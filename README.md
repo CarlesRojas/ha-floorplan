@@ -51,7 +51,30 @@ Register `/local/floorplan-3d/card.js?v=1` as a JavaScript module resource. Bump
 
 ### Add the card
 
-Create a dashboard, Edit, Add card. Search "Floorplan 3D" or add it manually:
+Create a dashboard, Edit, Add card. Search "Floorplan 3D". The card opens with a visual editor where you draw the rooms. You can also write the config by hand:
+
+## Editor
+
+The card's visual editor is a top-down drawing tool. Open it from the card's edit dialog.
+
+It opens fullscreen. The X in the top right closes it, leaving an Open editor button in the dialog so Home Assistant's live preview is visible.
+
+- Draw room (D): click to place corners, click the first corner or press Enter to close.
+- Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu: delete corner, add corner, delete room, fit view.
+- Fit view (F), drag empty space to pan, wheel to zoom.
+- Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
+- Rooms never overlap. While dragging, the room follows the pointer and turns red where it would overlap. On release it lands on the nearest valid position, sliding along the free axis. A corner cannot be drawn inside a room or through one.
+
+Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
+
+### Devices mode
+
+The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Pick a room on the canvas to add entities to it. The selected room shows its Home Assistant area at the top, where it can be assigned or changed. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
+
+- Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
+- A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
+- Right click a device to rotate it or remove it. Delete removes the selected device.
+- Deleting a room removes its devices.
 
 ## Card config
 
@@ -63,6 +86,7 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D" or add it manually:
 
 Defaults for these and other visual values live in `src/theme.ts`.
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
+| `devices` | `[]` | List of placed entities, see below |
 
 Each room:
 
@@ -74,6 +98,17 @@ Each room:
 | `name` | Label override |
 | `radius` | Corner radius override |
 | `color` | Fill color override |
+
+Each device:
+
+| Key | Description |
+| --- | --- |
+| `entity_id` | Home Assistant entity, required |
+| `room` | Id of the room it sits in, required |
+| `position` | `[x, y]` in meters, required |
+| `type` | Look, one of the types for the entity's domain. Defaults to the first |
+| `rotation` | Degrees, counter clockwise on the plan |
+| `length` | Meters, for strip-like types |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 

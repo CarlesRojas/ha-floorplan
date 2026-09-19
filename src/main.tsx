@@ -1,66 +1,42 @@
 import Card from '#/Card.tsx'
-import fontsCss from '#/fonts.css?inline'
-import styles from '#/index.css?inline'
-import type { CardConfig, HomeAssistant } from '#/types.ts'
-import { StrictMode } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import Editor from '#/editor/Editor.tsx'
+import { ReactHost } from '#/host.tsx'
+import type { CardConfig } from '#/types.ts'
 
 const CARD_TYPE = 'floorplan-3d'
-const FONTS_ID = `${CARD_TYPE}-fonts`
+const EDITOR_TYPE = `${CARD_TYPE}-editor`
 
-// Fonts must live in the document, not the shadow root, for @font-face to apply.
-function injectFonts() {
-  if (document.getElementById(FONTS_ID)) return
-  const style = document.createElement('style')
-  style.id = FONTS_ID
-  style.textContent = fontsCss
-  document.head.appendChild(style)
+function validate(config: CardConfig) {
+  if (config.rooms !== undefined && !Array.isArray(config.rooms)) throw new Error('rooms must be a list')
+  for (const room of config.rooms ?? []) {
+    if (!room.id) throw new Error('Every room needs an id')
+    if (!Array.isArray(room.points) || room.points.length < 3)
+      throw new Error(`Room ${room.id} needs at least 3 points`)
+  }
+  if (config.devices !== undefined && !Array.isArray(config.devices)) throw new Error('devices must be a list')
+  for (const device of config.devices ?? []) {
+    if (!device.entity_id) throw new Error('Every device needs an entity_id')
+    if (!config.rooms?.some(r => r.id === device.room))
+      throw new Error(`Device ${device.entity_id} points at an unknown room`)
+    if (!Array.isArray(device.position) || device.position.length !== 2)
+      throw new Error(`Device ${device.entity_id} needs a position`)
+  }
 }
 
-class Floorplan3DCard extends HTMLElement {
-  private root: Root
-  private _hass: HomeAssistant | null = null
-  private _config: CardConfig | null = null
-
-  constructor() {
-    super()
-    // HA detaches and re-attaches cards when a view re-renders, so everything
-    // that must happen exactly once lives here rather than in connectedCallback.
-    injectFonts()
-    const shadow = this.attachShadow({ mode: 'open' })
-    const style = document.createElement('style')
-    style.textContent = styles
-    shadow.appendChild(style)
-    const mount = document.createElement('div')
-    mount.style.height = '100%'
-    shadow.appendChild(mount)
-    this.root = createRoot(mount)
+class Floorplan3DCard extends ReactHost<CardConfig> {
+  static getConfigElement() {
+    return document.createElement(EDITOR_TYPE)
   }
 
-  connectedCallback() {
-    this.render()
+  static getStubConfig(): Omit<CardConfig, 'type'> {
+    return { rooms: [] }
   }
 
   // Called by HA once with the YAML config for this card.
   setConfig(config: CardConfig) {
-    if (config.rooms !== undefined && !Array.isArray(config.rooms)) throw new Error('rooms must be a list')
-    for (const room of config.rooms ?? []) {
-      if (!room.id) throw new Error('Every room needs an id')
-      if (!Array.isArray(room.points) || room.points.length < 3)
-        throw new Error(`Room ${room.id} needs at least 3 points`)
-    }
+    validate(config)
     this._config = config
     this.render()
-  }
-
-  // Called by HA on every state change.
-  set hass(hass: HomeAssistant) {
-    this._hass = hass
-    this.render()
-  }
-
-  get hass() {
-    return this._hass as HomeAssistant
   }
 
   // Rough height in 50px rows for the masonry layout.
@@ -68,17 +44,30 @@ class Floorplan3DCard extends HTMLElement {
     return 6
   }
 
-  private render() {
-    if (!this._config) return
-    this.root.render(
-      <StrictMode>
-        <Card hass={this._hass} config={this._config} />
-      </StrictMode>,
-    )
+  protected view() {
+    return <Card hass={this._hass} config={this._config!} />
+  }
+}
+
+class Floorplan3DEditor extends ReactHost<CardConfig> {
+  setConfig(config: CardConfig) {
+    this._config = config
+    this.render()
+  }
+
+  private emit = (config: CardConfig) => {
+    this._config = config
+    this.render()
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config }, bubbles: true, composed: true }))
+  }
+
+  protected view() {
+    return <Editor hass={this._hass} config={this._config!} onChange={this.emit} />
   }
 }
 
 if (!customElements.get(CARD_TYPE)) customElements.define(CARD_TYPE, Floorplan3DCard)
+if (!customElements.get(EDITOR_TYPE)) customElements.define(EDITOR_TYPE, Floorplan3DEditor)
 
 // Makes the card show up in the "add card" picker.
 window.customCards = window.customCards ?? []

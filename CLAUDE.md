@@ -8,7 +8,7 @@ Before starting any task, check the state of the branch you are working on again
 - If the branch was rebased or force-pushed: fetch it and continue the work on top of that.
 - If the branch is open and unchanged: continue as is.
 
-Check this on every new session and before each push, not just once.
+Check this on every new session and again right before every commit: fetch, confirm the branch's pull request is still open and the remote branch has not moved. Never commit on stale assumptions.
 
 Keep working on the same branch and pull request while it is open, whatever the task. Only start a new branch when the pull request was merged or the user asks for one.
 

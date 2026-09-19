@@ -6,6 +6,24 @@
   --transition-duration-slow: 300ms;
 }
 
+/* shadcn tokens, mapped onto the Home Assistant theme variables. */
+@theme inline {
+  --color-background: var(--card-background-color, #fff);
+  --color-foreground: var(--primary-text-color, #212121);
+  --color-muted: var(--secondary-background-color, #f5f5f5);
+  --color-muted-foreground: var(--secondary-text-color, #727272);
+  --color-popover: var(--card-background-color, #fff);
+  --color-popover-foreground: var(--primary-text-color, #212121);
+  --color-accent: var(--secondary-background-color, #f5f5f5);
+  --color-accent-foreground: var(--primary-text-color, #212121);
+  --color-primary: var(--primary-color, #03a9f4);
+  --color-primary-foreground: var(--text-primary-color, #fff);
+  --color-destructive: var(--error-color, #db4437);
+  --color-border: var(--divider-color, #e0e0e0);
+  --radius-md: 8px;
+  --radius-sm: 6px;
+}
+
 @custom-variant mouse (@media (hover: hover) and (pointer: fine));
 @custom-variant touch (@media (hover: none) or (pointer: coarse));
 
