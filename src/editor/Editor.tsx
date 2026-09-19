@@ -4,6 +4,8 @@ import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, round, type View } from '#/editor/view.ts'
+import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useEffect, useRef, useState } from 'react'
@@ -174,7 +176,17 @@ export default function Editor({ hass, config, onChange }: Props) {
           tabIndex={0}
           onKeyDown={onKeyDown}
         >
-          <div className="flex items-center gap-4">{toolbar}</div>
+          <div className="flex items-center justify-between">
+            {toolbar}
+            <button
+              type="button"
+              aria-label="Close fullscreen"
+              onClick={() => setFullscreen(false)}
+              className="flex size-9 items-center justify-center rounded-lg text-(--primary-text-color) hover:bg-(--secondary-background-color)"
+            >
+              <FontAwesomeIcon icon={faXmark} className="size-4" />
+            </button>
+          </div>
           <div className="flex min-h-0 flex-1 gap-4">
             <div className="min-w-0 flex-1">{canvas}</div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto" style={{ width: EDITOR_SIDEBAR_WIDTH_PX }}>
