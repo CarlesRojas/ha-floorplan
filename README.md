@@ -63,7 +63,7 @@ It opens fullscreen. The X in the top right closes it, leaving an Open editor bu
 - Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu: delete corner, add corner, delete room, fit view.
 - Fit view (F), drag empty space to pan, wheel to zoom.
 - Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
-- Rooms never overlap. A drag that would overlap another room stops at the last valid position, and a corner cannot be drawn inside a room or through one.
+- Rooms never overlap. A drag that would overlap another room slides along the free axis instead, and a corner cannot be drawn inside a room or through one.
 
 Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 

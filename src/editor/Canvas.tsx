@@ -212,15 +212,30 @@ export default function Canvas({
     const d = drag.current
     if (!d) return
     // A move that would overlap another room or fold the polygon is ignored,
-    // so the room stays where it last was valid.
-    const patch = (roomId: string, points: Point[]) => {
+    // so the room stays where it last was valid. Candidates are tried in
+    // order, which lets a blocked move still slide along the free axis.
+    const patch = (roomId: string, candidates: Point[][]) => {
       const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
-      if (!isValidRoom(points, others)) return
+      const points = candidates.find(c => isValidRoom(c, others))
+      if (!points) return
       onRooms(
         currentRooms.map(r => (r.id === roomId ? { ...r, points } : r)),
         false,
       )
     }
+    // Full move first, then the axis with the larger displacement, then the other.
+    const axisOrder = (dx: number, dy: number): Point[] =>
+      Math.abs(dx) >= Math.abs(dy)
+        ? [
+            [dx, dy],
+            [dx, 0],
+            [0, dy],
+          ]
+        : [
+            [dx, dy],
+            [0, dy],
+            [dx, 0],
+          ]
     switch (d.kind) {
       case 'pan': {
         onView({ ...d.view, tx: d.view.tx + screen[0] - d.start[0], ty: d.view.ty + screen[1] - d.start[1] })
@@ -228,10 +243,13 @@ export default function Canvas({
       }
       case 'vertex': {
         const room = currentRooms.find(r => r.id === d.roomId)!
+        const current = room.points[d.index]
         const snapped = snap(p, v, currentRooms, { roomId: d.roomId, index: d.index })
         patch(
           d.roomId,
-          room.points.map((q, i) => (i === d.index ? snapped : q)),
+          axisOrder(snapped[0] - current[0], snapped[1] - current[1]).map(([dx, dy]) =>
+            room.points.map((q, i) => (i === d.index ? ([current[0] + dx, current[1] + dy] as Point) : q)),
+          ),
         )
         break
       }
@@ -248,12 +266,11 @@ export default function Canvas({
         const moved: Point = [a[0] + nx * t, a[1] + ny * t]
         const snapped = snap(moved, v, others)
         const ts = (snapped[0] - a[0]) * nx + (snapped[1] - a[1]) * ny
-        patch(
-          d.roomId,
+        patch(d.roomId, [
           d.origin.map((q, i) =>
             i === d.index || i === (d.index + 1) % n ? ([q[0] + nx * ts, q[1] + ny * ts] as Point) : q,
           ),
-        )
+        ])
         break
       }
       case 'room': {
@@ -267,7 +284,7 @@ export default function Canvas({
         const oy = snapped[1] - d.origin[0][1]
         patch(
           d.roomId,
-          d.origin.map(([x, y]) => [x + ox, y + oy]),
+          axisOrder(ox, oy).map(([ax, ay]) => d.origin.map(([x, y]) => [x + ax, y + ay] as Point)),
         )
         break
       }
