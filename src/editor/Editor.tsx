@@ -1,4 +1,5 @@
 import Canvas from '#/editor/Canvas.tsx'
+import Overlay from '#/editor/Overlay.tsx'
 import PlanPanel from '#/editor/PlanPanel.tsx'
 import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
@@ -194,22 +195,24 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   if (fullscreen) {
     return (
-      <div
-        className="font-montserrat fixed inset-0 z-50 flex flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none"
-        tabIndex={0}
-        onKeyDown={onKeyDown}
-      >
-        <div className="flex items-center gap-4">
-          {toolbar}
-          {hintLine}
-        </div>
-        <div className="flex min-h-0 flex-1 gap-4">
-          <div className="min-w-0 flex-1">{canvas}</div>
-          <div className="flex shrink-0 flex-col gap-3 overflow-y-auto" style={{ width: EDITOR_SIDEBAR_WIDTH_PX }}>
-            {panels}
+      <Overlay>
+        <div
+          className="font-montserrat flex h-full flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none"
+          tabIndex={0}
+          onKeyDown={onKeyDown}
+        >
+          <div className="flex items-center gap-4">
+            {toolbar}
+            {hintLine}
+          </div>
+          <div className="flex min-h-0 flex-1 gap-4">
+            <div className="min-w-0 flex-1">{canvas}</div>
+            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto" style={{ width: EDITOR_SIDEBAR_WIDTH_PX }}>
+              {panels}
+            </div>
           </div>
         </div>
-      </div>
+      </Overlay>
     )
   }
 
