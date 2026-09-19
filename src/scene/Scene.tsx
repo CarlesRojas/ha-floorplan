@@ -1,21 +1,20 @@
 import {
   AMBIENT_LIGHT_INTENSITY,
   CAMERA_FAR_M,
-  CAMERA_FIT_MARGIN,
   CAMERA_FOV_DEG,
   CAMERA_MAX_DISTANCE_M,
   CAMERA_MAX_POLAR_DEG,
   CAMERA_MIN_DISTANCE_M,
   CAMERA_MIN_POLAR_DEG,
   CAMERA_NEAR_M,
-  CAMERA_START_POSITION_M,
   SUN_LIGHT_INTENSITY,
   SUN_LIGHT_POSITION_M,
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
+import CameraRig from '#/scene/CameraRig.tsx'
 import Room from '#/scene/Room.tsx'
 import type { CardConfig } from '#/types.ts'
-import { Bounds, OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils } from 'three'
 
@@ -33,7 +32,7 @@ export default function Scene({ config }: Props) {
       shadows
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
-      camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M, position: CAMERA_START_POSITION_M }}
+      camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
     >
       <ambientLight intensity={AMBIENT_LIGHT_INTENSITY} />
       <directionalLight
@@ -43,13 +42,10 @@ export default function Scene({ config }: Props) {
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0005}
       />
-      <Bounds fit clip observe margin={CAMERA_FIT_MARGIN} maxDuration={0}>
-        <group>
-          {rooms.map((room, i) => (
-            <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
-          ))}
-        </group>
-      </Bounds>
+      <CameraRig rooms={rooms} />
+      {rooms.map((room, i) => (
+        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
+      ))}
       <OrbitControls
         makeDefault
         enablePan={false}
