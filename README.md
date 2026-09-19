@@ -67,6 +67,8 @@ rooms:
 | `rooms` | `[]` | List of rooms, see below |
 | `radius` | `0.3` | Corner radius in meters for rooms without their own |
 | `gap` | `0.12` | Gap in meters between adjacent rooms |
+
+Defaults for these and other visual values live in `src/theme.ts`.
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
 
 Each room:
