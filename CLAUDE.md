@@ -20,3 +20,4 @@ Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bo
 - Styling: Tailwind v4, injected into the card's shadow root from `src/index.css`. Use the `cn` helper from `src/lib/utils.ts`.
 - `dist/` is bind-mounted into the Home Assistant container. Never empty it from the build config.
 - Write in plain sentences. Never use em dashes, in code comments, commit messages, or docs.
+- When giving the user card YAML, always give the complete card config, never a fragment to merge.
