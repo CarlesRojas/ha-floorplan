@@ -317,8 +317,11 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   const onKeyDown = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement
-    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
+    // Listening on the document, the target is retargeted to the shadow host,
+    // so look at the real element through the composed path.
+    const target = e.composedPath()[0] as HTMLElement
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable) return
+    if (e.ctrlKey || e.metaKey || e.altKey) return
     switch (e.key) {
       case 'v':
       case 'V':
