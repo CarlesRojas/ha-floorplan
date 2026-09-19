@@ -32,7 +32,7 @@ export const SUN_LIGHT_POSITION_M: [number, number, number] = [6, 12, 8]
 // Editor
 
 // Grid step for snapping.
-export const EDITOR_GRID_M = 0.5
+export const EDITOR_GRID_M = 0.2
 // How close, on screen, a point must be to snap to another vertex.
 export const EDITOR_SNAP_PX = 10
 // How close, on screen, a click must be to hit a vertex handle.

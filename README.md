@@ -62,7 +62,7 @@ It opens fullscreen. The X in the top right closes it, leaving an Open editor bu
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
 - Select (V): click a room to select it, drag corners to move them, click the plus signs on the edges to add corners, Delete removes the selected corner, drag a room to move it.
 - Fit view (F), drag empty space to pan, wheel to zoom.
-- Corners snap to a 50 cm grid and to other rooms' corners and wall lines.
+- Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
 
 Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 

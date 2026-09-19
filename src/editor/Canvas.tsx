@@ -309,7 +309,7 @@ export default function Canvas({
 function Grid({ view, width, height }: { view: View; width: number; height: number }) {
   const [minX, maxY] = toPlan(view, [0, 0])
   const [maxX, minY] = toPlan(view, [width, height])
-  const step = view.scale >= 16 ? EDITOR_GRID_M : view.scale >= 6 ? 1 : 5
+  const step = view.scale >= 30 ? EDITOR_GRID_M : view.scale >= 6 ? 1 : 5
   const lines: React.ReactNode[] = []
   for (let x = Math.floor(minX / step) * step; x <= maxX; x += step) {
     const major = Math.abs(x / 1 - Math.round(x / 1)) < 1e-6
