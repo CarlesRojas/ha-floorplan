@@ -33,9 +33,20 @@ export type RoomConfig = {
   color?: string
 }
 
+// Floor plan image traced in the editor. `x` and `y` place its bottom left
+// corner on the plan and `width` is its real width, all in meters.
+export type PlanImageConfig = {
+  url: string
+  width: number
+  x: number
+  y: number
+  opacity?: number
+}
+
 export type CardConfig = {
   type: string
   rooms?: RoomConfig[]
+  plan?: PlanImageConfig
   // Corner radius in meters applied to rooms without their own.
   radius?: number
   // Gap in meters between adjacent rooms.

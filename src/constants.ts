@@ -28,3 +28,13 @@ export const CAMERA_FAR_M = 200
 export const AMBIENT_LIGHT_INTENSITY = 0.6
 export const SUN_LIGHT_INTENSITY = 1.4
 export const SUN_LIGHT_POSITION_M: [number, number, number] = [6, 12, 8]
+
+// Editor
+
+// Grid step for snapping.
+export const EDITOR_GRID_M = 0.1
+// How close, on screen, a point must be to snap to another vertex.
+export const EDITOR_SNAP_PX = 10
+// How close, on screen, a click must be to hit a vertex handle.
+export const EDITOR_HANDLE_PX = 7
+export const EDITOR_CANVAS_HEIGHT_PX = 440
