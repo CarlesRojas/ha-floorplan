@@ -4,7 +4,8 @@ import ModelPreview from '#/editor/ModelPreview.tsx'
 import { cn } from '#/lib/utils.ts'
 import { DECORATION_MATERIALS, EDITOR_MODE_COLORS, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
-import { faLightbulb, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
+import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
 
@@ -25,7 +26,6 @@ type Props = {
 const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
 const accent = EDITOR_MODE_COLORS.decoration
-const FAMILY_LABELS: Record<string, string> = { light: 'Lights' }
 
 export default function DecorationPanel({
   hass,
@@ -41,6 +41,7 @@ export default function DecorationPanel({
   onFloor,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
+  const [query, setQuery] = useState('')
   const item = selected ? decorations.find(d => d.id === selected) : undefined
   const kind = item ? decorationKind(item.kind) : undefined
 
@@ -208,41 +209,52 @@ export default function DecorationPanel({
         )}
       </div>
 
-      {families.map(family => (
-        <div key={family} className="flex flex-col gap-1">
-          <p className="text-xs font-semibold text-(--secondary-text-color)">{FAMILY_LABELS[family] ?? family}</p>
-          {DECORATION_KINDS.filter(k => k.family === family).map(k => (
-            <div
-              key={k.id}
-              onMouseEnter={() => setHovered(k)}
-              onMouseLeave={() => setHovered(h => (h?.id === k.id ? null : h))}
-              className={cn(
-                'grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1',
-                hovered?.id === k.id && 'bg-(--secondary-background-color)',
-              )}
-            >
-              <FontAwesomeIcon icon={faLightbulb} className="size-4 text-(--secondary-text-color)" />
-              <div className="min-w-0">
-                <p className="truncate text-sm text-(--primary-text-color)">{k.label}</p>
-                <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
+      <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />
+
+      {families.map(family => {
+        const shown = DECORATION_KINDS.filter(
+          k => k.family === family && (!query.trim() || k.label.toLowerCase().includes(query.trim().toLowerCase())),
+        )
+        if (shown.length === 0) return null
+        return (
+          <div key={family} className="flex flex-col gap-1">
+            <p className="text-xs font-semibold text-(--secondary-text-color)">{FAMILY_LABELS[family] ?? family}</p>
+            {shown.map(k => (
+              <div
+                key={k.id}
+                onMouseEnter={() => setHovered(k)}
+                onMouseLeave={() => setHovered(h => (h?.id === k.id ? null : h))}
+                className={cn(
+                  'grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1',
+                  hovered?.id === k.id && 'bg-(--secondary-background-color)',
+                )}
+              >
+                <FontAwesomeIcon
+                  icon={decorationIcon(k.id, k.family)}
+                  className="size-4 text-(--secondary-text-color)"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-(--primary-text-color)">{k.label}</p>
+                  <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
+                </div>
+                {rooms.length > 0 ? (
+                  <button
+                    type="button"
+                    aria-label={`Add ${k.label}`}
+                    onClick={() => onAdd(k)}
+                    className="flex size-8 items-center justify-center rounded-lg hover:bg-(--card-background-color)"
+                    style={{ color: accent }}
+                  >
+                    <FontAwesomeIcon icon={faPlus} className="size-4" />
+                  </button>
+                ) : (
+                  <span />
+                )}
               </div>
-              {rooms.length > 0 ? (
-                <button
-                  type="button"
-                  aria-label={`Add ${k.label}`}
-                  onClick={() => onAdd(k)}
-                  className="flex size-8 items-center justify-center rounded-lg hover:bg-(--card-background-color)"
-                  style={{ color: accent }}
-                >
-                  <FontAwesomeIcon icon={faPlus} className="size-4" />
-                </button>
-              ) : (
-                <span />
-              )}
-            </div>
-          ))}
-        </div>
-      ))}
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }

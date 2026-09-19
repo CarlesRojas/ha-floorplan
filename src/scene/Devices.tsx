@@ -1,6 +1,6 @@
-import { decorationKind } from '#/decoration/catalog.ts'
 import { deviceType } from '#/devices/catalog.ts'
-import LightModel, { type LightState } from '#/scene/decor/LightModel.tsx'
+import DecorationModel from '#/scene/decor/DecorationModel.tsx'
+import type { ItemState } from '#/scene/decor/state.ts'
 import { clickAction, deviceSignals, kelvinToRgb, signalValues } from '#/signals.ts'
 import { CEILING_HEIGHT_M, DEVICE_SPHERE_COLOR, DEVICE_SPHERE_RADIUS_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
@@ -20,17 +20,23 @@ function sphereHeight(device: DeviceConfig) {
   return 0.9
 }
 
-// Visual state of a light model from its bound device's signals. Null when
-// the device cannot express what the model shows, so it stays neutral.
-function lightState(hass: HomeAssistant, entityId: string): LightState | null {
+// What a bound device tells its decoration items. Null when the device says
+// nothing a model can draw, so the item stays neutral.
+function itemState(hass: HomeAssistant, entityId: string): ItemState | null {
   const signals = deviceSignals(hass, entityId)
-  if (!signals.includes('toggle')) return null
+  if (signals.length === 0) return null
   const v = signalValues(hass, entityId)
   const base = new Color(LIGHT_GLOW_COLOR)
   let glow: [number, number, number] = [base.r, base.g, base.b]
   if (v.color) glow = [v.color[0] / 255, v.color[1] / 255, v.color[2] / 255]
   else if (v.warmth) glow = kelvinToRgb(v.warmth)
-  return { on: v.on ?? false, level: signals.includes('level') ? (v.level ?? 1) : 1, glow }
+  return {
+    on: v.on ?? false,
+    level: signals.includes('level') ? (v.level ?? 1) : 1,
+    glow,
+    value: v.value,
+    text: v.state,
+  }
 }
 
 export default function Devices({ hass, config }: Props) {
@@ -72,22 +78,16 @@ export default function Devices({ hass, config }: Props) {
         )
       })}
       {decorations.map(item => {
-        const kind = decorationKind(item.kind)
-        if (!kind) return null
         const device = boundTo.get(item.id)
-        if (kind.family === 'light') {
-          const state = device && hass ? lightState(hass, device.entity_id) : null
-          return (
-            <LightModel
-              key={item.id}
-              kind={kind}
-              item={item}
-              state={state}
-              onClick={device ? () => act(device.entity_id) : undefined}
-            />
-          )
-        }
-        return null
+        const state = device && hass ? itemState(hass, device.entity_id) : null
+        return (
+          <DecorationModel
+            key={item.id}
+            item={item}
+            state={state}
+            onClick={device ? () => act(device.entity_id) : undefined}
+          />
+        )
       })}
     </>
   )

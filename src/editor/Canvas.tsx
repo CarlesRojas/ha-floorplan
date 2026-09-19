@@ -13,7 +13,8 @@ import {
   EDITOR_GRID_M,
   EDITOR_HANDLE_PX,
 } from '#/constants.ts'
-import { decorationKind, paramValue } from '#/decoration/catalog.ts'
+import { decorationKind, footprint } from '#/decoration/catalog.ts'
+import { decorationIcon } from '#/decoration/icons.ts'
 import { deviceType } from '#/devices/catalog.ts'
 import type { Mode, Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
@@ -28,7 +29,7 @@ import {
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
-import { faLightbulb, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useRef, useState } from 'react'
 import { useResizeObserver } from 'usehooks-ts'
 
@@ -959,10 +960,10 @@ export default function Canvas({
           const isSelected = selectedDecoration === item.id
           const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.decoration
           const angle = -(item.rotation ?? 0)
-          const size = paramValue(kind, item.params, 'size')
-          const length = paramValue(kind, item.params, 'length')
+          const [fw, fd] = footprint(kind, item.params)
           const r = EDITOR_DEVICE_RADIUS_PX
-          const footprint = Math.max(r, (size / 2) * view.scale)
+          const halfW = Math.max(r, (fw / 2) * view.scale)
+          const halfD = Math.max(r, (fd / 2) * view.scale)
           return (
             <g
               key={item.id}
@@ -971,47 +972,32 @@ export default function Canvas({
               onPointerDown={e => onDecorationDown(e, item)}
               onContextMenu={e => openMenu(e, { kind: 'decoration', id: item.id })}
             >
-              {length > 0 && (
-                <line
-                  x1={sx - (length / 2) * view.scale}
-                  y1={sy}
-                  x2={sx + (length / 2) * view.scale}
-                  y2={sy}
-                  transform={`rotate(${angle} ${sx} ${sy})`}
-                  stroke={color}
-                  strokeWidth={6}
-                  strokeLinecap="round"
-                  opacity={0.8}
-                />
-              )}
-              {kind.mount === 'wall' ? (
-                <rect
-                  x={sx - footprint}
-                  y={sy - 4}
-                  width={footprint * 2}
-                  height={8}
-                  rx={3}
-                  transform={`rotate(${angle} ${sx} ${sy})`}
-                  fill={color}
-                  opacity={0.7}
-                />
-              ) : (
-                <circle
-                  cx={sx}
-                  cy={sy}
-                  r={footprint}
-                  fill={color}
-                  fillOpacity={0.18}
-                  stroke={color}
-                  strokeWidth={1.5}
-                  strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
-                />
-              )}
+              {/* The item's real footprint, rotated with it. Wall items read as
+                  a bar on the wall, ceiling items as a dashed outline. */}
+              <rect
+                x={sx - halfW}
+                y={sy - (kind.mount === 'wall' ? 5 : halfD)}
+                width={halfW * 2}
+                height={kind.mount === 'wall' ? 10 : halfD * 2}
+                rx={kind.mount === 'wall' ? 4 : Math.min(8, Math.min(halfW, halfD) * 0.4)}
+                transform={`rotate(${angle} ${sx} ${sy})`}
+                fill={color}
+                fillOpacity={kind.mount === 'wall' ? 0.7 : 0.18}
+                stroke={color}
+                strokeWidth={1.5}
+                strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
+              />
               {isSelected && (
                 <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
               )}
               <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
-              <IconGlyph icon={faLightbulb} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />
+              <IconGlyph
+                icon={decorationIcon(item.kind, kind.family)}
+                x={sx}
+                y={sy}
+                size={r * 1.1}
+                fill="var(--primary-text-color)"
+              />
             </g>
           )
         })}

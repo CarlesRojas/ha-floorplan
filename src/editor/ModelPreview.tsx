@@ -1,5 +1,5 @@
 import { decorationKind } from '#/decoration/catalog.ts'
-import LightModel from '#/scene/decor/LightModel.tsx'
+import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { CEILING_HEIGHT_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { Bounds, OrbitControls } from '@react-three/drei'
@@ -21,7 +21,7 @@ export default function ModelPreview({ item, className }: Props) {
   const onFloor = kind.mount === 'floor'
   // Ceiling items hang from a virtual ceiling 1.4 m up, so the cord does not
   // dominate the frame.
-  const lift = kind.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : 0
+  const lift = kind.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : kind.mount === 'wall' ? -1.2 : 0
   return (
     <div className={className}>
       <Canvas dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ fov: 35, position: [3, 2.4, 3] }}>
@@ -35,13 +35,7 @@ export default function ModelPreview({ item, className }: Props) {
             </mesh>
           )}
           <group position={[0, lift, 0]}>
-            {kind.family === 'light' && (
-              <LightModel
-                kind={kind}
-                item={centered}
-                state={{ on: true, level: 0.8, glow: [glow.r, glow.g, glow.b] }}
-              />
-            )}
+            <DecorationModel item={centered} state={{ on: true, level: 0.8, glow: [glow.r, glow.g, glow.b] }} />
           </group>
         </Bounds>
         <OrbitControls makeDefault enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={1.5} />

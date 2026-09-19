@@ -33,6 +33,23 @@ export const EDITOR_MODE_COLORS = {
 // Height of the ceiling that pendants and ceiling lights hang from.
 export const CEILING_HEIGHT_M = 2.6
 // Default colors of the material slots of the light family.
+// The Scandinavian palette every model draws from: pale woods, chalky
+// whites, muted greens and clays, soft greys.
+export const SCANDI = {
+  oak: '#dcc3a0',
+  birch: '#ead9c0',
+  walnut: '#a8845c',
+  offWhite: '#f2efe9',
+  linen: '#e6ded1',
+  straw: '#d9c9a3',
+  mist: '#cdd6d8',
+  slate: '#9aa3a8',
+  charcoal: '#4a4f52',
+  sage: '#b6c3ae',
+  leaf: '#7f9c6d',
+  clay: '#cfa08a',
+}
+
 // Scandinavian defaults: warm white fabric shades, light oak, grey cords.
 export const LIGHT_SHADE_COLOR = '#f4eee3'
 export const LIGHT_BASE_COLOR = '#d8b98e'

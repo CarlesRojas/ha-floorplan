@@ -13,7 +13,7 @@ export type Framing = {
 // the viewport. Plan y maps to -z in the scene.
 // Tallest point the scene reaches, so the camera frames fixtures too.
 export function sceneHeight(decorations: DecorationConfig[] = []) {
-  let top = ROOM_SLAB_THICKNESS_M
+  let top = 0.6
   for (const item of decorations) {
     const kind = decorationKind(item.kind)
     if (!kind) continue
@@ -25,7 +25,7 @@ export function sceneHeight(decorations: DecorationConfig[] = []) {
   return top
 }
 
-export function frameRooms(rooms: RoomConfig[], aspect: number, height = ROOM_SLAB_THICKNESS_M): Framing {
+export function frameRooms(rooms: RoomConfig[], aspect: number, height = 0.6): Framing {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -43,7 +43,7 @@ export function frameRooms(rooms: RoomConfig[], aspect: number, height = ROOM_SL
     maxX = maxY = 1
   }
 
-  const target = new Vector3((minX + maxX) / 2, 0, -(minY + maxY) / 2)
+  const target = new Vector3((minX + maxX) / 2, height * 0.35, -(minY + maxY) / 2)
   const direction = new Vector3(...CAMERA_DIRECTION).normalize()
 
   // Camera basis for a camera at `target + direction * d` looking at target.
@@ -61,7 +61,7 @@ export function frameRooms(rooms: RoomConfig[], aspect: number, height = ROOM_SL
   const corner = new Vector3()
   for (const x of [minX, maxX]) {
     for (const y of [minY, maxY]) {
-      for (const z of [0, height]) {
+      for (const z of [-ROOM_SLAB_THICKNESS_M, height]) {
         corner.set(x, z, -y).sub(target)
         const depth = corner.dot(forward)
         const dx = Math.abs(corner.dot(right))

@@ -82,7 +82,40 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
 - A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change.
-- The first family is lights: ceiling light, pendant, floor lamp, table lamp, wall light, LED strip and spot.
+- Items are grouped by family in the sidebar, with a search box. Every model is built from primitives in code, in a Scandinavian vocabulary: pale oak, chalky whites, muted greens and clays, rounded frames on tapered legs, plump linen upholstery.
+
+### Catalog
+
+| Family | Items |
+| --- | --- |
+| Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, LED strip, spot |
+| Seating | Sofa, loveseat, armchair, dining chair, stool, bench, pouf |
+| Tables | Dining table, coffee table, side table, desk, console table, nightstand |
+| Storage | Bookshelf, sideboard, wardrobe, dresser, TV stand, cabinet, shoe rack, wall shelf |
+| Beds | Double bed, single bed, crib |
+| Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, dishwasher, sink, microwave, coffee machine, kettle |
+| Laundry | Washing machine, dryer |
+| Bathroom | Toilet, basin, bathtub, shower, towel rail, mirror |
+| Decor | Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
+| Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector |
+| Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
+| Windows and doors | Blind, roller shutter, window, door, garage door, awning |
+| Security and sensors | Camera, doorbell, motion sensor, door sensor, smoke detector, alarm panel, smart lock, air quality sensor |
+| Smart home | Robot vacuum, smart plug, switch panel |
+
+### How items show device state
+
+A bound device drives what the item does in 3D, when its signals match:
+
+- Lamps and LED strips glow with the light's brightness, color and color temperature.
+- TVs, monitors and projectors light their screens. Speakers and soundbars light a small indicator.
+- Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors swing open.
+- Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.
+- Radiators and towel rails warm up, hobs light their rings, ovens glow behind the glass.
+- Fridges, dishwashers, kettles and coffee machines show a status light.
+- Thermostats, alarm panels and air quality sensors light their display.
+
+A device whose signals the item cannot express can still be bound. Clicking it works, the item just does not change.
 
 ## Card config
 

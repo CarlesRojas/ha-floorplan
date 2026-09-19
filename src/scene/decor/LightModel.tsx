@@ -3,21 +3,15 @@ import type { SurfaceKind } from '#/materials/textures.ts'
 import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
 import { CEILING_HEIGHT_M, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
-import { MathUtils } from 'three'
 
-export type LightState = {
-  on: boolean
-  // 0 to 1
-  level: number
-  // 0 to 1 each, the glow tint
-  glow: [number, number, number]
-}
+import type { ItemState } from '#/scene/decor/state.ts'
+
+export type LightState = ItemState
 
 type Props = {
   kind: DecorationKind
   item: DecorationConfig
-  state: LightState | null
-  onClick?: () => void
+  state: ItemState | null
 }
 
 // Smooth, chunky shapes: squashed spheres, capsules and domes, matte
@@ -105,25 +99,11 @@ function Dome({
   )
 }
 
-export default function LightModel({ kind, item, state, onClick }: Props) {
+export default function LightModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
   const m = (slot: string) => materialValue(kind, item.materials, slot)
   const size = p('size')
-  const rotation = MathUtils.degToRad(item.rotation ?? 0)
-  const handlers = {
-    onClick: (e: { stopPropagation: () => void }) => {
-      e.stopPropagation()
-      onClick?.()
-    },
-  }
-  const cursor = onClick
-    ? {
-        onPointerOver: () => (document.body.style.cursor = 'pointer'),
-        onPointerOut: () => (document.body.style.cursor = ''),
-      }
-    : {}
-
   let body: React.ReactNode
   let glowY = 1
   switch (kind.id) {
@@ -254,9 +234,9 @@ export default function LightModel({ kind, item, state, onClick }: Props) {
   }
 
   return (
-    <group position={[item.position[0], 0, -item.position[1]]} rotation={[0, rotation, 0]} {...handlers} {...cursor}>
+    <>
       {body}
       <Glow state={state} y={glowY} />
-    </group>
+    </>
   )
 }

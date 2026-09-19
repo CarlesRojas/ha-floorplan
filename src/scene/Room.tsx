@@ -37,8 +37,11 @@ export default function Room({ room, index, radius, gap }: Props) {
       bevelSegments: SLAB_BEVEL_SEGMENTS,
       curveSegments: SLAB_CURVE_SEGMENTS,
     })
-    // Shape is drawn on the XY plane. Lay it flat so Y is up and plan y maps to -z.
+    // Shape is drawn on the XY plane. Lay it flat so Y is up and plan y maps
+    // to -z, then drop it so the walking surface is exactly y = 0 and
+    // everything placed in the room sits on top of it.
     geo.rotateX(-Math.PI / 2)
+    geo.translate(0, -(ROOM_SLAB_THICKNESS_M + ROOM_SLAB_EDGE_RADIUS_M), 0)
     return geo
   }, [points, room.radius, radius, gap])
 
