@@ -16,5 +16,7 @@ export default defineConfig({
       fileName: () => 'card.js',
     },
     rollupOptions: { output: { inlineDynamicImports: true } },
+    copyPublicDir: false,
+    emptyOutDir: false,
   },
 })
