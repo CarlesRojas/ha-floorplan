@@ -1,4 +1,4 @@
-import { EDITOR_PREVIEW_DEFAULT_WIDTH_PX, EDITOR_PREVIEW_MIN_WIDTH_PX } from '#/constants.ts'
+import { EDITOR_PREVIEW_DEFAULT_WIDTH_PX, EDITOR_PREVIEW_MARGIN_PX, EDITOR_PREVIEW_MIN_WIDTH_PX } from '#/constants.ts'
 import { aspectRatioNumber } from '#/lib/aspect.ts'
 import Scene from '#/scene/Scene.tsx'
 import { CARD_CORNER_RADIUS_PX } from '#/theme.ts'
@@ -40,13 +40,25 @@ export default function PreviewWindow({ hass, config, onClose }: Props) {
     drag.current = { kind, startX: e.clientX, startY: e.clientY, x: position.x, y: position.y, width }
   }
 
+  // Keeps the window inside the viewport with a margin on every side.
+  const m = EDITOR_PREVIEW_MARGIN_PX
+  const clampPosition = (x: number, y: number, w: number) => ({
+    x: Math.min(Math.max(x, m), Math.max(m, window.innerWidth - w - m)),
+    y: Math.min(Math.max(y, m), Math.max(m, window.innerHeight - w / aspect - m)),
+  })
+  const clampWidth = (w: number, x: number, y: number) => {
+    const maxByWidth = window.innerWidth - x - m
+    const maxByHeight = (window.innerHeight - y - m) * aspect
+    return Math.max(EDITOR_PREVIEW_MIN_WIDTH_PX, Math.min(w, maxByWidth, maxByHeight))
+  }
+
   const move = (e: React.PointerEvent) => {
     const d = drag.current
     if (!d) return
     const dx = e.clientX - d.startX
     const dy = e.clientY - d.startY
-    if (d.kind === 'move') setPosition({ x: d.x + dx, y: d.y + dy })
-    else setWidth(Math.max(EDITOR_PREVIEW_MIN_WIDTH_PX, Math.max(d.width + dx, (d.width / aspect + dy) * aspect)))
+    if (d.kind === 'move') setPosition(clampPosition(d.x + dx, d.y + dy, width))
+    else setWidth(clampWidth(Math.max(d.width + dx, (d.width / aspect + dy) * aspect), d.x, d.y))
   }
 
   const end = (e: React.PointerEvent) => {

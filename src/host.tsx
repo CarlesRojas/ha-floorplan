@@ -5,6 +5,7 @@ import { StrictMode, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 
 const FONTS_ID = 'floorplan-3d-fonts'
+const PROPERTIES_ID = 'floorplan-3d-properties'
 
 // Fonts must live in the document, not the shadow root, for @font-face to apply.
 function injectFonts() {
@@ -12,6 +13,20 @@ function injectFonts() {
   const style = document.createElement('style')
   style.id = FONTS_ID
   style.textContent = fontsCss
+  document.head.appendChild(style)
+}
+
+// Tailwind registers its variables with @property, which browsers only
+// honor at document level, never inside a shadow root. Without them the
+// border, shadow and ring utilities resolve to nothing. Register them once
+// in the document.
+export function injectProperties() {
+  if (document.getElementById(PROPERTIES_ID)) return
+  const rules = styles.match(/@property\s+--[\w-]+\s*\{[^}]*\}/g)
+  if (!rules) return
+  const style = document.createElement('style')
+  style.id = PROPERTIES_ID
+  style.textContent = rules.join('\n')
   document.head.appendChild(style)
 }
 
@@ -27,6 +42,7 @@ export abstract class ReactHost<Config> extends HTMLElement {
   constructor() {
     super()
     injectFonts()
+    injectProperties()
     const shadow = this.attachShadow({ mode: 'open' })
     const style = document.createElement('style')
     style.textContent = styles
