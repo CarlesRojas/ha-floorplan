@@ -4,7 +4,16 @@ import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, round, type View } from '#/editor/view.ts'
-import { faPenRuler, faXmark } from '@fortawesome/free-solid-svg-icons'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '#/components/ui/alert-dialog.tsx'
+import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
@@ -31,6 +40,9 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [draft, setDraft] = useState<Point[]>([])
   const [view, setView] = useState<View | null>(null)
   const [fullscreen, setFullscreen] = useState(true)
+  // Rooms as they were when the fullscreen editor opened, for Discard.
+  const [opened, setOpened] = useState<RoomConfig[]>(config.rooms ?? [])
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const lastEmitted = useRef<string>(JSON.stringify(config.rooms ?? []))
 
   // Pick up edits made outside, for example in the YAML editor.
@@ -73,6 +85,28 @@ export default function Editor({ hass, config, onChange }: Props) {
   const deleteRoom = (id: string) => {
     commit(rooms.filter(r => r.id !== id))
     if (selection.roomId === id) setSelection({ roomId: null, vertex: null })
+  }
+
+  const openEditor = () => {
+    setOpened(rooms)
+    setFullscreen(true)
+  }
+
+  const saveAndClose = () => {
+    flushRename()
+    setDraft([])
+    setFullscreen(false)
+  }
+
+  const discard = () => {
+    if (pending.current) clearTimeout(pending.current)
+    pending.current = null
+    pendingRooms.current = null
+    setDraft([])
+    setSelection({ roomId: null, vertex: null })
+    commit(opened)
+    setConfirmDiscard(false)
+    setFullscreen(false)
   }
 
   const closeDraft = () => {
@@ -138,6 +172,8 @@ export default function Editor({ hass, config, onChange }: Props) {
       onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
       onDraftPoint={p => setDraft([...draft, p])}
       onCloseDraft={closeDraft}
+      onDeleteRoom={deleteRoom}
+      onTool={setTool}
       fill
     />
   )
@@ -169,14 +205,24 @@ export default function Editor({ hass, config, onChange }: Props) {
         >
           <div className="flex items-center justify-between">
             {toolbar}
-            <button
-              type="button"
-              aria-label="Close fullscreen"
-              onClick={() => setFullscreen(false)}
-              className="flex size-9 items-center justify-center rounded-lg text-(--primary-text-color) hover:bg-(--secondary-background-color)"
-            >
-              <FontAwesomeIcon icon={faXmark} className="size-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDiscard(true)}
+                className="bg-destructive flex h-9 items-center gap-2 rounded-full px-4 text-xs font-semibold text-white hover:opacity-90"
+              >
+                <FontAwesomeIcon icon={faTrash} className="size-3.5" />
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={saveAndClose}
+                className="flex h-9 items-center gap-2 rounded-full bg-emerald-600 px-4 text-xs font-semibold text-white hover:opacity-90"
+              >
+                <FontAwesomeIcon icon={faCheck} className="size-3.5" />
+                Save & Close
+              </button>
+            </div>
           </div>
           <div className="flex min-h-0 flex-1 gap-4">
             <div className="min-w-0 flex-1">{canvas}</div>
@@ -185,6 +231,20 @@ export default function Editor({ hass, config, onChange }: Props) {
             </div>
           </div>
         </div>
+        <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The rooms go back to how they were when you opened the editor. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDiscard(false)}>Keep editing</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={discard}>
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialog>
       </Overlay>
     )
   }
@@ -196,7 +256,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       </p>
       <button
         type="button"
-        onClick={() => setFullscreen(true)}
+        onClick={openEditor}
         className="flex items-center gap-2 rounded-full bg-(--primary-color) px-4 py-2 text-xs font-semibold text-white"
       >
         <FontAwesomeIcon icon={faPenRuler} className="size-3.5" />

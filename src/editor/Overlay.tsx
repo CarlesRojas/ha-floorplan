@@ -24,6 +24,8 @@ function createHost() {
   // HA closes its own dialog on clicks it sees as outside. Nothing that
   // happens in here concerns it, so stop events at the boundary. React's own
   // handlers sit inside the dialog and have already run by then.
+  // The editor has its own right click menus.
+  dialog.addEventListener('contextmenu', e => e.preventDefault())
   const isolated = [
     'pointerdown',
     'pointerup',
