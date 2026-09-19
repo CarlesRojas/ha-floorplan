@@ -53,4 +53,4 @@ export const EDITOR_DEVICE_RADIUS_PX = 14
 export const EDITOR_PREVIEW_DEFAULT_WIDTH_PX = 420
 export const EDITOR_PREVIEW_MIN_WIDTH_PX = 240
 // Space kept between the floating preview and the window edges.
-export const EDITOR_PREVIEW_MARGIN_PX = 16
+export const EDITOR_PREVIEW_MARGIN_PX = 40
