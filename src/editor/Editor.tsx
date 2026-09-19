@@ -4,6 +4,7 @@ import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, round, type View } from '#/editor/view.ts'
+import { isValidRoom } from '#/geometry/overlap.ts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +18,7 @@ import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { EDITOR_TEXT_COMMIT_DELAY_MS } from '#/constants.ts'
 
@@ -110,7 +111,14 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   const closeDraft = () => {
-    if (draft.length < 3) return
+    if (
+      draft.length < 3 ||
+      !isValidRoom(
+        draft,
+        rooms.map(r => r.points),
+      )
+    )
+      return
     const n = nextRoomId(rooms)
     const room: RoomConfig = { id: `room-${n}`, name: `Room ${n}`, points: draft.map(([x, y]) => [round(x), round(y)]) }
     commit([...rooms, room])
@@ -159,6 +167,8 @@ export default function Editor({ hass, config, onChange }: Props) {
     e.preventDefault()
   }
 
+  const fit = useCallback((w: number, h: number) => fitView(rooms, w, h), [rooms])
+
   const canvas = (
     <Canvas
       rooms={rooms}
@@ -167,7 +177,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       draft={draft}
       view={view}
       onView={setView}
-      fit={(w, h) => fitView(rooms, w, h)}
+      fit={fit}
       onSelect={setSelection}
       onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
       onDraftPoint={p => setDraft([...draft, p])}
@@ -209,7 +219,7 @@ export default function Editor({ hass, config, onChange }: Props) {
               <button
                 type="button"
                 onClick={() => setConfirmDiscard(true)}
-                className="bg-destructive flex h-9 items-center gap-2 rounded-full px-4 text-xs font-semibold text-white hover:opacity-90"
+                className="bg-destructive flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white hover:opacity-90"
               >
                 <FontAwesomeIcon icon={faTrash} className="size-3.5" />
                 Discard
@@ -217,7 +227,7 @@ export default function Editor({ hass, config, onChange }: Props) {
               <button
                 type="button"
                 onClick={saveAndClose}
-                className="flex h-9 items-center gap-2 rounded-full bg-emerald-600 px-4 text-xs font-semibold text-white hover:opacity-90"
+                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90"
               >
                 <FontAwesomeIcon icon={faCheck} className="size-3.5" />
                 Save & Close
@@ -251,13 +261,13 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   return (
     <div className="font-montserrat flex items-center justify-between gap-3 py-2 text-(--primary-text-color)">
-      <p className="text-xs text-(--secondary-text-color)">
+      <p className="text-sm text-(--secondary-text-color)">
         {rooms.length === 0 ? 'No rooms yet.' : `${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}.`}
       </p>
       <button
         type="button"
         onClick={openEditor}
-        className="flex items-center gap-2 rounded-full bg-(--primary-color) px-4 py-2 text-xs font-semibold text-white"
+        className="flex h-10 items-center gap-2 rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white"
       >
         <FontAwesomeIcon icon={faPenRuler} className="size-3.5" />
         Open editor

@@ -4,9 +4,16 @@ import {
   ContextMenuSeparator,
   type ContextMenuPosition,
 } from '#/components/ui/context-menu.tsx'
-import { EDITOR_CANVAS_HEIGHT_PX, EDITOR_GRID_M, EDITOR_HANDLE_PX } from '#/constants.ts'
+import {
+  EDITOR_AUTOPAN_MARGIN_PX,
+  EDITOR_AUTOPAN_SPEED_PX_S,
+  EDITOR_CANVAS_HEIGHT_PX,
+  EDITOR_GRID_M,
+  EDITOR_HANDLE_PX,
+} from '#/constants.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
+import { isValidRoom, pointStrictlyInside, segmentEntersAny } from '#/geometry/overlap.ts'
 import { cn } from '#/lib/utils.ts'
 import { ROOM_COLORS } from '#/theme.ts'
 import type { Point, RoomConfig } from '#/types.ts'
@@ -71,7 +78,20 @@ export default function Canvas({
   const [panning, setPanning] = useState(false)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
+  // The view only changes on pan, zoom, fit or auto-pan. It is fitted once
+  // when unset, never re-fitted as rooms change.
   const view = viewProp ?? (width && height ? fit(width, height) : null)
+  useEffect(() => {
+    if (!viewProp && width && height) onView(fit(width, height))
+  }, [viewProp, width, height, fit, onView])
+
+  // Latest values for the auto-pan loop, which runs outside React renders.
+  const latest = useRef({ view, rooms, draft, tool })
+  useEffect(() => {
+    latest.current = { view, rooms, draft, tool }
+  })
+  const lastScreen = useRef<Point | null>(null)
+  const autopan = useRef<{ raf: number; time: number; vx: number; vy: number } | null>(null)
 
   // React registers wheel listeners as passive, so preventDefault needs a native one.
   useEffect(() => {
@@ -99,6 +119,16 @@ export default function Canvas({
   const planPoint = (e: React.PointerEvent | React.MouseEvent) => toPlan(view, screenPoint(e))
 
   const selectedRoom = rooms.find(r => r.id === selection.roomId)
+  const roomPolygons = rooms.map(r => r.points)
+
+  // A new corner may not land inside a room, and the segment from the last
+  // corner may not run through one.
+  const draftPointValid = (p: Point) => {
+    if (roomPolygons.some(o => pointStrictlyInside(p, o))) return false
+    if (draft.length === 0) return true
+    return !segmentEntersAny(draft[draft.length - 1], p, roomPolygons)
+  }
+  const draftClosable = draft.length >= 3 && isValidRoom(draft, roomPolygons)
 
   const updateRoom = (roomId: string, points: Point[], done: boolean) =>
     onRooms(
@@ -124,11 +154,12 @@ export default function Canvas({
         const [fx, fy] = toScreen(view, draft[0])
         const [sx, sy] = screenPoint(e)
         if (Math.hypot(fx - sx, fy - sy) < HANDLE * 2) {
-          onCloseDraft()
+          if (draftClosable) onCloseDraft()
           return
         }
       }
-      onDraftPoint(snap(p, view, rooms, undefined, draft))
+      const next = snap(p, view, rooms, undefined, draft)
+      if (draftPointValid(next)) onDraftPoint(next)
     }
   }
 
@@ -176,24 +207,31 @@ export default function Canvas({
     drag.current = { kind: 'edge', roomId: room.id, index, start: planPoint(e), origin: room.points }
   }
 
-  const onPointerMove = (e: React.PointerEvent) => {
-    const p = planPoint(e)
-    setHover(p)
+  const applyDrag = (screen: Point, v: View, currentRooms: RoomConfig[]) => {
+    const p = toPlan(v, screen)
     const d = drag.current
     if (!d) return
+    // A move that would overlap another room or fold the polygon is ignored,
+    // so the room stays where it last was valid.
+    const patch = (roomId: string, points: Point[]) => {
+      const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
+      if (!isValidRoom(points, others)) return
+      onRooms(
+        currentRooms.map(r => (r.id === roomId ? { ...r, points } : r)),
+        false,
+      )
+    }
     switch (d.kind) {
       case 'pan': {
-        const [sx, sy] = screenPoint(e)
-        onView({ ...d.view, tx: d.view.tx + sx - d.start[0], ty: d.view.ty + sy - d.start[1] })
+        onView({ ...d.view, tx: d.view.tx + screen[0] - d.start[0], ty: d.view.ty + screen[1] - d.start[1] })
         break
       }
       case 'vertex': {
-        const room = rooms.find(r => r.id === d.roomId)!
-        const snapped = snap(p, view, rooms, { roomId: d.roomId, index: d.index })
-        updateRoom(
+        const room = currentRooms.find(r => r.id === d.roomId)!
+        const snapped = snap(p, v, currentRooms, { roomId: d.roomId, index: d.index })
+        patch(
           d.roomId,
           room.points.map((q, i) => (i === d.index ? snapped : q)),
-          false,
         )
         break
       }
@@ -206,39 +244,90 @@ export default function Canvas({
         const nx = -(b[1] - a[1]) / len
         const ny = (b[0] - a[0]) / len
         const t = (p[0] - d.start[0]) * nx + (p[1] - d.start[1]) * ny
-        const others = rooms.filter(r => r.id !== d.roomId)
+        const others = currentRooms.filter(r => r.id !== d.roomId)
         const moved: Point = [a[0] + nx * t, a[1] + ny * t]
-        const snapped = snap(moved, view, others)
+        const snapped = snap(moved, v, others)
         const ts = (snapped[0] - a[0]) * nx + (snapped[1] - a[1]) * ny
-        const points = d.origin.map((q, i) =>
-          i === d.index || i === (d.index + 1) % n ? ([q[0] + nx * ts, q[1] + ny * ts] as Point) : q,
+        patch(
+          d.roomId,
+          d.origin.map((q, i) =>
+            i === d.index || i === (d.index + 1) % n ? ([q[0] + nx * ts, q[1] + ny * ts] as Point) : q,
+          ),
         )
-        updateRoom(d.roomId, points, false)
         break
       }
       case 'room': {
-        const others = rooms.filter(r => r.id !== d.roomId)
+        const others = currentRooms.filter(r => r.id !== d.roomId)
         const dx = p[0] - d.start[0]
         const dy = p[1] - d.start[1]
         // Snap the moved first corner, then apply the same offset to the rest.
         const first: Point = [d.origin[0][0] + dx, d.origin[0][1] + dy]
-        const snapped = snap(first, view, others)
+        const snapped = snap(first, v, others)
         const ox = snapped[0] - d.origin[0][0]
         const oy = snapped[1] - d.origin[0][1]
-        updateRoom(
+        patch(
           d.roomId,
           d.origin.map(([x, y]) => [x + ox, y + oy]),
-          false,
         )
         break
       }
     }
   }
 
+  // Pans the view while a drag or a draft nears the canvas border. It only
+  // ever pushes outward, it never zooms and never comes back on its own.
+  const stopAutopan = () => {
+    if (autopan.current) cancelAnimationFrame(autopan.current.raf)
+    autopan.current = null
+  }
+
+  const autopanTick = (time: number) => {
+    const state = autopan.current
+    const { view: v, rooms: currentRooms, draft: currentDraft, tool: currentTool } = latest.current
+    const screen = lastScreen.current
+    if (!state || !v || !screen) return
+    const dt = state.time ? Math.min((time - state.time) / 1000, 0.05) : 0
+    state.time = time
+    const next = { ...v, tx: v.tx - state.vx * dt, ty: v.ty - state.vy * dt }
+    onView(next)
+    const d = drag.current
+    if (d && d.kind !== 'pan') applyDrag(screen, next, currentRooms)
+    else if (currentTool === 'draw' && currentDraft.length > 0) setHover(toPlan(next, screen))
+    state.raf = requestAnimationFrame(autopanTick)
+  }
+
+  const updateAutopan = (screen: Point) => {
+    const d = drag.current
+    const active = (d && d.kind !== 'pan') || (tool === 'draw' && draft.length > 0)
+    const m = EDITOR_AUTOPAN_MARGIN_PX
+    const speed = (depth: number) => (Math.min(Math.max(depth, 0), m) / m) * EDITOR_AUTOPAN_SPEED_PX_S
+    const vx = speed(m - screen[0]) * -1 + speed(screen[0] - (width - m))
+    const vy = speed(m - screen[1]) * -1 + speed(screen[1] - (height - m))
+    if (!active || (vx === 0 && vy === 0)) {
+      stopAutopan()
+      return
+    }
+    if (autopan.current) {
+      autopan.current.vx = vx
+      autopan.current.vy = vy
+      return
+    }
+    autopan.current = { raf: requestAnimationFrame(autopanTick), time: 0, vx, vy }
+  }
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    const screen = screenPoint(e)
+    lastScreen.current = screen
+    setHover(toPlan(view, screen))
+    applyDrag(screen, view, rooms)
+    updateAutopan(screen)
+  }
+
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current
     drag.current = null
     setPanning(false)
+    stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
     const room = rooms.find(r => r.id === d.roomId)
@@ -260,9 +349,19 @@ export default function Canvas({
 
   const closeMenu = () => setMenu(null)
 
+  const canDeleteVertex = (roomId: string, index: number) => {
+    const room = rooms.find(r => r.id === roomId)
+    if (!room || room.points.length <= 3) return false
+    const others = rooms.filter(r => r.id !== roomId).map(r => r.points)
+    return isValidRoom(
+      room.points.filter((_, i) => i !== index),
+      others,
+    )
+  }
+
   const deleteVertex = (roomId: string, index: number) => {
     const room = rooms.find(r => r.id === roomId)
-    if (!room || room.points.length <= 3) return
+    if (!room || !canDeleteVertex(roomId, index)) return
     updateRoom(
       roomId,
       room.points.filter((_, i) => i !== index),
@@ -280,6 +379,7 @@ export default function Canvas({
   }
 
   const cursor = tool === 'draw' ? 'crosshair' : panning ? 'grabbing' : 'default'
+  const hoverSnapped = tool === 'draw' && hover ? snap(hover, view, rooms, undefined, draft) : null
   const polygon = (points: Point[]) => points.map(p => toScreen(view, p).join(',')).join(' ')
 
   const edgeCursor = (a: Point, b: Point) => {
@@ -294,11 +394,10 @@ export default function Canvas({
     const t = menu.target
     switch (t.kind) {
       case 'vertex': {
-        const room = rooms.find(r => r.id === t.roomId)
         return (
           <ContextMenuItem
             variant="destructive"
-            disabled={!room || room.points.length <= 3}
+            disabled={!canDeleteVertex(t.roomId, t.index)}
             onSelect={() => {
               deleteVertex(t.roomId, t.index)
               closeMenu()
@@ -371,8 +470,11 @@ export default function Canvas({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerLeave={() => setHover(null)}
-        onDoubleClick={() => tool === 'draw' && onCloseDraft()}
+        onPointerLeave={() => {
+          setHover(null)
+          stopAutopan()
+        }}
+        onDoubleClick={() => tool === 'draw' && draftClosable && onCloseDraft()}
         onContextMenu={e => openMenu(e, { kind: 'canvas' })}
       >
         <Grid view={view} width={width} height={height} />
@@ -438,9 +540,9 @@ export default function Canvas({
         {tool === 'draw' && draft.length > 0 && (
           <>
             <polyline
-              points={polygon(hover ? [...draft, snap(hover, view, rooms, undefined, draft)] : draft)}
+              points={polygon(hoverSnapped ? [...draft, hoverSnapped] : draft)}
               fill="none"
-              stroke="var(--primary-color)"
+              stroke={hoverSnapped && !draftPointValid(hoverSnapped) ? 'var(--error-color)' : 'var(--primary-color)'}
               strokeWidth={2}
               strokeDasharray="6 4"
               className="pointer-events-none"
@@ -463,11 +565,7 @@ export default function Canvas({
           </>
         )}
 
-        {hover && (
-          <text x={8} y={height - 8} className="pointer-events-none fill-(--secondary-text-color) text-[11px]">
-            {hover[0].toFixed(2)}, {hover[1].toFixed(2)} m
-          </text>
-        )}
+        <ScaleBar view={view} height={height} />
       </svg>
 
       <ContextMenu position={menu?.at ?? null} onClose={closeMenu}>
@@ -518,6 +616,24 @@ function Grid({ view, width, height }: { view: View; width: number; height: numb
       {lines}
       <line x1={ox} y1={0} x2={ox} y2={height} stroke="currentColor" strokeOpacity={0.4} />
       <line x1={0} y1={oy} x2={width} y2={oy} stroke="currentColor" strokeOpacity={0.4} />
+    </g>
+  )
+}
+
+function ScaleBar({ view, height }: { view: View; height: number }) {
+  // Pick a round length that stays between about 60 and 300 pixels.
+  const meters = [0.5, 1, 2, 5, 10, 20, 50].find(m => m * view.scale >= 60) ?? 100
+  const px = meters * view.scale
+  const x = 16
+  const y = height - 16
+  return (
+    <g className="pointer-events-none text-(--primary-text-color)">
+      <line x1={x} y1={y} x2={x + px} y2={y} stroke="currentColor" strokeWidth={2} />
+      <line x1={x} y1={y - 6} x2={x} y2={y + 6} stroke="currentColor" strokeWidth={2} />
+      <line x1={x + px} y1={y - 6} x2={x + px} y2={y + 6} stroke="currentColor" strokeWidth={2} />
+      <text x={x + px / 2} y={y - 10} textAnchor="middle" className="fill-current text-xs font-semibold">
+        {meters} m
+      </text>
     </g>
   )
 }

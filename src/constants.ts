@@ -41,3 +41,7 @@ export const EDITOR_CANVAS_HEIGHT_PX = 440
 export const EDITOR_SIDEBAR_WIDTH_PX = 340
 // How long typing must pause before a text edit is sent to Home Assistant.
 export const EDITOR_TEXT_COMMIT_DELAY_MS = 500
+// Distance from the canvas border where dragging starts to pan the view.
+export const EDITOR_AUTOPAN_MARGIN_PX = 48
+// Pan speed when the pointer is right at the border.
+export const EDITOR_AUTOPAN_SPEED_PX_S = 500

@@ -17,7 +17,7 @@ type Props = {
 }
 
 const input =
-  'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1 text-xs text-(--primary-text-color)'
+  'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
 
 export default function RoomList({
   rooms,
@@ -34,7 +34,7 @@ export default function RoomList({
 
   if (rooms.length === 0) {
     return (
-      <p className="text-xs text-(--secondary-text-color)">No rooms yet. Pick the Draw tool and click on the canvas.</p>
+      <p className="text-sm text-(--secondary-text-color)">No rooms yet. Pick the Draw tool and click on the canvas.</p>
     )
   }
 

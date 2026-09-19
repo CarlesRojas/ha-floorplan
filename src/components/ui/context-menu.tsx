@@ -104,7 +104,7 @@ export function ContextMenuItem({
       )}
     >
       {children}
-      {shortcut && <span className="text-muted-foreground ml-auto text-xs tracking-widest">{shortcut}</span>}
+      {shortcut && <span className="text-muted-foreground ml-auto text-sm tracking-widest">{shortcut}</span>}
     </button>
   )
 }
@@ -114,5 +114,5 @@ export function ContextMenuSeparator({ className }: { className?: string }) {
 }
 
 export function ContextMenuLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('text-muted-foreground px-2 py-1.5 text-xs font-semibold', className)}>{children}</div>
+  return <div className={cn('text-muted-foreground px-2 py-1.5 text-sm font-semibold', className)}>{children}</div>
 }
