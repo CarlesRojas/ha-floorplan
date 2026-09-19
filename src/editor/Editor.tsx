@@ -54,8 +54,6 @@ export default function Editor({ hass, config, onChange }: Props) {
     devices: config.devices ?? [],
   })
   const [confirmDiscard, setConfirmDiscard] = useState(false)
-  // Area change waiting for confirmation because the room has devices.
-  const [pendingArea, setPendingArea] = useState<{ roomId: string; areaId: string | undefined } | null>(null)
   const serialize = (r: RoomConfig[], d: DeviceConfig[]) => JSON.stringify({ rooms: r, devices: d })
   const lastEmitted = useRef<string>(serialize(config.rooms ?? [], config.devices ?? []))
 
@@ -120,22 +118,10 @@ export default function Editor({ hass, config, onChange }: Props) {
     if (selectedDevice === entityId) setSelectedDevice(null)
   }
 
-  // Changing a room's area drops its devices, since they belong to the old
-  // area. Ask first when there are any.
-  const assignArea = (roomId: string, areaId: string | undefined, confirmed = false) => {
+  const assignArea = (roomId: string, areaId: string | undefined) => {
     const room = rooms.find(r => r.id === roomId)
     if (!room || room.area_id === areaId) return
-    const hasDevices = devices.some(d => d.room === roomId)
-    if (hasDevices && !confirmed) {
-      setPendingArea({ roomId, areaId })
-      return
-    }
-    commit(
-      rooms.map(r => (r.id === roomId ? { ...r, area_id: areaId } : r)),
-      hasDevices ? devices.filter(d => d.room !== roomId) : devices,
-    )
-    setSelectedDevice(null)
-    setPendingArea(null)
+    commit(rooms.map(r => (r.id === roomId ? { ...r, area_id: areaId } : r)))
   }
 
   const rotateDevice = (entityId: string) => {
@@ -366,23 +352,6 @@ export default function Editor({ hass, config, onChange }: Props) {
             </div>
           </div>
         </div>
-        <AlertDialog open={pendingArea !== null} onOpenChange={open => !open && setPendingArea(null)}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Change the room's area?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The devices placed in this room belong to its current area. Changing the area removes them from the plan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingArea(null)}>Keep area</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => pendingArea && assignArea(pendingArea.roomId, pendingArea.areaId, true)}
-            >
-              Change and clear devices
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialog>
         <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>

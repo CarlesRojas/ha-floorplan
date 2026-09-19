@@ -101,6 +101,8 @@ export type EntityInfo = {
   entity_id: string
   name: string
   domain: string
+  // Area the entity belongs to in Home Assistant, directly or through its device.
+  area_id: string | null
   // Type suggested by the entity's device class, when any.
   suggestedType?: string
 }
@@ -112,14 +114,18 @@ export function entityName(hass: HomeAssistant, entityId: string) {
   return hass.entities?.[entityId]?.name ?? entityId
 }
 
-// Entities that can be placed in a room, from the room's Home Assistant area.
-// An entity belongs to an area directly or through its device.
-export function entitiesInArea(hass: HomeAssistant, areaId: string): EntityInfo[] {
+export function entityArea(hass: HomeAssistant, entityId: string): string | null {
+  const entry = hass.entities?.[entityId]
+  if (!entry) return null
+  return entry.area_id ?? (entry.device_id ? (hass.devices?.[entry.device_id]?.area_id ?? null) : null)
+}
+
+// Every entity that can be placed on the plan, from the entity registry.
+// Areas are not required: Home Assistant does not force one on anything.
+export function placeableEntities(hass: HomeAssistant): EntityInfo[] {
   const out: EntityInfo[] = []
   for (const entry of Object.values(hass.entities ?? {})) {
     if (entry.hidden || entry.entity_category) continue
-    const area = entry.area_id ?? (entry.device_id ? hass.devices?.[entry.device_id]?.area_id : null)
-    if (area !== areaId) continue
     const domain = domainOf(entry.entity_id)
     if (!DEVICE_TYPES[domain]) continue
     let suggestedType: string | undefined
@@ -129,7 +135,13 @@ export function entitiesInArea(hass: HomeAssistant, areaId: string): EntityInfo[
       suggestedType = typeof deviceClass === 'string' ? classes[deviceClass] : undefined
       if (!suggestedType) continue
     }
-    out.push({ entity_id: entry.entity_id, name: entityName(hass, entry.entity_id), domain, suggestedType })
+    out.push({
+      entity_id: entry.entity_id,
+      name: entityName(hass, entry.entity_id),
+      domain,
+      area_id: entityArea(hass, entry.entity_id),
+      suggestedType,
+    })
   }
   return out.sort((a, b) => a.domain.localeCompare(b.domain) || a.name.localeCompare(b.name))
 }

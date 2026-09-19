@@ -1,10 +1,10 @@
-import { deviceType, entitiesInArea, entityName, typesFor, type EntityInfo } from '#/devices/catalog.ts'
+import { deviceType, entityName, placeableEntities, typesFor, type EntityInfo } from '#/devices/catalog.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS } from '#/theme.ts'
-import { ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
-import { faCheck, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useState } from 'react'
 
 type Props = {
   hass: HomeAssistant | null
@@ -37,8 +37,9 @@ export default function DevicePanel({
   onUpdate,
   onRemove,
 }: Props) {
+  const [query, setQuery] = useState('')
   const areas: Area[] = Object.values(hass?.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name))
-  const areaName = (id: string | undefined) => (id ? (hass?.areas?.[id]?.name ?? id) : undefined)
+  const areaName = (id: string | null | undefined) => (id ? (hass?.areas?.[id]?.name ?? id) : undefined)
 
   if (!room) {
     if (rooms.length === 0) {
@@ -101,16 +102,6 @@ export default function DevicePanel({
     </div>
   )
 
-  if (!room.area_id) {
-    return (
-      <div className="flex flex-col gap-3">
-        {header}
-        <p className="text-sm text-(--secondary-text-color)">
-          Link the room to a Home Assistant area to list its devices.
-        </p>
-      </div>
-    )
-  }
   if (!hass?.entities) {
     return (
       <div className="flex flex-col gap-3">
@@ -122,71 +113,101 @@ export default function DevicePanel({
     )
   }
 
-  const placed = new Map(devices.filter(d => d.room === room.id).map(d => [d.entity_id, d]))
-  const inArea = entitiesInArea(hass, room.area_id)
-  // Devices placed here whose entity left the area still show, so they can be removed.
-  const orphans: EntityInfo[] = [...placed.keys()]
-    .filter(id => !inArea.some(e => e.entity_id === id))
-    .map(id => ({ entity_id: id, name: entityName(hass, id), domain: id.split('.')[0] }))
-  const entities = [...inArea, ...orphans]
-  const selectedDevice = selected ? placed.get(selected) : undefined
+  const placedHere = new Map(devices.filter(d => d.room === room.id).map(d => [d.entity_id, d]))
+  const placedElsewhere = new Map(devices.filter(d => d.room !== room.id).map(d => [d.entity_id, d.room]))
+  const all = placeableEntities(hass)
+  // Devices placed here whose entity vanished from the registry still show, so they can be removed.
+  const orphans: EntityInfo[] = [...placedHere.keys()]
+    .filter(id => !all.some(e => e.entity_id === id))
+    .map(id => ({ entity_id: id, name: entityName(hass, id), domain: id.split('.')[0], area_id: null }))
+  const q = query.trim().toLowerCase()
+  const matches = (e: EntityInfo) => !q || e.name.toLowerCase().includes(q) || e.entity_id.toLowerCase().includes(q)
+  const inArea = room.area_id ? all.filter(e => e.area_id === room.area_id) : []
+  const rest = [...all.filter(e => !room.area_id || e.area_id !== room.area_id), ...orphans]
+  const selectedDevice = selected ? placedHere.get(selected) : undefined
+
+  const row = (e: EntityInfo) => {
+    const device = placedHere.get(e.entity_id)
+    const elsewhere = placedElsewhere.get(e.entity_id)
+    const type = deviceType({ entity_id: e.entity_id, type: device?.type ?? e.suggestedType })
+    // Placed here but Home Assistant puts it in another area.
+    const mismatch = device && e.area_id && room.area_id !== e.area_id
+    return (
+      <div
+        key={e.entity_id}
+        onClick={() => device && onSelect(e.entity_id)}
+        className={cn(
+          'grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-transparent px-2 py-1',
+          device && 'cursor-pointer',
+          selected === e.entity_id && 'border-current',
+        )}
+        style={selected === e.entity_id ? { color: accent } : undefined}
+      >
+        {type ? <FontAwesomeIcon icon={type.icon} className="size-4 text-(--secondary-text-color)" /> : <span />}
+        <div className="min-w-0 text-(--primary-text-color)">
+          <p className="truncate text-sm">{e.name}</p>
+          <p className="truncate text-xs text-(--secondary-text-color)">{e.entity_id}</p>
+          {mismatch && (
+            <p className="text-(--warning-color, #f59e0b) flex items-center gap-1 text-xs">
+              <FontAwesomeIcon icon={faTriangleExclamation} className="size-3" />
+              In Home Assistant this is in {areaName(e.area_id)}
+            </p>
+          )}
+        </div>
+        {device ? (
+          <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
+            <FontAwesomeIcon icon={faCheck} className="size-3" />
+            Placed
+          </span>
+        ) : elsewhere ? (
+          <span className="text-xs text-(--secondary-text-color)">
+            In {rooms.find(r => r.id === elsewhere)?.name ?? elsewhere}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={ev => {
+              ev.stopPropagation()
+              onAdd(e)
+            }}
+            className="flex h-8 items-center gap-1 rounded-lg px-3 text-xs font-semibold text-white"
+            style={{ backgroundColor: accent }}
+          >
+            <FontAwesomeIcon icon={faPlus} className="size-3" />
+            Add
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const inAreaShown = inArea.filter(matches)
+  const restShown = rest.filter(matches)
 
   return (
     <div className="flex flex-col gap-3">
       {header}
-      {entities.length === 0 ? (
-        <p className="text-sm text-(--secondary-text-color)">
-          No devices in this area. Assign devices to it in Home Assistant.
-        </p>
-      ) : (
+      <input className={input} placeholder="Search entities" value={query} onChange={e => setQuery(e.target.value)} />
+      {room.area_id && (
         <div className="flex flex-col gap-1">
-          {entities.map(e => {
-            const device = placed.get(e.entity_id)
-            const type = deviceType({ entity_id: e.entity_id, type: device?.type ?? e.suggestedType })
-            return (
-              <div
-                key={e.entity_id}
-                onClick={() => device && onSelect(e.entity_id)}
-                className={cn(
-                  'grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-transparent px-2 py-1',
-                  device && 'cursor-pointer',
-                  selected === e.entity_id && 'border-current',
-                )}
-                style={selected === e.entity_id ? { color: accent } : undefined}
-              >
-                {type ? (
-                  <FontAwesomeIcon icon={type.icon} className="size-4 text-(--secondary-text-color)" />
-                ) : (
-                  <span />
-                )}
-                <div className="min-w-0 text-(--primary-text-color)">
-                  <p className="truncate text-sm">{e.name}</p>
-                  <p className="truncate text-xs text-(--secondary-text-color)">{e.entity_id}</p>
-                </div>
-                {device ? (
-                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
-                    <FontAwesomeIcon icon={faCheck} className="size-3" />
-                    Placed
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={ev => {
-                      ev.stopPropagation()
-                      onAdd(e)
-                    }}
-                    className="flex h-8 items-center gap-1 rounded-lg px-3 text-xs font-semibold text-white"
-                    style={{ backgroundColor: accent }}
-                  >
-                    <FontAwesomeIcon icon={faPlus} className="size-3" />
-                    Add
-                  </button>
-                )}
-              </div>
-            )
-          })}
+          <p className="text-xs font-semibold text-(--secondary-text-color)">In {areaName(room.area_id)}</p>
+          {inAreaShown.length === 0 ? (
+            <p className="px-2 text-xs text-(--secondary-text-color)">Nothing in this area.</p>
+          ) : (
+            inAreaShown.map(row)
+          )}
         </div>
       )}
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-semibold text-(--secondary-text-color)">
+          {room.area_id ? 'Other entities' : 'All entities'}
+        </p>
+        {restShown.length === 0 ? (
+          <p className="px-2 text-xs text-(--secondary-text-color)">No matches.</p>
+        ) : (
+          restShown.map(row)
+        )}
+      </div>
 
       {selectedDevice && (
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
