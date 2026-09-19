@@ -5,7 +5,7 @@ import type { Point } from '#/types.ts'
 
 const EPS = 1e-9
 // Offset used to probe just inside a polygon, in meters.
-const PROBE_M = 0.005
+const PROBE_M = 0.001
 
 const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx
 
