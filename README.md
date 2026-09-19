@@ -51,8 +51,36 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D" or add it manually:
 
 ```yaml
 type: custom:floorplan-3d
-model: flat.glb
+rooms:
+  - id: living
+    area_id: living_room
+    points: [[0, 0], [5.2, 0], [5.2, 4], [0, 4]]
+  - id: kitchen
+    name: Kitchen
+    points: [[5.2, 0], [8, 0], [8, 4], [5.2, 4]]
 ```
+
+## Card config
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `rooms` | `[]` | List of rooms, see below |
+| `radius` | `0.3` | Corner radius in meters for rooms without their own |
+| `gap` | `0.12` | Gap in meters between adjacent rooms |
+| `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
+
+Each room:
+
+| Key | Description |
+| --- | --- |
+| `id` | Unique id, required |
+| `points` | Polygon corners in meters as `[x, y]`, at least 3, required |
+| `area_id` | Home Assistant area to link. Its name is used as the label |
+| `name` | Label override |
+| `radius` | Corner radius override |
+| `color` | Fill color override |
+
+Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 
 ### When changes don't show up
 
