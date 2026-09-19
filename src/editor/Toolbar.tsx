@@ -6,6 +6,7 @@ import {
   faArrowPointer,
   faDrawPolygon,
   faExpand,
+  faCube,
   faRuler,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -53,9 +54,20 @@ type Props = {
   onFit: () => void
   showLengths: boolean
   onShowLengths: (value: boolean) => void
+  showPreview: boolean
+  onShowPreview: (value: boolean) => void
 }
 
-export default function Toolbar({ mode, tool, onTool, onFit, showLengths, onShowLengths }: Props) {
+export default function Toolbar({
+  mode,
+  tool,
+  onTool,
+  onFit,
+  showLengths,
+  onShowLengths,
+  showPreview,
+  onShowPreview,
+}: Props) {
   const color = EDITOR_MODE_COLORS[mode]
   return (
     <div className="flex items-center gap-1">
@@ -67,6 +79,19 @@ export default function Toolbar({ mode, tool, onTool, onFit, showLengths, onShow
         action={{ id: 'fit', icon: faExpand, title: 'Fit view', description: 'Frame all rooms.', shortcut: 'F' }}
         color={color}
         onClick={onFit}
+      />
+      <ToolButton
+        action={{
+          id: 'preview',
+          icon: faCube,
+          title: '3D preview',
+          description: 'Floating live preview of the card.',
+          shortcut: 'P',
+        }}
+        active={showPreview}
+        color={color}
+        toggle
+        onClick={() => onShowPreview(!showPreview)}
       />
       {mode === 'rooms' && (
         <ToolButton

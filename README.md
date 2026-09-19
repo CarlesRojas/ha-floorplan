@@ -57,7 +57,7 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D". The card opens with a
 
 The card's visual editor is a top-down drawing tool. Open it from the card's edit dialog.
 
-It opens fullscreen. The X in the top right closes it, leaving an Open editor button in the dialog so Home Assistant's live preview is visible.
+It opens fullscreen. Save & Close keeps the edits and Discard restores the state from when it opened, leaving an Open editor button in the dialog. The cube toolbar button (P) opens a floating live 3D preview of the card, with the card's aspect ratio. Drag it by the top left handle, resize it from the bottom right one, close it with the top right one.
 
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
 - Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu: delete corner, add corner, delete room, fit view.

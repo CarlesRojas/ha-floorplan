@@ -49,3 +49,6 @@ export const EDITOR_AUTOPAN_SPEED_PX_S = 500
 export const EDITOR_DEVICE_GRID_M = 0.05
 // Radius of a device marker on the canvas.
 export const EDITOR_DEVICE_RADIUS_PX = 14
+// Floating 3D preview inside the editor.
+export const EDITOR_PREVIEW_DEFAULT_WIDTH_PX = 420
+export const EDITOR_PREVIEW_MIN_WIDTH_PX = 240

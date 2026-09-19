@@ -1,6 +1,7 @@
 import Canvas from '#/editor/Canvas.tsx'
 import DevicePanel from '#/editor/DevicePanel.tsx'
 import ModeSwitch from '#/editor/ModeSwitch.tsx'
+import PreviewWindow from '#/editor/PreviewWindow.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
@@ -48,6 +49,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [view, setView] = useState<View | null>(null)
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   // Rooms as they were when the fullscreen editor opened, for Discard.
   const [opened, setOpened] = useState<{ rooms: RoomConfig[]; devices: DeviceConfig[] }>({
     rooms: config.rooms ?? [],
@@ -205,7 +207,7 @@ export default function Editor({ hass, config, onChange }: Props) {
     setSelection({ roomId: room.id, vertex: null })
   }
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     const target = e.target as HTMLElement
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
     switch (e.key) {
@@ -225,6 +227,10 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'L':
         if (mode === 'rooms') setShowLengths(!showLengths)
         break
+      case 'p':
+      case 'P':
+        setShowPreview(!showPreview)
+        break
       case 'Enter':
         closeDraft()
         break
@@ -243,6 +249,20 @@ export default function Editor({ hass, config, onChange }: Props) {
     }
     e.preventDefault()
   }
+
+  // Shortcuts work wherever focus is while the editor is fullscreen. The
+  // overlay stops key events at its boundary in the bubble phase, so listen
+  // in the capture phase.
+  const keyHandler = useRef(onKeyDown)
+  useEffect(() => {
+    keyHandler.current = onKeyDown
+  })
+  useEffect(() => {
+    if (!fullscreen) return
+    const listener = (e: KeyboardEvent) => keyHandler.current(e)
+    document.addEventListener('keydown', listener, true)
+    return () => document.removeEventListener('keydown', listener, true)
+  }, [fullscreen])
 
   const fit = useCallback((w: number, h: number) => fitView(rooms, w, h), [rooms])
 
@@ -284,6 +304,8 @@ export default function Editor({ hass, config, onChange }: Props) {
         onFit={() => setView(null)}
         showLengths={showLengths}
         onShowLengths={setShowLengths}
+        showPreview={showPreview}
+        onShowPreview={setShowPreview}
       />
     </div>
   )
@@ -322,11 +344,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   if (fullscreen) {
     return (
       <Overlay>
-        <div
-          className="font-montserrat flex h-full flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none"
-          tabIndex={0}
-          onKeyDown={onKeyDown}
-        >
+        <div className="font-montserrat flex h-full flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none">
           <div className="flex items-center justify-between">
             {toolbar}
             <div className="flex items-center gap-2">
@@ -355,6 +373,7 @@ export default function Editor({ hass, config, onChange }: Props) {
             </div>
           </div>
         </div>
+        {showPreview && <PreviewWindow config={{ ...config, rooms, devices }} onClose={() => setShowPreview(false)} />}
         <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
