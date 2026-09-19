@@ -1,13 +1,14 @@
 import Canvas from '#/editor/Canvas.tsx'
 import Overlay from '#/editor/Overlay.tsx'
-import PlanPanel from '#/editor/PlanPanel.tsx'
 import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, round, type View } from '#/editor/view.ts'
 import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
-import type { CardConfig, HomeAssistant, PlanImageConfig, Point, RoomConfig } from '#/types.ts'
+import type { CardConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useEffect, useRef, useState } from 'react'
+
+import { EDITOR_TEXT_COMMIT_DELAY_MS } from '#/constants.ts'
 
 type Props = {
   hass: HomeAssistant | null
@@ -23,38 +24,49 @@ function nextRoomId(rooms: RoomConfig[]) {
 
 export default function Editor({ hass, config, onChange }: Props) {
   const [rooms, setRooms] = useState<RoomConfig[]>(config.rooms ?? [])
-  const [plan, setPlan] = useState<PlanImageConfig | undefined>(config.plan)
   const [tool, setTool] = useState<Tool>('select')
   const [selection, setSelection] = useState<Selection>({ roomId: null, vertex: null })
   const [draft, setDraft] = useState<Point[]>([])
-  const [calibration, setCalibration] = useState<Point[] | null>(null)
   const [view, setView] = useState<View | null>(null)
   const [fullscreen, setFullscreen] = useState(true)
-  const lastEmitted = useRef<string>(JSON.stringify({ rooms: config.rooms ?? [], plan: config.plan }))
+  const lastEmitted = useRef<string>(JSON.stringify(config.rooms ?? []))
 
   // Pick up edits made outside, for example in the YAML editor.
   useEffect(() => {
-    const incoming = JSON.stringify({ rooms: config.rooms ?? [], plan: config.plan })
+    const incoming = JSON.stringify(config.rooms ?? [])
     if (incoming === lastEmitted.current) return
     lastEmitted.current = incoming
     setRooms(config.rooms ?? [])
-    setPlan(config.plan)
   }, [config])
 
-  const commit = (nextRooms: RoomConfig[], nextPlan: PlanImageConfig | undefined = plan) => {
+  const commit = (nextRooms: RoomConfig[]) => {
     setRooms(nextRooms)
-    setPlan(nextPlan)
-    const serialized = JSON.stringify({ rooms: nextRooms, plan: nextPlan })
+    const serialized = JSON.stringify(nextRooms)
     if (serialized === lastEmitted.current) return
     lastEmitted.current = serialized
-    const next: CardConfig = { ...config, rooms: nextRooms }
-    if (nextPlan) next.plan = nextPlan
-    else delete next.plan
-    onChange(next)
+    onChange({ ...config, rooms: nextRooms })
   }
 
   const updateRoom = (id: string, patch: Partial<RoomConfig>) =>
     commit(rooms.map(r => (r.id === id ? { ...r, ...patch } : r)))
+
+  // Text edits update the canvas at once but reach Home Assistant only after a
+  // pause, since HA rebuilds the preview card on every config change.
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingRooms = useRef<RoomConfig[] | null>(null)
+  const flushRename = () => {
+    if (pending.current) clearTimeout(pending.current)
+    pending.current = null
+    if (pendingRooms.current) commit(pendingRooms.current)
+    pendingRooms.current = null
+  }
+  const renameRoom = (id: string, name: string | undefined) => {
+    const next = rooms.map(r => (r.id === id ? { ...r, name } : r))
+    setRooms(next)
+    pendingRooms.current = next
+    if (pending.current) clearTimeout(pending.current)
+    pending.current = setTimeout(flushRename, EDITOR_TEXT_COMMIT_DELAY_MS)
+  }
 
   const deleteRoom = (id: string) => {
     commit(rooms.filter(r => r.id !== id))
@@ -90,10 +102,6 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'D':
         setTool('draw')
         break
-      case 'p':
-      case 'P':
-        setTool('plan')
-        break
       case 'f':
       case 'F':
         if (e.shiftKey) setFullscreen(!fullscreen)
@@ -104,7 +112,6 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'Escape':
         setDraft([])
-        setCalibration(null)
         setSelection({ roomId: null, vertex: null })
         break
       case 'Delete':
@@ -117,47 +124,19 @@ export default function Editor({ hass, config, onChange }: Props) {
     e.preventDefault()
   }
 
-  const onCalibrationPoint = (p: Point) => {
-    if (!calibration || !plan) return
-    const points = [...calibration, p]
-    if (points.length < 2) {
-      setCalibration(points)
-      return
-    }
-    setCalibration(null)
-    const [a, b] = points
-    const measured = Math.hypot(b[0] - a[0], b[1] - a[1])
-    const answer = window.prompt('Real distance between the two points, in meters')
-    const real = Number(answer)
-    if (!answer || !Number.isFinite(real) || real <= 0 || measured === 0) return
-    commit(rooms, { ...plan, width: round((plan.width * real) / measured) })
-  }
-
-  const hint = calibration
-    ? `Calibrating: click point ${calibration.length + 1} of 2 on the plan`
-    : tool === 'draw'
-      ? 'Click to add corners. Click the first corner or press Enter to close. Esc cancels.'
-      : tool === 'plan'
-        ? 'Drag to move the plan image.'
-        : 'Click a room to select it. Drag corners to move them, click the plus signs to add corners. Delete removes a corner. Drag empty space to pan, wheel to zoom.'
-
   const canvas = (
     <Canvas
       rooms={rooms}
-      plan={plan}
       tool={tool}
       selection={selection}
       draft={draft}
-      calibration={calibration}
       view={view}
       onView={setView}
       fit={(w, h) => fitView(rooms, w, h)}
       onSelect={setSelection}
       onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
-      onPlan={(next, done) => (done ? commit(rooms, next) : setPlan(next))}
       onDraftPoint={p => setDraft([...draft, p])}
       onCloseDraft={closeDraft}
-      onCalibrationPoint={onCalibrationPoint}
       fill={fullscreen}
     />
   )
@@ -180,18 +159,12 @@ export default function Editor({ hass, config, onChange }: Props) {
         selection={selection}
         onSelect={roomId => setSelection({ roomId, vertex: null })}
         onUpdate={updateRoom}
+        onRename={renameRoom}
+        onRenameDone={flushRename}
         onDelete={deleteRoom}
-      />
-      <PlanPanel
-        plan={plan}
-        calibrating={calibration !== null}
-        onChange={next => commit(rooms, next)}
-        onCalibrate={() => setCalibration([])}
       />
     </>
   )
-
-  const hintLine = <p className="text-xs text-(--secondary-text-color)">{hint}</p>
 
   if (fullscreen) {
     return (
@@ -201,10 +174,7 @@ export default function Editor({ hass, config, onChange }: Props) {
           tabIndex={0}
           onKeyDown={onKeyDown}
         >
-          <div className="flex items-center gap-4">
-            {toolbar}
-            {hintLine}
-          </div>
+          <div className="flex items-center gap-4">{toolbar}</div>
           <div className="flex min-h-0 flex-1 gap-4">
             <div className="min-w-0 flex-1">{canvas}</div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto" style={{ width: EDITOR_SIDEBAR_WIDTH_PX }}>
@@ -224,7 +194,6 @@ export default function Editor({ hass, config, onChange }: Props) {
     >
       {toolbar}
       {canvas}
-      {hintLine}
       {panels}
     </div>
   )

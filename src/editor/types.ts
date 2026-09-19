@@ -1,4 +1,4 @@
-export type Tool = 'select' | 'draw' | 'plan'
+export type Tool = 'select' | 'draw'
 
 export type Selection = {
   roomId: string | null

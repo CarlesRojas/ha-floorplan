@@ -61,13 +61,10 @@ It opens fullscreen. Shift+F or the toolbar button collapses it back into the di
 
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
 - Select (V): click a room to select it, drag corners to move them, click the plus signs on the edges to add corners, Delete removes the selected corner, drag a room to move it.
-- Move plan (P): drag the floor plan image.
 - Fit view (F), drag empty space to pan, wheel to zoom.
 - Corners snap to a 50 cm grid and to other rooms' corners and wall lines.
 
 Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
-
-To trace real plans, put an image under `www/floorplan-3d` in the Home Assistant config folder and enter its `/local/...` URL. Then click Calibrate scale and click two points whose real distance you know.
 
 ## Card config
 
@@ -79,7 +76,6 @@ To trace real plans, put an image under `www/floorplan-3d` in the Home Assistant
 
 Defaults for these and other visual values live in `src/theme.ts`.
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
-| `plan` | | Floor plan image: `url`, `width` in meters, `x` and `y` of its bottom left corner, `opacity` |
 
 Each room:
 

@@ -19,7 +19,8 @@ function injectFonts() {
 // HA detaches and re-attaches elements when a view re-renders, so everything
 // that must happen exactly once lives in the constructor.
 export abstract class ReactHost<Config> extends HTMLElement {
-  private root: Root
+  private root: Root | null = null
+  private mount: HTMLDivElement
   protected _hass: HomeAssistant | null = null
   protected _config: Config | null = null
 
@@ -30,14 +31,25 @@ export abstract class ReactHost<Config> extends HTMLElement {
     const style = document.createElement('style')
     style.textContent = styles
     shadow.appendChild(style)
-    const mount = document.createElement('div')
-    mount.style.height = '100%'
-    shadow.appendChild(mount)
-    this.root = createRoot(mount)
+    this.mount = document.createElement('div')
+    this.mount.style.height = '100%'
+    shadow.appendChild(this.mount)
   }
 
   connectedCallback() {
     this.render()
+  }
+
+  // HA moves elements (disconnect and reconnect in the same task) but also
+  // discards them, for example the preview card on every config change. Wait
+  // a tick to tell the two apart, and only tear the React tree down when the
+  // element is really gone, so WebGL contexts and render loops do not leak.
+  disconnectedCallback() {
+    setTimeout(() => {
+      if (this.isConnected || !this.root) return
+      this.root.unmount()
+      this.root = null
+    }, 0)
   }
 
   // Called by HA on every state change.
@@ -53,7 +65,8 @@ export abstract class ReactHost<Config> extends HTMLElement {
   protected abstract view(): ReactNode
 
   protected render() {
-    if (!this._config) return
+    if (!this._config || !this.isConnected) return
+    this.root ??= createRoot(this.mount)
     this.root.render(<StrictMode>{this.view()}</StrictMode>)
   }
 }

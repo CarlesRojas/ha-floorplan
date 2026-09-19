@@ -2,27 +2,23 @@ import { EDITOR_CANVAS_HEIGHT_PX, EDITOR_GRID_M, EDITOR_HANDLE_PX } from '#/cons
 import type { Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
 import { ROOM_COLORS } from '#/theme.ts'
-import type { PlanImageConfig, Point, RoomConfig } from '#/types.ts'
+import type { Point, RoomConfig } from '#/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { useEffect, useRef, useState } from 'react'
 import { useResizeObserver } from 'usehooks-ts'
 
 type Props = {
   rooms: RoomConfig[]
-  plan: PlanImageConfig | undefined
   tool: Tool
   selection: Selection
   draft: Point[]
-  calibration: Point[] | null
   view: View | null
   onView: (view: View | null) => void
   fit: (width: number, height: number) => View
   onSelect: (selection: Selection) => void
   onRooms: (rooms: RoomConfig[], done: boolean) => void
-  onPlan: (plan: PlanImageConfig, done: boolean) => void
   onDraftPoint: (point: Point) => void
   onCloseDraft: () => void
-  onCalibrationPoint: (point: Point) => void
   fill?: boolean
 }
 
@@ -30,26 +26,21 @@ type Drag =
   | { kind: 'pan'; start: Point; view: View }
   | { kind: 'vertex'; roomId: string; index: number }
   | { kind: 'room'; roomId: string; start: Point; origin: Point[] }
-  | { kind: 'plan'; start: Point; origin: Point }
 
 const HANDLE = EDITOR_HANDLE_PX
 
 export default function Canvas({
   rooms,
-  plan,
   tool,
   selection,
   draft,
-  calibration,
   view: viewProp,
   onView,
   fit,
   onSelect,
   onRooms,
-  onPlan,
   onDraftPoint,
   onCloseDraft,
-  onCalibrationPoint,
   fill = false,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -58,18 +49,10 @@ export default function Canvas({
     box: 'border-box',
   })
   const [hover, setHover] = useState<Point | null>(null)
-  const [planAspect, setPlanAspect] = useState(1)
   const drag = useRef<Drag | null>(null)
   const [panning, setPanning] = useState(false)
 
   const view = viewProp ?? (width && height ? fit(width, height) : null)
-
-  useEffect(() => {
-    if (!plan?.url) return
-    const img = new Image()
-    img.onload = () => setPlanAspect(img.naturalHeight / img.naturalWidth)
-    img.src = plan.url
-  }, [plan?.url])
 
   // React registers wheel listeners as passive, so preventDefault needs a native one.
   useEffect(() => {
@@ -99,14 +82,10 @@ export default function Canvas({
   const selectedRoom = rooms.find(r => r.id === selection.roomId)
 
   const onBackgroundDown = (e: React.PointerEvent) => {
-    if (e.button === 1 || tool === 'select' || (tool === 'plan' && !plan)) {
+    if (e.button === 1 || tool === 'select') {
       drag.current = { kind: 'pan', start: screenPoint(e), view }
       setPanning(true)
       if (tool === 'select' && e.button === 0) onSelect({ roomId: null, vertex: null })
-      return
-    }
-    if (calibration) {
-      onCalibrationPoint(planPoint(e))
       return
     }
     if (tool === 'draw') {
@@ -121,9 +100,6 @@ export default function Canvas({
       }
       onDraftPoint(snap(p, view, rooms, undefined, draft))
       return
-    }
-    if (tool === 'plan' && plan) {
-      drag.current = { kind: 'plan', start: planPoint(e), origin: [plan.x, plan.y] }
     }
   }
 
@@ -199,11 +175,6 @@ export default function Canvas({
         )
         break
       }
-      case 'plan': {
-        if (!plan) break
-        onPlan({ ...plan, x: d.origin[0] + p[0] - d.start[0], y: d.origin[1] + p[1] - d.start[1] }, false)
-        break
-      }
     }
   }
 
@@ -213,18 +184,13 @@ export default function Canvas({
     setPanning(false)
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
-    if (d.kind === 'plan') {
-      if (plan) onPlan({ ...plan, x: round(plan.x), y: round(plan.y) }, true)
-      return
-    }
     onRooms(
       rooms.map(r => (r.id === d.roomId ? { ...r, points: r.points.map(([x, y]) => [round(x), round(y)]) } : r)),
       true,
     )
   }
 
-  const cursor =
-    tool === 'draw' || calibration ? 'crosshair' : tool === 'plan' ? 'move' : panning ? 'grabbing' : 'default'
+  const cursor = tool === 'draw' ? 'crosshair' : panning ? 'grabbing' : 'default'
 
   const polygon = (points: Point[]) => points.map(p => toScreen(view, p).join(',')).join(' ')
 
@@ -241,19 +207,6 @@ export default function Canvas({
       onDoubleClick={() => tool === 'draw' && onCloseDraft()}
     >
       <Grid view={view} width={width} height={height} />
-
-      {plan && (
-        <image
-          href={plan.url}
-          x={toScreen(view, [plan.x, plan.y])[0]}
-          y={toScreen(view, [plan.x, plan.y + plan.width * planAspect])[1]}
-          width={plan.width * view.scale}
-          height={plan.width * planAspect * view.scale}
-          opacity={plan.opacity ?? 0.5}
-          preserveAspectRatio="none"
-          className="pointer-events-none"
-        />
-      )}
 
       {rooms.map((room, i) => (
         <polygon
@@ -343,13 +296,6 @@ export default function Canvas({
           })}
         </>
       )}
-
-      {calibration?.map((p, i) => {
-        const [sx, sy] = toScreen(view, p)
-        return (
-          <circle key={i} cx={sx} cy={sy} r={HANDLE} fill="var(--error-color, #d33)" className="pointer-events-none" />
-        )
-      })}
 
       {hover && (
         <text x={8} y={height - 8} className="pointer-events-none fill-(--secondary-text-color) text-[11px]">

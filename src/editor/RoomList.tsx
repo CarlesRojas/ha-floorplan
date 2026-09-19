@@ -11,13 +11,24 @@ type Props = {
   selection: Selection
   onSelect: (roomId: string) => void
   onUpdate: (id: string, patch: Partial<RoomConfig>) => void
+  onRename: (id: string, name: string | undefined) => void
+  onRenameDone: () => void
   onDelete: (id: string) => void
 }
 
 const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1 text-xs text-(--primary-text-color)'
 
-export default function RoomList({ rooms, areas, selection, onSelect, onUpdate, onDelete }: Props) {
+export default function RoomList({
+  rooms,
+  areas,
+  selection,
+  onSelect,
+  onUpdate,
+  onRename,
+  onRenameDone,
+  onDelete,
+}: Props) {
   const sortedAreas = [...areas].sort((a, b) => a.name.localeCompare(b.name))
   const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
 
@@ -46,7 +57,8 @@ export default function RoomList({ rooms, areas, selection, onSelect, onUpdate, 
             className={input}
             value={room.name ?? ''}
             placeholder={room.id}
-            onChange={e => onUpdate(room.id, { name: e.target.value || undefined })}
+            onChange={e => onRename(room.id, e.target.value || undefined)}
+            onBlur={onRenameDone}
           />
           <select
             className={input}

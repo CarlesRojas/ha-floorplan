@@ -7,7 +7,6 @@ import {
   faExpand,
   faMinimize,
   faMaximize,
-  faUpDownLeftRight,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
@@ -34,7 +33,6 @@ const TOOLS: (Action & { id: Tool })[] = [
     description: 'Click corners, close on the first one.',
     shortcut: 'D',
   },
-  { id: 'plan', icon: faUpDownLeftRight, title: 'Move plan', description: 'Drag the floor plan image.', shortcut: 'P' },
 ]
 
 type Props = {
