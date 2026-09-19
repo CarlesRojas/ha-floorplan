@@ -723,7 +723,7 @@ export default function Canvas({
                 invalid
                   ? 'var(--error-color)'
                   : selection.roomId === room.id
-                    ? 'var(--primary-color)'
+                    ? EDITOR_MODE_COLORS[mode]
                     : 'rgba(0,0,0,0.35)'
               }
               strokeWidth={selection.roomId === room.id ? 2 : 1}
