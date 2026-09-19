@@ -57,13 +57,15 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D". The card opens with a
 
 The card's visual editor is a top-down drawing tool. Open it from the card's edit dialog.
 
+It opens fullscreen. Shift+F or the toolbar button collapses it back into the dialog, where Home Assistant's live preview is visible.
+
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
-- Select (V): click a room to select it, drag corners to move them, drag the small dots on the edges to add corners, Delete removes the selected corner, drag a room to move it.
+- Select (V): click a room to select it, drag corners to move them, click the plus signs on the edges to add corners, Delete removes the selected corner, drag a room to move it.
 - Move plan (P): drag the floor plan image.
 - Fit view (F), drag empty space to pan, wheel to zoom.
-- Corners snap to a 10 cm grid and to other rooms' corners and wall lines.
+- Corners snap to a 50 cm grid and to other rooms' corners and wall lines.
 
-Each room in the list can be named, linked to a Home Assistant area, and given its own corner radius and color.
+Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 
 To trace real plans, put an image under `www/floorplan-3d` in the Home Assistant config folder and enter its `/local/...` URL. Then click Calibrate scale and click two points whose real distance you know.
 

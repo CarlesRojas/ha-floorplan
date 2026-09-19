@@ -1,8 +1,9 @@
-import { EDITOR_CANVAS_HEIGHT_PX, EDITOR_HANDLE_PX } from '#/constants.ts'
+import { EDITOR_CANVAS_HEIGHT_PX, EDITOR_GRID_M, EDITOR_HANDLE_PX } from '#/constants.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
 import { ROOM_COLORS } from '#/theme.ts'
 import type { PlanImageConfig, Point, RoomConfig } from '#/types.ts'
+import { cn } from '#/lib/utils.ts'
 import { useEffect, useRef, useState } from 'react'
 import { useResizeObserver } from 'usehooks-ts'
 
@@ -22,6 +23,7 @@ type Props = {
   onDraftPoint: (point: Point) => void
   onCloseDraft: () => void
   onCalibrationPoint: (point: Point) => void
+  fill?: boolean
 }
 
 type Drag =
@@ -48,6 +50,7 @@ export default function Canvas({
   onDraftPoint,
   onCloseDraft,
   onCalibrationPoint,
+  fill = false,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const { width = 0, height = 0 } = useResizeObserver({
@@ -82,7 +85,10 @@ export default function Canvas({
     return () => svg.removeEventListener('wheel', onWheel)
   }, [onView, view])
 
-  if (!view) return <svg ref={svgRef} className="w-full rounded-xl" style={{ height: EDITOR_CANVAS_HEIGHT_PX }} />
+  const sizing = fill ? 'h-full w-full' : 'w-full'
+  const style = fill ? undefined : { height: EDITOR_CANVAS_HEIGHT_PX }
+
+  if (!view) return <svg ref={svgRef} className={cn(sizing, 'rounded-xl')} style={style} />
 
   const screenPoint = (e: React.PointerEvent): Point => {
     const rect = svgRef.current!.getBoundingClientRect()
@@ -226,8 +232,8 @@ export default function Canvas({
     <svg
       ref={svgRef}
       tabIndex={-1}
-      className="w-full touch-none rounded-xl bg-(--secondary-background-color) outline-none select-none"
-      style={{ height: EDITOR_CANVAS_HEIGHT_PX, cursor }}
+      className={cn(sizing, 'touch-none rounded-xl bg-(--secondary-background-color) outline-none select-none')}
+      style={{ ...style, cursor }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -268,17 +274,27 @@ export default function Canvas({
           {selectedRoom.points.map((p, i) => {
             const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
             const [mx, my] = toScreen(view, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2])
+            const r = HANDLE * 0.8
             return (
-              <circle
-                key={`m${i}`}
-                cx={mx}
-                cy={my}
-                r={HANDLE * 0.6}
-                fill="var(--card-background-color)"
-                stroke="var(--primary-color)"
-                className="cursor-copy"
-                onPointerDown={e => onMidpointDown(e, selectedRoom, i)}
-              />
+              <g key={`m${i}`} className="cursor-copy" onPointerDown={e => onMidpointDown(e, selectedRoom, i)}>
+                <circle cx={mx} cy={my} r={r} fill="var(--card-background-color)" stroke="var(--primary-color)" />
+                <line
+                  x1={mx - r * 0.5}
+                  y1={my}
+                  x2={mx + r * 0.5}
+                  y2={my}
+                  stroke="var(--primary-color)"
+                  strokeWidth={1.5}
+                />
+                <line
+                  x1={mx}
+                  y1={my - r * 0.5}
+                  x2={mx}
+                  y2={my + r * 0.5}
+                  stroke="var(--primary-color)"
+                  strokeWidth={1.5}
+                />
+              </g>
             )
           })}
           {selectedRoom.points.map((p, i) => {
@@ -347,7 +363,7 @@ export default function Canvas({
 function Grid({ view, width, height }: { view: View; width: number; height: number }) {
   const [minX, maxY] = toPlan(view, [0, 0])
   const [maxX, minY] = toPlan(view, [width, height])
-  const step = view.scale >= 40 ? 0.1 : view.scale >= 8 ? 1 : 5
+  const step = view.scale >= 16 ? EDITOR_GRID_M : view.scale >= 6 ? 1 : 5
   const lines: React.ReactNode[] = []
   for (let x = Math.floor(minX / step) * step; x <= maxX; x += step) {
     const major = Math.abs(x / 1 - Math.round(x / 1)) < 1e-6

@@ -1,9 +1,10 @@
 import Canvas from '#/editor/Canvas.tsx'
 import PlanPanel from '#/editor/PlanPanel.tsx'
 import RoomList from '#/editor/RoomList.tsx'
+import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, round, type View } from '#/editor/view.ts'
-import { cn } from '#/lib/utils.ts'
+import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, HomeAssistant, PlanImageConfig, Point, RoomConfig } from '#/types.ts'
 import { useEffect, useRef, useState } from 'react'
 
@@ -12,12 +13,6 @@ type Props = {
   config: CardConfig
   onChange: (config: CardConfig) => void
 }
-
-const TOOLS: { id: Tool; label: string; key: string }[] = [
-  { id: 'select', label: 'Select', key: 'V' },
-  { id: 'draw', label: 'Draw room', key: 'D' },
-  { id: 'plan', label: 'Move plan', key: 'P' },
-]
 
 function nextRoomId(rooms: RoomConfig[]) {
   let n = rooms.length + 1
@@ -33,6 +28,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [draft, setDraft] = useState<Point[]>([])
   const [calibration, setCalibration] = useState<Point[] | null>(null)
   const [view, setView] = useState<View | null>(null)
+  const [fullscreen, setFullscreen] = useState(true)
   const lastEmitted = useRef<string>(JSON.stringify({ rooms: config.rooms ?? [], plan: config.plan }))
 
   // Pick up edits made outside, for example in the YAML editor.
@@ -99,7 +95,8 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'f':
       case 'F':
-        setView(null)
+        if (e.shiftKey) setFullscreen(!fullscreen)
+        else setView(null)
         break
       case 'Enter':
         closeDraft()
@@ -141,57 +138,41 @@ export default function Editor({ hass, config, onChange }: Props) {
       ? 'Click to add corners. Click the first corner or press Enter to close. Esc cancels.'
       : tool === 'plan'
         ? 'Drag to move the plan image.'
-        : 'Click a room to select it. Drag corners to move them, drag the small dots to add corners. Delete removes a corner. Drag empty space to pan, wheel to zoom.'
+        : 'Click a room to select it. Drag corners to move them, click the plus signs to add corners. Delete removes a corner. Drag empty space to pan, wheel to zoom.'
 
-  return (
-    <div
-      className="font-montserrat flex flex-col gap-3 text-(--primary-text-color) outline-none"
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        {TOOLS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTool(t.id)}
-            className={cn(
-              'rounded-full border border-(--divider-color) px-3 py-1 text-xs font-semibold',
-              tool === t.id && 'border-(--primary-color) bg-(--primary-color) text-white',
-            )}
-          >
-            {t.label} <span className="opacity-60">{t.key}</span>
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setView(null)}
-          className="rounded-full border border-(--divider-color) px-3 py-1 text-xs font-semibold"
-        >
-          Fit view <span className="opacity-60">F</span>
-        </button>
-      </div>
+  const canvas = (
+    <Canvas
+      rooms={rooms}
+      plan={plan}
+      tool={tool}
+      selection={selection}
+      draft={draft}
+      calibration={calibration}
+      view={view}
+      onView={setView}
+      fit={(w, h) => fitView(rooms, w, h)}
+      onSelect={setSelection}
+      onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
+      onPlan={(next, done) => (done ? commit(rooms, next) : setPlan(next))}
+      onDraftPoint={p => setDraft([...draft, p])}
+      onCloseDraft={closeDraft}
+      onCalibrationPoint={onCalibrationPoint}
+      fill={fullscreen}
+    />
+  )
 
-      <Canvas
-        rooms={rooms}
-        plan={plan}
-        tool={tool}
-        selection={selection}
-        draft={draft}
-        calibration={calibration}
-        view={view}
-        onView={setView}
-        fit={(w, h) => fitView(rooms, w, h)}
-        onSelect={setSelection}
-        onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
-        onPlan={(next, done) => (done ? commit(rooms, next) : setPlan(next))}
-        onDraftPoint={p => setDraft([...draft, p])}
-        onCloseDraft={closeDraft}
-        onCalibrationPoint={onCalibrationPoint}
-      />
+  const toolbar = (
+    <Toolbar
+      tool={tool}
+      fullscreen={fullscreen}
+      onTool={setTool}
+      onFit={() => setView(null)}
+      onFullscreen={setFullscreen}
+    />
+  )
 
-      <p className="text-xs text-(--secondary-text-color)">{hint}</p>
-
+  const panels = (
+    <>
       <RoomList
         rooms={rooms}
         areas={Object.values(hass?.areas ?? {})}
@@ -200,13 +181,48 @@ export default function Editor({ hass, config, onChange }: Props) {
         onUpdate={updateRoom}
         onDelete={deleteRoom}
       />
-
       <PlanPanel
         plan={plan}
         calibrating={calibration !== null}
         onChange={next => commit(rooms, next)}
         onCalibrate={() => setCalibration([])}
       />
+    </>
+  )
+
+  const hintLine = <p className="text-xs text-(--secondary-text-color)">{hint}</p>
+
+  if (fullscreen) {
+    return (
+      <div
+        className="font-montserrat fixed inset-0 z-50 flex flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none"
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+      >
+        <div className="flex items-center gap-4">
+          {toolbar}
+          {hintLine}
+        </div>
+        <div className="flex min-h-0 flex-1 gap-4">
+          <div className="min-w-0 flex-1">{canvas}</div>
+          <div className="flex shrink-0 flex-col gap-3 overflow-y-auto" style={{ width: EDITOR_SIDEBAR_WIDTH_PX }}>
+            {panels}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="font-montserrat flex flex-col gap-3 text-(--primary-text-color) outline-none"
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+    >
+      {toolbar}
+      {canvas}
+      {hintLine}
+      {panels}
     </div>
   )
 }

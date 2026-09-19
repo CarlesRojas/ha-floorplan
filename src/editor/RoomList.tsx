@@ -2,6 +2,8 @@ import type { Selection } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { ROOM_COLORS } from '#/theme.ts'
 import type { Area, RoomConfig } from '#/types.ts'
+import { faTrash } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
   rooms: RoomConfig[]
@@ -17,6 +19,7 @@ const input =
 
 export default function RoomList({ rooms, areas, selection, onSelect, onUpdate, onDelete }: Props) {
   const sortedAreas = [...areas].sort((a, b) => a.name.localeCompare(b.name))
+  const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
 
   if (rooms.length === 0) {
     return (
@@ -31,12 +34,12 @@ export default function RoomList({ rooms, areas, selection, onSelect, onUpdate, 
           key={room.id}
           onClick={() => onSelect(room.id)}
           className={cn(
-            'grid grid-cols-[16px_minmax(0,1fr)_minmax(0,1fr)_56px_28px_auto] items-center gap-2 rounded-lg border border-transparent px-2 py-1',
+            'grid grid-cols-[12px_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-transparent px-2 py-1',
             selection.roomId === room.id && 'border-(--primary-color)',
           )}
         >
           <span
-            className="size-4 rounded-full"
+            className="size-3 rounded-full"
             style={{ background: room.color ?? ROOM_COLORS[i % ROOM_COLORS.length] }}
           />
           <input
@@ -51,36 +54,27 @@ export default function RoomList({ rooms, areas, selection, onSelect, onUpdate, 
             onChange={e => onUpdate(room.id, { area_id: e.target.value || undefined })}
           >
             <option value="">No area</option>
-            {sortedAreas.map(a => (
-              <option key={a.area_id} value={a.area_id}>
-                {a.name}
-              </option>
-            ))}
+            {sortedAreas.map(a => {
+              const owner = used.get(a.area_id)
+              const taken = owner !== undefined && owner !== room.id
+              return (
+                <option key={a.area_id} value={a.area_id} disabled={taken}>
+                  {a.name}
+                  {taken ? ' (used)' : ''}
+                </option>
+              )
+            })}
           </select>
-          <input
-            className={input}
-            type="number"
-            step={0.05}
-            min={0}
-            placeholder="radius"
-            value={room.radius ?? ''}
-            onChange={e => onUpdate(room.id, { radius: e.target.value === '' ? undefined : Number(e.target.value) })}
-          />
-          <input
-            type="color"
-            className="h-6 w-8 cursor-pointer bg-transparent"
-            value={room.color ?? ROOM_COLORS[i % ROOM_COLORS.length]}
-            onChange={e => onUpdate(room.id, { color: e.target.value })}
-          />
           <button
             type="button"
-            className="text-xs text-(--secondary-text-color) hover:text-(--error-color)"
+            aria-label="Delete room"
+            className="flex size-7 items-center justify-center rounded text-(--secondary-text-color) hover:text-(--error-color)"
             onClick={e => {
               e.stopPropagation()
               if (window.confirm(`Delete ${room.name ?? room.id}?`)) onDelete(room.id)
             }}
           >
-            Delete
+            <FontAwesomeIcon icon={faTrash} className="size-3.5" />
           </button>
         </div>
       ))}
