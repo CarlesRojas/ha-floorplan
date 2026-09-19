@@ -25,6 +25,7 @@ export const CARD_CORNER_RADIUS_PX = 24
 export const EDITOR_MODE_COLORS = {
   rooms: '#03a9f4',
   devices: '#f59e0b',
+  decoration: '#34d399',
 }
 
 // Decoration
@@ -41,3 +42,15 @@ export const LIGHT_POINT_INTENSITY = 6
 // Radius of the sphere shown for a device with no decoration bound.
 export const DEVICE_SPHERE_RADIUS_M = 0.12
 export const DEVICE_SPHERE_COLOR = '#ffffff'
+
+// Floor
+
+// Floor materials a room can have. Color is the default tint, roughness the
+// sheen of the surface.
+export const FLOOR_MATERIALS: Record<string, { label: string; color: string; roughness: number }> = {
+  wood: { label: 'Wood', color: '#c99a6b', roughness: 0.7 },
+  tiles: { label: 'Tiles', color: '#d9d2c5', roughness: 0.35 },
+  terracotta: { label: 'Terracotta', color: '#c4764f', roughness: 0.8 },
+  carpet: { label: 'Carpet', color: '#9fb3c8', roughness: 1 },
+  concrete: { label: 'Concrete', color: '#9a9a9a', roughness: 0.9 },
+}

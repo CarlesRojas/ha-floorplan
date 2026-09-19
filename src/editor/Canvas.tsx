@@ -13,9 +13,11 @@ import {
   EDITOR_GRID_M,
   EDITOR_HANDLE_PX,
 } from '#/constants.ts'
+import { decorationKind, paramValue } from '#/decoration/catalog.ts'
 import { deviceType } from '#/devices/catalog.ts'
 import type { Mode, Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
+import { snapToWall } from '#/editor/walls.ts'
 import {
   furthestValid,
   isValidRoom,
@@ -25,8 +27,8 @@ import {
 } from '#/geometry/overlap.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
-import type { DeviceConfig, Point, RoomConfig } from '#/types.ts'
-import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
+import { faLightbulb, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useRef, useState } from 'react'
 import { useResizeObserver } from 'usehooks-ts'
 
@@ -39,6 +41,12 @@ type Props = {
   onSelectDevice: (entityId: string | null) => void
   onRemoveDevice: (entityId: string) => void
   onRotateDevice: (entityId: string) => void
+  decorations: DecorationConfig[]
+  selectedDecoration: string | null
+  onDecorations: (decorations: DecorationConfig[], done: boolean) => void
+  onSelectDecoration: (id: string | null) => void
+  onRemoveDecoration: (id: string) => void
+  onRotateDecoration: (id: string) => void
   tool: Tool
   showLengths: boolean
   selection: Selection
@@ -61,12 +69,14 @@ type Drag =
   | { kind: 'edge'; roomId: string; index: number; start: Point; origin: Point[] }
   | { kind: 'room'; roomId: string; start: Point; origin: Point[] }
   | { kind: 'device'; entityId: string; start: Point; origin: Point }
+  | { kind: 'decoration'; id: string; start: Point; origin: Point }
 
 type Menu =
   | { kind: 'vertex'; roomId: string; index: number }
   | { kind: 'edge'; roomId: string; index: number; point: Point }
   | { kind: 'room'; roomId: string }
   | { kind: 'device'; entityId: string }
+  | { kind: 'decoration'; id: string }
   | { kind: 'canvas' }
 
 const HANDLE = EDITOR_HANDLE_PX
@@ -81,6 +91,12 @@ export default function Canvas({
   onSelectDevice,
   onRemoveDevice,
   onRotateDevice,
+  decorations,
+  selectedDecoration,
+  onDecorations,
+  onSelectDecoration,
+  onRemoveDecoration,
+  onRotateDecoration,
   tool,
   showLengths,
   selection,
@@ -113,6 +129,8 @@ export default function Canvas({
   // its room, lands on the last valid spot.
   const liveDevices = useRef<DeviceConfig[] | null>(null)
   const [draggingDevice, setDraggingDevice] = useState<string | null>(null)
+  const liveDecorations = useRef<DecorationConfig[] | null>(null)
+  const [draggingDecoration, setDraggingDecoration] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
@@ -129,10 +147,11 @@ export default function Canvas({
     view: View | null
     rooms: RoomConfig[]
     devices: DeviceConfig[]
+    decorations: DecorationConfig[]
     draft: Point[]
     tool: Tool
     updateAutopan: (screen: Point) => void
-  }>({ view, rooms, devices, draft, tool, updateAutopan: () => {} })
+  }>({ view, rooms, devices, decorations, draft, tool, updateAutopan: () => {} })
   const lastScreen = useRef<Point | null>(null)
   const autopan = useRef<{ raf: number; time: number; vx: number; vy: number } | null>(null)
 
@@ -163,6 +182,21 @@ export default function Canvas({
     liveDevices.current = devices
     drag.current = { kind: 'device', entityId: device.entity_id, start: planPoint(e), origin: device.position }
     setDraggingDevice(device.entity_id)
+  }
+
+  const onDecorationDown = (e: React.PointerEvent, item: DecorationConfig) => {
+    if (e.button === 2) {
+      e.stopPropagation()
+      return
+    }
+    if (e.button !== 0) return
+    e.stopPropagation()
+    capture(e)
+    onSelect({ roomId: item.room, vertex: null })
+    onSelectDecoration(item.id)
+    liveDecorations.current = decorations
+    drag.current = { kind: 'decoration', id: item.id, start: planPoint(e), origin: item.position }
+    setDraggingDecoration(item.id)
   }
 
   const applyDrag = (screen: Point, v: View, renderedRooms: RoomConfig[]) => {
@@ -317,6 +351,51 @@ export default function Canvas({
         )
         break
       }
+      case 'decoration': {
+        const current = liveDecorations.current ?? latest.current.decorations
+        const item = current.find(x => x.id === d.id)
+        if (!item) break
+        const kind = decorationKind(item.kind)
+        const g = EDITOR_DEVICE_GRID_M
+        const target: Point = [
+          Math.round((d.origin[0] + p[0] - d.start[0]) / g) * g,
+          Math.round((d.origin[1] + p[1] - d.start[1]) / g) * g,
+        ]
+        const within = (q: Point, points: Point[]) => pointStrictlyInside(q, points) || pointOnBoundary(q, points)
+        const over = currentRooms.find(r => within(target, r.points))
+        const home = currentRooms.find(r => r.id === item.room)
+        const roomFor = over ?? home
+        let landing: DecorationConfig = { ...item, position: target, room: roomFor?.id ?? item.room }
+        if (kind?.mount === 'wall' && roomFor) {
+          // Wall items sit on the nearest wall of the room and face inward.
+          const snapped = snapToWall(target, roomFor.points)
+          landing = { ...landing, position: snapped.point, rotation: snapped.rotation }
+        } else if (!over && home) {
+          const from = item.position
+          let lo = 0
+          let hi = 1
+          for (let i = 0; i < 16; i++) {
+            const mid = (lo + hi) / 2
+            const q: Point = [from[0] + (target[0] - from[0]) * mid, from[1] + (target[1] - from[1]) * mid]
+            if (within(q, home.points)) lo = mid
+            else hi = mid
+          }
+          landing = {
+            ...item,
+            position: [
+              Math.round((from[0] + (target[0] - from[0]) * lo) * 100) / 100,
+              Math.round((from[1] + (target[1] - from[1]) * lo) * 100) / 100,
+            ],
+          }
+        }
+        liveDecorations.current = current.map(x => (x.id === d.id ? landing : x))
+        const shown = kind?.mount === 'wall' ? landing : { ...item, position: target, room: over?.id ?? item.room }
+        onDecorations(
+          current.map(x => (x.id === d.id ? shown : x)),
+          false,
+        )
+        break
+      }
     }
   }
 
@@ -362,7 +441,7 @@ export default function Canvas({
   }
 
   useEffect(() => {
-    latest.current = { view, rooms, devices, draft, tool, updateAutopan }
+    latest.current = { view, rooms, devices, decorations, draft, tool, updateAutopan }
   })
 
   // A drag captures the pointer, so moves outside the canvas still arrive.
@@ -427,6 +506,7 @@ export default function Canvas({
       if (tool === 'select' && e.button === 0) {
         onSelect({ roomId: null, vertex: null })
         onSelectDevice(null)
+        onSelectDecoration(null)
       }
       return
     }
@@ -462,9 +542,10 @@ export default function Canvas({
     e.stopPropagation()
     capture(e)
     onSelect({ roomId: room.id, vertex: null })
-    if (mode === 'devices') {
-      // Rooms are only picked here. Clicking a room clears the device selection.
+    if (mode !== 'rooms') {
+      // Rooms are only picked here. Clicking a room clears the item selection.
       onSelectDevice(null)
+      onSelectDecoration(null)
       drag.current = { kind: 'pan', start: screenPoint(e), view }
       setPanning(true)
       return
@@ -514,15 +595,28 @@ export default function Canvas({
     const d = drag.current
     const resolved = liveRooms.current
     const resolvedDevices = liveDevices.current
+    const resolvedDecorations = liveDecorations.current
     drag.current = null
     liveRooms.current = null
     liveDevices.current = null
+    liveDecorations.current = null
     setDraggingId(null)
     setDraggingDevice(null)
+    setDraggingDecoration(null)
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
+    if (d.kind === 'decoration') {
+      const source = resolvedDecorations ?? decorations
+      onDecorations(
+        source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
+        true,
+      )
+      const landed = source.find(x => x.id === d.id)
+      if (landed) onSelect({ roomId: landed.room, vertex: null })
+      return
+    }
     if (d.kind === 'device') {
       const source = resolvedDevices ?? devices
       onDevices(
@@ -546,6 +640,11 @@ export default function Canvas({
     e.stopPropagation()
     if (target.kind === 'room') onSelect({ roomId: target.roomId, vertex: null })
     if (target.kind === 'vertex') onSelect({ roomId: target.roomId, vertex: target.index })
+    if (target.kind === 'decoration') {
+      const item = decorations.find(x => x.id === target.id)
+      if (item) onSelect({ roomId: item.room, vertex: null })
+      onSelectDecoration(target.id)
+    }
     if (target.kind === 'device') {
       const device = devices.find(x => x.entity_id === target.entityId)
       if (device) onSelect({ roomId: device.room, vertex: null })
@@ -665,6 +764,30 @@ export default function Canvas({
             </ContextMenuItem>
           </>
         )
+      case 'decoration':
+        return (
+          <>
+            <ContextMenuItem
+              onSelect={() => {
+                onRotateDecoration(t.id)
+                closeMenu()
+              }}
+            >
+              Rotate 90°
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onSelect={() => {
+                onRemoveDecoration(t.id)
+                closeMenu()
+              }}
+              shortcut="Del"
+            >
+              Remove from plan
+            </ContextMenuItem>
+          </>
+        )
       case 'canvas':
         return (
           <>
@@ -719,7 +842,8 @@ export default function Canvas({
         {rooms.map((room, i) => {
           // While a device is dragged, the room under the pointer lights up.
           const dropTarget =
-            draggingDevice !== null && devices.find(x => x.entity_id === draggingDevice)?.room === room.id
+            (draggingDevice !== null && devices.find(x => x.entity_id === draggingDevice)?.room === room.id) ||
+            (draggingDecoration !== null && decorations.find(x => x.id === draggingDecoration)?.room === room.id)
           const invalid =
             draggingId === room.id &&
             !isValidRoom(
@@ -821,6 +945,76 @@ export default function Canvas({
             })}
           </>
         )}
+
+        {decorations.map(item => {
+          const room = rooms.find(r => r.id === item.room)
+          const kind = decorationKind(item.kind)
+          if (!room || !kind) return null
+          const [sx, sy] = toScreen(view, item.position)
+          const active = mode === 'decoration'
+          const dim = active && selection.roomId !== null && selection.roomId !== item.room
+          const invalid =
+            draggingDecoration === item.id &&
+            !(pointStrictlyInside(item.position, room.points) || pointOnBoundary(item.position, room.points))
+          const isSelected = selectedDecoration === item.id
+          const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.decoration
+          const angle = -(item.rotation ?? 0)
+          const size = paramValue(kind, item.params, 'size')
+          const length = paramValue(kind, item.params, 'length')
+          const r = EDITOR_DEVICE_RADIUS_PX
+          const footprint = Math.max(r, (size / 2) * view.scale)
+          return (
+            <g
+              key={item.id}
+              opacity={active ? (dim ? 0.35 : 1) : 0.4}
+              className={active ? 'cursor-move' : 'pointer-events-none'}
+              onPointerDown={e => onDecorationDown(e, item)}
+              onContextMenu={e => openMenu(e, { kind: 'decoration', id: item.id })}
+            >
+              {length > 0 && (
+                <line
+                  x1={sx - (length / 2) * view.scale}
+                  y1={sy}
+                  x2={sx + (length / 2) * view.scale}
+                  y2={sy}
+                  transform={`rotate(${angle} ${sx} ${sy})`}
+                  stroke={color}
+                  strokeWidth={6}
+                  strokeLinecap="round"
+                  opacity={0.8}
+                />
+              )}
+              {kind.mount === 'wall' ? (
+                <rect
+                  x={sx - footprint}
+                  y={sy - 4}
+                  width={footprint * 2}
+                  height={8}
+                  rx={3}
+                  transform={`rotate(${angle} ${sx} ${sy})`}
+                  fill={color}
+                  opacity={0.7}
+                />
+              ) : (
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={footprint}
+                  fill={color}
+                  fillOpacity={0.18}
+                  stroke={color}
+                  strokeWidth={1.5}
+                  strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
+                />
+              )}
+              {isSelected && (
+                <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
+              )}
+              <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
+              <IconGlyph icon={faLightbulb} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />
+            </g>
+          )
+        })}
 
         {devices.map(device => {
           const room = rooms.find(r => r.id === device.room)

@@ -1,5 +1,5 @@
 import { SLAB_BEVEL_SEGMENTS, SLAB_CURVE_SEGMENTS } from '#/constants.ts'
-import { ROOM_COLORS, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
+import { FLOOR_MATERIALS, ROOM_COLORS, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
 import { ensureCounterClockwise, inset, roundedShape } from '#/geometry/polygon.ts'
 import type { RoomConfig } from '#/types.ts'
 import { useMemo } from 'react'
@@ -40,11 +40,13 @@ export default function Room({ room, index, radius, gap }: Props) {
     return geo
   }, [points, room.radius, radius, gap])
 
-  const color = room.color ?? ROOM_COLORS[index % ROOM_COLORS.length]
+  const floor = room.floor ? FLOOR_MATERIALS[room.floor.material] : undefined
+  const color = room.floor?.color ?? floor?.color ?? room.color ?? ROOM_COLORS[index % ROOM_COLORS.length]
+  const roughness = floor?.roughness ?? 0.85
 
   return (
     <mesh geometry={geometry} castShadow receiveShadow>
-      <meshStandardMaterial color={color} roughness={0.85} />
+      <meshStandardMaterial color={color} roughness={roughness} />
     </mesh>
   )
 }

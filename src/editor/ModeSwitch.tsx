@@ -1,13 +1,14 @@
 import type { Mode } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS } from '#/theme.ts'
-import { type IconDefinition, faLightbulb, faObjectGroup } from '@fortawesome/free-solid-svg-icons'
+import { type IconDefinition, faCouch, faLightbulb, faObjectGroup } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { motion } from 'motion/react'
 
 const MODES: { id: Mode; label: string; icon: IconDefinition }[] = [
   { id: 'rooms', label: 'Rooms', icon: faObjectGroup },
   { id: 'devices', label: 'Devices', icon: faLightbulb },
+  { id: 'decoration', label: 'Decoration', icon: faCouch },
 ]
 
 type Props = {

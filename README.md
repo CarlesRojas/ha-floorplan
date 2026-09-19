@@ -76,6 +76,14 @@ The mode switch on the left of the toolbar changes between Rooms and Devices. In
 - Right click a device to rotate it or remove it. Delete removes the selected device.
 - Deleting a room removes its devices.
 
+### Decoration mode
+
+The third mode places furniture and fixtures. Pick a room on the canvas: the sidebar shows its floor material and tint, then the catalog of items. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
+
+- Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
+- A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change.
+- The first family is lights: ceiling light, pendant, floor lamp, table lamp, wall light, LED strip and spot.
+
 ## Card config
 
 | Key | Default | Description |
@@ -87,6 +95,7 @@ The mode switch on the left of the toolbar changes between Rooms and Devices. In
 Defaults for these and other visual values live in `src/theme.ts`.
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
 | `devices` | `[]` | List of placed entities, see below |
+| `decorations` | `[]` | List of placed decoration items, see below |
 
 Each room:
 
@@ -98,6 +107,7 @@ Each room:
 | `name` | Label override |
 | `radius` | Corner radius override |
 | `color` | Fill color override |
+| `floor` | `material` from wood, tiles, terracotta, carpet, concrete, and an optional `color` tint |
 
 Each device:
 
@@ -109,6 +119,19 @@ Each device:
 | `type` | Look, one of the types for the entity's domain. Defaults to the first |
 | `rotation` | Degrees, counter clockwise on the plan |
 | `length` | Meters, for strip-like types |
+| `decorations` | Ids of decoration items that stand in for this device in 3D |
+
+Each decoration:
+
+| Key | Description |
+| --- | --- |
+| `id` | Unique id, required |
+| `kind` | Catalog kind, for example `light_pendant`, required |
+| `room` | Id of the room it sits in, required |
+| `position` | `[x, y]` in meters, required |
+| `rotation` | Degrees, counter clockwise on the plan |
+| `params` | Kind specific numbers in meters, for example `size`, `cord`, `height`, `length` |
+| `colors` | Hex color per material slot, for example `shade`, `base`, `cord` |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 

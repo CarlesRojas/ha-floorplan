@@ -45,6 +45,15 @@ const TOOLS: Record<Mode, (Action & { id: Tool })[]> = {
       shortcut: 'V',
     },
   ],
+  decoration: [
+    {
+      id: 'select',
+      icon: faArrowPointer,
+      title: 'Select',
+      description: 'Pick a room, then place and drag items.',
+      shortcut: 'V',
+    },
+  ],
 }
 
 type Props = {

@@ -49,6 +49,8 @@ export type RoomConfig = {
   points: Point[]
   radius?: number
   color?: string
+  // Floor material from the theme's list, with an optional color tint.
+  floor?: { material: string; color?: string }
 }
 
 // A Home Assistant entity placed in a room.

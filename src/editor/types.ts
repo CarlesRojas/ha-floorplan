@@ -1,4 +1,4 @@
-export type Mode = 'rooms' | 'devices'
+export type Mode = 'rooms' | 'devices' | 'decoration'
 
 export type Tool = 'select' | 'draw'
 

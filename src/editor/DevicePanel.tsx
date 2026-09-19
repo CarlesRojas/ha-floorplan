@@ -1,7 +1,8 @@
 import { deviceType, entityName, placeableEntities, typesFor, type EntityInfo } from '#/devices/catalog.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
-import type { Area, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
+import { decorationKind } from '#/decoration/catalog.ts'
+import type { Area, DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
@@ -11,6 +12,8 @@ type Props = {
   rooms: RoomConfig[]
   room: RoomConfig | null
   devices: DeviceConfig[]
+  decorations: DecorationConfig[]
+  onBindDecoration: (entityId: string, decorationId: string, bound: boolean) => void
   selected: string | null
   onAssignArea: (roomId: string, areaId: string | undefined) => void
   onSelect: (entityId: string | null) => void
@@ -28,6 +31,8 @@ export default function DevicePanel({
   rooms,
   room,
   devices,
+  decorations,
+  onBindDecoration,
   selected,
   onAssignArea,
   onSelect,
@@ -216,6 +221,35 @@ export default function DevicePanel({
                 onChange={e => onUpdate(selectedDevice.entity_id, { length: Math.max(0.1, Number(e.target.value)) })}
               />
             </label>
+          )}
+          {decorations.length > 0 && (
+            <div className="flex flex-col gap-1 border-t border-(--divider-color) pt-3">
+              <p className="text-xs font-semibold text-(--secondary-text-color)">Decoration items standing in for it</p>
+              <p className="text-xs text-(--secondary-text-color)">
+                With none, the device shows as a sphere in 3D. Bound items take its clicks and its state.
+              </p>
+              {decorations.map(item => {
+                const bound = selectedDevice.decorations?.includes(item.id) ?? false
+                const owner = devices.find(
+                  d => d.entity_id !== selectedDevice.entity_id && d.decorations?.includes(item.id),
+                )
+                const itemRoom = rooms.find(r => r.id === item.room)
+                return (
+                  <label key={item.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={bound}
+                      style={{ accentColor: accent }}
+                      onChange={e => onBindDecoration(selectedDevice.entity_id, item.id, e.target.checked)}
+                    />
+                    <span className="truncate">{decorationKind(item.kind)?.label ?? item.kind}</span>
+                    <span className="ml-auto truncate text-xs text-(--secondary-text-color)">
+                      {owner ? `bound to ${entityName(hass, owner.entity_id)}` : (itemRoom?.name ?? item.room)}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
           )}
           <button
             type="button"
