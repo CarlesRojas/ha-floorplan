@@ -1,8 +1,8 @@
-import { DECORATION_KINDS, decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { DECORATION_KINDS, decorationKind, materialValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { entityName } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
+import { DECORATION_MATERIALS, EDITOR_MODE_COLORS, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { faLightbulb, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -99,17 +99,28 @@ export default function DecorationPanel({
         </label>
 
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-          <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
+          <p className="text-xs font-semibold text-(--secondary-text-color)">Materials</p>
           {Object.entries(kind.colors).map(([slot, fallback]) => (
-            <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
+            <div key={slot} className="grid grid-cols-[96px_1fr_40px] items-center gap-2 text-sm capitalize">
               {slot}
+              <select
+                className={input}
+                value={materialValue(kind, item.materials, slot)}
+                onChange={e => onUpdate(item.id, { materials: { ...item.materials, [slot]: e.target.value } })}
+              >
+                {Object.entries(DECORATION_MATERIALS).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
               <input
                 type="color"
                 className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
                 value={item.colors?.[slot] ?? fallback}
                 onChange={e => onUpdate(item.id, { colors: { ...item.colors, [slot]: e.target.value } })}
               />
-            </label>
+            </div>
           ))}
         </div>
 

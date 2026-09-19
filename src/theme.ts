@@ -33,9 +33,10 @@ export const EDITOR_MODE_COLORS = {
 // Height of the ceiling that pendants and ceiling lights hang from.
 export const CEILING_HEIGHT_M = 2.6
 // Default colors of the material slots of the light family.
-export const LIGHT_SHADE_COLOR = '#f3d9b1'
-export const LIGHT_BASE_COLOR = '#8a6a4b'
-export const LIGHT_CORD_COLOR = '#5b4632'
+// Scandinavian defaults: warm white fabric shades, light oak, grey cords.
+export const LIGHT_SHADE_COLOR = '#f4eee3'
+export const LIGHT_BASE_COLOR = '#d8b98e'
+export const LIGHT_CORD_COLOR = '#8f877b'
 // Glow of a light that is on, before level and color are applied.
 export const LIGHT_GLOW_COLOR = '#ffd27a'
 export const LIGHT_POINT_INTENSITY = 6
@@ -48,9 +49,18 @@ export const DEVICE_SPHERE_COLOR = '#ffffff'
 // Floor materials a room can have. Color is the default tint, roughness the
 // sheen of the surface.
 export const FLOOR_MATERIALS: Record<string, { label: string; color: string; roughness: number }> = {
-  wood: { label: 'Wood', color: '#c99a6b', roughness: 0.7 },
+  wood: { label: 'Wood', color: '#dcc3a0', roughness: 0.7 },
   tiles: { label: 'Tiles', color: '#d9d2c5', roughness: 0.35 },
   terracotta: { label: 'Terracotta', color: '#c4764f', roughness: 0.8 },
   carpet: { label: 'Carpet', color: '#9fb3c8', roughness: 1 },
   concrete: { label: 'Concrete', color: '#9a9a9a', roughness: 0.9 },
+}
+
+// Surfaces a decoration material slot can use.
+export const DECORATION_MATERIALS: Record<string, string> = {
+  matte: 'Matte',
+  fabric: 'Fabric',
+  wood: 'Wood',
+  ceramic: 'Ceramic',
+  metal: 'Metal',
 }

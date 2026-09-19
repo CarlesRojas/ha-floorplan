@@ -20,12 +20,15 @@ export type DecorationKind = {
   params: DecorationParam[]
   // Material slots and their default colors.
   colors: Record<string, string>
+  // Default surface per slot, matte when missing.
+  materials?: Record<string, string>
   // Signals the model can express visually. Anything else can still be
   // bound, the model just does not change.
   expresses: Signal[]
 }
 
 const lightColors = { shade: LIGHT_SHADE_COLOR, base: LIGHT_BASE_COLOR }
+const lightMaterials = { shade: 'fabric', base: 'wood' }
 const LIGHT_SIGNALS: Signal[] = ['toggle', 'level', 'color', 'warmth']
 const size = (d: number, min = 0.1, max = 1.5): DecorationParam => ({
   id: 'size',
@@ -44,6 +47,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     mount: 'ceiling',
     params: [size(0.45, 0.2, 1.2)],
     colors: lightColors,
+    materials: lightMaterials,
     expresses: LIGHT_SIGNALS,
   },
   {
@@ -53,6 +57,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     mount: 'ceiling',
     params: [size(0.4, 0.15, 1), { id: 'cord', label: 'Cord length', default: 0.8, min: 0.2, max: 2, step: 0.05 }],
     colors: { ...lightColors, cord: LIGHT_CORD_COLOR },
+    materials: { ...lightMaterials, cord: 'fabric' },
     expresses: LIGHT_SIGNALS,
   },
   {
@@ -62,6 +67,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     mount: 'floor',
     params: [size(0.4, 0.2, 0.8), { id: 'height', label: 'Height', default: 1.5, min: 0.8, max: 2.2, step: 0.05 }],
     colors: lightColors,
+    materials: lightMaterials,
     expresses: LIGHT_SIGNALS,
   },
   {
@@ -75,6 +81,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       { id: 'lift', label: 'Standing on', default: 0.75, min: 0, max: 1.5, step: 0.05 },
     ],
     colors: lightColors,
+    materials: lightMaterials,
     expresses: LIGHT_SIGNALS,
   },
   {
@@ -84,6 +91,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     mount: 'wall',
     params: [size(0.25, 0.1, 0.6), { id: 'height', label: 'Height', default: 1.8, min: 0.5, max: 2.5, step: 0.05 }],
     colors: lightColors,
+    materials: lightMaterials,
     expresses: LIGHT_SIGNALS,
   },
   {
@@ -117,4 +125,8 @@ export function paramValue(kind: DecorationKind, params: Record<string, number> 
 
 export function colorValue(kind: DecorationKind, colors: Record<string, string> | undefined, slot: string) {
   return colors?.[slot] ?? kind.colors[slot] ?? '#ffffff'
+}
+
+export function materialValue(kind: DecorationKind, materials: Record<string, string> | undefined, slot: string) {
+  return materials?.[slot] ?? kind.materials?.[slot] ?? 'matte'
 }

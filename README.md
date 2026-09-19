@@ -132,6 +132,7 @@ Each decoration:
 | `rotation` | Degrees, counter clockwise on the plan |
 | `params` | Kind specific numbers in meters, for example `size`, `cord`, `height`, `length` |
 | `colors` | Hex color per material slot, for example `shade`, `base`, `cord` |
+| `materials` | Surface per slot: `matte`, `fabric`, `wood`, `ceramic`, `metal`. Surfaces are procedural textures with relief |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 
