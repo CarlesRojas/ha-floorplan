@@ -13,7 +13,7 @@ import {
 } from '#/constants.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
-import { isValidRoom, pointStrictlyInside, segmentEntersAny } from '#/geometry/overlap.ts'
+import { furthestValid, isValidRoom, pointStrictlyInside, segmentEntersAny } from '#/geometry/overlap.ts'
 import { cn } from '#/lib/utils.ts'
 import { ROOM_COLORS } from '#/theme.ts'
 import type { Point, RoomConfig } from '#/types.ts'
@@ -75,9 +75,12 @@ export default function Canvas({
   })
   const [hover, setHover] = useState<Point | null>(null)
   const drag = useRef<Drag | null>(null)
-  // Rooms as last written during a drag. Pointer moves can arrive faster than
-  // React re-renders, so the props would lag behind.
+  // Rooms at their last valid positions during a drag. The dragged room
+  // itself is shown following the pointer, red when that spot is invalid,
+  // and lands on this resolved position when released. Kept in a ref since
+  // pointer moves can arrive faster than React re-renders.
   const liveRooms = useRef<RoomConfig[] | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
@@ -122,28 +125,30 @@ export default function Canvas({
     // A move that would overlap another room or fold the polygon is ignored,
     // so the room stays where it last was valid. Candidates are tried in
     // order, which lets a blocked move still slide along the free axis.
-    // When a candidate is blocked, the furthest valid position on the way
-    // to it is used instead, so a room lands right against its neighbour
-    // however fast the pointer moved.
+    // The first candidate is where the pointer puts the room and is what gets
+    // shown. The resolved position is the first valid candidate, or the
+    // furthest valid point on the way to one, so a blocked room still slides
+    // along the free axis and lands right against its neighbour on release.
     const patch = (roomId: string, candidates: Point[][]) => {
       const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
       const from = currentRooms.find(r => r.id === roomId)!.points
-      let points: Point[] | null = null
+      let resolved: Point[] = from
       for (const target of candidates) {
         if (isValidRoom(target, others)) {
-          points = target
+          resolved = target
           break
         }
         const reached = furthestValid(from, target, others)
         if (reached) {
-          points = reached
+          resolved = reached
           break
         }
       }
-      if (!points) return
-      const next = currentRooms.map(r => (r.id === roomId ? { ...r, points } : r))
-      liveRooms.current = next
-      onRooms(next, false)
+      liveRooms.current = currentRooms.map(r => (r.id === roomId ? { ...r, points: resolved } : r))
+      onRooms(
+        currentRooms.map(r => (r.id === roomId ? { ...r, points: candidates[0] } : r)),
+        false,
+      )
     }
     // Full move first, then the axis with the larger displacement, then the other.
     const axisOrder = (dx: number, dy: number): Point[] =>
@@ -366,6 +371,7 @@ export default function Canvas({
     onSelect({ roomId: room.id, vertex: null })
     liveRooms.current = rooms
     drag.current = { kind: 'room', roomId: room.id, start: planPoint(e), origin: room.points }
+    setDraggingId(room.id)
   }
 
   const onVertexDown = (e: React.PointerEvent, room: RoomConfig, index: number) => {
@@ -379,6 +385,7 @@ export default function Canvas({
     onSelect({ roomId: room.id, vertex: index })
     liveRooms.current = rooms
     drag.current = { kind: 'vertex', roomId: room.id, index }
+    setDraggingId(room.id)
   }
 
   const onEdgeDown = (e: React.PointerEvent, room: RoomConfig, index: number) => {
@@ -392,6 +399,7 @@ export default function Canvas({
     onSelect({ roomId: room.id, vertex: null })
     liveRooms.current = rooms
     drag.current = { kind: 'edge', roomId: room.id, index, start: planPoint(e), origin: room.points }
+    setDraggingId(room.id)
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -404,19 +412,20 @@ export default function Canvas({
 
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current
+    const resolved = liveRooms.current
     drag.current = null
     liveRooms.current = null
+    setDraggingId(null)
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
-    const room = rooms.find(r => r.id === d.roomId)
-    if (room)
-      updateRoom(
-        d.roomId,
-        room.points.map(([x, y]) => [round(x), round(y)]),
-        true,
-      )
+    // Land on the resolved position, whatever the pointer showed.
+    const source = resolved ?? rooms
+    onRooms(
+      source.map(r => ({ ...r, points: r.points.map(([x, y]) => [round(x), round(y)] as Point) })),
+      true,
+    )
   }
 
   const openMenu = (e: React.MouseEvent, target: Menu) => {
@@ -560,20 +569,34 @@ export default function Canvas({
       >
         <Grid view={view} width={width} height={height} />
 
-        {rooms.map((room, i) => (
-          <polygon
-            key={room.id}
-            points={polygon(room.points)}
-            fill={room.color ?? ROOM_COLORS[i % ROOM_COLORS.length]}
-            fillOpacity={selection.roomId === room.id ? 0.75 : 0.5}
-            stroke={selection.roomId === room.id ? 'var(--primary-color)' : 'rgba(0,0,0,0.35)'}
-            strokeWidth={selection.roomId === room.id ? 2 : 1}
-            strokeLinejoin="round"
-            className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
-            onPointerDown={e => onRoomDown(e, room)}
-            onContextMenu={e => openMenu(e, { kind: 'room', roomId: room.id })}
-          />
-        ))}
+        {rooms.map((room, i) => {
+          const invalid =
+            draggingId === room.id &&
+            !isValidRoom(
+              room.points,
+              rooms.filter(r => r.id !== room.id).map(r => r.points),
+            )
+          return (
+            <polygon
+              key={room.id}
+              points={polygon(room.points)}
+              fill={invalid ? 'var(--error-color)' : (room.color ?? ROOM_COLORS[i % ROOM_COLORS.length])}
+              fillOpacity={selection.roomId === room.id ? 0.75 : 0.5}
+              stroke={
+                invalid
+                  ? 'var(--error-color)'
+                  : selection.roomId === room.id
+                    ? 'var(--primary-color)'
+                    : 'rgba(0,0,0,0.35)'
+              }
+              strokeWidth={selection.roomId === room.id ? 2 : 1}
+              strokeLinejoin="round"
+              className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
+              onPointerDown={e => onRoomDown(e, room)}
+              onContextMenu={e => openMenu(e, { kind: 'room', roomId: room.id })}
+            />
+          )
+        })}
 
         {selectedRoom && tool === 'select' && (
           <>
@@ -596,6 +619,34 @@ export default function Canvas({
                     openMenu(e, { kind: 'edge', roomId: selectedRoom.id, index: i, point: planPoint(e) })
                   }
                 />
+              )
+            })}
+            {selectedRoom.points.map((p, i) => {
+              const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
+              const length = Math.hypot(q[0] - p[0], q[1] - p[1])
+              const [mx, my] = toScreen(view, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2])
+              const label = `${length.toFixed(2)} m`
+              const w = label.length * 7 + 12
+              return (
+                <g key={`l${i}`} className="pointer-events-none">
+                  <rect
+                    x={mx - w / 2}
+                    y={my - 10}
+                    width={w}
+                    height={20}
+                    rx={10}
+                    fill="var(--card-background-color)"
+                    stroke="var(--primary-color)"
+                  />
+                  <text
+                    x={mx}
+                    y={my + 4}
+                    textAnchor="middle"
+                    className="font-montserrat fill-(--primary-text-color) text-[11px] font-semibold"
+                  >
+                    {label}
+                  </text>
+                </g>
               )
             })}
             {selectedRoom.points.map((p, i) => {
@@ -717,21 +768,4 @@ function ScaleBar({ view, height }: { view: View; height: number }) {
       </text>
     </g>
   )
-}
-
-// Bisects between `from` (valid) and `to` (blocked) and returns the furthest
-// valid polygon on the way, or null when there is no room to move at all.
-function furthestValid(from: Point[], to: Point[], others: Point[][]): Point[] | null {
-  if (from.length !== to.length) return null
-  const at = (t: number) => from.map((p, i) => [p[0] + (to[i][0] - p[0]) * t, p[1] + (to[i][1] - p[1]) * t] as Point)
-  let lo = 0
-  let hi = 1
-  for (let i = 0; i < 12; i++) {
-    const mid = (lo + hi) / 2
-    if (isValidRoom(at(mid), others)) lo = mid
-    else hi = mid
-  }
-  if (lo < 0.001) return null
-  // Round to a millimetre so the result serialises cleanly.
-  return at(lo).map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000] as Point)
 }

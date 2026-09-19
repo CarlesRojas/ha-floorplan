@@ -127,3 +127,27 @@ export function segmentEntersAny(a: Point, b: Point, others: Point[][]) {
     return pointStrictlyInside(mid, o) || pointStrictlyInside(b, o)
   })
 }
+
+// Bisects between `from` (valid) and `to` (blocked) and returns the furthest
+// valid polygon on the way, or null when there is no room to move at all.
+export function furthestValid(from: Point[], to: Point[], others: Point[][]): Point[] | null {
+  if (from.length !== to.length) return null
+  const at = (t: number) => from.map((p, i) => [p[0] + (to[i][0] - p[0]) * t, p[1] + (to[i][1] - p[1]) * t] as Point)
+  let lo = 0
+  let hi = 1
+  for (let i = 0; i < 16; i++) {
+    const mid = (lo + hi) / 2
+    if (isValidRoom(at(mid), others)) lo = mid
+    else hi = mid
+  }
+  if (lo < 0.001) return null
+  const reached = at(lo)
+  // The bisection stops a hair short of contact. Contact usually sits on a
+  // centimetre, so round toward where the move started and use that when
+  // it is valid.
+  const toward = (value: number, origin: number, step: number) =>
+    (origin > value ? Math.ceil(value / step - 1e-9) : Math.floor(value / step + 1e-9)) * step
+  const cm = reached.map(([x, y], i) => [toward(x, from[i][0], 0.01), toward(y, from[i][1], 0.01)] as Point)
+  if (isValidRoom(cm, others)) return cm
+  return reached.map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000] as Point)
+}
