@@ -62,8 +62,10 @@ export function inset(points: Point[], distance: number): Point[] {
 }
 
 // Builds a closed shape whose corners are rounded with quadratic curves.
-// The radius on each corner is clamped to half of its shortest adjacent edge.
-export function roundedShape(points: Point[], radius: number): Shape {
+// Expects a counter clockwise polygon. Convex corners use `radius` and
+// concave ones `concaveRadius`, each clamped to half of the shortest adjacent
+// edge.
+export function roundedShape(points: Point[], radius: number, concaveRadius = radius): Shape {
   const shape = new Shape()
   const n = points.length
   if (n < 3) return shape
@@ -74,7 +76,9 @@ export function roundedShape(points: Point[], radius: number): Shape {
     const [nx, ny] = points[(i + 1) % n]
     const inLen = Math.hypot(cx - px, cy - py)
     const outLen = Math.hypot(nx - cx, ny - cy)
-    const r = Math.min(radius, inLen / 2, outLen / 2)
+    // A right turn on a counter clockwise polygon is a concave corner.
+    const concave = (cx - px) * (ny - cy) - (cy - py) * (nx - cx) < 0
+    const r = Math.min(concave ? concaveRadius : radius, inLen / 2, outLen / 2)
     const start: Point = [cx + ((px - cx) / inLen) * r, cy + ((py - cy) / inLen) * r]
     const end: Point = [cx + ((nx - cx) / outLen) * r, cy + ((ny - cy) / outLen) * r]
     return { start, end, cx, cy }

@@ -21,7 +21,12 @@ export default function Room({ room, index, radius, gap }: Props) {
   )
 
   const geometry = useMemo(() => {
-    const shape = roundedShape(points, room.radius ?? radius)
+    const cornerRadius = room.radius ?? radius
+    // A concave corner wraps around a neighbour's convex corner. For the two
+    // arcs to be concentric its radius grows by the gap, plus the edge
+    // rounding on both slabs since the bevel widens each of them.
+    const concaveRadius = cornerRadius + gap + 2 * ROOM_SLAB_EDGE_RADIUS_M
+    const shape = roundedShape(points, cornerRadius, concaveRadius)
     const geo = new ExtrudeGeometry(shape, {
       depth: ROOM_SLAB_THICKNESS_M,
       bevelEnabled: true,
@@ -33,7 +38,7 @@ export default function Room({ room, index, radius, gap }: Props) {
     // Shape is drawn on the XY plane. Lay it flat so Y is up and plan y maps to -z.
     geo.rotateX(-Math.PI / 2)
     return geo
-  }, [points, room.radius, radius])
+  }, [points, room.radius, radius, gap])
 
   const color = room.color ?? ROOM_COLORS[index % ROOM_COLORS.length]
 
