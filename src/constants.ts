@@ -9,11 +9,11 @@ export const DEFAULT_ASPECT_RATIO = '4 / 3'
 
 export const DEFAULT_ROOM_RADIUS = 0.3
 export const DEFAULT_ROOM_GAP = 0.12
-export const SLAB_HEIGHT = 0.12
+export const SLAB_HEIGHT = 0.1
 export const SLAB_BEVEL_THICKNESS = 0.05
 export const SLAB_BEVEL_SIZE = 0.05
-export const SLAB_BEVEL_SEGMENTS = 6
-export const SLAB_CURVE_SEGMENTS = 12
+export const SLAB_BEVEL_SEGMENTS = 32
+export const SLAB_CURVE_SEGMENTS = 32
 export const ROOM_LABEL_LIFT = 0.05
 export const ROOM_PALETTE = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a', '#8fb6b3']
 
