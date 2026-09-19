@@ -43,7 +43,7 @@ export default function Scene({ config }: Props) {
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0005}
       />
-      <Bounds fit clip observe margin={CAMERA_FIT_MARGIN}>
+      <Bounds fit clip observe margin={CAMERA_FIT_MARGIN} maxDuration={0}>
         <group>
           {rooms.map((room, i) => (
             <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
