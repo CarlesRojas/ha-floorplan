@@ -1,15 +1,19 @@
 import { deviceType, entitiesInArea, entityName, typesFor, type EntityInfo } from '#/devices/catalog.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS } from '#/theme.ts'
-import type { DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
+import { ROOM_COLORS } from '#/theme.ts'
+import type { Area, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { faCheck, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
   hass: HomeAssistant | null
+  rooms: RoomConfig[]
   room: RoomConfig | null
   devices: DeviceConfig[]
   selected: string | null
+  onSelectRoom: (roomId: string) => void
+  onAssignArea: (roomId: string, areaId: string | undefined) => void
   onSelect: (entityId: string | null) => void
   onAdd: (entity: EntityInfo) => void
   onUpdate: (entityId: string, patch: Partial<DeviceConfig>) => void
@@ -20,20 +24,101 @@ const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
 const accent = EDITOR_MODE_COLORS.devices
 
-export default function DevicePanel({ hass, room, devices, selected, onSelect, onAdd, onUpdate, onRemove }: Props) {
-  if (!room) return <p className="text-sm text-(--secondary-text-color)">Select a room to see its devices.</p>
+export default function DevicePanel({
+  hass,
+  rooms,
+  room,
+  devices,
+  selected,
+  onSelectRoom,
+  onAssignArea,
+  onSelect,
+  onAdd,
+  onUpdate,
+  onRemove,
+}: Props) {
+  const areas: Area[] = Object.values(hass?.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name))
+  const areaName = (id: string | undefined) => (id ? (hass?.areas?.[id]?.name ?? id) : undefined)
+
+  if (!room) {
+    if (rooms.length === 0) {
+      return <p className="text-sm text-(--secondary-text-color)">No rooms yet. Draw them in the Rooms mode first.</p>
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="mb-1 text-sm text-(--secondary-text-color)">Pick a room to place its devices.</p>
+        {rooms.map((r, i) => {
+          const count = devices.filter(d => d.room === r.id).length
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => onSelectRoom(r.id)}
+              className="grid grid-cols-[12px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-(--secondary-background-color)"
+            >
+              <span
+                className="size-3 rounded-full"
+                style={{ background: r.color ?? ROOM_COLORS[i % ROOM_COLORS.length] }}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm text-(--primary-text-color)">{r.name ?? r.id}</p>
+                <p className="truncate text-xs text-(--secondary-text-color)">{areaName(r.area_id) ?? 'No area'}</p>
+              </div>
+              <span className="text-xs text-(--secondary-text-color)">
+                {count} {count === 1 ? 'device' : 'devices'}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
+  const header = (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-semibold">{room.name ?? room.id}</p>
+      <label className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
+        Area
+        <select
+          className={input}
+          value={room.area_id ?? ''}
+          onChange={e => onAssignArea(room.id, e.target.value || undefined)}
+        >
+          <option value="">No area</option>
+          {areas.map(a => {
+            const owner = used.get(a.area_id)
+            const taken = owner !== undefined && owner !== room.id
+            return (
+              <option key={a.area_id} value={a.area_id} disabled={taken}>
+                {a.name}
+                {taken ? ' (used)' : ''}
+              </option>
+            )
+          })}
+        </select>
+      </label>
+    </div>
+  )
+
   if (!room.area_id) {
     return (
-      <p className="text-sm text-(--secondary-text-color)">
-        Link {room.name ?? room.id} to a Home Assistant area in the Rooms mode to list its devices.
-      </p>
+      <div className="flex flex-col gap-3">
+        {header}
+        <p className="text-sm text-(--secondary-text-color)">
+          Link the room to a Home Assistant area to list its devices.
+        </p>
+      </div>
     )
   }
   if (!hass?.entities) {
     return (
-      <p className="text-sm text-(--secondary-text-color)">
-        This Home Assistant version does not expose the entity registry.
-      </p>
+      <div className="flex flex-col gap-3">
+        {header}
+        <p className="text-sm text-(--secondary-text-color)">
+          This Home Assistant version does not expose the entity registry.
+        </p>
+      </div>
     )
   }
 
@@ -48,7 +133,7 @@ export default function DevicePanel({ hass, room, devices, selected, onSelect, o
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-semibold">{room.name ?? room.id}</p>
+      {header}
       {entities.length === 0 ? (
         <p className="text-sm text-(--secondary-text-color)">
           No devices in this area. Assign devices to it in Home Assistant.
