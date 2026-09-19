@@ -44,6 +44,12 @@ class Floorplan3DCard extends HTMLElement {
 
   // Called by HA once with the YAML config for this card.
   setConfig(config: CardConfig) {
+    if (config.rooms !== undefined && !Array.isArray(config.rooms)) throw new Error('rooms must be a list')
+    for (const room of config.rooms ?? []) {
+      if (!room.id) throw new Error('Every room needs an id')
+      if (!Array.isArray(room.points) || room.points.length < 3)
+        throw new Error(`Room ${room.id} needs at least 3 points`)
+    }
     this._config = config
     this.render()
   }
