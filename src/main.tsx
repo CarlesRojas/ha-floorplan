@@ -18,28 +18,27 @@ function injectFonts() {
 }
 
 class Floorplan3DCard extends HTMLElement {
-  private root: Root | null = null
-  private mount: HTMLDivElement | null = null
+  private root: Root
   private _hass: HomeAssistant | null = null
   private _config: CardConfig | null = null
 
-  connectedCallback() {
-    if (this.root) return
+  constructor() {
+    super()
+    // HA detaches and re-attaches cards when a view re-renders, so everything
+    // that must happen exactly once lives here rather than in connectedCallback.
     injectFonts()
     const shadow = this.attachShadow({ mode: 'open' })
     const style = document.createElement('style')
     style.textContent = styles
     shadow.appendChild(style)
-    this.mount = document.createElement('div')
-    this.mount.style.height = '100%'
-    shadow.appendChild(this.mount)
-    this.root = createRoot(this.mount)
-    this.render()
+    const mount = document.createElement('div')
+    mount.style.height = '100%'
+    shadow.appendChild(mount)
+    this.root = createRoot(mount)
   }
 
-  disconnectedCallback() {
-    this.root?.unmount()
-    this.root = null
+  connectedCallback() {
+    this.render()
   }
 
   // Called by HA once with the YAML config for this card.
@@ -70,7 +69,7 @@ class Floorplan3DCard extends HTMLElement {
   }
 
   private render() {
-    if (!this.root || !this._config) return
+    if (!this._config) return
     this.root.render(
       <StrictMode>
         <Card hass={this._hass} config={this._config} />
