@@ -21,7 +21,12 @@ type Props = {
 }
 
 export default function Room({ room, index, radius, gap }: Props) {
-  const points = useMemo(() => inset(ensureCounterClockwise(room.points), gap / 2), [room.points, gap])
+  // The bevel grows outward from the outline, so inset by it as well to keep
+  // the visible edge where the gap says it should be.
+  const points = useMemo(
+    () => inset(ensureCounterClockwise(room.points), gap / 2 + SLAB_BEVEL_SIZE),
+    [room.points, gap],
+  )
   const label = useMemo(() => centroid(points), [points])
 
   const geometry = useMemo(() => {
