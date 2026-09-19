@@ -294,11 +294,14 @@ export default function Editor({ hass, config, onChange }: Props) {
         hass={hass}
         rooms={rooms}
         room={selectedRoom}
-        onSelectRoom={roomId => setSelection({ roomId, vertex: null })}
         onAssignArea={assignArea}
         devices={devices}
         selected={selectedDevice}
-        onSelect={setSelectedDevice}
+        onSelect={entityId => {
+          setSelectedDevice(entityId)
+          const device = devices.find(d => d.entity_id === entityId)
+          if (device) setSelection({ roomId: device.room, vertex: null })
+        }}
         onAdd={addDevice}
         onUpdate={updateDevice}
         onRemove={removeDevice}

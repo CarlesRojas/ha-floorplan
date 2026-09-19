@@ -69,9 +69,9 @@ Each room in the list can be named and linked to a Home Assistant area. An area 
 
 ### Devices mode
 
-The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode the sidebar lists the rooms until one is picked, on the canvas or in the list. The selected room shows its Home Assistant area at the top, where it can be assigned or changed. Below, a searchable list of every entity that can be placed, with the ones from the room's area first. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
+The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Pick a room on the canvas to add entities to it. The selected room shows its Home Assistant area at the top, where it can be assigned or changed. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 
-- Add places the entity in the room. Placed entities are marked and can be dragged around the room. They cannot leave it: outside the room they show red and land on the wall on release.
+- Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
 - A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
 - Right click a device to rotate it or remove it. Delete removes the selected device.
 - Deleting a room removes its devices.

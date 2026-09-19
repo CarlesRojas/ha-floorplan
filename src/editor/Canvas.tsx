@@ -278,35 +278,41 @@ export default function Canvas({
       case 'device': {
         const currentDevices = liveDevices.current ?? latest.current.devices
         const device = currentDevices.find(x => x.entity_id === d.entityId)
-        const room = currentRooms.find(r => r.id === device?.room)
-        if (!device || !room) break
+        if (!device) break
         const g = EDITOR_DEVICE_GRID_M
         const target: Point = [
           Math.round((d.origin[0] + p[0] - d.start[0]) / g) * g,
           Math.round((d.origin[1] + p[1] - d.start[1]) / g) * g,
         ]
-        const inside = (q: Point) => pointStrictlyInside(q, room.points) || pointOnBoundary(q, room.points)
-        let landing = target
-        if (!inside(target)) {
-          // Bisect from the last valid spot toward the pointer so the device
-          // lands right on the wall.
+        const within = (q: Point, points: Point[]) => pointStrictlyInside(q, points) || pointOnBoundary(q, points)
+        // A device can move to any room. Over no room at all it is shown
+        // where the pointer is, and lands on the wall of its current room.
+        const over = currentRooms.find(r => within(target, r.points))
+        const home = currentRooms.find(r => r.id === device.room)
+        let landing: DeviceConfig = { ...device, position: target, room: over?.id ?? device.room }
+        if (!over && home) {
           const from = device.position
           let lo = 0
           let hi = 1
           for (let i = 0; i < 16; i++) {
             const mid = (lo + hi) / 2
             const q: Point = [from[0] + (target[0] - from[0]) * mid, from[1] + (target[1] - from[1]) * mid]
-            if (inside(q)) lo = mid
+            if (within(q, home.points)) lo = mid
             else hi = mid
           }
-          landing = [
-            Math.round((from[0] + (target[0] - from[0]) * lo) * 100) / 100,
-            Math.round((from[1] + (target[1] - from[1]) * lo) * 100) / 100,
-          ]
+          landing = {
+            ...device,
+            position: [
+              Math.round((from[0] + (target[0] - from[0]) * lo) * 100) / 100,
+              Math.round((from[1] + (target[1] - from[1]) * lo) * 100) / 100,
+            ],
+          }
         }
-        liveDevices.current = currentDevices.map(x => (x.entity_id === d.entityId ? { ...x, position: landing } : x))
+        liveDevices.current = currentDevices.map(x => (x.entity_id === d.entityId ? landing : x))
         onDevices(
-          currentDevices.map(x => (x.entity_id === d.entityId ? { ...x, position: target } : x)),
+          currentDevices.map(x =>
+            x.entity_id === d.entityId ? { ...x, position: target, room: over?.id ?? x.room } : x,
+          ),
           false,
         )
         break
@@ -523,6 +529,8 @@ export default function Canvas({
         source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
         true,
       )
+      const landed = source.find(x => x.entity_id === d.entityId)
+      if (landed) onSelect({ roomId: landed.room, vertex: null })
       return
     }
     // Land on the resolved position, whatever the pointer showed.
