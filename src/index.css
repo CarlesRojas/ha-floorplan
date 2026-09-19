@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@theme {
+  --font-montserrat: 'Montserrat', sans-serif;
+  --transition-duration-slow: 300ms;
+}
+
+@custom-variant mouse (@media (hover: hover) and (pointer: fine));
+@custom-variant touch (@media (hover: none) or (pointer: coarse));
+
+@layer base {
+  * {
+    @apply m-0 box-border p-0 antialiased outline-none select-none;
+  }
+
+  img,
+  video,
+  svg,
+  canvas {
+    @apply block;
+  }
+}

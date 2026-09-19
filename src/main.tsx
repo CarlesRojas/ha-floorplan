@@ -1,9 +1,21 @@
 import Card from '#/Card.tsx'
+import fontsCss from '#/fonts.css?inline'
+import styles from '#/index.css?inline'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 
 const CARD_TYPE = 'floorplan-3d'
+const FONTS_ID = `${CARD_TYPE}-fonts`
+
+// Fonts must live in the document, not the shadow root, for @font-face to apply.
+function injectFonts() {
+  if (document.getElementById(FONTS_ID)) return
+  const style = document.createElement('style')
+  style.id = FONTS_ID
+  style.textContent = fontsCss
+  document.head.appendChild(style)
+}
 
 class Floorplan3DCard extends HTMLElement {
   private root: Root | null = null
@@ -13,7 +25,11 @@ class Floorplan3DCard extends HTMLElement {
 
   connectedCallback() {
     if (this.root) return
+    injectFonts()
     const shadow = this.attachShadow({ mode: 'open' })
+    const style = document.createElement('style')
+    style.textContent = styles
+    shadow.appendChild(style)
     this.mount = document.createElement('div')
     this.mount.style.height = '100%'
     shadow.appendChild(this.mount)
