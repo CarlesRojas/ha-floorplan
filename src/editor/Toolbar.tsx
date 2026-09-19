@@ -1,13 +1,6 @@
 import type { Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
-import {
-  type IconDefinition,
-  faArrowPointer,
-  faDrawPolygon,
-  faExpand,
-  faMinimize,
-  faMaximize,
-} from '@fortawesome/free-solid-svg-icons'
+import { type IconDefinition, faArrowPointer, faDrawPolygon, faExpand } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Action = {
@@ -37,13 +30,11 @@ const TOOLS: (Action & { id: Tool })[] = [
 
 type Props = {
   tool: Tool
-  fullscreen: boolean
   onTool: (tool: Tool) => void
   onFit: () => void
-  onFullscreen: (value: boolean) => void
 }
 
-export default function Toolbar({ tool, fullscreen, onTool, onFit, onFullscreen }: Props) {
+export default function Toolbar({ tool, onTool, onFit }: Props) {
   return (
     <div className="flex items-center gap-1">
       {TOOLS.map(t => (
@@ -53,16 +44,6 @@ export default function Toolbar({ tool, fullscreen, onTool, onFit, onFullscreen 
       <ToolButton
         action={{ id: 'fit', icon: faExpand, title: 'Fit view', description: 'Frame all rooms.', shortcut: 'F' }}
         onClick={onFit}
-      />
-      <ToolButton
-        action={{
-          id: 'fullscreen',
-          icon: fullscreen ? faMinimize : faMaximize,
-          title: fullscreen ? 'Exit fullscreen' : 'Fullscreen',
-          description: fullscreen ? 'Back to the dialog and its preview.' : 'Use the whole window.',
-          shortcut: 'Shift+F',
-        }}
-        onClick={() => onFullscreen(!fullscreen)}
       />
     </div>
   )

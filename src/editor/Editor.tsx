@@ -4,7 +4,7 @@ import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, round, type View } from '#/editor/view.ts'
-import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faPenRuler, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
@@ -106,8 +106,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'f':
       case 'F':
-        if (e.shiftKey) setFullscreen(!fullscreen)
-        else setView(null)
+        setView(null)
         break
       case 'Enter':
         closeDraft()
@@ -139,19 +138,11 @@ export default function Editor({ hass, config, onChange }: Props) {
       onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
       onDraftPoint={p => setDraft([...draft, p])}
       onCloseDraft={closeDraft}
-      fill={fullscreen}
+      fill
     />
   )
 
-  const toolbar = (
-    <Toolbar
-      tool={tool}
-      fullscreen={fullscreen}
-      onTool={setTool}
-      onFit={() => setView(null)}
-      onFullscreen={setFullscreen}
-    />
-  )
+  const toolbar = <Toolbar tool={tool} onTool={setTool} onFit={() => setView(null)} />
 
   const panels = (
     <>
@@ -199,14 +190,18 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   return (
-    <div
-      className="font-montserrat flex flex-col gap-3 text-(--primary-text-color) outline-none"
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-    >
-      {toolbar}
-      {canvas}
-      {panels}
+    <div className="font-montserrat flex items-center justify-between gap-3 py-2 text-(--primary-text-color)">
+      <p className="text-xs text-(--secondary-text-color)">
+        {rooms.length === 0 ? 'No rooms yet.' : `${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}.`}
+      </p>
+      <button
+        type="button"
+        onClick={() => setFullscreen(true)}
+        className="flex items-center gap-2 rounded-full bg-(--primary-color) px-4 py-2 text-xs font-semibold text-white"
+      >
+        <FontAwesomeIcon icon={faPenRuler} className="size-3.5" />
+        Open editor
+      </button>
     </div>
   )
 }
