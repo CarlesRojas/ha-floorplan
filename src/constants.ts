@@ -8,7 +8,6 @@ export const DEFAULT_ASPECT_RATIO = '4 / 3'
 
 export const SLAB_BEVEL_SEGMENTS = 32
 export const SLAB_CURVE_SEGMENTS = 32
-export const ROOM_LABEL_LIFT_M = 0.05
 
 // Camera
 

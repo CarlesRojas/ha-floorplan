@@ -1,8 +1,7 @@
-import { ROOM_LABEL_LIFT_M, SLAB_BEVEL_SEGMENTS, SLAB_CURVE_SEGMENTS } from '#/constants.ts'
+import { SLAB_BEVEL_SEGMENTS, SLAB_CURVE_SEGMENTS } from '#/constants.ts'
 import { ROOM_COLORS, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
-import { centroid, ensureCounterClockwise, inset, roundedShape } from '#/geometry/polygon.ts'
+import { ensureCounterClockwise, inset, roundedShape } from '#/geometry/polygon.ts'
 import type { RoomConfig } from '#/types.ts'
-import { Html } from '@react-three/drei'
 import { useMemo } from 'react'
 import { ExtrudeGeometry } from 'three'
 
@@ -20,7 +19,6 @@ export default function Room({ room, index, radius, gap }: Props) {
     () => inset(ensureCounterClockwise(room.points), gap / 2 + ROOM_SLAB_EDGE_RADIUS_M),
     [room.points, gap],
   )
-  const label = useMemo(() => centroid(points), [points])
 
   const geometry = useMemo(() => {
     const shape = roundedShape(points, room.radius ?? radius)
@@ -40,15 +38,8 @@ export default function Room({ room, index, radius, gap }: Props) {
   const color = room.color ?? ROOM_COLORS[index % ROOM_COLORS.length]
 
   return (
-    <group>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial color={color} roughness={0.85} />
-      </mesh>
-      <Html position={[label[0], ROOM_SLAB_THICKNESS_M + ROOM_LABEL_LIFT_M, -label[1]]} center zIndexRange={[10, 0]}>
-        <span className="font-montserrat pointer-events-none text-xs font-semibold whitespace-nowrap text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-          {room.name ?? room.id}
-        </span>
-      </Html>
-    </group>
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshStandardMaterial color={color} roughness={0.85} />
+    </mesh>
   )
 }

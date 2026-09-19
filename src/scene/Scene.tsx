@@ -14,25 +14,19 @@ import {
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import Room from '#/scene/Room.tsx'
-import type { CardConfig, HomeAssistant } from '#/types.ts'
+import type { CardConfig } from '#/types.ts'
 import { Bounds, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils } from 'three'
 
 type Props = {
-  hass: HomeAssistant | null
   config: CardConfig
 }
 
-export default function Scene({ hass, config }: Props) {
+export default function Scene({ config }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
-
-  const withNames = rooms.map(room => ({
-    ...room,
-    name: room.name ?? (room.area_id ? hass?.areas?.[room.area_id]?.name : undefined),
-  }))
 
   return (
     <Canvas
@@ -51,7 +45,7 @@ export default function Scene({ hass, config }: Props) {
       />
       <Bounds fit clip observe margin={CAMERA_FIT_MARGIN}>
         <group>
-          {withNames.map((room, i) => (
+          {rooms.map((room, i) => (
             <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
           ))}
         </group>
