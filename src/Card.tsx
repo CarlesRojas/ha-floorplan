@@ -1,4 +1,5 @@
-import { CARD_BORDER_RADIUS_PX, DEFAULT_ASPECT_RATIO } from '#/constants.ts'
+import { DEFAULT_ASPECT_RATIO } from '#/constants.ts'
+import { CARD_CORNER_RADIUS_PX } from '#/theme.ts'
 import Scene from '#/scene/Scene.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import type { CSSProperties } from 'react'
@@ -18,10 +19,10 @@ export default function Card({ hass, config }: Props) {
   const hasRooms = (config.rooms?.length ?? 0) > 0
 
   return (
-    <ha-card style={{ '--ha-card-border-radius': `${CARD_BORDER_RADIUS_PX}px` } as CSSProperties}>
+    <ha-card style={{ '--ha-card-border-radius': `${CARD_CORNER_RADIUS_PX}px` } as CSSProperties}>
       <div
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: aspectRatio(config.aspect_ratio), borderRadius: CARD_BORDER_RADIUS_PX }}
+        style={{ aspectRatio: aspectRatio(config.aspect_ratio), borderRadius: CARD_CORNER_RADIUS_PX }}
       >
         {hasRooms ? (
           <Scene hass={hass} config={config} />
