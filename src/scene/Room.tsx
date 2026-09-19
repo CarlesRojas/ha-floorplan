@@ -4,7 +4,7 @@ import { Html } from '@react-three/drei'
 import { useMemo } from 'react'
 import { ExtrudeGeometry } from 'three'
 
-export const SLAB_HEIGHT = 0.08
+export const SLAB_HEIGHT = 0.12
 
 const PALETTE = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a', '#8fb6b3']
 
@@ -24,9 +24,9 @@ export default function Room({ room, index, radius, gap }: Props) {
     const geo = new ExtrudeGeometry(shape, {
       depth: SLAB_HEIGHT,
       bevelEnabled: true,
-      bevelThickness: 0.02,
-      bevelSize: 0.02,
-      bevelSegments: 3,
+      bevelThickness: 0.05,
+      bevelSize: 0.05,
+      bevelSegments: 6,
       curveSegments: 12,
     })
     // Shape is drawn on the XY plane. Lay it flat so Y is up and plan y maps to -z.
