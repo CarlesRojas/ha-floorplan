@@ -75,6 +75,9 @@ export default function Canvas({
   })
   const [hover, setHover] = useState<Point | null>(null)
   const drag = useRef<Drag | null>(null)
+  // Rooms as last written during a drag. Pointer moves can arrive faster than
+  // React re-renders, so the props would lag behind.
+  const liveRooms = useRef<RoomConfig[] | null>(null)
   const [panning, setPanning] = useState(false)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
@@ -85,11 +88,15 @@ export default function Canvas({
     if (!viewProp && width && height) onView(fit(width, height))
   }, [viewProp, width, height, fit, onView])
 
-  // Latest values for the auto-pan loop, which runs outside React renders.
-  const latest = useRef({ view, rooms, draft, tool })
-  useEffect(() => {
-    latest.current = { view, rooms, draft, tool }
-  })
+  // Latest values for the auto-pan loop and the document wide draft
+  // listener, which both run outside React renders.
+  const latest = useRef<{
+    view: View | null
+    rooms: RoomConfig[]
+    draft: Point[]
+    tool: Tool
+    updateAutopan: (screen: Point) => void
+  }>({ view, rooms, draft, tool, updateAutopan: () => {} })
   const lastScreen = useRef<Point | null>(null)
   const autopan = useRef<{ raf: number; time: number; vx: number; vy: number } | null>(null)
 
@@ -106,6 +113,183 @@ export default function Canvas({
     svg.addEventListener('wheel', onWheel, { passive: false })
     return () => svg.removeEventListener('wheel', onWheel)
   }, [onView, view])
+
+  const applyDrag = (screen: Point, v: View, renderedRooms: RoomConfig[]) => {
+    const p = toPlan(v, screen)
+    const d = drag.current
+    if (!d) return
+    const currentRooms = liveRooms.current ?? renderedRooms
+    // A move that would overlap another room or fold the polygon is ignored,
+    // so the room stays where it last was valid. Candidates are tried in
+    // order, which lets a blocked move still slide along the free axis.
+    // When a candidate is blocked, the furthest valid position on the way
+    // to it is used instead, so a room lands right against its neighbour
+    // however fast the pointer moved.
+    const patch = (roomId: string, candidates: Point[][]) => {
+      const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
+      const from = currentRooms.find(r => r.id === roomId)!.points
+      let points: Point[] | null = null
+      for (const target of candidates) {
+        if (isValidRoom(target, others)) {
+          points = target
+          break
+        }
+        const reached = furthestValid(from, target, others)
+        if (reached) {
+          points = reached
+          break
+        }
+      }
+      if (!points) return
+      const next = currentRooms.map(r => (r.id === roomId ? { ...r, points } : r))
+      liveRooms.current = next
+      onRooms(next, false)
+    }
+    // Full move first, then the axis with the larger displacement, then the other.
+    const axisOrder = (dx: number, dy: number): Point[] =>
+      Math.abs(dx) >= Math.abs(dy)
+        ? [
+            [dx, dy],
+            [dx, 0],
+            [0, dy],
+          ]
+        : [
+            [dx, dy],
+            [0, dy],
+            [dx, 0],
+          ]
+    switch (d.kind) {
+      case 'pan': {
+        onView({ ...d.view, tx: d.view.tx + screen[0] - d.start[0], ty: d.view.ty + screen[1] - d.start[1] })
+        break
+      }
+      case 'vertex': {
+        const room = currentRooms.find(r => r.id === d.roomId)!
+        const current = room.points[d.index]
+        const snapped = snap(p, v, currentRooms, { roomId: d.roomId, index: d.index })
+        patch(
+          d.roomId,
+          axisOrder(snapped[0] - current[0], snapped[1] - current[1]).map(([dx, dy]) =>
+            room.points.map((q, i) => (i === d.index ? ([current[0] + dx, current[1] + dy] as Point) : q)),
+          ),
+        )
+        break
+      }
+      case 'edge': {
+        // Move both ends of the edge along its normal, so it stays parallel.
+        const n = d.origin.length
+        const a = d.origin[d.index]
+        const b = d.origin[(d.index + 1) % n]
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1
+        const nx = -(b[1] - a[1]) / len
+        const ny = (b[0] - a[0]) / len
+        const t = (p[0] - d.start[0]) * nx + (p[1] - d.start[1]) * ny
+        const others = currentRooms.filter(r => r.id !== d.roomId)
+        const moved: Point = [a[0] + nx * t, a[1] + ny * t]
+        const snapped = snap(moved, v, others)
+        const ts = (snapped[0] - a[0]) * nx + (snapped[1] - a[1]) * ny
+        patch(d.roomId, [
+          d.origin.map((q, i) =>
+            i === d.index || i === (d.index + 1) % n ? ([q[0] + nx * ts, q[1] + ny * ts] as Point) : q,
+          ),
+        ])
+        break
+      }
+      case 'room': {
+        const others = currentRooms.filter(r => r.id !== d.roomId)
+        const current = currentRooms.find(r => r.id === d.roomId)!.points
+        const dx = p[0] - d.start[0]
+        const dy = p[1] - d.start[1]
+        // Snap the moved first corner, then apply the same offset to the rest.
+        const first: Point = [d.origin[0][0] + dx, d.origin[0][1] + dy]
+        const snapped = snap(first, v, others)
+        const ox = snapped[0] - d.origin[0][0]
+        const oy = snapped[1] - d.origin[0][1]
+        // Where the room is right now, as an offset from where the drag began.
+        const cx = current[0][0] - d.origin[0][0]
+        const cy = current[0][1] - d.origin[0][1]
+        const move = ([ax, ay]: Point) => d.origin.map(([x, y]) => [x + ax, y + ay] as Point)
+        const xFirst = Math.abs(ox - cx) >= Math.abs(oy - cy)
+        const single: Point[] = xFirst
+          ? [
+              [ox, cy],
+              [cx, oy],
+            ]
+          : [
+              [cx, oy],
+              [ox, cy],
+            ]
+        patch(d.roomId, [move([ox, oy]), ...single.map(move)])
+        break
+      }
+    }
+  }
+
+  // Pans the view while a drag or a draft nears the canvas border. It only
+  // ever pushes outward, it never zooms and never comes back on its own.
+  const stopAutopan = () => {
+    if (autopan.current) cancelAnimationFrame(autopan.current.raf)
+    autopan.current = null
+  }
+
+  const autopanTick = (time: number) => {
+    const state = autopan.current
+    const { view: v, rooms: currentRooms, draft: currentDraft, tool: currentTool } = latest.current
+    const screen = lastScreen.current
+    if (!state || !v || !screen) return
+    const dt = state.time ? Math.min((time - state.time) / 1000, 0.05) : 0
+    state.time = time
+    const next = { ...v, tx: v.tx - state.vx * dt, ty: v.ty - state.vy * dt }
+    onView(next)
+    const d = drag.current
+    if (d && d.kind !== 'pan') applyDrag(screen, next, currentRooms)
+    else if (currentTool === 'draw' && currentDraft.length > 0) setHover(toPlan(next, screen))
+    state.raf = requestAnimationFrame(autopanTick)
+  }
+
+  const updateAutopan = (screen: Point) => {
+    const d = drag.current
+    const active = (d && d.kind !== 'pan') || (tool === 'draw' && draft.length > 0)
+    const m = EDITOR_AUTOPAN_MARGIN_PX
+    const speed = (depth: number) => (Math.min(Math.max(depth, 0), m) / m) * EDITOR_AUTOPAN_SPEED_PX_S
+    const vx = speed(m - screen[0]) * -1 + speed(screen[0] - (width - m))
+    const vy = speed(m - screen[1]) * -1 + speed(screen[1] - (height - m))
+    if (!active || (vx === 0 && vy === 0)) {
+      stopAutopan()
+      return
+    }
+    if (autopan.current) {
+      autopan.current.vx = vx
+      autopan.current.vy = vy
+      return
+    }
+    autopan.current = { raf: requestAnimationFrame(autopanTick), time: 0, vx, vy }
+  }
+
+  useEffect(() => {
+    latest.current = { view, rooms, draft, tool, updateAutopan }
+  })
+
+  // A drag captures the pointer, so moves outside the canvas still arrive.
+  // Drawing does not, so while a draft is open the pointer is followed
+  // document wide, and the preview and auto-pan keep working past the border.
+  const drafting = tool === 'draw' && draft.length > 0
+  useEffect(() => {
+    if (!drafting) return
+    const svg = svgRef.current
+    if (!svg) return
+    const onMove = (e: PointerEvent) => {
+      if (e.composedPath().includes(svg)) return
+      const rect = svg.getBoundingClientRect()
+      const screen: Point = [e.clientX - rect.left, e.clientY - rect.top]
+      lastScreen.current = screen
+      const v = latest.current.view
+      if (v) setHover(toPlan(v, screen))
+      latest.current.updateAutopan(screen)
+    }
+    document.addEventListener('pointermove', onMove, true)
+    return () => document.removeEventListener('pointermove', onMove, true)
+  }, [drafting])
 
   const sizing = fill ? 'h-full w-full' : 'w-full'
   const style = fill ? undefined : { height: EDITOR_CANVAS_HEIGHT_PX }
@@ -180,6 +364,7 @@ export default function Canvas({
     e.stopPropagation()
     capture(e)
     onSelect({ roomId: room.id, vertex: null })
+    liveRooms.current = rooms
     drag.current = { kind: 'room', roomId: room.id, start: planPoint(e), origin: room.points }
   }
 
@@ -192,6 +377,7 @@ export default function Canvas({
     e.stopPropagation()
     capture(e)
     onSelect({ roomId: room.id, vertex: index })
+    liveRooms.current = rooms
     drag.current = { kind: 'vertex', roomId: room.id, index }
   }
 
@@ -204,132 +390,8 @@ export default function Canvas({
     e.stopPropagation()
     capture(e)
     onSelect({ roomId: room.id, vertex: null })
+    liveRooms.current = rooms
     drag.current = { kind: 'edge', roomId: room.id, index, start: planPoint(e), origin: room.points }
-  }
-
-  const applyDrag = (screen: Point, v: View, currentRooms: RoomConfig[]) => {
-    const p = toPlan(v, screen)
-    const d = drag.current
-    if (!d) return
-    // A move that would overlap another room or fold the polygon is ignored,
-    // so the room stays where it last was valid. Candidates are tried in
-    // order, which lets a blocked move still slide along the free axis.
-    const patch = (roomId: string, candidates: Point[][]) => {
-      const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
-      const points = candidates.find(c => isValidRoom(c, others))
-      if (!points) return
-      onRooms(
-        currentRooms.map(r => (r.id === roomId ? { ...r, points } : r)),
-        false,
-      )
-    }
-    // Full move first, then the axis with the larger displacement, then the other.
-    const axisOrder = (dx: number, dy: number): Point[] =>
-      Math.abs(dx) >= Math.abs(dy)
-        ? [
-            [dx, dy],
-            [dx, 0],
-            [0, dy],
-          ]
-        : [
-            [dx, dy],
-            [0, dy],
-            [dx, 0],
-          ]
-    switch (d.kind) {
-      case 'pan': {
-        onView({ ...d.view, tx: d.view.tx + screen[0] - d.start[0], ty: d.view.ty + screen[1] - d.start[1] })
-        break
-      }
-      case 'vertex': {
-        const room = currentRooms.find(r => r.id === d.roomId)!
-        const current = room.points[d.index]
-        const snapped = snap(p, v, currentRooms, { roomId: d.roomId, index: d.index })
-        patch(
-          d.roomId,
-          axisOrder(snapped[0] - current[0], snapped[1] - current[1]).map(([dx, dy]) =>
-            room.points.map((q, i) => (i === d.index ? ([current[0] + dx, current[1] + dy] as Point) : q)),
-          ),
-        )
-        break
-      }
-      case 'edge': {
-        // Move both ends of the edge along its normal, so it stays parallel.
-        const n = d.origin.length
-        const a = d.origin[d.index]
-        const b = d.origin[(d.index + 1) % n]
-        const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1
-        const nx = -(b[1] - a[1]) / len
-        const ny = (b[0] - a[0]) / len
-        const t = (p[0] - d.start[0]) * nx + (p[1] - d.start[1]) * ny
-        const others = currentRooms.filter(r => r.id !== d.roomId)
-        const moved: Point = [a[0] + nx * t, a[1] + ny * t]
-        const snapped = snap(moved, v, others)
-        const ts = (snapped[0] - a[0]) * nx + (snapped[1] - a[1]) * ny
-        patch(d.roomId, [
-          d.origin.map((q, i) =>
-            i === d.index || i === (d.index + 1) % n ? ([q[0] + nx * ts, q[1] + ny * ts] as Point) : q,
-          ),
-        ])
-        break
-      }
-      case 'room': {
-        const others = currentRooms.filter(r => r.id !== d.roomId)
-        const dx = p[0] - d.start[0]
-        const dy = p[1] - d.start[1]
-        // Snap the moved first corner, then apply the same offset to the rest.
-        const first: Point = [d.origin[0][0] + dx, d.origin[0][1] + dy]
-        const snapped = snap(first, v, others)
-        const ox = snapped[0] - d.origin[0][0]
-        const oy = snapped[1] - d.origin[0][1]
-        patch(
-          d.roomId,
-          axisOrder(ox, oy).map(([ax, ay]) => d.origin.map(([x, y]) => [x + ax, y + ay] as Point)),
-        )
-        break
-      }
-    }
-  }
-
-  // Pans the view while a drag or a draft nears the canvas border. It only
-  // ever pushes outward, it never zooms and never comes back on its own.
-  const stopAutopan = () => {
-    if (autopan.current) cancelAnimationFrame(autopan.current.raf)
-    autopan.current = null
-  }
-
-  const autopanTick = (time: number) => {
-    const state = autopan.current
-    const { view: v, rooms: currentRooms, draft: currentDraft, tool: currentTool } = latest.current
-    const screen = lastScreen.current
-    if (!state || !v || !screen) return
-    const dt = state.time ? Math.min((time - state.time) / 1000, 0.05) : 0
-    state.time = time
-    const next = { ...v, tx: v.tx - state.vx * dt, ty: v.ty - state.vy * dt }
-    onView(next)
-    const d = drag.current
-    if (d && d.kind !== 'pan') applyDrag(screen, next, currentRooms)
-    else if (currentTool === 'draw' && currentDraft.length > 0) setHover(toPlan(next, screen))
-    state.raf = requestAnimationFrame(autopanTick)
-  }
-
-  const updateAutopan = (screen: Point) => {
-    const d = drag.current
-    const active = (d && d.kind !== 'pan') || (tool === 'draw' && draft.length > 0)
-    const m = EDITOR_AUTOPAN_MARGIN_PX
-    const speed = (depth: number) => (Math.min(Math.max(depth, 0), m) / m) * EDITOR_AUTOPAN_SPEED_PX_S
-    const vx = speed(m - screen[0]) * -1 + speed(screen[0] - (width - m))
-    const vy = speed(m - screen[1]) * -1 + speed(screen[1] - (height - m))
-    if (!active || (vx === 0 && vy === 0)) {
-      stopAutopan()
-      return
-    }
-    if (autopan.current) {
-      autopan.current.vx = vx
-      autopan.current.vy = vy
-      return
-    }
-    autopan.current = { raf: requestAnimationFrame(autopanTick), time: 0, vx, vy }
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -343,6 +405,7 @@ export default function Canvas({
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current
     drag.current = null
+    liveRooms.current = null
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
@@ -488,6 +551,7 @@ export default function Canvas({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={() => {
+          if (drafting) return
           setHover(null)
           stopAutopan()
         }}
@@ -653,4 +717,21 @@ function ScaleBar({ view, height }: { view: View; height: number }) {
       </text>
     </g>
   )
+}
+
+// Bisects between `from` (valid) and `to` (blocked) and returns the furthest
+// valid polygon on the way, or null when there is no room to move at all.
+function furthestValid(from: Point[], to: Point[], others: Point[][]): Point[] | null {
+  if (from.length !== to.length) return null
+  const at = (t: number) => from.map((p, i) => [p[0] + (to[i][0] - p[0]) * t, p[1] + (to[i][1] - p[1]) * t] as Point)
+  let lo = 0
+  let hi = 1
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2
+    if (isValidRoom(at(mid), others)) lo = mid
+    else hi = mid
+  }
+  if (lo < 0.001) return null
+  // Round to a millimetre so the result serialises cleanly.
+  return at(lo).map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000] as Point)
 }
