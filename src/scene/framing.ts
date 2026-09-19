@@ -1,4 +1,5 @@
 import { CAMERA_DIRECTION, CAMERA_FIT_MARGIN, CAMERA_FOV_DEG } from '#/constants.ts'
+import { ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
 import type { RoomConfig } from '#/types.ts'
 import { MathUtils, Vector3 } from 'three'
 
@@ -28,13 +29,33 @@ export function frameRooms(rooms: RoomConfig[], aspect: number): Framing {
   }
 
   const target = new Vector3((minX + maxX) / 2, 0, -(minY + maxY) / 2)
-  const radius = Math.hypot(maxX - minX, maxY - minY) / 2
+  const direction = new Vector3(...CAMERA_DIRECTION).normalize()
+
+  // Camera basis for a camera at `target + direction * d` looking at target.
+  const forward = direction.clone().negate()
+  const right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize()
+  const up = new Vector3().crossVectors(right, forward).normalize()
 
   const vFov = MathUtils.degToRad(CAMERA_FOV_DEG)
-  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
-  const distance = (radius * CAMERA_FIT_MARGIN) / Math.sin(Math.min(vFov, hFov) / 2)
+  const tanV = Math.tan(vFov / 2)
+  const tanH = tanV * aspect
 
-  const direction = new Vector3(...CAMERA_DIRECTION).normalize()
-  const position = target.clone().addScaledVector(direction, distance)
+  // For each box corner, the distance the camera needs so that the corner
+  // still fits horizontally and vertically. The farthest wins.
+  let distance = 0
+  const corner = new Vector3()
+  for (const x of [minX, maxX]) {
+    for (const y of [minY, maxY]) {
+      for (const z of [0, ROOM_SLAB_THICKNESS_M]) {
+        corner.set(x, z, -y).sub(target)
+        const depth = corner.dot(forward)
+        const dx = Math.abs(corner.dot(right))
+        const dy = Math.abs(corner.dot(up))
+        distance = Math.max(distance, dx / tanH - depth, dy / tanV - depth)
+      }
+    }
+  }
+
+  const position = target.clone().addScaledVector(direction, distance * CAMERA_FIT_MARGIN)
   return { position, target }
 }

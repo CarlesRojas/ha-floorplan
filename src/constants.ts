@@ -15,7 +15,7 @@ export const CAMERA_FOV_DEG = 40
 // Direction from the flat's center to the camera. Only the ratio matters.
 export const CAMERA_DIRECTION: [number, number, number] = [0.6, 0.9, 0.8]
 // Extra room around the flat when fitting it to the viewport, as a factor.
-export const CAMERA_FIT_MARGIN = 1.05
+export const CAMERA_FIT_MARGIN = 1.1
 export const CAMERA_MIN_DISTANCE_M = 2
 export const CAMERA_MAX_DISTANCE_M = 60
 export const CAMERA_MIN_POLAR_DEG = 6
