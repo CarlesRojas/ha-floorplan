@@ -1,8 +1,8 @@
 import { deviceType, entityName, placeableEntities, typesFor, type EntityInfo } from '#/devices/catalog.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS } from '#/theme.ts'
+import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
-import { faCheck, faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
 
@@ -83,6 +83,10 @@ export default function DevicePanel({
 
   const placed = new Map(devices.map(d => [d.entity_id, d]))
   const roomOf = (id: string) => rooms.find(r => r.id === id)
+  const roomColor = (id: string) => {
+    const i = rooms.findIndex(r => r.id === id)
+    return rooms[i]?.color ?? ROOM_COLORS[(i < 0 ? 0 : i) % ROOM_COLORS.length]
+  }
   const all = placeableEntities(hass)
   // Placed devices whose entity vanished from the registry still show, so they can be removed.
   const orphans: EntityInfo[] = [...placed.keys()]
@@ -119,7 +123,7 @@ export default function DevicePanel({
             {device && (
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
-                style={{ backgroundColor: accent }}
+                style={{ backgroundColor: roomColor(device.room) }}
               >
                 {deviceRoom?.name ?? device.room}
               </span>
@@ -133,23 +137,18 @@ export default function DevicePanel({
             </p>
           )}
         </div>
-        {device ? (
-          <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
-            <FontAwesomeIcon icon={faCheck} className="size-3" />
-            Placed
-          </span>
-        ) : room ? (
+        {!device && room ? (
           <button
             type="button"
+            aria-label={`Add ${e.name}`}
             onClick={ev => {
               ev.stopPropagation()
               onAdd(e)
             }}
-            className="flex h-8 items-center gap-1 rounded-lg px-3 text-xs font-semibold text-white"
-            style={{ backgroundColor: accent }}
+            className="flex size-8 items-center justify-center rounded-lg hover:bg-(--secondary-background-color)"
+            style={{ color: accent }}
           >
-            <FontAwesomeIcon icon={faPlus} className="size-3" />
-            Add
+            <FontAwesomeIcon icon={faPlus} className="size-4" />
           </button>
         ) : (
           <span />

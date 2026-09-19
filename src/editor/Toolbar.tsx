@@ -79,6 +79,7 @@ export default function Toolbar({ mode, tool, onTool, onFit, showLengths, onShow
           }}
           active={showLengths}
           color={color}
+          toggle
           onClick={() => onShowLengths(!showLengths)}
         />
       )}
@@ -86,15 +87,19 @@ export default function Toolbar({ mode, tool, onTool, onFit, showLengths, onShow
   )
 }
 
+// A toggle shows its state through the icon color alone, a tool through a
+// filled background.
 function ToolButton({
   action,
   active,
   color,
+  toggle = false,
   onClick,
 }: {
   action: Action
   active?: boolean
   color: string
+  toggle?: boolean
   onClick: () => void
 }) {
   return (
@@ -103,10 +108,10 @@ function ToolButton({
         type="button"
         aria-label={action.title}
         onClick={onClick}
-        style={active ? { backgroundColor: color } : undefined}
+        style={active ? (toggle ? { color } : { backgroundColor: color }) : undefined}
         className={cn(
           'flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)',
-          active && 'text-white',
+          active && !toggle && 'text-white',
         )}
       >
         <FontAwesomeIcon icon={action.icon} className="size-4" />

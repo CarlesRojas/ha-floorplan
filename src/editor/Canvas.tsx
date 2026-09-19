@@ -717,6 +717,9 @@ export default function Canvas({
         <Grid view={view} width={width} height={height} />
 
         {rooms.map((room, i) => {
+          // While a device is dragged, the room under the pointer lights up.
+          const dropTarget =
+            draggingDevice !== null && devices.find(x => x.entity_id === draggingDevice)?.room === room.id
           const invalid =
             draggingId === room.id &&
             !isValidRoom(
@@ -728,15 +731,17 @@ export default function Canvas({
               key={room.id}
               points={polygon(room.points)}
               fill={invalid ? 'var(--error-color)' : (room.color ?? ROOM_COLORS[i % ROOM_COLORS.length])}
-              fillOpacity={selection.roomId === room.id ? 0.75 : 0.5}
+              fillOpacity={dropTarget ? 0.9 : selection.roomId === room.id ? 0.75 : 0.5}
               stroke={
                 invalid
                   ? 'var(--error-color)'
-                  : selection.roomId === room.id
-                    ? EDITOR_MODE_COLORS[mode]
-                    : 'rgba(0,0,0,0.35)'
+                  : dropTarget
+                    ? EDITOR_MODE_COLORS.devices
+                    : selection.roomId === room.id
+                      ? EDITOR_MODE_COLORS[mode]
+                      : 'rgba(0,0,0,0.35)'
               }
-              strokeWidth={selection.roomId === room.id ? 2 : 1}
+              strokeWidth={dropTarget ? 3 : selection.roomId === room.id ? 2 : 1}
               strokeLinejoin="round"
               className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
               onPointerDown={e => onRoomDown(e, room)}
