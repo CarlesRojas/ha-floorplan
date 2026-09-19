@@ -40,6 +40,7 @@ type Props = {
   onRemoveDevice: (entityId: string) => void
   onRotateDevice: (entityId: string) => void
   tool: Tool
+  showLengths: boolean
   selection: Selection
   draft: Point[]
   view: View | null
@@ -81,6 +82,7 @@ export default function Canvas({
   onRemoveDevice,
   onRotateDevice,
   tool,
+  showLengths,
   selection,
   draft,
   view: viewProp,
@@ -758,34 +760,35 @@ export default function Canvas({
                 />
               )
             })}
-            {selectedRoom.points.map((p, i) => {
-              const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
-              const length = Math.hypot(q[0] - p[0], q[1] - p[1])
-              const [mx, my] = toScreen(view, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2])
-              const label = `${length.toFixed(2)} m`
-              const w = label.length * 7 + 12
-              return (
-                <g key={`l${i}`} className="pointer-events-none">
-                  <rect
-                    x={mx - w / 2}
-                    y={my - 10}
-                    width={w}
-                    height={20}
-                    rx={10}
-                    fill="var(--card-background-color)"
-                    stroke="var(--primary-color)"
-                  />
-                  <text
-                    x={mx}
-                    y={my + 4}
-                    textAnchor="middle"
-                    className="font-montserrat fill-(--primary-text-color) text-[11px] font-semibold"
-                  >
-                    {label}
-                  </text>
-                </g>
-              )
-            })}
+            {showLengths &&
+              selectedRoom.points.map((p, i) => {
+                const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
+                const length = Math.hypot(q[0] - p[0], q[1] - p[1])
+                const [mx, my] = toScreen(view, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2])
+                const label = `${length.toFixed(2)} m`
+                const w = label.length * 7 + 12
+                return (
+                  <g key={`l${i}`} className="pointer-events-none">
+                    <rect
+                      x={mx - w / 2}
+                      y={my - 10}
+                      width={w}
+                      height={20}
+                      rx={10}
+                      fill="var(--card-background-color)"
+                      stroke="var(--primary-color)"
+                    />
+                    <text
+                      x={mx}
+                      y={my + 4}
+                      textAnchor="middle"
+                      className="font-montserrat fill-(--primary-text-color) text-[11px] font-semibold"
+                    >
+                      {label}
+                    </text>
+                  </g>
+                )
+              })}
             {selectedRoom.points.map((p, i) => {
               const [sx, sy] = toScreen(view, p)
               return (

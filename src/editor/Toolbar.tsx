@@ -1,7 +1,13 @@
 import type { Mode, Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS } from '#/theme.ts'
-import { type IconDefinition, faArrowPointer, faDrawPolygon, faExpand } from '@fortawesome/free-solid-svg-icons'
+import {
+  type IconDefinition,
+  faArrowPointer,
+  faDrawPolygon,
+  faExpand,
+  faRuler,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Action = {
@@ -45,9 +51,11 @@ type Props = {
   tool: Tool
   onTool: (tool: Tool) => void
   onFit: () => void
+  showLengths: boolean
+  onShowLengths: (value: boolean) => void
 }
 
-export default function Toolbar({ mode, tool, onTool, onFit }: Props) {
+export default function Toolbar({ mode, tool, onTool, onFit, showLengths, onShowLengths }: Props) {
   const color = EDITOR_MODE_COLORS[mode]
   return (
     <div className="flex items-center gap-1">
@@ -60,6 +68,20 @@ export default function Toolbar({ mode, tool, onTool, onFit }: Props) {
         color={color}
         onClick={onFit}
       />
+      {mode === 'rooms' && (
+        <ToolButton
+          action={{
+            id: 'lengths',
+            icon: faRuler,
+            title: 'Edge lengths',
+            description: 'Show the length of each edge of the selected room.',
+            shortcut: 'L',
+          }}
+          active={showLengths}
+          color={color}
+          onClick={() => onShowLengths(!showLengths)}
+        />
+      )}
     </div>
   )
 }

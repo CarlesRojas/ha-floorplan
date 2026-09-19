@@ -47,6 +47,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [draft, setDraft] = useState<Point[]>([])
   const [view, setView] = useState<View | null>(null)
   const [fullscreen, setFullscreen] = useState(true)
+  const [showLengths, setShowLengths] = useState(false)
   // Rooms as they were when the fullscreen editor opened, for Discard.
   const [opened, setOpened] = useState<{ rooms: RoomConfig[]; devices: DeviceConfig[] }>({
     rooms: config.rooms ?? [],
@@ -234,6 +235,10 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'F':
         setView(null)
         break
+      case 'l':
+      case 'L':
+        if (mode === 'rooms') setShowLengths(!showLengths)
+        break
       case 'Enter':
         closeDraft()
         break
@@ -266,6 +271,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       onRemoveDevice={removeDevice}
       onRotateDevice={rotateDevice}
       tool={tool}
+      showLengths={showLengths}
       selection={selection}
       draft={draft}
       view={view}
@@ -285,7 +291,14 @@ export default function Editor({ hass, config, onChange }: Props) {
     <div className="flex items-center gap-3">
       <ModeSwitch mode={mode} onMode={setMode} />
       <span className="h-6 w-px bg-(--divider-color)" />
-      <Toolbar mode={mode} tool={tool} onTool={setTool} onFit={() => setView(null)} />
+      <Toolbar
+        mode={mode}
+        tool={tool}
+        onTool={setTool}
+        onFit={() => setView(null)}
+        showLengths={showLengths}
+        onShowLengths={setShowLengths}
+      />
     </div>
   )
 
