@@ -2,12 +2,13 @@ import { EDITOR_PREVIEW_DEFAULT_WIDTH_PX, EDITOR_PREVIEW_MIN_WIDTH_PX } from '#/
 import { aspectRatioNumber } from '#/lib/aspect.ts'
 import Scene from '#/scene/Scene.tsx'
 import { CARD_CORNER_RADIUS_PX } from '#/theme.ts'
-import type { CardConfig } from '#/types.ts'
+import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { faUpDownLeftRight, faUpRightAndDownLeftFromCenter, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
 
 type Props = {
+  hass: HomeAssistant | null
   config: CardConfig
   onClose: () => void
 }
@@ -15,7 +16,7 @@ type Props = {
 // Floating live preview of the card, with the card's aspect ratio. Three
 // round handles sit half outside its corners: drag at the top left, close
 // at the top right, resize at the bottom right.
-export default function PreviewWindow({ config, onClose }: Props) {
+export default function PreviewWindow({ hass, config, onClose }: Props) {
   const aspect = aspectRatioNumber(config.aspect_ratio)
   const [width, setWidth] = useState(EDITOR_PREVIEW_DEFAULT_WIDTH_PX)
   const [position, setPosition] = useState(() => ({
@@ -66,7 +67,7 @@ export default function PreviewWindow({ config, onClose }: Props) {
         className="h-full w-full overflow-hidden bg-(--card-background-color) shadow-2xl"
         style={{ borderRadius: CARD_CORNER_RADIUS_PX }}
       >
-        <Scene config={config} />
+        <Scene hass={hass} config={config} />
       </div>
       <div
         className={`${handle} -top-4 -left-4 cursor-move touch-none`}

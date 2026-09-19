@@ -9,7 +9,7 @@ type Props = {
   config: CardConfig
 }
 
-export default function Card({ config }: Props) {
+export default function Card({ hass, config }: Props) {
   const hasRooms = (config.rooms?.length ?? 0) > 0
 
   return (
@@ -19,7 +19,7 @@ export default function Card({ config }: Props) {
         style={{ aspectRatio: aspectRatioCss(config.aspect_ratio), borderRadius: CARD_CORNER_RADIUS_PX }}
       >
         {hasRooms ? (
-          <Scene config={config} />
+          <Scene hass={hass} config={config} />
         ) : (
           <div className="font-montserrat flex h-full flex-col items-center justify-center gap-1 p-4 text-center">
             <p className="text-sm font-semibold">No rooms yet</p>

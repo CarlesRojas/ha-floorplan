@@ -26,3 +26,18 @@ export const EDITOR_MODE_COLORS = {
   rooms: '#03a9f4',
   devices: '#f59e0b',
 }
+
+// Decoration
+
+// Height of the ceiling that pendants and ceiling lights hang from.
+export const CEILING_HEIGHT_M = 2.6
+// Default colors of the material slots of the light family.
+export const LIGHT_SHADE_COLOR = '#f3d9b1'
+export const LIGHT_BASE_COLOR = '#8a6a4b'
+export const LIGHT_CORD_COLOR = '#5b4632'
+// Glow of a light that is on, before level and color are applied.
+export const LIGHT_GLOW_COLOR = '#ffd27a'
+export const LIGHT_POINT_INTENSITY = 6
+// Radius of the sphere shown for a device with no decoration bound.
+export const DEVICE_SPHERE_RADIUS_M = 0.12
+export const DEVICE_SPHERE_COLOR = '#ffffff'

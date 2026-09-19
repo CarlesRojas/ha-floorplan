@@ -21,6 +21,15 @@ function validate(config: CardConfig) {
     if (!Array.isArray(device.position) || device.position.length !== 2)
       throw new Error(`Device ${device.entity_id} needs a position`)
   }
+  if (config.decorations !== undefined && !Array.isArray(config.decorations))
+    throw new Error('decorations must be a list')
+  for (const item of config.decorations ?? []) {
+    if (!item.id) throw new Error('Every decoration needs an id')
+    if (!item.kind) throw new Error(`Decoration ${item.id} needs a kind`)
+    if (!config.rooms?.some(r => r.id === item.room)) throw new Error(`Decoration ${item.id} points at an unknown room`)
+    if (!Array.isArray(item.position) || item.position.length !== 2)
+      throw new Error(`Decoration ${item.id} needs a position`)
+  }
 }
 
 class Floorplan3DCard extends ReactHost<CardConfig> {

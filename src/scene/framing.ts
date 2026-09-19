@@ -1,6 +1,7 @@
 import { CAMERA_DIRECTION, CAMERA_FIT_MARGIN, CAMERA_FOV_DEG } from '#/constants.ts'
-import { ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
-import type { RoomConfig } from '#/types.ts'
+import { decorationKind, paramValue } from '#/decoration/catalog.ts'
+import { CEILING_HEIGHT_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
+import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils, Vector3 } from 'three'
 
 export type Framing = {
@@ -10,7 +11,21 @@ export type Framing = {
 
 // Places the camera along a fixed direction so the flat's bounding box fits
 // the viewport. Plan y maps to -z in the scene.
-export function frameRooms(rooms: RoomConfig[], aspect: number): Framing {
+// Tallest point the scene reaches, so the camera frames fixtures too.
+export function sceneHeight(decorations: DecorationConfig[] = []) {
+  let top = ROOM_SLAB_THICKNESS_M
+  for (const item of decorations) {
+    const kind = decorationKind(item.kind)
+    if (!kind) continue
+    if (kind.mount === 'ceiling') return CEILING_HEIGHT_M
+    const lift = paramValue(kind, item.params, 'lift')
+    const height = paramValue(kind, item.params, 'height')
+    top = Math.max(top, lift + height + 0.4)
+  }
+  return top
+}
+
+export function frameRooms(rooms: RoomConfig[], aspect: number, height = ROOM_SLAB_THICKNESS_M): Framing {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -46,7 +61,7 @@ export function frameRooms(rooms: RoomConfig[], aspect: number): Framing {
   const corner = new Vector3()
   for (const x of [minX, maxX]) {
     for (const y of [minY, maxY]) {
-      for (const z of [0, ROOM_SLAB_THICKNESS_M]) {
+      for (const z of [0, height]) {
         corner.set(x, z, -y).sub(target)
         const depth = corner.dot(forward)
         const dx = Math.abs(corner.dot(right))

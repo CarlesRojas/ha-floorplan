@@ -62,12 +62,31 @@ export type DeviceConfig = {
   rotation?: number
   // Meters, for strip-like types such as LED strips and blinds.
   length?: number
+  // Decoration items that stand in for this device in 3D. With none, the
+  // device shows as a sphere.
+  decorations?: string[]
+}
+
+// A decoration item placed in a room: furniture, lamps, plants and the like.
+export type DecorationConfig = {
+  id: string
+  // One of the kinds in the decoration catalog.
+  kind: string
+  room: string
+  position: Point
+  // Degrees, counter clockwise on the plan.
+  rotation?: number
+  // Kind specific numbers, for example size or cord length, in meters.
+  params?: Record<string, number>
+  // Colors per material slot, as hex strings.
+  colors?: Record<string, string>
 }
 
 export type CardConfig = {
   type: string
   rooms?: RoomConfig[]
   devices?: DeviceConfig[]
+  decorations?: DecorationConfig[]
   // Corner radius in meters applied to rooms without their own.
   radius?: number
   // Gap in meters between adjacent rooms.

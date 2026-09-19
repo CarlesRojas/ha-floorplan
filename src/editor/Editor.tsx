@@ -373,7 +373,9 @@ export default function Editor({ hass, config, onChange }: Props) {
             </div>
           </div>
         </div>
-        {showPreview && <PreviewWindow config={{ ...config, rooms, devices }} onClose={() => setShowPreview(false)} />}
+        {showPreview && (
+          <PreviewWindow hass={hass} config={{ ...config, rooms, devices }} onClose={() => setShowPreview(false)} />
+        )}
         <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
