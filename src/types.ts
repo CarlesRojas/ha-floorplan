@@ -13,10 +13,28 @@ export type Area = {
   icon: string | null
 }
 
+export type EntityRegistryEntry = {
+  entity_id: string
+  device_id?: string | null
+  area_id?: string | null
+  name?: string | null
+  hidden?: boolean
+  entity_category?: string | null
+}
+
+export type DeviceRegistryEntry = {
+  id: string
+  area_id?: string | null
+  name?: string | null
+  name_by_user?: string | null
+}
+
 // Minimal subset of the hass object HA passes to cards.
 export type HomeAssistant = {
   states: Record<string, EntityState>
   areas: Record<string, Area>
+  entities?: Record<string, EntityRegistryEntry>
+  devices?: Record<string, DeviceRegistryEntry>
   callService: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown>
   themes: { darkMode: boolean }
 }
@@ -33,9 +51,23 @@ export type RoomConfig = {
   color?: string
 }
 
+// A Home Assistant entity placed in a room.
+export type DeviceConfig = {
+  entity_id: string
+  room: string
+  position: Point
+  // One of the types in the device catalog for the entity's domain.
+  type?: string
+  // Degrees, counter clockwise on the plan.
+  rotation?: number
+  // Meters, for strip-like types such as LED strips and blinds.
+  length?: number
+}
+
 export type CardConfig = {
   type: string
   rooms?: RoomConfig[]
+  devices?: DeviceConfig[]
   // Corner radius in meters applied to rooms without their own.
   radius?: number
   // Gap in meters between adjacent rooms.

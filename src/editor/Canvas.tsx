@@ -8,20 +8,37 @@ import {
   EDITOR_AUTOPAN_MARGIN_PX,
   EDITOR_AUTOPAN_SPEED_PX_S,
   EDITOR_CANVAS_HEIGHT_PX,
+  EDITOR_DEVICE_GRID_M,
+  EDITOR_DEVICE_RADIUS_PX,
   EDITOR_GRID_M,
   EDITOR_HANDLE_PX,
 } from '#/constants.ts'
-import type { Selection, Tool } from '#/editor/types.ts'
+import { deviceType } from '#/devices/catalog.ts'
+import type { Mode, Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
-import { furthestValid, isValidRoom, pointStrictlyInside, segmentEntersAny } from '#/geometry/overlap.ts'
+import {
+  furthestValid,
+  isValidRoom,
+  pointOnBoundary,
+  pointStrictlyInside,
+  segmentEntersAny,
+} from '#/geometry/overlap.ts'
 import { cn } from '#/lib/utils.ts'
-import { ROOM_COLORS } from '#/theme.ts'
-import type { Point, RoomConfig } from '#/types.ts'
+import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
+import type { DeviceConfig, Point, RoomConfig } from '#/types.ts'
+import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useRef, useState } from 'react'
 import { useResizeObserver } from 'usehooks-ts'
 
 type Props = {
+  mode: Mode
   rooms: RoomConfig[]
+  devices: DeviceConfig[]
+  selectedDevice: string | null
+  onDevices: (devices: DeviceConfig[], done: boolean) => void
+  onSelectDevice: (entityId: string | null) => void
+  onRemoveDevice: (entityId: string) => void
+  onRotateDevice: (entityId: string) => void
   tool: Tool
   selection: Selection
   draft: Point[]
@@ -42,18 +59,27 @@ type Drag =
   | { kind: 'vertex'; roomId: string; index: number }
   | { kind: 'edge'; roomId: string; index: number; start: Point; origin: Point[] }
   | { kind: 'room'; roomId: string; start: Point; origin: Point[] }
+  | { kind: 'device'; entityId: string; start: Point; origin: Point }
 
 type Menu =
   | { kind: 'vertex'; roomId: string; index: number }
   | { kind: 'edge'; roomId: string; index: number; point: Point }
   | { kind: 'room'; roomId: string }
+  | { kind: 'device'; entityId: string }
   | { kind: 'canvas' }
 
 const HANDLE = EDITOR_HANDLE_PX
 const EDGE_HIT_PX = 10
 
 export default function Canvas({
+  mode,
   rooms,
+  devices,
+  selectedDevice,
+  onDevices,
+  onSelectDevice,
+  onRemoveDevice,
+  onRotateDevice,
   tool,
   selection,
   draft,
@@ -81,6 +107,10 @@ export default function Canvas({
   // pointer moves can arrive faster than React re-renders.
   const liveRooms = useRef<RoomConfig[] | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  // Same idea for a dragged device: shown at the pointer, red when outside
+  // its room, lands on the last valid spot.
+  const liveDevices = useRef<DeviceConfig[] | null>(null)
+  const [draggingDevice, setDraggingDevice] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
@@ -96,10 +126,11 @@ export default function Canvas({
   const latest = useRef<{
     view: View | null
     rooms: RoomConfig[]
+    devices: DeviceConfig[]
     draft: Point[]
     tool: Tool
     updateAutopan: (screen: Point) => void
-  }>({ view, rooms, draft, tool, updateAutopan: () => {} })
+  }>({ view, rooms, devices, draft, tool, updateAutopan: () => {} })
   const lastScreen = useRef<Point | null>(null)
   const autopan = useRef<{ raf: number; time: number; vx: number; vy: number } | null>(null)
 
@@ -116,6 +147,21 @@ export default function Canvas({
     svg.addEventListener('wheel', onWheel, { passive: false })
     return () => svg.removeEventListener('wheel', onWheel)
   }, [onView, view])
+
+  const onDeviceDown = (e: React.PointerEvent, device: DeviceConfig) => {
+    if (e.button === 2) {
+      e.stopPropagation()
+      return
+    }
+    if (e.button !== 0) return
+    e.stopPropagation()
+    capture(e)
+    onSelect({ roomId: device.room, vertex: null })
+    onSelectDevice(device.entity_id)
+    liveDevices.current = devices
+    drag.current = { kind: 'device', entityId: device.entity_id, start: planPoint(e), origin: device.position }
+    setDraggingDevice(device.entity_id)
+  }
 
   const applyDrag = (screen: Point, v: View, renderedRooms: RoomConfig[]) => {
     const p = toPlan(v, screen)
@@ -227,6 +273,42 @@ export default function Canvas({
         patch(d.roomId, [move([ox, oy]), ...single.map(move)])
         break
       }
+      case 'device': {
+        const currentDevices = liveDevices.current ?? latest.current.devices
+        const device = currentDevices.find(x => x.entity_id === d.entityId)
+        const room = currentRooms.find(r => r.id === device?.room)
+        if (!device || !room) break
+        const g = EDITOR_DEVICE_GRID_M
+        const target: Point = [
+          Math.round((d.origin[0] + p[0] - d.start[0]) / g) * g,
+          Math.round((d.origin[1] + p[1] - d.start[1]) / g) * g,
+        ]
+        const inside = (q: Point) => pointStrictlyInside(q, room.points) || pointOnBoundary(q, room.points)
+        let landing = target
+        if (!inside(target)) {
+          // Bisect from the last valid spot toward the pointer so the device
+          // lands right on the wall.
+          const from = device.position
+          let lo = 0
+          let hi = 1
+          for (let i = 0; i < 16; i++) {
+            const mid = (lo + hi) / 2
+            const q: Point = [from[0] + (target[0] - from[0]) * mid, from[1] + (target[1] - from[1]) * mid]
+            if (inside(q)) lo = mid
+            else hi = mid
+          }
+          landing = [
+            Math.round((from[0] + (target[0] - from[0]) * lo) * 100) / 100,
+            Math.round((from[1] + (target[1] - from[1]) * lo) * 100) / 100,
+          ]
+        }
+        liveDevices.current = currentDevices.map(x => (x.entity_id === d.entityId ? { ...x, position: landing } : x))
+        onDevices(
+          currentDevices.map(x => (x.entity_id === d.entityId ? { ...x, position: target } : x)),
+          false,
+        )
+        break
+      }
     }
   }
 
@@ -272,7 +354,7 @@ export default function Canvas({
   }
 
   useEffect(() => {
-    latest.current = { view, rooms, draft, tool, updateAutopan }
+    latest.current = { view, rooms, devices, draft, tool, updateAutopan }
   })
 
   // A drag captures the pointer, so moves outside the canvas still arrive.
@@ -334,7 +416,10 @@ export default function Canvas({
     if (e.button === 1 || tool === 'select') {
       drag.current = { kind: 'pan', start: screenPoint(e), view }
       setPanning(true)
-      if (tool === 'select' && e.button === 0) onSelect({ roomId: null, vertex: null })
+      if (tool === 'select' && e.button === 0) {
+        onSelect({ roomId: null, vertex: null })
+        onSelectDevice(null)
+      }
       return
     }
     if (tool === 'draw') {
@@ -369,6 +454,13 @@ export default function Canvas({
     e.stopPropagation()
     capture(e)
     onSelect({ roomId: room.id, vertex: null })
+    if (mode === 'devices') {
+      // Rooms are only picked here. Clicking a room clears the device selection.
+      onSelectDevice(null)
+      drag.current = { kind: 'pan', start: screenPoint(e), view }
+      setPanning(true)
+      return
+    }
     liveRooms.current = rooms
     drag.current = { kind: 'room', roomId: room.id, start: planPoint(e), origin: room.points }
     setDraggingId(room.id)
@@ -413,13 +505,24 @@ export default function Canvas({
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current
     const resolved = liveRooms.current
+    const resolvedDevices = liveDevices.current
     drag.current = null
     liveRooms.current = null
+    liveDevices.current = null
     setDraggingId(null)
+    setDraggingDevice(null)
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
+    if (d.kind === 'device') {
+      const source = resolvedDevices ?? devices
+      onDevices(
+        source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
+        true,
+      )
+      return
+    }
     // Land on the resolved position, whatever the pointer showed.
     const source = resolved ?? rooms
     onRooms(
@@ -433,6 +536,11 @@ export default function Canvas({
     e.stopPropagation()
     if (target.kind === 'room') onSelect({ roomId: target.roomId, vertex: null })
     if (target.kind === 'vertex') onSelect({ roomId: target.roomId, vertex: target.index })
+    if (target.kind === 'device') {
+      const device = devices.find(x => x.entity_id === target.entityId)
+      if (device) onSelect({ roomId: device.room, vertex: null })
+      onSelectDevice(target.entityId)
+    }
     setMenu({ at: { x: e.clientX, y: e.clientY }, target })
   }
 
@@ -510,6 +618,7 @@ export default function Canvas({
         )
       case 'room': {
         const room = rooms.find(r => r.id === t.roomId)
+        if (mode !== 'rooms') return null
         return (
           <ContextMenuItem
             variant="destructive"
@@ -522,19 +631,47 @@ export default function Canvas({
           </ContextMenuItem>
         )
       }
-      case 'canvas':
+      case 'device':
         return (
           <>
             <ContextMenuItem
               onSelect={() => {
-                onTool('draw')
+                onRotateDevice(t.entityId)
                 closeMenu()
               }}
-              shortcut="D"
             >
-              Draw room
+              Rotate 90°
             </ContextMenuItem>
             <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onSelect={() => {
+                onRemoveDevice(t.entityId)
+                closeMenu()
+              }}
+              shortcut="Del"
+            >
+              Remove from plan
+            </ContextMenuItem>
+          </>
+        )
+      case 'canvas':
+        return (
+          <>
+            {mode === 'rooms' && (
+              <>
+                <ContextMenuItem
+                  onSelect={() => {
+                    onTool('draw')
+                    closeMenu()
+                  }}
+                  shortcut="D"
+                >
+                  Draw room
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+              </>
+            )}
             <ContextMenuItem
               onSelect={() => {
                 onView(null)
@@ -598,7 +735,7 @@ export default function Canvas({
           )
         })}
 
-        {selectedRoom && tool === 'select' && (
+        {mode === 'rooms' && selectedRoom && tool === 'select' && (
           <>
             {selectedRoom.points.map((p, i) => {
               const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
@@ -668,6 +805,51 @@ export default function Canvas({
             })}
           </>
         )}
+
+        {devices.map(device => {
+          const room = rooms.find(r => r.id === device.room)
+          if (!room) return null
+          const type = deviceType(device)
+          const [sx, sy] = toScreen(view, device.position)
+          const active = mode === 'devices'
+          const dim = active && selection.roomId !== null && selection.roomId !== device.room
+          const invalid =
+            draggingDevice === device.entity_id &&
+            !(pointStrictlyInside(device.position, room.points) || pointOnBoundary(device.position, room.points))
+          const isSelected = selectedDevice === device.entity_id
+          const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.devices
+          const r = EDITOR_DEVICE_RADIUS_PX
+          const length = type?.hasLength ? (device.length ?? type.defaultLength ?? 1) : 0
+          const angle = -(device.rotation ?? 0)
+          return (
+            <g
+              key={device.entity_id}
+              opacity={dim ? 0.35 : 1}
+              className={active ? 'cursor-move' : 'pointer-events-none'}
+              onPointerDown={e => onDeviceDown(e, device)}
+              onContextMenu={e => openMenu(e, { kind: 'device', entityId: device.entity_id })}
+            >
+              {length > 0 && (
+                <line
+                  x1={sx - (length / 2) * view.scale}
+                  y1={sy}
+                  x2={sx + (length / 2) * view.scale}
+                  y2={sy}
+                  transform={`rotate(${angle} ${sx} ${sy})`}
+                  stroke={color}
+                  strokeWidth={6}
+                  strokeLinecap="round"
+                  opacity={0.8}
+                />
+              )}
+              {isSelected && (
+                <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
+              )}
+              <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
+              {type && <IconGlyph icon={type.icon} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />}
+            </g>
+          )
+        })}
 
         {tool === 'draw' && draft.length > 0 && (
           <>
@@ -767,5 +949,33 @@ function ScaleBar({ view, height }: { view: View; height: number }) {
         {meters} m
       </text>
     </g>
+  )
+}
+
+// Draws a Font Awesome icon centered at a point, as a plain path so it can
+// live inside the canvas svg.
+function IconGlyph({
+  icon,
+  x,
+  y,
+  size,
+  fill,
+}: {
+  icon: IconDefinition
+  x: number
+  y: number
+  size: number
+  fill: string
+}) {
+  const [w, h, , , path] = icon.icon
+  const d = Array.isArray(path) ? path.join(' ') : path
+  const scale = size / Math.max(w, h)
+  return (
+    <path
+      d={d}
+      fill={fill}
+      className="pointer-events-none"
+      transform={`translate(${x - (w * scale) / 2} ${y - (h * scale) / 2}) scale(${scale})`}
+    />
   )
 }

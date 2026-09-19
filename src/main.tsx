@@ -13,6 +13,14 @@ function validate(config: CardConfig) {
     if (!Array.isArray(room.points) || room.points.length < 3)
       throw new Error(`Room ${room.id} needs at least 3 points`)
   }
+  if (config.devices !== undefined && !Array.isArray(config.devices)) throw new Error('devices must be a list')
+  for (const device of config.devices ?? []) {
+    if (!device.entity_id) throw new Error('Every device needs an entity_id')
+    if (!config.rooms?.some(r => r.id === device.room))
+      throw new Error(`Device ${device.entity_id} points at an unknown room`)
+    if (!Array.isArray(device.position) || device.position.length !== 2)
+      throw new Error(`Device ${device.entity_id} needs a position`)
+  }
 }
 
 class Floorplan3DCard extends ReactHost<CardConfig> {

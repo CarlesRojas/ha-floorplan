@@ -45,3 +45,7 @@ export const EDITOR_TEXT_COMMIT_DELAY_MS = 500
 export const EDITOR_AUTOPAN_MARGIN_PX = 48
 // Pan speed when the pointer is right at the border.
 export const EDITOR_AUTOPAN_SPEED_PX_S = 500
+// Grid step for placing devices.
+export const EDITOR_DEVICE_GRID_M = 0.05
+// Radius of a device marker on the canvas.
+export const EDITOR_DEVICE_RADIUS_PX = 14

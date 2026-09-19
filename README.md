@@ -67,6 +67,15 @@ It opens fullscreen. The X in the top right closes it, leaving an Open editor bu
 
 Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 
+### Devices mode
+
+The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode, click a room to list the entities of its Home Assistant area in the sidebar: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
+
+- Add places the entity in the room. Placed entities are marked and can be dragged around the room. They cannot leave it: outside the room they show red and land on the wall on release.
+- A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
+- Right click a device to rotate it or remove it. Delete removes the selected device.
+- Deleting a room removes its devices.
+
 ## Card config
 
 | Key | Default | Description |
@@ -77,6 +86,7 @@ Each room in the list can be named and linked to a Home Assistant area. An area 
 
 Defaults for these and other visual values live in `src/theme.ts`.
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
+| `devices` | `[]` | List of placed entities, see below |
 
 Each room:
 
@@ -88,6 +98,17 @@ Each room:
 | `name` | Label override |
 | `radius` | Corner radius override |
 | `color` | Fill color override |
+
+Each device:
+
+| Key | Description |
+| --- | --- |
+| `entity_id` | Home Assistant entity, required |
+| `room` | Id of the room it sits in, required |
+| `position` | `[x, y]` in meters, required |
+| `type` | Look, one of the types for the entity's domain. Defaults to the first |
+| `rotation` | Degrees, counter clockwise on the plan |
+| `length` | Meters, for strip-like types |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 

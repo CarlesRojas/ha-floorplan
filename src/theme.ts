@@ -18,3 +18,11 @@ export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a
 // Card
 
 export const CARD_CORNER_RADIUS_PX = 24
+
+// Editor
+
+// Accent color of each editor mode.
+export const EDITOR_MODE_COLORS = {
+  rooms: '#03a9f4',
+  devices: '#f59e0b',
+}
