@@ -6,23 +6,36 @@ Custom Lovelace card for Home Assistant: an interactive 3D model of the flat wit
 
 Requires a Home Assistant instance running in Docker with a `compose.yaml`.
 
-### 1. Build
+### Day to day: dev server with live reload
+
+Home Assistant caches files under `/local` aggressively, so during development the card is served from the Vite dev server instead.
 
 ```bash
 pnpm install
-pnpm watch
+pnpm dev
 ```
 
-Leave it running. It rebuilds `dist/card.js` on every save.
+In Home Assistant go to Settings > Dashboards > three-dot menu (top right) > Resources and add:
 
-### 2. Mount `dist/` into Home Assistant
+- URL: `http://localhost:5173/src/dev/entry.ts`
+- Type: JavaScript module
 
-In `compose.yaml`, add a volume under the Home Assistant service, next to the existing config volume:
+Every save rebuilds and reloads the dashboard. No cache busting needed. Keep only one of the two resources (dev server or `/local`) enabled at a time, otherwise the element gets registered twice.
+
+### Production build into Home Assistant
+
+This is what the mini PC will use. It also works locally to test the real bundle.
+
+```bash
+pnpm build
+```
+
+Mount `dist/` into Home Assistant. In `compose.yaml`, add a volume under the Home Assistant service, next to the existing config volume:
 
 ```yaml
 volumes:
   - ./config:/config
-  - <path-to-this-repo>/dist:/config/www/floorplan-3d
+  - ${HOME}/Documents/Repos/ha-floorplan/dist:/config/www/floorplan-3d
 ```
 
 Then:
@@ -34,31 +47,11 @@ docker compose exec homeassistant ls /config/www/floorplan-3d
 
 You should see `card.js`. If Home Assistant was started before `/config/www` existed, restart it once so it serves `/local/`.
 
-Check http://localhost:8123/local/floorplan-3d/card.js shows the JS source.
+Register `/local/floorplan-3d/card.js?v=1` as a JavaScript module resource. Bump `?v=` after each new build so browsers pick it up. `pnpm watch` rebuilds `dist/card.js` on change if you want to test the bundle continuously.
 
-### 3. Register the resource
-
-Settings > Dashboards > three-dot menu (top right) > Resources. Add:
-
-- URL: `/local/floorplan-3d/card.js?v=1`
-- Type: JavaScript module
-
-The Resources entry only shows when advanced mode is enabled in your user profile.
-
-### 4. Add the card
+### Add the card
 
 Create a dashboard, Edit, Add card. Search "Floorplan 3D" or add it manually:
-
-```yaml
-type: custom:floorplan-3d
-rooms:
-  - id: living
-    area_id: living_room
-    points: [[0, 0], [5.2, 0], [5.2, 4], [0, 4]]
-  - id: kitchen
-    name: Kitchen
-    points: [[5.2, 0], [8, 0], [8, 4], [5.2, 4]]
-```
 
 ## Card config
 
@@ -88,6 +81,7 @@ Home Assistant and the browser cache resources aggressively. After a rebuild, ha
 
 ## Scripts
 
-- `pnpm watch`: build and rebuild on change
-- `pnpm build`: typecheck and build once
+- `pnpm dev`: Vite dev server with live reload, see above
+- `pnpm build`: typecheck and build `dist/card.js` once
+- `pnpm watch`: rebuild `dist/card.js` on change
 - `pnpm lint`: run oxlint

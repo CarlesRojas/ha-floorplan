@@ -7,6 +7,13 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [tailwindcss(), react(), babel({ presets: [reactCompilerPreset()] })],
   define: { 'process.env.NODE_ENV': '"production"' },
+  server: {
+    port: 5173,
+    strictPort: true,
+    cors: true,
+    // Absolute asset URLs so fonts resolve when the module is loaded from Home Assistant.
+    origin: 'http://localhost:5173',
+  },
   build: {
     lib: {
       entry: 'src/main.tsx',
