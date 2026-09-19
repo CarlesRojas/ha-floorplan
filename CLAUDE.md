@@ -10,6 +10,8 @@ Before starting any task, check the state of the branch you are working on again
 
 Check this on every new session and before each push, not just once.
 
+Keep working on the same branch and pull request while it is open, whatever the task. Only start a new branch when the pull request was merged or the user asks for one.
+
 ## Project
 
 Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bound to objects. React + Three.js, Vite in lib mode building a single `dist/card.js`. See `README.md` for the local Home Assistant setup.
@@ -18,3 +20,4 @@ Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bo
 - Styling: Tailwind v4, injected into the card's shadow root from `src/index.css`. Use the `cn` helper from `src/lib/utils.ts`.
 - `dist/` is bind-mounted into the Home Assistant container. Never empty it from the build config.
 - Write in plain sentences. Never use em dashes, in code comments, commit messages, or docs.
+- When giving the user card YAML, always give the complete card config, never a fragment to merge.
