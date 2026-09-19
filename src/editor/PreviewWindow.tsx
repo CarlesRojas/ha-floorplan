@@ -54,8 +54,9 @@ export default function PreviewWindow({ hass, config, onClose }: Props) {
     ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
   }
 
+  // Handles are 36 px and overflow the corner by a quarter of that.
   const handle =
-    'absolute z-10 flex size-9 cursor-pointer items-center justify-center rounded-full border border-(--divider-color) bg-(--card-background-color) text-(--primary-text-color) shadow-md select-none'
+    'absolute z-10 flex size-9 cursor-pointer items-center justify-center rounded-full border-2 border-(--primary-color) bg-(--card-background-color) text-(--primary-text-color) shadow-md select-none'
 
   return (
     <div
@@ -70,7 +71,7 @@ export default function PreviewWindow({ hass, config, onClose }: Props) {
         <Scene hass={hass} config={config} />
       </div>
       <div
-        className={`${handle} -top-4 -left-4 cursor-move touch-none`}
+        className={`${handle} -top-[9px] -left-[9px] cursor-move touch-none`}
         onPointerDown={start('move')}
         onPointerMove={move}
         onPointerUp={end}
@@ -78,17 +79,22 @@ export default function PreviewWindow({ hass, config, onClose }: Props) {
       >
         <FontAwesomeIcon icon={faUpDownLeftRight} className="size-4" />
       </div>
-      <button type="button" className={`${handle} -top-4 -right-4`} onClick={onClose} aria-label="Close preview">
+      <button
+        type="button"
+        className={`${handle} -top-[9px] -right-[9px]`}
+        onClick={onClose}
+        aria-label="Close preview"
+      >
         <FontAwesomeIcon icon={faXmark} className="size-4" />
       </button>
       <div
-        className={`${handle} -right-4 -bottom-4 cursor-nwse-resize touch-none`}
+        className={`${handle} -right-[9px] -bottom-[9px] cursor-nwse-resize touch-none`}
         onPointerDown={start('resize')}
         onPointerMove={move}
         onPointerUp={end}
         aria-label="Resize preview"
       >
-        <FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} className="size-4" />
+        <FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} className="size-4 rotate-90" />
       </div>
     </div>
   )

@@ -47,7 +47,7 @@ export default function DevicePanel({
   const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
   const header = !room ? (
     <p className="text-sm text-(--secondary-text-color)">
-      {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas to add devices to it.'}
+      {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas, or add and drag.'}
     </p>
   ) : (
     <div className="flex flex-col gap-2">
@@ -142,7 +142,7 @@ export default function DevicePanel({
             </p>
           )}
         </div>
-        {!device && room ? (
+        {!device && rooms.length > 0 ? (
           <button
             type="button"
             aria-label={`Add ${e.name}`}

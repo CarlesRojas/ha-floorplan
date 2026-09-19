@@ -183,7 +183,7 @@ export default function DecorationPanel({
         </div>
       ) : (
         <p className="text-sm text-(--secondary-text-color)">
-          {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas to add items to it.'}
+          {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas, or add and drag.'}
         </p>
       )}
 
@@ -215,7 +215,7 @@ export default function DecorationPanel({
                 <p className="truncate text-sm text-(--primary-text-color)">{k.label}</p>
                 <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
               </div>
-              {room ? (
+              {rooms.length > 0 ? (
                 <button
                   type="button"
                   aria-label={`Add ${k.label}`}

@@ -69,7 +69,7 @@ Each room in the list can be named and linked to a Home Assistant area. An area 
 
 ### Devices mode
 
-The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Pick a room on the canvas to add entities to it. The selected room shows its Home Assistant area at the top, where it can be assigned or changed. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
+The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Adding with no room selected drops the entity in a random room. The selected room shows its Home Assistant area at the top, where it can be assigned or changed. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 
 - Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
 - A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
@@ -78,7 +78,7 @@ The mode switch on the left of the toolbar changes between Rooms and Devices. In
 
 ### Decoration mode
 
-The third mode places furniture and fixtures. Pick a room on the canvas: the sidebar shows its floor material and tint, then the catalog of items. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
+The third mode places furniture and fixtures. The sidebar shows the catalog, and the selected room's floor material and tint when one is picked. Adding with no room selected drops the item in a random room, from where it can be dragged.of items. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
 
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
 - A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change.

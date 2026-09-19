@@ -108,19 +108,21 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   const addDecoration = (kind: DecorationKind) => {
-    if (!selectedRoom) return
+    const room = targetRoom()
+    if (!room) return
     const item: DecorationConfig = {
       id: nextDecorationId(kind),
       kind: kind.id,
-      room: selectedRoom.id,
-      position: pointInside(selectedRoom.points),
+      room: room.id,
+      position: pointInside(room.points),
     }
     if (kind.mount === 'wall') {
-      const snapped = snapToWall(item.position, selectedRoom.points)
+      const snapped = snapToWall(item.position, room.points)
       item.position = snapped.point
       item.rotation = snapped.rotation
     }
     commit(rooms, devices, [...decorations, item])
+    setSelection({ roomId: room.id, vertex: null })
     setSelectedDecoration(item.id)
   }
 
@@ -189,17 +191,22 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   const selectedRoom = rooms.find(r => r.id === selection.roomId) ?? null
 
+  // The selected room, or any room when none is selected.
+  const targetRoom = () => selectedRoom ?? (rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null)
+
   const addDevice = (entity: EntityInfo) => {
-    if (!selectedRoom) return
+    const room = targetRoom()
+    if (!room) return
     const type = deviceType({ entity_id: entity.entity_id, type: entity.suggestedType })
     const device: DeviceConfig = {
       entity_id: entity.entity_id,
-      room: selectedRoom.id,
-      position: pointInside(selectedRoom.points),
+      room: room.id,
+      position: pointInside(room.points),
       type: type?.id,
     }
     if (type?.hasLength) device.length = type.defaultLength
     commit(rooms, [...devices.filter(d => d.entity_id !== entity.entity_id), device])
+    setSelection({ roomId: room.id, vertex: null })
     setSelectedDevice(entity.entity_id)
   }
 
