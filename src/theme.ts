@@ -66,6 +66,10 @@ export const LIGHT_CORD_COLOR = '#8f877b'
 // Glow of a light that is on, before level and color are applied.
 export const LIGHT_GLOW_COLOR = '#ffd27a'
 export const LIGHT_POINT_INTENSITY = 9
+// How far from a press the card looks for something to act on, in pixels.
+// A ray hits one point, so a press that lands on nothing is tried again in
+// rings out to this radius.
+export const PICK_RADIUS_PX = 42
 // Radius of the sphere shown for a device with no decoration bound.
 export const DEVICE_SPHERE_RADIUS_M = 0.12
 export const DEVICE_SPHERE_COLOR = '#ffffff'

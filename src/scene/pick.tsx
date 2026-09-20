@@ -1,5 +1,6 @@
 import { useThree } from '@react-three/fiber'
 import { useEffect } from 'react'
+import { PICK_RADIUS_PX } from '#/theme.ts'
 import { Vector2, type Object3D } from 'three'
 
 // What a click on an object does. Models carry it in their userData so a
@@ -8,11 +9,11 @@ export type Pick = { click: () => void; open: () => void }
 
 // A ray hits exactly one point, and the things in the plan are small seen
 // from across a room. When a press lands on nothing, the same press is tried
-// again in rings around it, growing outward, and the first thing found takes
-// it. This is the radius a ray cannot have, done with several rays.
-const RINGS_PX = [10, 20, 32, 46, 62, 80]
-// Enough directions that a small thing is not slipped between two rays:
-// at the widest ring these are about 30 px apart.
+// again in rings around it, growing outward to PICK_RADIUS_PX, and the first
+// thing found takes it. This is the radius a ray cannot have, done with
+// several rays.
+const RINGS = [0.25, 0.45, 0.65, 0.85, 1]
+// Enough directions that a small thing is not slipped between two rays.
 const SAMPLES = 16
 // A press that moves more than this is the camera being dragged.
 const SLOP_PX = 8
@@ -53,7 +54,8 @@ export default function PickFallback() {
     const near = (x: number, y: number): { pick: Pick; direct: boolean } | null => {
       const direct = at(x, y)
       if (direct) return { pick: direct, direct: true }
-      for (const radius of RINGS_PX) {
+      for (const step of RINGS) {
+        const radius = step * PICK_RADIUS_PX
         for (let i = 0; i < SAMPLES; i++) {
           const angle = ((i + 0.5) / SAMPLES) * Math.PI * 2
           const pick = at(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius)

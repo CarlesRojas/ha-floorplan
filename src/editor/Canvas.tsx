@@ -695,6 +695,37 @@ export default function Canvas({
     updateAutopan(screen)
   }
 
+  // Everything whose footprint covers a point on the plan, in the order they
+  // are drawn, so the last one is the one on top. A press that does not turn
+  // into a drag steps down through them, since something underneath cannot
+  // be reached any other way.
+  const stackAt = (point: Point): DecorationConfig[] => {
+    const covers = (item: DecorationConfig) => {
+      const kind = decorationKind(item.kind)
+      if (!kind) return false
+      const [fw, fd] = footprint(kind, item.params)
+      const least = EDITOR_DEVICE_RADIUS_PX / view.scale
+      const halfW = Math.max(fw / 2, least)
+      const halfD = Math.max(kind.mount === 'wall' ? 0.05 : fd / 2, least)
+      const a = (-(item.rotation ?? 0) * Math.PI) / 180
+      const dx = point[0] - item.position[0]
+      const dy = point[1] - item.position[1]
+      const lx = dx * Math.cos(a) - dy * Math.sin(a)
+      const ly = dx * Math.sin(a) + dy * Math.cos(a)
+      return Math.abs(lx) <= halfW && Math.abs(ly) <= halfD
+    }
+    const all = latest.current.decorations
+    return all.filter(covers).sort((x, y) => standHeight(x, all) - standHeight(y, all))
+  }
+
+  // The next one down from whatever is selected, wrapping around.
+  const stepDown = (point: Point) => {
+    const stack = stackAt(point)
+    if (stack.length < 2) return null
+    const at = stack.findIndex(x => x.id === selectedDecoration)
+    return at < 0 ? stack[stack.length - 1].id : stack[(at + 1) % stack.length].id
+  }
+
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current
     const resolved = liveRooms.current
@@ -718,6 +749,16 @@ export default function Canvas({
         source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
         true,
       )
+      // A press that moved nothing was a click, so it picks what is under
+      // the one already picked instead of picking the same thing again.
+      if (d.kind === 'decoration') {
+        const landed = source.find(x => x.id === d.id)
+        const still = landed && landed.position[0] === d.origin[0] && landed.position[1] === d.origin[1]
+        if (still) {
+          const next = stepDown(d.start)
+          if (next && next !== d.id) onSelectDecoration(next)
+        }
+      }
       return
     }
     if (d.kind === 'device') {
