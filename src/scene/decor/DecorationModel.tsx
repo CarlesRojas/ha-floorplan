@@ -57,7 +57,13 @@ export default function DecorationModel({ item, all, state, onClick, onOpen }: P
   const lift = standHeight(item, all)
 
   return (
-    <group position={[item.position[0], lift, -item.position[1]]} rotation={[0, rotation, 0]} {...interactive}>
+    <group
+      position={[item.position[0], lift, -item.position[1]]}
+      rotation={[0, rotation, 0]}
+      // A press that lands near this item rather than on it finds these.
+      userData={onClick ? { pick: { click: onClick, open: onOpen ?? onClick } } : undefined}
+      {...interactive}
+    >
       <Model kind={kind} item={item} state={state} />
     </group>
   )

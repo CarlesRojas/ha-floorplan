@@ -1015,7 +1015,8 @@ export default function Canvas({
         <Grid view={view} width={width} height={height} />
 
         {rooms.map((room, i) => {
-          // While a device is dragged, the room under the pointer lights up.
+          // While a device is dragged, the room under the pointer lifts a
+          // little. Enough to see which one it would land in, no more.
           const dropTarget =
             (draggingDevice !== null && devices.find(x => x.entity_id === draggingDevice)?.room === room.id) ||
             (draggingDecoration !== null && decorations.find(x => x.id === draggingDecoration)?.room === room.id)
@@ -1030,7 +1031,7 @@ export default function Canvas({
               key={room.id}
               points={polygon(room.points)}
               fill={invalid ? 'var(--error-color)' : (room.color ?? ROOM_COLORS[i % ROOM_COLORS.length])}
-              fillOpacity={dropTarget ? 0.9 : selection.roomId === room.id ? 0.75 : 0.5}
+              fillOpacity={dropTarget ? 0.62 : selection.roomId === room.id ? 0.7 : 0.5}
               stroke={
                 invalid
                   ? 'var(--error-color)'
@@ -1040,7 +1041,7 @@ export default function Canvas({
                       ? EDITOR_MODE_COLORS[mode]
                       : 'rgba(0,0,0,0.35)'
               }
-              strokeWidth={dropTarget ? 3 : selection.roomId === room.id ? 2 : 1}
+              strokeWidth={dropTarget ? 2 : selection.roomId === room.id ? 2 : 1}
               strokeLinejoin="round"
               className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
               onPointerDown={e => onRoomDown(e, room)}
@@ -1122,7 +1123,13 @@ export default function Canvas({
         )}
 
         {[...decorations]
-          .sort((a, b) => standHeight(a, decorations) - standHeight(b, decorations))
+          .sort((a, b) => {
+            // Whatever is selected goes last: on top, and first to take a
+            // press when two items sit over each other.
+            if (a.id === selectedDecoration) return 1
+            if (b.id === selectedDecoration) return -1
+            return standHeight(a, decorations) - standHeight(b, decorations)
+          })
           .map(item => {
             const room = rooms.find(r => r.id === item.room)
             const kind = decorationKind(item.kind)
@@ -1234,50 +1241,52 @@ export default function Canvas({
             )
           })}
 
-        {devices.map(device => {
-          const room = rooms.find(r => r.id === device.room)
-          if (!room) return null
-          const type = deviceType(device)
-          const [sx, sy] = toScreen(view, device.position)
-          const active = mode === 'devices'
-          const dim = active && selection.roomId !== null && selection.roomId !== device.room
-          const invalid =
-            draggingDevice === device.entity_id &&
-            !(pointStrictlyInside(device.position, room.points) || pointOnBoundary(device.position, room.points))
-          const isSelected = selectedDevice === device.entity_id
-          const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.devices
-          const r = EDITOR_DEVICE_RADIUS_PX
-          const length = type?.hasLength ? (device.length ?? type.defaultLength ?? 1) : 0
-          const angle = -(device.rotation ?? 0)
-          return (
-            <g
-              key={device.entity_id}
-              opacity={dim ? 0.35 : 1}
-              className={active ? 'cursor-move' : 'pointer-events-none'}
-              onPointerDown={e => onDeviceDown(e, device)}
-              onContextMenu={e => openMenu(e, { kind: 'device', entityId: device.entity_id })}
-            >
-              {length > 0 && (
-                <line
-                  x1={sx - (length / 2) * view.scale}
-                  y1={sy}
-                  x2={sx + (length / 2) * view.scale}
-                  y2={sy}
-                  transform={`rotate(${angle} ${sx} ${sy})`}
-                  stroke={color}
-                  strokeWidth={6}
-                  strokeLinecap="round"
-                  opacity={0.8}
-                />
-              )}
-              {isSelected && (
-                <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
-              )}
-              <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
-              {type && <IconGlyph icon={type.icon} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />}
-            </g>
-          )
-        })}
+        {[...devices]
+          .sort((a, b) => (a.entity_id === selectedDevice ? 1 : b.entity_id === selectedDevice ? -1 : 0))
+          .map(device => {
+            const room = rooms.find(r => r.id === device.room)
+            if (!room) return null
+            const type = deviceType(device)
+            const [sx, sy] = toScreen(view, device.position)
+            const active = mode === 'devices'
+            const dim = active && selection.roomId !== null && selection.roomId !== device.room
+            const invalid =
+              draggingDevice === device.entity_id &&
+              !(pointStrictlyInside(device.position, room.points) || pointOnBoundary(device.position, room.points))
+            const isSelected = selectedDevice === device.entity_id
+            const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.devices
+            const r = EDITOR_DEVICE_RADIUS_PX
+            const length = type?.hasLength ? (device.length ?? type.defaultLength ?? 1) : 0
+            const angle = -(device.rotation ?? 0)
+            return (
+              <g
+                key={device.entity_id}
+                opacity={dim ? 0.35 : 1}
+                className={active ? 'cursor-move' : 'pointer-events-none'}
+                onPointerDown={e => onDeviceDown(e, device)}
+                onContextMenu={e => openMenu(e, { kind: 'device', entityId: device.entity_id })}
+              >
+                {length > 0 && (
+                  <line
+                    x1={sx - (length / 2) * view.scale}
+                    y1={sy}
+                    x2={sx + (length / 2) * view.scale}
+                    y2={sy}
+                    transform={`rotate(${angle} ${sx} ${sy})`}
+                    stroke={color}
+                    strokeWidth={6}
+                    strokeLinecap="round"
+                    opacity={0.8}
+                  />
+                )}
+                {isSelected && (
+                  <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
+                )}
+                <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
+                {type && <IconGlyph icon={type.icon} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />}
+              </g>
+            )
+          })}
 
         {tool === 'draw' && draft.length > 0 && (
           <>

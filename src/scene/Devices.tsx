@@ -95,7 +95,7 @@ function DeviceSphere({
 }) {
   const interactive = usePressActions(onClick, onOpen)
   return (
-    <mesh position={position} {...interactive}>
+    <mesh position={position} userData={{ pick: { click: onClick, open: onOpen } }} {...interactive}>
       <sphereGeometry args={[DEVICE_SPHERE_RADIUS_M, 12, 8]} />
       <meshStandardMaterial
         color={DEVICE_SPHERE_COLOR}
