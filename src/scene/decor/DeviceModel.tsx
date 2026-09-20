@@ -1,11 +1,11 @@
-import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
-import { Bar, Blob, Dome, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { colorValue, leafCount, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { Bar, Blob, Dome, Glass, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef, type ReactNode } from 'react'
-import { DoubleSide, type Group } from 'three'
+import type { Group } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
@@ -52,6 +52,29 @@ export default function DeviceModel({ kind, item, state }: Props) {
   const level = state?.level ?? 1
   // An unbound cover shows closed, so the item is visible on the plan.
   const coverLevel = state?.level ?? 0
+
+  // One leaf of a window or a glazed door: a thin frame with glass in it,
+  // standing on its own base, centered on `cx`.
+  const sash = (cx: number, lw: number, lh: number, frame: ReactNode, glass: string, t = 0.03) => (
+    <group position={[cx, 0, 0]}>
+      <Slab size={[t, lh, t]} radius={0.007} position={[-lw / 2 + t / 2, 0, 0]}>
+        {frame}
+      </Slab>
+      <Slab size={[t, lh, t]} radius={0.007} position={[lw / 2 - t / 2, 0, 0]}>
+        {frame}
+      </Slab>
+      <Slab size={[lw, t, t]} radius={0.007} position={[0, 0, 0]}>
+        {frame}
+      </Slab>
+      <Slab size={[lw, t, t]} radius={0.007} position={[0, lh - t, 0]}>
+        {frame}
+      </Slab>
+      <mesh position={[0, lh / 2, t / 2]}>
+        <planeGeometry args={[Math.max(lw - t * 2, 0.02), Math.max(lh - t * 2, 0.02)]} />
+        <Glass color={glass} />
+      </mesh>
+    </group>
+  )
 
   // A dark panel that plays a picture when the device is on and is a black
   // mirror when it is off.
@@ -401,14 +424,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'window': {
-      // A frame with clear glass in it, sitting on its sill. The opening is
-      // open when the device reports open, so the casement swings inward.
+      // A frame with as many casements as the width takes, each between half
+      // a meter and a meter wide. They swing inward when the cover opens,
+      // hinged on the outer edge so a pair opens from the middle.
       const w = p('width')
       const h = p('height')
       const f = 0.055
       const d = 0.08
       const frame = <Material color={c('frame')} material={m('frame')} />
       const inner = { w: w - f * 2, h: h - f * 2 }
+      const leaves = leafCount(inner.w)
+      const leafW = inner.w / leaves
       return (
         <group>
           <Slab size={[w, f, d]} radius={0.012} position={[0, 0, d / 2 - 0.02]}>
@@ -423,32 +449,58 @@ export default function DeviceModel({ kind, item, state }: Props) {
           <Slab size={[f, inner.h, d]} radius={0.012} position={[(w - f) / 2, f, d / 2 - 0.02]}>
             {frame}
           </Slab>
-          {/* The casement, hinged on the left, with the glass in it. */}
-          <group position={[-inner.w / 2, f, 0.02]} rotation={[0, on ? 0.9 : 0, 0]}>
-            <Slab size={[0.03, inner.h, 0.03]} radius={0.008} position={[0.015, 0, 0]}>
-              {frame}
-            </Slab>
-            <Slab size={[0.03, inner.h, 0.03]} radius={0.008} position={[inner.w - 0.015, 0, 0]}>
-              {frame}
-            </Slab>
-            <Slab size={[inner.w, 0.03, 0.03]} radius={0.008} position={[inner.w / 2, 0, 0]}>
-              {frame}
-            </Slab>
-            <Slab size={[inner.w, 0.03, 0.03]} radius={0.008} position={[inner.w / 2, inner.h - 0.03, 0]}>
-              {frame}
-            </Slab>
-            <mesh position={[inner.w / 2, inner.h / 2, 0.015]}>
-              <planeGeometry args={[inner.w - 0.05, inner.h - 0.05]} />
-              <meshPhysicalMaterial
-                color={c('glass')}
-                transparent
-                opacity={0.22}
-                roughness={0.05}
-                metalness={0}
-                side={DoubleSide}
-              />
-            </mesh>
-          </group>
+          {Array.from({ length: leaves }).map((_, i) => {
+            const left = i < leaves / 2
+            const edge = -inner.w / 2 + i * leafW
+            const hinge = left ? edge : edge + leafW
+            const swing = left ? 0.85 : -0.85
+            return (
+              <group key={i} position={[hinge, f, 0.02]} rotation={[0, on ? swing : 0, 0]}>
+                {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, c('glass'))}
+              </group>
+            )
+          })}
+        </group>
+      )
+    }
+    case 'sliding_door':
+    case 'sliding_glass': {
+      // Panels in a track. They slide toward the far end and stack there as
+      // the cover opens, so the opening grows from the near end.
+      const w = p('width')
+      const h = p('height')
+      const f = 0.05
+      const frame = <Material color={c('frame')} material={m('frame')} />
+      const glazed = kind.id === 'sliding_glass'
+      const open = state ? (state.level ?? (state.on ? 1 : 0)) : 0
+      const panels = Math.max(2, leafCount(w, 0.6, 1.4))
+      const panelW = w / panels
+      return (
+        <group>
+          {/* Head rail and floor track. */}
+          <Slab size={[w, f, 0.1]} radius={0.012} position={[0, h - f, 0.01]}>
+            {frame}
+          </Slab>
+          <Slab size={[w, 0.02, 0.1]} radius={0.006} position={[0, 0, 0.01]}>
+            {frame}
+          </Slab>
+          {Array.from({ length: panels }).map((_, i) => {
+            // The last panel stays put, the others gather behind it.
+            const slide = open * (panels - 1 - i) * panelW
+            const cx = -w / 2 + panelW * (i + 0.5) + slide
+            const z = 0.012 * (i - (panels - 1) / 2)
+            return (
+              <group key={i} position={[cx, 0.02, z]}>
+                {glazed ? (
+                  sash(0, panelW - 0.01, h - f - 0.02, frame, c('glass'), 0.045)
+                ) : (
+                  <Slab size={[panelW - 0.01, h - f - 0.02, 0.04]} radius={0.01} position={[0, 0, 0]}>
+                    {body}
+                  </Slab>
+                )}
+              </group>
+            )
+          })}
         </group>
       )
     }

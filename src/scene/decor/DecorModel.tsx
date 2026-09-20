@@ -129,7 +129,7 @@ export default function DecorModel({ kind, item, state }: Props) {
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.038]}>
             <cylinderGeometry args={[r - 0.03, r - 0.03, 0.008, SEG]} />
-            <Material color={c('glass')} material={m('glass')} />
+            <Material color={c('mirror')} material={m('mirror')} />
           </mesh>
         </group>
       )

@@ -1,6 +1,7 @@
 import {
   canRide,
   DECORATION_KINDS,
+  FIXED_SLOTS,
   decorationKind,
   isSupport,
   materialValue,
@@ -121,17 +122,22 @@ export default function DecorationPanel({
           {Object.entries(kind.colors).map(([slot, fallback]) => (
             <div key={slot} className="grid grid-cols-[96px_1fr_40px] items-center gap-2 text-sm capitalize">
               {slot}
-              <select
-                className={input}
-                value={materialValue(kind, item.materials, slot)}
-                onChange={e => onUpdate(item.id, { materials: { ...item.materials, [slot]: e.target.value } })}
-              >
-                {Object.entries(DECORATION_MATERIALS).map(([id, label]) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              {FIXED_SLOTS.has(slot) ? (
+                // Glass is glass. Only its tint is up to the viewer.
+                <span className="text-xs text-(--secondary-text-color)">Tint only</span>
+              ) : (
+                <select
+                  className={input}
+                  value={materialValue(kind, item.materials, slot)}
+                  onChange={e => onUpdate(item.id, { materials: { ...item.materials, [slot]: e.target.value } })}
+                >
+                  {Object.entries(DECORATION_MATERIALS).map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              )}
               <input
                 type="color"
                 className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"

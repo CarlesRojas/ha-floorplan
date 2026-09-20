@@ -2,7 +2,7 @@ import { roundedShape } from '#/geometry/polygon.ts'
 import type { SurfaceKind } from '#/materials/textures.ts'
 import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
 import { useMemo, type ReactNode } from 'react'
-import { ExtrudeGeometry } from 'three'
+import { DoubleSide, ExtrudeGeometry } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
 // Scandinavian: softly rounded boxes, tapered legs, plump cushions and thin
@@ -281,5 +281,20 @@ export function Knob({
       <cylinderGeometry args={[radius, radius * 0.8, radius * 1.2, 10]} />
       {children}
     </mesh>
+  )
+}
+
+// Clear glass, for windows and glazed doors. Never tinted by a surface
+// texture: glass is glass.
+export function Glass({ color, opacity = 0.22 }: { color: string; opacity?: number }) {
+  return (
+    <meshPhysicalMaterial
+      color={color}
+      transparent
+      opacity={opacity}
+      roughness={0.05}
+      metalness={0}
+      side={DoubleSide}
+    />
   )
 }

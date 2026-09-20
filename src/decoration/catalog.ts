@@ -524,8 +524,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall mirror',
     'wall',
     [size(0.7, 0.3, 1.3), height(1.6, 0.8, 2.3)],
-    { frame: SCANDI.oak, glass: SCANDI.mist },
-    { frame: 'wood', glass: 'ceramic' },
+    { frame: SCANDI.oak, mirror: SCANDI.mist },
+    { frame: 'wood', mirror: 'metal' },
   ),
   kind(
     'wall_clock',
@@ -780,6 +780,26 @@ export const DECORATION_KINDS: DecorationKind[] = [
     TOGGLE,
   ),
   kind(
+    'sliding_door',
+    'cover',
+    'Sliding door',
+    'wall',
+    [width(1.8, 0.9, 4), height(2.1, 1.8, 2.5)],
+    { body: SCANDI.offWhite, frame: SCANDI.slate },
+    { body: 'matte', frame: 'metal' },
+    TOGGLE_LEVEL,
+  ),
+  kind(
+    'sliding_glass',
+    'cover',
+    'Sliding glass door',
+    'wall',
+    [width(2.4, 1.2, 5), height(2.2, 1.8, 2.6)],
+    { frame: SCANDI.slate, glass: SCANDI.mist },
+    { frame: 'metal' },
+    TOGGLE_LEVEL,
+  ),
+  kind(
     'garage_door',
     'cover',
     'Garage door',
@@ -941,7 +961,7 @@ export function footprint(kind: DecorationKind, params: Record<string, number> |
 
 // Items that hang on a wall but stand on the floor, so their height
 // parameter is their own size and not how high they are mounted.
-const FLOOR_STANDING = new Set(['door', 'garage_door', 'radiator'])
+const FLOOR_STANDING = new Set(['door', 'sliding_door', 'sliding_glass', 'garage_door', 'radiator'])
 
 // How high above the floor an item's own origin sits. Lights build
 // themselves at full height, ceiling items hang from the ceiling, a window
@@ -954,6 +974,18 @@ export function mountHeight(kind: DecorationKind, params: Record<string, number>
   if (kind.id === 'window') return paramValue(kind, params, 'sill')
   return paramValue(kind, params, 'height')
 }
+
+// How many leaves a run of a given width is divided into, each one between
+// `min` and `max` meters wide.
+export function leafCount(width: number, min = 0.5, max = 1) {
+  const fewest = Math.ceil(width / max)
+  const most = Math.max(1, Math.floor(width / min))
+  return Math.min(Math.max(Math.round(width / 0.75), fewest), Math.max(fewest, most))
+}
+
+// Material slots that are what they are: the viewer picks their tint, never
+// their surface.
+export const FIXED_SLOTS = new Set(['glass', 'mirror'])
 
 // Items with a flat top that other things can stand on, and how high that
 // top is: their own height parameter, or a fixed height when they have none.

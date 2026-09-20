@@ -98,6 +98,7 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
 - Tables, desks, counters, islands, sideboards, dressers, nightstands, shelves, stools, benches, poufs, washing machines and dryers have a top other things can stand on. Drag a lamp, a kettle, a vase, a monitor or a TV over one and it lands on it: the top lights up while the item is over it, and the item carries a ring on the plan to show it is raised. Moving the support takes everything on it along, and deleting the support leaves them on the floor. The sidebar has a Standing on dropdown for the same thing without dragging. A hob and a sink let into a worktop instead of resting on it. An item that stands on nothing sits at its own Standing on height. A wall item hangs at its height, except a door, a garage door and a radiator, which stand on the floor, and a window, which starts at its sill.
 - A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change.
+- A window is divided into casements, and a sliding door into panels, by how wide it is: a window leaf stays between half a meter and a meter, a sliding panel between 0.6 and 1.4.
 - Items are grouped by family in the sidebar, with a search box. Every model is built from primitives in code, in a Scandinavian vocabulary: pale oak, chalky whites, muted greens and clays, rounded frames on tapered legs, plump linen upholstery.
 
 ### Catalog
@@ -115,7 +116,7 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 | Decor | Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
 | Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector |
 | Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
-| Windows and doors | Blind, roller shutter, window, door, garage door, awning |
+| Windows and doors | Blind, roller shutter, window, door, sliding door, sliding glass door, garage door, awning |
 | Security and sensors | Camera, doorbell, motion sensor, door sensor, smoke detector, alarm panel, smart lock, air quality sensor |
 | Smart home | Robot vacuum, smart plug, switch panel |
 
@@ -125,7 +126,7 @@ A bound device drives what the item does in 3D, when its signals match:
 
 - Lamps and LED strips glow with the light's brightness, color and color temperature.
 - TVs, monitors and projectors play a picture on their screen, and are black glass when off. Speakers and soundbars light a small indicator.
-- Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors and window casements swing open.
+- Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors and window casements swing open, and sliding doors run along their track, partway when the cover reports a position.
 - Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.
 - Radiators and towel rails warm up, hobs light their rings, ovens glow behind the glass.
 - Fridges, dishwashers, kettles and coffee machines show a status light.
@@ -182,7 +183,7 @@ Each decoration:
 | `on` | Id of the item this one stands on, for example the table under a lamp |
 | `params` | Kind specific numbers in meters, for example `size`, `cord`, `height`, `length` |
 | `colors` | Hex color per material slot, for example `shade`, `base`, `cord` |
-| `materials` | Surface per slot: `matte`, `fabric`, `wood`, `ceramic`, `metal`. Surfaces are procedural textures with relief |
+| `materials` | Surface per slot: `matte`, `fabric`, `wood`, `ceramic`, `metal`. Surfaces are procedural textures with relief. A `glass` or `mirror` slot takes a tint only, never a surface |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 
