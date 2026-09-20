@@ -1012,14 +1012,16 @@ const SURFACE_TOPS: Record<string, string | number> = {
 }
 
 // Items let into a worktop rather than set on it, and how far their origin
-// drops so the top comes out flush. A sink already hangs below its rim, so
-// its origin is the worktop line itself.
-const BUILT_IN: Record<string, number> = { hob: 0.02, kitchen_sink: 0 }
+// moves for it: down into the worktop, or up when the item hangs below its
+// own rim, as a sink does. Never exactly flush, since two surfaces in the
+// same plane fight over which one is drawn.
+const BUILT_IN: Record<string, number> = { hob: 0.01, kitchen_sink: -0.015 }
 
 export const isSupport = (kind: DecorationKind) => kind.id in SURFACE_TOPS
 // Anything with a "Standing on" parameter is meant to stand on something.
 export const canRide = (kind: DecorationKind) => kind.params.some(p => p.id === 'lift')
 export const isBuiltIn = (kind: DecorationKind) => kind.id in BUILT_IN
+// Positive sinks the item into the top, negative lifts it clear of it.
 export const builtInDepth = (kind: DecorationKind) => BUILT_IN[kind.id] ?? 0
 
 // Height of an item's top surface above its own base.
