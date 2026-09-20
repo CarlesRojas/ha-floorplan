@@ -151,12 +151,34 @@ export default function Editor({ hass, config, onChange }: Props) {
     })
 
   const removeDecoration = (id: string) => {
+    // Whatever stood on it drops to the floor rather than disappearing.
+    const left = decorations
+      .filter(d => d.id !== id)
+      .map(d => {
+        if (d.on !== id) return d
+        const { on: _dropped, ...rest } = d
+        return rest
+      })
+    commit(rooms, unbindEverywhere(devices, id), left)
+    if (selectedDecoration === id) setSelectedDecoration(null)
+  }
+
+  // Puts an item on another one, or back on the floor.
+  const standOn = (id: string, supportId: string | null) => {
+    const support = supportId ? decorations.find(d => d.id === supportId) : null
     commit(
       rooms,
-      unbindEverywhere(devices, id),
-      decorations.filter(d => d.id !== id),
+      devices,
+      decorations.map(d => {
+        if (d.id !== id) return d
+        if (!support) {
+          const { on: _dropped, ...rest } = d
+          return rest
+        }
+        // It lands in the middle of the top it was put on.
+        return { ...d, on: support.id, room: support.room, position: support.position }
+      }),
     )
-    if (selectedDecoration === id) setSelectedDecoration(null)
   }
 
   // A copy sits one grid step away, so it does not hide under the original.
@@ -617,6 +639,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         onUpdate={updateDecoration}
         onRemove={removeDecoration}
         onBind={(id, entityId) => (entityId ? bindDecoration(entityId, id, true) : bindDecoration('', id, false))}
+        onStandOn={standOn}
         onFloor={setFloor}
       />
     ) : mode === 'devices' ? (

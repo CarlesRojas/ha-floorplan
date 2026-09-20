@@ -1,4 +1,5 @@
-import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
+import { decorationKind } from '#/decoration/catalog.ts'
+import { standHeight } from '#/decoration/surfaces.ts'
 import ApplianceModel from '#/scene/decor/ApplianceModel.tsx'
 import DecorModel from '#/scene/decor/DecorModel.tsx'
 import DeviceModel from '#/scene/decor/DeviceModel.tsx'
@@ -12,6 +13,8 @@ import { MathUtils } from 'three'
 
 type Props = {
   item: DecorationConfig
+  // Every item in the plan, so one standing on another can follow its top.
+  all: DecorationConfig[]
   state: ItemState | null
   onClick?: () => void
 }
@@ -38,14 +41,14 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-export default function DecorationModel({ item, state, onClick }: Props) {
+export default function DecorationModel({ item, all, state, onClick }: Props) {
   const kind = decorationKind(item.kind)
   if (!kind) return null
   const Model = FAMILY_MODELS[kind.family]
   if (!Model) return null
 
   const rotation = MathUtils.degToRad(item.rotation ?? 0)
-  const lift = mountHeight(kind, item.params)
+  const lift = standHeight(item, all)
 
   const interactive = onClick
     ? {

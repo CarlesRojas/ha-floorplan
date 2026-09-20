@@ -78,6 +78,9 @@ export type DecorationConfig = {
   position: Point
   // Degrees, counter clockwise on the plan.
   rotation?: number
+  // Id of the item this one stands on, for example the table under a lamp.
+  // Its height follows that item's top, and it moves when that item moves.
+  on?: string
   // Kind specific numbers, for example size or cord length, in meters.
   params?: Record<string, number>
   // Colors per material slot, as hex strings.

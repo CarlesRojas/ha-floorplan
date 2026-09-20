@@ -84,6 +84,7 @@ export default function Devices({ hass, config }: Props) {
           <DecorationModel
             key={item.id}
             item={item}
+            all={decorations}
             state={state}
             onClick={device ? () => act(device.entity_id) : undefined}
           />

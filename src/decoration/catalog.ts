@@ -41,6 +41,7 @@ const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max
 const height = (d: number, min = 0.2, max = 2.6) => p('height', 'Height', d, min, max)
 const size = (d: number, min = 0.1, max = 1.5) => p('size', 'Size', d, min, max)
 const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Length', d, min, max, step)
+// Height an item stands at when it is not standing on anything.
 const lift = (d: number, max = 1.5) => p('lift', 'Standing on', d, 0, max)
 
 // Signal sets.
@@ -579,7 +580,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'TV',
     'floor',
-    [width(1.2, 0.6, 2.2), p('ratio', 'Height ratio', 0.58, 0.4, 0.8, 0.02), lift(0.55)],
+    [width(1.2, 0.6, 2.2), p('ratio', 'Height ratio', 0.58, 0.4, 0.8, 0.02), lift(0)],
     { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.oak },
     { body: 'matte', screen: 'ceramic', stand: 'wood' },
     TOGGLE,
@@ -599,7 +600,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'Soundbar',
     'floor',
-    [width(0.9, 0.4, 1.6), height(0.08, 0.05, 0.15), lift(0.5)],
+    [width(0.9, 0.4, 1.6), height(0.08, 0.05, 0.15), lift(0)],
     { body: SCANDI.linen, trim: SCANDI.charcoal },
     { body: 'fabric', trim: 'matte' },
     TOGGLE_LEVEL,
@@ -609,7 +610,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'Speaker',
     'floor',
-    [size(0.16, 0.08, 0.35), height(0.22, 0.1, 0.5), lift(0.75)],
+    [size(0.16, 0.08, 0.35), height(0.22, 0.1, 0.5), lift(0)],
     { body: SCANDI.linen, trim: SCANDI.oak },
     { body: 'fabric', trim: 'wood' },
     TOGGLE_LEVEL,
@@ -629,7 +630,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'Monitor',
     'floor',
-    [width(0.6, 0.4, 1.1), p('ratio', 'Height ratio', 0.6, 0.4, 0.8, 0.02), lift(0.74)],
+    [width(0.6, 0.4, 1.1), p('ratio', 'Height ratio', 0.6, 0.4, 0.8, 0.02), lift(0)],
     { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.slate },
     { body: 'matte', screen: 'ceramic', stand: 'metal' },
     TOGGLE,
@@ -639,7 +640,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'Game console',
     'floor',
-    [width(0.3, 0.15, 0.5), height(0.06, 0.04, 0.12), lift(0.5)],
+    [width(0.3, 0.15, 0.5), height(0.06, 0.04, 0.12), lift(0)],
     { body: SCANDI.offWhite, trim: SCANDI.charcoal },
     { body: 'matte', trim: 'matte' },
     TOGGLE,
@@ -875,7 +876,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'security',
     'Air quality sensor',
     'floor',
-    [size(0.1, 0.06, 0.2), lift(0.8)],
+    [size(0.1, 0.06, 0.2), lift(0)],
     { body: SCANDI.offWhite, face: SCANDI.mist },
     { body: 'matte', face: 'ceramic' },
     READOUT,
@@ -952,4 +953,52 @@ export function mountHeight(kind: DecorationKind, params: Record<string, number>
   if (FLOOR_STANDING.has(kind.id)) return 0
   if (kind.id === 'window') return paramValue(kind, params, 'sill')
   return paramValue(kind, params, 'height')
+}
+
+// Items with a flat top that other things can stand on, and how high that
+// top is: their own height parameter, or a fixed height when they have none.
+const SURFACE_TOPS: Record<string, string | number> = {
+  dining_table: 'height',
+  coffee_table: 'height',
+  side_table: 'height',
+  desk: 'height',
+  console_table: 'height',
+  nightstand: 'height',
+  sideboard: 'height',
+  dresser: 'height',
+  shoe_rack: 'height',
+  bookshelf: 'height',
+  stool: 'height',
+  kitchen_counter: 'height',
+  kitchen_island: 'height',
+  washing_machine: 'height',
+  dryer: 'height',
+  bench: 0.42,
+  pouf: 'height',
+}
+
+// Items let into a worktop rather than set on it, and how far their origin
+// drops so the top comes out flush. A sink already hangs below its rim, so
+// its origin is the worktop line itself.
+const BUILT_IN: Record<string, number> = { hob: 0.02, kitchen_sink: 0 }
+
+export const isSupport = (kind: DecorationKind) => kind.id in SURFACE_TOPS
+// Anything with a "Standing on" parameter is meant to stand on something.
+export const canRide = (kind: DecorationKind) => kind.params.some(p => p.id === 'lift')
+export const isBuiltIn = (kind: DecorationKind) => kind.id in BUILT_IN
+export const builtInDepth = (kind: DecorationKind) => BUILT_IN[kind.id] ?? 0
+
+// Height of an item's top surface above its own base.
+export function surfaceTop(kind: DecorationKind, params: Record<string, number> | undefined) {
+  const top = SURFACE_TOPS[kind.id]
+  return typeof top === 'number' ? top : paramValue(kind, params, top)
+}
+
+// Usable area of a top, inset so things do not hang over the edge.
+export function surfaceRect(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+): [number, number] {
+  const [w, d] = footprint(kind, params)
+  return [Math.max(w - 0.1, w * 0.4), Math.max(d - 0.1, d * 0.4)]
 }

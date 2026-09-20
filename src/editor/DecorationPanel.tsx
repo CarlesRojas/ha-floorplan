@@ -1,4 +1,12 @@
-import { DECORATION_KINDS, decorationKind, materialValue, type DecorationKind } from '#/decoration/catalog.ts'
+import {
+  canRide,
+  DECORATION_KINDS,
+  decorationKind,
+  isSupport,
+  materialValue,
+  type DecorationKind,
+} from '#/decoration/catalog.ts'
+import { ridersOf } from '#/decoration/surfaces.ts'
 import { entityName } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import { cn } from '#/lib/utils.ts'
@@ -20,6 +28,7 @@ type Props = {
   onUpdate: (id: string, patch: Partial<DecorationConfig>) => void
   onRemove: (id: string) => void
   onBind: (id: string, entityId: string | null) => void
+  onStandOn: (id: string, supportId: string | null) => void
   onFloor: (roomId: string, floor: RoomConfig['floor']) => void
 }
 
@@ -38,6 +47,7 @@ export default function DecorationPanel({
   onUpdate,
   onRemove,
   onBind,
+  onStandOn,
   onFloor,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
@@ -47,6 +57,13 @@ export default function DecorationPanel({
 
   if (item && kind) {
     const boundDevice = devices.find(d => d.decorations?.includes(item.id))
+    // Tops in the same room, never the item itself or anything on it.
+    const mine = new Set([item.id, ...ridersOf(item.id, decorations).map(r => r.id)])
+    const supports = decorations.filter(d => {
+      if (mine.has(d.id) || d.room !== item.room) return false
+      const k = decorationKind(d.kind)
+      return k ? isSupport(k) : false
+    })
     const itemRoom = rooms.find(r => r.id === item.room)
     const roomIndex = rooms.findIndex(r => r.id === item.room)
     return (
@@ -124,6 +141,24 @@ export default function DecorationPanel({
             </div>
           ))}
         </div>
+
+        {canRide(kind) && (
+          <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
+            <p className="text-xs font-semibold text-(--secondary-text-color)">Standing on</p>
+            <select
+              className={input}
+              value={item.on ?? ''}
+              onChange={e => onStandOn(item.id, e.target.value || null)}
+            >
+              <option value="">The floor</option>
+              {supports.map(s => (
+                <option key={s.id} value={s.id}>
+                  {decorationKind(s.kind)?.label ?? s.kind}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
           <p className="text-xs font-semibold text-(--secondary-text-color)">Device</p>

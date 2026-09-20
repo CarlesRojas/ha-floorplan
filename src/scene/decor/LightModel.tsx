@@ -163,12 +163,11 @@ export default function LightModel({ kind, item, state }: Props) {
     }
     case 'light_table': {
       // A mushroom lamp: chunky stem, dome cap.
-      const lift = p('lift')
       const height = p('height')
       const r = size / 2
-      glowY = lift + height
+      glowY = height
       body = (
-        <group position={[0, lift, 0]}>
+        <group>
           <mesh position={[0, height * 0.5, 0]}>
             <capsuleGeometry args={[r * 0.35, height * 0.8, 4, SEG]} />
             <BaseMaterial color={c('base')} material={m('base')} />

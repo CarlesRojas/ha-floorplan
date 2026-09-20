@@ -1,7 +1,6 @@
 import {
   ContextMenu,
   ContextMenuItem,
-  ContextMenuLabel,
   ContextMenuSeparator,
   type ContextMenuPosition,
 } from '#/components/ui/context-menu.tsx'
@@ -14,7 +13,8 @@ import {
   EDITOR_GRID_M,
   EDITOR_HANDLE_PX,
 } from '#/constants.ts'
-import { decorationKind, footprint } from '#/decoration/catalog.ts'
+import { canRide, decorationKind, footprint, isSupport } from '#/decoration/catalog.ts'
+import { ridersOf, standHeight, supportUnder } from '#/decoration/surfaces.ts'
 import { decorationIcon } from '#/decoration/icons.ts'
 import { deviceType } from '#/devices/catalog.ts'
 import type { Mode, Selection, Tool } from '#/editor/types.ts'
@@ -28,7 +28,7 @@ import {
   pointStrictlyInside,
   segmentEntersAny,
 } from '#/geometry/overlap.ts'
-import { ALT_KEY, shortcut } from '#/lib/shortcuts.ts'
+import { shortcut } from '#/lib/shortcuts.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
@@ -151,6 +151,9 @@ export default function Canvas({
   const [draggingDevice, setDraggingDevice] = useState<string | null>(null)
   const liveDecorations = useRef<DecorationConfig[] | null>(null)
   const [draggingDecoration, setDraggingDecoration] = useState<string | null>(null)
+  // The item a dragged one would come to rest on, highlighted while it is
+  // over it.
+  const [hoverSupport, setHoverSupport] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   // The room a drag just copied, so an overlapping release can be resolved
   // to a free spot instead of landing on top of the original.
@@ -442,10 +445,33 @@ export default function Canvas({
             ],
           }
         }
-        liveDecorations.current = current.map(x => (x.id === d.id ? landing : x))
-        const shown = kind?.mount === 'wall' ? landing : { ...item, position: target, room: over?.id ?? item.room }
+        // What it comes to rest on: the highest top under it, or the floor.
+        if (kind && canRide(kind)) {
+          const support = supportUnder(landing.position, { ...item, room: landing.room }, current)
+          if (support) landing = { ...landing, on: support.id, room: support.room }
+          else if (landing.on) {
+            const { on: _dropped, ...rest } = landing
+            landing = rest
+          }
+          setHoverSupport(support?.id ?? null)
+        }
+        // Whatever stands on this item travels with it.
+        const riders = new Set(ridersOf(d.id, current).map(r => r.id))
+        const dx = landing.position[0] - item.position[0]
+        const dy = landing.position[1] - item.position[1]
+        const carry = (x: DecorationConfig): DecorationConfig =>
+          riders.has(x.id)
+            ? {
+                ...x,
+                position: [round(x.position[0] + dx), round(x.position[1] + dy)] as Point,
+                room: landing.room,
+              }
+            : x
+        liveDecorations.current = current.map(x => (x.id === d.id ? landing : carry(x)))
+        const shown =
+          kind?.mount === 'wall' ? landing : { ...landing, position: target, room: over?.id ?? landing.room }
         onDecorations(
-          current.map(x => (x.id === d.id ? shown : x)),
+          current.map(x => (x.id === d.id ? shown : carry(x))),
           false,
         )
         break
@@ -672,6 +698,7 @@ export default function Canvas({
     setDraggingId(null)
     setDraggingDevice(null)
     setDraggingDecoration(null)
+    setHoverSupport(null)
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
@@ -858,7 +885,6 @@ export default function Canvas({
             >
               Rotate 90°
             </ContextMenuItem>
-            <ContextMenuLabel>Arrows move it, Shift for a finer step</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
@@ -912,7 +938,6 @@ export default function Canvas({
             >
               Rotate 90°
             </ContextMenuItem>
-            <ContextMenuLabel>{ALT_KEY} drag copies it, arrows move it</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
@@ -1099,104 +1124,126 @@ export default function Canvas({
           </>
         )}
 
-        {decorations.map(item => {
-          const room = rooms.find(r => r.id === item.room)
-          const kind = decorationKind(item.kind)
-          if (!room || !kind) return null
-          const [sx, sy] = toScreen(view, item.position)
-          const active = mode === 'decoration'
-          const dim = active && selection.roomId !== null && selection.roomId !== item.room
-          const invalid =
-            draggingDecoration === item.id &&
-            !(pointStrictlyInside(item.position, room.points) || pointOnBoundary(item.position, room.points))
-          const isSelected = selectedDecoration === item.id
-          const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.decoration
-          const angle = -(item.rotation ?? 0)
-          const [fw, fd] = footprint(kind, item.params)
-          const r = EDITOR_DEVICE_RADIUS_PX
-          const halfW = Math.max(r, (fw / 2) * view.scale)
-          const halfD = Math.max(r, (fd / 2) * view.scale)
-          // Zero rotation faces plan -y, so the handle starts below the item.
-          const handleAngle = ((item.rotation ?? 0) - 90) * (Math.PI / 180)
-          const handleDist = Math.max(halfW, halfD) + 22
-          return (
-            <g
-              key={item.id}
-              opacity={active ? (dim ? 0.35 : 1) : 0.4}
-              className={active ? 'cursor-move' : 'pointer-events-none'}
-              onPointerDown={e => onDecorationDown(e, item)}
-              onContextMenu={e => openMenu(e, { kind: 'decoration', id: item.id })}
-            >
-              {/* The item's real footprint, rotated with it. Wall items read as
+        {[...decorations]
+          .sort((a, b) => standHeight(a, decorations) - standHeight(b, decorations))
+          .map(item => {
+            const room = rooms.find(r => r.id === item.room)
+            const kind = decorationKind(item.kind)
+            if (!room || !kind) return null
+            const [sx, sy] = toScreen(view, item.position)
+            const active = mode === 'decoration'
+            const dim = active && selection.roomId !== null && selection.roomId !== item.room
+            const invalid =
+              draggingDecoration === item.id &&
+              !(pointStrictlyInside(item.position, room.points) || pointOnBoundary(item.position, room.points))
+            const isSelected = selectedDecoration === item.id
+            const target = hoverSupport === item.id
+            const raised = item.on !== undefined
+            const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.decoration
+            const angle = -(item.rotation ?? 0)
+            const [fw, fd] = footprint(kind, item.params)
+            const r = EDITOR_DEVICE_RADIUS_PX
+            const halfW = Math.max(r, (fw / 2) * view.scale)
+            const halfD = Math.max(r, (fd / 2) * view.scale)
+            // Zero rotation faces plan -y, so the handle starts below the item.
+            const handleAngle = ((item.rotation ?? 0) - 90) * (Math.PI / 180)
+            const handleDist = Math.max(halfW, halfD) + 22
+            return (
+              <g
+                key={item.id}
+                opacity={active ? (dim ? 0.35 : 1) : 0.4}
+                className={active ? 'cursor-move' : 'pointer-events-none'}
+                onPointerDown={e => onDecorationDown(e, item)}
+                onContextMenu={e => openMenu(e, { kind: 'decoration', id: item.id })}
+              >
+                {/* The item's real footprint, rotated with it. Wall items read as
                   a bar on the wall, ceiling items as a dashed outline. */}
-              <rect
-                x={sx - halfW}
-                y={sy - (kind.mount === 'wall' ? 5 : halfD)}
-                width={halfW * 2}
-                height={kind.mount === 'wall' ? 10 : halfD * 2}
-                rx={kind.mount === 'wall' ? 4 : Math.min(8, Math.min(halfW, halfD) * 0.4)}
-                transform={`rotate(${angle} ${sx} ${sy})`}
-                fill={color}
-                fillOpacity={kind.mount === 'wall' ? 0.7 : 0.18}
-                stroke={color}
-                strokeWidth={1.5}
-                strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
-              />
-              {isSelected && (
-                <>
-                  {/* A dashed halo around the whole footprint. */}
+                <rect
+                  x={sx - halfW}
+                  y={sy - (kind.mount === 'wall' ? 5 : halfD)}
+                  width={halfW * 2}
+                  height={kind.mount === 'wall' ? 10 : halfD * 2}
+                  rx={kind.mount === 'wall' ? 4 : Math.min(8, Math.min(halfW, halfD) * 0.4)}
+                  transform={`rotate(${angle} ${sx} ${sy})`}
+                  fill={color}
+                  fillOpacity={kind.mount === 'wall' ? 0.7 : 0.18}
+                  stroke={color}
+                  strokeWidth={1.5}
+                  strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
+                />
+                {/* The usable part of a top, lit up while something is over it. */}
+                {target && isSupport(kind) && (
                   <rect
-                    x={sx - halfW - 5}
-                    y={sy - (kind.mount === 'wall' ? 10 : halfD + 5)}
-                    width={halfW * 2 + 10}
-                    height={(kind.mount === 'wall' ? 10 : halfD + 5) * 2}
-                    rx={8}
+                    x={sx - halfW + 4}
+                    y={sy - halfD + 4}
+                    width={Math.max(halfW * 2 - 8, 4)}
+                    height={Math.max(halfD * 2 - 8, 4)}
+                    rx={6}
                     transform={`rotate(${angle} ${sx} ${sy})`}
-                    fill="none"
+                    fill={color}
+                    fillOpacity={0.3}
                     stroke={color}
                     strokeWidth={2}
-                    strokeDasharray="6 4"
                   />
-                  {/* Rotation handle on the item's front, with a stem. */}
-                  <line
-                    x1={sx}
-                    y1={sy}
-                    x2={sx + Math.cos(handleAngle) * handleDist}
-                    y2={sy - Math.sin(handleAngle) * handleDist}
-                    stroke={color}
-                    strokeWidth={1.5}
-                    className="pointer-events-none"
-                  />
-                  <circle
-                    cx={sx + Math.cos(handleAngle) * handleDist}
-                    cy={sy - Math.sin(handleAngle) * handleDist}
-                    r={7}
-                    fill="var(--card-background-color)"
-                    stroke={color}
-                    strokeWidth={2}
-                    className="cursor-grab"
-                    onPointerDown={e => onRotateDown(e, item)}
-                  />
-                </>
-              )}
-              <circle
-                cx={sx}
-                cy={sy}
-                r={r}
-                fill="var(--card-background-color)"
-                stroke={color}
-                strokeWidth={isSelected ? 3 : 2}
-              />
-              <IconGlyph
-                icon={decorationIcon(item.kind, kind.family)}
-                x={sx}
-                y={sy}
-                size={r * 1.1}
-                fill="var(--primary-text-color)"
-              />
-            </g>
-          )
-        })}
+                )}
+                {isSelected && (
+                  <>
+                    {/* A dashed halo around the whole footprint. */}
+                    <rect
+                      x={sx - halfW - 5}
+                      y={sy - (kind.mount === 'wall' ? 10 : halfD + 5)}
+                      width={halfW * 2 + 10}
+                      height={(kind.mount === 'wall' ? 10 : halfD + 5) * 2}
+                      rx={8}
+                      transform={`rotate(${angle} ${sx} ${sy})`}
+                      fill="none"
+                      stroke={color}
+                      strokeWidth={2}
+                      strokeDasharray="6 4"
+                    />
+                    {/* Rotation handle on the item's front, with a stem. */}
+                    <line
+                      x1={sx}
+                      y1={sy}
+                      x2={sx + Math.cos(handleAngle) * handleDist}
+                      y2={sy - Math.sin(handleAngle) * handleDist}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      className="pointer-events-none"
+                    />
+                    <circle
+                      cx={sx + Math.cos(handleAngle) * handleDist}
+                      cy={sy - Math.sin(handleAngle) * handleDist}
+                      r={7}
+                      fill="var(--card-background-color)"
+                      stroke={color}
+                      strokeWidth={2}
+                      className="cursor-grab"
+                      onPointerDown={e => onRotateDown(e, item)}
+                    />
+                  </>
+                )}
+                {raised && (
+                  <circle cx={sx} cy={sy} r={r + 3} fill="none" stroke={color} strokeWidth={1.5} opacity={0.7} />
+                )}
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={r}
+                  fill="var(--card-background-color)"
+                  stroke={color}
+                  strokeWidth={isSelected ? 3 : 2}
+                />
+                <IconGlyph
+                  icon={decorationIcon(item.kind, kind.family)}
+                  x={sx}
+                  y={sy}
+                  size={r * 1.1}
+                  fill="var(--primary-text-color)"
+                />
+              </g>
+            )
+          })}
 
         {devices.map(device => {
           const room = rooms.find(r => r.id === device.room)

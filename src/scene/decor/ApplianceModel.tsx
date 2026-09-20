@@ -296,9 +296,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       const w = p('width')
       const d = p('depth')
       const h = p('height')
-      const lift = paramValue(kind, item.params, 'lift')
       return (
-        <group position={[0, lift, 0]}>
+        <group>
           <Slab size={[w, h, d]} radius={0.03} position={[0, 0, 0]}>
             {body}
           </Slab>

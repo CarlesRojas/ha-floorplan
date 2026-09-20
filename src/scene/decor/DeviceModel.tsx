@@ -328,7 +328,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const r = p('size') / 2
       const h = p('height')
       return (
-        <group position={[0, paramValue(kind, item.params, 'lift'), 0]}>
+        <group>
           <mesh position={[0, h / 2, 0]} castShadow>
             <cylinderGeometry args={[r * 0.8, r, h, SEG]} />
             {body}

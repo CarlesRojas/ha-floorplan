@@ -80,7 +80,7 @@ export default function DecorModel({ kind, item, state }: Props) {
     case 'plant_small': {
       const r = p('size') / 2
       return (
-        <group position={[0, paramValue(kind, item.params, 'lift'), 0]}>
+        <group>
           <mesh position={[0, r * 0.55, 0]} castShadow>
             <cylinderGeometry args={[r * 0.85, r * 0.65, r * 1.1, SEG]} />
             <Material color={c('pot')} material={m('pot')} />
@@ -162,7 +162,7 @@ export default function DecorModel({ kind, item, state }: Props) {
       const r = p('size') / 2
       const h = p('height')
       return (
-        <group position={[0, paramValue(kind, item.params, 'lift'), 0]}>
+        <group>
           <mesh position={[0, h / 2, 0]} castShadow>
             <cylinderGeometry args={[r * 0.6, r, h, SEG]} />
             <Material color={c('body')} material={m('body')} />
@@ -193,7 +193,7 @@ export default function DecorModel({ kind, item, state }: Props) {
       const h = p('height')
       const count = Math.max(2, Math.round(h / 0.045))
       return (
-        <group position={[0, paramValue(kind, item.params, 'lift'), 0]}>
+        <group>
           {Array.from({ length: count }).map((_, i) => {
             const shrink = i * 0.012
             return (

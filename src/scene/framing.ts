@@ -1,5 +1,6 @@
 import { CAMERA_DIRECTION, CAMERA_FIT_MARGIN, CAMERA_FOV_DEG } from '#/constants.ts'
 import { decorationKind, paramValue } from '#/decoration/catalog.ts'
+import { standHeight } from '#/decoration/surfaces.ts'
 import { CEILING_HEIGHT_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
 import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils, Vector3 } from 'three'
@@ -18,9 +19,8 @@ export function sceneHeight(decorations: DecorationConfig[] = []) {
     const kind = decorationKind(item.kind)
     if (!kind) continue
     if (kind.mount === 'ceiling') return CEILING_HEIGHT_M
-    const lift = paramValue(kind, item.params, 'lift')
     const height = paramValue(kind, item.params, 'height')
-    top = Math.max(top, lift + height + 0.4)
+    top = Math.max(top, standHeight(item, decorations) + height + 0.4)
   }
   return top
 }

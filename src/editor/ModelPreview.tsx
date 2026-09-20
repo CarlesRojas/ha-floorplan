@@ -28,7 +28,7 @@ export default function ModelPreview({ item, className }: Props) {
         <directionalLight position={[3, 6, 4]} intensity={1.2} />
         <Bounds fit clip observe margin={1.3} maxDuration={0}>
           <group position={[0, lift, 0]}>
-            <DecorationModel item={centered} state={{ on: true, level: 0.8, glow: [glow.r, glow.g, glow.b] }} />
+            <DecorationModel item={centered} all={[centered]} state={{ on: true, level: 0.8, glow: [glow.r, glow.g, glow.b] }} />
           </group>
         </Bounds>
         <OrbitControls makeDefault enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={1.5} />
