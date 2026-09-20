@@ -46,10 +46,12 @@ export default function PreviewWindow({ hass, config, onClose }: Props) {
     x: Math.min(Math.max(x, m), Math.max(m, window.innerWidth - w - m)),
     y: Math.min(Math.max(y, m), Math.max(m, window.innerHeight - w / aspect - m)),
   })
-  const clampWidth = (w: number, x: number, y: number) => {
-    const maxByWidth = window.innerWidth - x - m
-    const maxByHeight = (window.innerHeight - y - m) * aspect
-    return Math.max(EDITOR_PREVIEW_MIN_WIDTH_PX, Math.min(w, maxByWidth, maxByHeight))
+  // The largest the window can be anywhere on screen. Measured against the
+  // viewport rather than against where the window happens to sit, so growing
+  // it near an edge slides it back in instead of collapsing it.
+  const clampWidth = (w: number) => {
+    const fits = Math.min(window.innerWidth - m * 2, (window.innerHeight - m * 2) * aspect)
+    return Math.min(Math.max(w, EDITOR_PREVIEW_MIN_WIDTH_PX), Math.max(fits, EDITOR_PREVIEW_MIN_WIDTH_PX))
   }
 
   const move = (e: React.PointerEvent) => {
@@ -57,8 +59,13 @@ export default function PreviewWindow({ hass, config, onClose }: Props) {
     if (!d) return
     const dx = e.clientX - d.startX
     const dy = e.clientY - d.startY
-    if (d.kind === 'move') setPosition(clampPosition(d.x + dx, d.y + dy, width))
-    else setWidth(clampWidth(Math.max(d.width + dx, (d.width / aspect + dy) * aspect), d.x, d.y))
+    if (d.kind === 'move') {
+      setPosition(clampPosition(d.x + dx, d.y + dy, width))
+      return
+    }
+    const next = clampWidth(Math.max(d.width + dx, (d.width / aspect + dy) * aspect))
+    setWidth(next)
+    setPosition(p => clampPosition(p.x, p.y, next))
   }
 
   const end = (e: React.PointerEvent) => {

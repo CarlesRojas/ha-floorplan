@@ -93,7 +93,7 @@ The mode switch on the left of the toolbar changes between Rooms and Devices. In
 
 ### Decoration mode
 
-The third mode places furniture and fixtures. The sidebar shows the catalog, and the selected room's floor material, tint, pattern size and pattern angle when one is picked. Floor patterns are drawn at their real size, boards 16 cm wide and 1.25 m long, tiles 21 cm across, so the pattern size only has to change when a room should read coarser or finer. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
+The third mode places furniture and fixtures. The sidebar shows the catalog, and the selected room's floor material, tint, pattern size, depth and angle when one is picked. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
 
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
 - Tables, desks, counters, islands, sideboards, dressers, nightstands, shelves, stools, benches, poufs, washing machines and dryers have a top other things can stand on. Drag a lamp, a kettle, a vase, a monitor or a TV over one and it lands on it: the top lights up while the item is over it, and the item carries a ring on the plan to show it is raised. Moving the support takes everything on it along, and deleting the support leaves them on the floor. The sidebar has a Standing on dropdown for the same thing without dragging. A hob and a sink let into a worktop instead of resting on it. An item that stands on nothing sits at its own Standing on height. A wall item hangs at its height, except a door, a garage door and a radiator, which stand on the floor, and a window, which starts at its sill.
@@ -157,7 +157,7 @@ Each room:
 | `name` | Label override |
 | `radius` | Corner radius override |
 | `color` | Fill color override |
-| `floor` | `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size and `rotation` in degrees |
+| `floor` | `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
 
 Each device:
 

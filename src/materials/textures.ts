@@ -1,4 +1,12 @@
-import { CanvasTexture, DataTexture, RepeatWrapping, RGBAFormat, SRGBColorSpace, type Texture } from 'three'
+import {
+  CanvasTexture,
+  DataTexture,
+  LinearMipmapLinearFilter,
+  RepeatWrapping,
+  RGBAFormat,
+  SRGBColorSpace,
+  type Texture,
+} from 'three'
 
 // Procedural surfaces, generated once on a canvas and cached. Each material
 // gives a light grayscale color map, so the item's color tints it, and a
@@ -19,8 +27,9 @@ export type Surface = {
 export type SurfaceKind =
   'wood' | 'wood_floor' | 'tiles' | 'terracotta' | 'carpet' | 'concrete' | 'fabric' | 'ceramic' | 'metal' | 'matte'
 
-const SIZE = 256
-const cache = new Map<SurfaceKind, Surface>()
+const SIZE = 512
+// Cached per kind and per intensity, since the color map is baked with it.
+const cache = new Map<string, Surface>()
 
 // Deterministic value noise, so every load looks the same.
 function noise2(x: number, y: number, seed: number) {
@@ -71,54 +80,54 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
     normalScale: 0.18,
   },
   wood_floor: {
-    // Floorboards. The tile is four boards across and two boards long, and it
-    // is stretched four times along u, so a board is 16 cm wide and 1.25 m
-    // long. Rows are staggered, so the short joints never line up.
+    // Floorboards. The tile is eight boards across and four boards long, and
+    // it is stretched five times along u, so a board is 16 cm wide and 1.6 m
+    // long. Every row is offset by its own amount, so the short joints only
+    // line up again after eight boards, more than a meter across the room.
     field: (u, v) => {
-      const row = Math.floor(v * 4)
+      const rows = 8
+      const row = Math.floor(v * rows)
       const along = u + noise2(row, 1, 7)
-      const board = Math.floor(along * 2)
-      const joint = Math.abs(v * 4 - row - 0.5) > 0.47 || Math.abs(along * 2 - board - 0.5) > 0.495
+      const board = Math.floor(along * 4)
+      const joint = Math.abs(v * rows - row - 0.5) > 0.475 || Math.abs(along * 4 - board - 0.5) > 0.4955
       // Grain runs the length of the board, so it is slow along u and fine
       // across v. Anything busy along u would read as another joint.
-      const grain = fbm(u * 1.5, v * 30, 1)
-      const tone = 0.9 + grain * 0.06 + (noise2(row, board, 3) - 0.5) * 0.07
-      // The joints are a hairline, not a groove: boards read from the tone
-      // of each one more than from the lines between them.
-      return { height: joint ? 0.42 : 0.62 + grain * 0.1, light: joint ? tone * 0.9 : tone }
+      const grain = fbm(u * 1.5, v * 56, 1)
+      const tone = 0.9 + grain * 0.05 + (noise2(row, board, 3) - 0.5) * 0.07
+      return { height: joint ? 0.45 : 0.62 + grain * 0.1, light: joint ? tone * 0.92 : tone }
     },
     roughness: 0.7,
-    repeat: 1.6,
-    stretch: 4,
+    repeat: 0.78,
+    stretch: 5,
     normalScale: 0.12,
   },
   tiles: {
-    // Square tiles with grout lines. Three per tile at 1.6 tiles per meter,
-    // so a tile is 21 cm across.
+    // Square tiles with grout lines. Three per tile at 0.83 tiles per meter,
+    // so a tile is 40 cm across.
     field: (u, v) => {
-      const gu = Math.abs(((u * 3) % 1) - 0.5) > 0.46
-      const gv = Math.abs(((v * 3) % 1) - 0.5) > 0.46
+      const gu = Math.abs(((u * 3) % 1) - 0.5) > 0.475
+      const gv = Math.abs(((v * 3) % 1) - 0.5) > 0.475
       const grout = gu || gv
       const speck = fbm(u * 9, v * 9, 5)
-      return { height: grout ? 0.1 : 0.7 + speck * 0.1, light: grout ? 0.7 : 0.93 + speck * 0.06 }
+      return { height: grout ? 0.45 : 0.7 + speck * 0.1, light: grout ? 0.86 : 0.95 + speck * 0.05 }
     },
     roughness: 0.35,
-    repeat: 1.6,
-    normalScale: 0.5,
+    repeat: 0.83,
+    normalScale: 0.22,
   },
   terracotta: {
-    // Larger warm tiles, slightly uneven. Two per tile at 1.6 tiles per
-    // meter, so a tile is 31 cm across.
+    // Larger warm tiles, slightly uneven. Two per tile at 1.25 tiles per
+    // meter, so a tile is 40 cm across.
     field: (u, v) => {
       const gu = Math.abs(((u * 2) % 1) - 0.5) > 0.47
       const gv = Math.abs(((v * 2) % 1) - 0.5) > 0.47
       const grout = gu || gv
       const wobble = fbm(u * 5, v * 5, 9)
-      return { height: grout ? 0.15 : 0.5 + wobble * 0.4, light: grout ? 0.74 : 0.9 + wobble * 0.09 }
+      return { height: grout ? 0.3 : 0.55 + wobble * 0.35, light: grout ? 0.82 : 0.92 + wobble * 0.07 }
     },
     roughness: 0.85,
-    repeat: 1.6,
-    normalScale: 0.55,
+    repeat: 1.25,
+    normalScale: 0.3,
   },
   carpet: {
     // Soft pile: broad clumps with a fine fuzz over them.
@@ -182,8 +191,13 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
   },
 }
 
-export function surface(kind: SurfaceKind): Surface {
-  const cached = cache.get(kind)
+// `intensity` scales how much the pattern shows: 0 is a plain tint, 1 is the
+// surface as designed, 2 is twice the contrast and relief. The color map is
+// baked with it, so it is quantized and cached per step.
+export function surface(kind: SurfaceKind, intensity = 1): Surface {
+  const k = Math.min(Math.max(Math.round(intensity * 20) / 20, 0), 3)
+  const key = `${kind}@${k}`
+  const cached = cache.get(key)
   if (cached) return cached
   const spec = FIELDS[kind]
   const heights = new Float32Array(SIZE * SIZE)
@@ -197,7 +211,9 @@ export function surface(kind: SurfaceKind): Surface {
       const { height, light } = spec.field(x / SIZE, y / SIZE)
       heights[y * SIZE + x] = height
       const i = (y * SIZE + x) * 4
-      const l = Math.round(Math.min(Math.max(light, 0), 1) * 255)
+      // Toward plain white as the intensity drops, past the design as it rises.
+      const shown = 1 - (1 - light) * k
+      const l = Math.round(Math.min(Math.max(shown, 0), 1) * 255)
       image.data[i] = l
       image.data[i + 1] = l
       image.data[i + 2] = l
@@ -231,6 +247,10 @@ export function surface(kind: SurfaceKind): Surface {
   }
   const normalMap = new DataTexture(data, SIZE, SIZE, RGBAFormat)
   normalMap.wrapS = normalMap.wrapT = RepeatWrapping
+  // A data texture comes with no mipmaps, which makes a floor seen at a
+  // grazing angle crawl and its lines break up.
+  normalMap.generateMipmaps = true
+  normalMap.minFilter = LinearMipmapLinearFilter
   normalMap.needsUpdate = true
 
   const out: Surface = {
@@ -239,8 +259,8 @@ export function surface(kind: SurfaceKind): Surface {
     roughness: spec.roughness,
     repeat: spec.repeat,
     stretch: spec.stretch ?? 1,
-    normalScale: spec.normalScale,
+    normalScale: spec.normalScale * k,
   }
-  cache.set(kind, out)
+  cache.set(key, out)
   return out
 }

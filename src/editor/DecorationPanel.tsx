@@ -249,6 +249,21 @@ export default function DecorationPanel({
                 </span>
               </label>
               <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
+                Pattern depth
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.05}
+                  value={room.floor.intensity ?? 1}
+                  style={{ accentColor: accent }}
+                  onChange={e => onFloor(room.id, { ...room.floor!, intensity: Number(e.target.value) })}
+                />
+                <span className="text-right text-xs text-(--secondary-text-color)">
+                  {(room.floor.intensity ?? 1).toFixed(2)}x
+                </span>
+              </label>
+              <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
                 Pattern angle
                 <input
                   type="range"

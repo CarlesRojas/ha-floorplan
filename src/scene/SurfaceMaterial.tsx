@@ -12,6 +12,8 @@ type Props = {
   scale?: number
   // Turns the pattern on the surface, in degrees.
   rotation?: number
+  // How much the pattern shows: 0 is a plain tint, 1 as designed, 2 twice.
+  intensity?: number
   // Size in meters of the object this material wraps. Geometry with
   // normalized UVs, a sphere or a cylinder, needs it to tile at the same
   // physical scale as extruded geometry, whose UVs are already in meters.
@@ -29,12 +31,13 @@ export default function SurfaceMaterial({
   repeat,
   scale = 1,
   rotation = 0,
+  intensity = 1,
   span,
   emissive,
   emissiveIntensity = 0,
   doubleSide = false,
 }: Props) {
-  const s = surface(kind)
+  const s = surface(kind, intensity)
   const maps = useMemo(() => {
     const map = s.map.clone()
     const normalMap = s.normalMap.clone()
@@ -51,6 +54,9 @@ export default function SurfaceMaterial({
     const sy = r
     const matrix = new Matrix3().set(sx * cos, -sx * sin, 0, sy * sin, sy * cos, 0, 0, 0, 1)
     for (const t of [map, normalMap]) {
+      // Floors are seen at a grazing angle, where without this the boards
+      // and grout lines break into dashes.
+      t.anisotropy = 8
       t.matrixAutoUpdate = false
       t.matrix.copy(matrix)
       t.needsUpdate = true

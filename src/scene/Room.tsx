@@ -68,6 +68,7 @@ export default function Room({ room, index, radius, gap }: Props) {
           color={color}
           scale={room.floor?.scale ?? 1}
           rotation={room.floor?.rotation ?? 0}
+          intensity={room.floor?.intensity ?? 1}
         />
       ) : (
         <meshStandardMaterial color={color} roughness={0.85} />
