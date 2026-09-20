@@ -10,6 +10,7 @@ import { Bar, Blob, Dome, Glass, Material, SEG, Slab } from '#/scene/decor/parts
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
+import { useEased } from '#/scene/decor/ease.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef, type ReactNode } from 'react'
 import { DoubleSide, type Group } from 'three'
@@ -57,8 +58,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
   const trim = () => <Material color={c('trim')} material={m('trim')} />
   const on = state?.on ?? false
   const level = state?.level ?? 1
+  // Everything that moves is eased, so a cover reporting its position once a
+  // second travels instead of stuttering and a door swings instead of
+  // snapping. The hooks are called here, never inside the switch, so their
+  // order does not depend on which kind is being drawn.
+  // How far open a hinged or sliding thing is, 0 to 1.
+  const swing = useEased(on ? 1 : 0, 2.5)
   // An unbound cover shows closed, so the item is visible on the plan.
-  const coverLevel = state?.level ?? 0
+  const coverLevel = useEased(state?.level ?? 0, 1.6)
+  // Same, but a cover with no position at all counts as fully open.
+  const openAmount = useEased(state ? (state.level ?? (state.on ? 1 : 0)) : 0, 1.6)
+  const runLevel = useEased(level, 3)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or
   // around a solid panel. It stands on its own base, centered on `cx`, so
@@ -270,7 +280,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           <Slab size={[w, h, 0.22]} radius={0.07} position={[0, 0, 0.11]}>
             {body}
           </Slab>
-          <Slab size={[w - 0.1, 0.03, 0.06]} radius={0.012} position={[0, 0.03, 0.2]} rotation={[on ? -0.5 : 0, 0, 0]}>
+          <Slab size={[w - 0.1, 0.03, 0.06]} radius={0.012} position={[0, 0.03, 0.2]} rotation={[-0.5 * swing, 0, 0]}>
             {trim()}
           </Slab>
           <Led on={on} position={[w / 2 - 0.08, h * 0.55, 0.222]} color="#7fb3e8" radius={0.009} />
@@ -280,7 +290,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
     case 'fan_ceiling': {
       const r = p('size') / 2
       const drop = p('drop')
-      const speed = on ? 2 + level * 10 : 0
+      const speed = on ? 2 + runLevel * 10 : 0
       return (
         <group position={[0, -drop, 0]}>
           <Bar length={drop} radius={0.018} position={[0, drop / 2 + 0.05, 0]}>
@@ -312,7 +322,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
     case 'fan_standing': {
       const r = p('size') / 2
       const h = p('height')
-      const speed = on ? 3 + level * 12 : 0
+      const speed = on ? 3 + runLevel * 12 : 0
       return (
         <group>
           <Blob radius={r * 0.7} squash={0.18} position={[0, 0.03, 0]}>
@@ -469,9 +479,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
             const left = i < leaves / 2
             const edge = -inner.w / 2 + i * leafW
             const hinge = left ? edge : edge + leafW
-            const swing = left ? 0.85 : -0.85
+            const open = (left ? 0.85 : -0.85) * swing
             return (
-              <group key={i} position={[hinge, f, 0.02]} rotation={[0, on ? swing : 0, 0]}>
+              <group key={i} position={[hinge, f, 0.02]} rotation={[0, open, 0]}>
                 {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, c('glass'))}
               </group>
             )
@@ -491,7 +501,6 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const track = 0.05
       const frame = <Material color={c('frame')} material={m('frame')} />
       const glazed = kind.id === 'sliding_glass'
-      const open = state ? (state.level ?? (state.on ? 1 : 0)) : 0
       const count = Math.max(1, Math.round(p('panels')))
       const panelW = w / count
       const depth = count * track + 0.03
@@ -506,7 +515,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           </Slab>
           {Array.from({ length: count }).map((_, i) => {
             // The last panel stays put and the others gather in front of it.
-            const slide = open * (count - 1 - i) * panelW
+            const slide = openAmount * (count - 1 - i) * panelW
             const cx = -w / 2 + panelW * (i + 0.5) + slide
             const z = (i - (count - 1) / 2) * track
             return (
@@ -522,8 +531,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       // A case at the ceiling with the screen rolling out of it. Closed is
       // rolled up, so an unbound one shows as just the case.
       const [w, h] = screenSize(p('inches'))
-      const out = state ? (state.level ?? (state.on ? 1 : 0)) : 0
-      const drop = h * out
+      const drop = h * openAmount
       const caseH = 0.09
       return (
         <group>

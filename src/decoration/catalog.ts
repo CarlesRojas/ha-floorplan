@@ -30,6 +30,24 @@ export type DecorationKind = {
 }
 
 // Parameter shorthands. Every length is in meters.
+
+// Vertical parameters: how tall something is, or how high it sits. They are
+// kept inside a room, a little above the ceiling at most.
+const VERTICAL = new Set(['height', 'sill', 'lift', 'drop', 'cord'])
+const CEILING_LIMIT_M = 3
+const round2 = (value: number) => Math.round(value * 100) / 100
+
+// The range a slider offers. Each one reaches well past the usual size in
+// both directions, so nothing is capped just short of a real piece of
+// furniture: a wardrobe three meters wide, a coffee table at ankle height.
+// Counts, which take whole steps, are left exactly as they are given.
+const range = (id: string, d: number, min: number, max: number, step: number) => {
+  if (step >= 1) return { min, max }
+  const low = round2(Math.max(Math.min(min, d * 0.25), VERTICAL.has(id) ? 0 : 0.05))
+  const high = round2(Math.max(max, d * 3))
+  return { min: low, max: VERTICAL.has(id) ? Math.min(high, CEILING_LIMIT_M) : high }
+}
+
 const p = (
   id: string,
   label: string,
@@ -42,8 +60,7 @@ const p = (
   id,
   label,
   default: d,
-  min,
-  max,
+  ...range(id, d, min, max, step),
   step,
   unit,
 })

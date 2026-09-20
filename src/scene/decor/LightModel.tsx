@@ -4,6 +4,7 @@ import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
 import { CEILING_HEIGHT_M, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
+import { useEased } from '#/scene/decor/ease.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 
 export type LightState = ItemState
@@ -29,16 +30,17 @@ function ShadeMaterial({
   material?: string
   state: LightState | null
 }) {
-  const on = state?.on ?? false
   const glow = state?.glow ?? [1, 1, 1]
-  const intensity = on ? 0.5 + (state?.level ?? 1) * 1.5 : 0
+  // Eased, so a lamp fades up and down and follows a dimmer smoothly
+  // instead of stepping with each update.
+  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 4)
   return (
     <SurfaceMaterial
       kind={material as SurfaceKind}
       color={color}
       doubleSide
-      emissive={on ? [glow[0], glow[1], glow[2]] : [0, 0, 0]}
-      emissiveIntensity={intensity}
+      emissive={[glow[0], glow[1], glow[2]]}
+      emissiveIntensity={lit * (0.5 + lit * 1.5)}
     />
   )
 }
@@ -48,13 +50,14 @@ function BaseMaterial({ color, material = 'matte' }: { color: string; material?:
 }
 
 function Glow({ state, y }: { state: LightState | null; y: number }) {
-  if (!state?.on) return null
-  const [r, g, b] = state.glow
+  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 4)
+  const [r, g, b] = state?.glow ?? [1, 1, 1]
+  if (lit < 0.01) return null
   return (
     <pointLight
       position={[0, y, 0]}
       color={[r, g, b]}
-      intensity={LIGHT_POINT_INTENSITY * (0.3 + state.level * 0.7)}
+      intensity={LIGHT_POINT_INTENSITY * lit * (0.3 + lit * 0.7)}
       distance={7}
       decay={1.6}
     />

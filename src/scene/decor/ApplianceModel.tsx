@@ -1,4 +1,5 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -49,7 +50,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
   const body = <Material color={c('body')} material={m('body')} />
   const trim = () => <Material color={c('trim')} material={m('trim')} />
   const on = state?.on ?? false
-  const level = state?.level ?? 1
+  // Eased, so a ring or a drum comes up to speed rather than stepping.
+  const level = useEased(state?.level ?? 1, 3)
 
   switch (kind.id) {
     case 'kitchen_counter':

@@ -1,4 +1,5 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Blob, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -10,8 +11,9 @@ export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
   const m = (slot: string) => materialValue(kind, item.materials, slot)
-  // An unbound curtain hangs closed.
-  const level = state?.level ?? 0
+  // An unbound curtain hangs closed. Eased, so it draws rather than jumps
+  // as Home Assistant reports its position on the way.
+  const level = useEased(state?.level ?? 0, 1.6)
 
   switch (kind.id) {
     case 'rug': {
