@@ -1,4 +1,5 @@
 import { decorationKind } from '#/decoration/catalog.ts'
+import { usePressActions } from '#/scene/decor/press.ts'
 import { standHeight } from '#/decoration/surfaces.ts'
 import ApplianceModel from '#/scene/decor/ApplianceModel.tsx'
 import DecorModel from '#/scene/decor/DecorModel.tsx'
@@ -17,8 +18,9 @@ type Props = {
   all: DecorationConfig[]
   state: ItemState | null
   onClick?: () => void
-  // Double click asks Home Assistant for the entity's own dialog, where
-  // everything a click cannot do lives: brightness, color, position.
+  // A right click, or a long press, asks Home Assistant for the entity's own
+  // dialog, where everything a click cannot do lives: brightness, color,
+  // position.
   onOpen?: () => void
 }
 
@@ -45,6 +47,7 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
 export default function DecorationModel({ item, all, state, onClick, onOpen }: Props) {
+  const interactive = usePressActions(onClick, onOpen)
   const kind = decorationKind(item.kind)
   if (!kind) return null
   const Model = FAMILY_MODELS[kind.family]
@@ -52,21 +55,6 @@ export default function DecorationModel({ item, all, state, onClick, onOpen }: P
 
   const rotation = MathUtils.degToRad(item.rotation ?? 0)
   const lift = standHeight(item, all)
-
-  const interactive = onClick
-    ? {
-        onClick: (e: { stopPropagation: () => void }) => {
-          e.stopPropagation()
-          onClick()
-        },
-        onDoubleClick: (e: { stopPropagation: () => void }) => {
-          e.stopPropagation()
-          onOpen?.()
-        },
-        onPointerOver: () => (document.body.style.cursor = 'pointer'),
-        onPointerOut: () => (document.body.style.cursor = ''),
-      }
-    : {}
 
   return (
     <group position={[item.position[0], lift, -item.position[1]]} rotation={[0, rotation, 0]} {...interactive}>

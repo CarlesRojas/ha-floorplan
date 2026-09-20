@@ -188,8 +188,8 @@ export default function DecorationPanel({
             ))}
           </select>
           <p className="text-xs text-(--secondary-text-color)">
-            Clicking this item in 3D acts on the device, and double clicking opens the device's own dialog in Home
-            Assistant, where brightness, color and the rest live.
+            Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for the
+            device's own dialog in Home Assistant, where brightness, color and the rest live.
           </p>
         </div>
 

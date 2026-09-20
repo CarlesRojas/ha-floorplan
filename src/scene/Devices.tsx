@@ -1,5 +1,6 @@
 import { deviceType } from '#/devices/catalog.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
+import { usePressActions } from '#/scene/decor/press.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import { clickAction, deviceSignals, kelvinToRgb, signalValues } from '#/signals.ts'
 import { CEILING_HEIGHT_M, DEVICE_SPHERE_COLOR, DEVICE_SPHERE_RADIUS_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
@@ -40,6 +41,33 @@ function itemState(hass: HomeAssistant, entityId: string): ItemState | null {
   }
 }
 
+// A device with nothing standing in for it, shown as a small sphere that
+// lights up with it.
+function DeviceSphere({
+  position,
+  on,
+  onClick,
+  onOpen,
+}: {
+  position: [number, number, number]
+  on: boolean
+  onClick: () => void
+  onOpen: () => void
+}) {
+  const interactive = usePressActions(onClick, onOpen)
+  return (
+    <mesh position={position} {...interactive}>
+      <sphereGeometry args={[DEVICE_SPHERE_RADIUS_M, 12, 8]} />
+      <meshStandardMaterial
+        color={DEVICE_SPHERE_COLOR}
+        emissive={LIGHT_GLOW_COLOR}
+        emissiveIntensity={on ? 1.2 : 0}
+        roughness={0.6}
+      />
+    </mesh>
+  )
+}
+
 export default function Devices({ hass, config }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
@@ -68,28 +96,13 @@ export default function Devices({ hass, config }: Props) {
         if (bound) return null
         const on = hass ? (signalValues(hass, device.entity_id).on ?? false) : false
         return (
-          <mesh
+          <DeviceSphere
             key={device.entity_id}
             position={[device.position[0], sphereHeight(device), -device.position[1]]}
-            onClick={e => {
-              e.stopPropagation()
-              act(device.entity_id)
-            }}
-            onDoubleClick={e => {
-              e.stopPropagation()
-              openMoreInfo(device.entity_id)
-            }}
-            onPointerOver={() => (document.body.style.cursor = 'pointer')}
-            onPointerOut={() => (document.body.style.cursor = '')}
-          >
-            <sphereGeometry args={[DEVICE_SPHERE_RADIUS_M, 12, 8]} />
-            <meshStandardMaterial
-              color={DEVICE_SPHERE_COLOR}
-              emissive={LIGHT_GLOW_COLOR}
-              emissiveIntensity={on ? 1.2 : 0}
-              roughness={0.6}
-            />
-          </mesh>
+            on={on}
+            onClick={() => act(device.entity_id)}
+            onOpen={() => openMoreInfo(device.entity_id)}
+          />
         )
       })}
       {decorations.map(item => {
