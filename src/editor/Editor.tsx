@@ -355,8 +355,8 @@ export default function Editor({ hass, config, onChange }: Props) {
     setModeState(next)
     setTool('select')
     setDraft([])
-    // The room stays picked across modes, since rooms are only picked in
-    // Rooms mode and what is added next still belongs in one.
+    // Changing mode starts clean: nothing picked, in any of the three.
+    setSelection({ roomId: null, vertex: null })
     setSelectedDevice(null)
     setSelectedDecoration(null)
   }
