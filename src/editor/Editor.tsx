@@ -28,6 +28,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
   EDITOR_GRID_M,
+  EDITOR_MODE_LABELS_PX,
   EDITOR_PREVIEW_FRACTION,
   EDITOR_PREVIEW_MIN_PX,
   EDITOR_SAVED_FLASH_MS,
@@ -821,7 +822,7 @@ export default function Editor({ hass, config, onChange }: Props) {
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
               {/* The mode is the first thing in the sidebar and stays put. */}
               <div className="sticky top-0 z-20 -mx-1 bg-(--card-background-color) px-1 pb-2">
-                <ModeSwitch mode={mode} onMode={setMode} />
+                <ModeSwitch mode={mode} onMode={setMode} compact={sidebarWidth < EDITOR_MODE_LABELS_PX} />
               </div>
               {roomInfo ?? panels}
             </div>
