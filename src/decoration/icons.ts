@@ -35,7 +35,6 @@ import {
 // Icon per decoration kind, with a fallback per family.
 const BY_KIND: Record<string, IconDefinition> = {
   sofa: faCouch,
-  loveseat: faCouch,
   armchair: faCouch,
   dining_chair: faChair,
   stool: faChair,
@@ -61,7 +60,6 @@ const BY_KIND: Record<string, IconDefinition> = {
   plant_small: faSeedling,
   picture: faImage,
   wall_mirror: faImage,
-  bath_mirror: faImage,
   wall_clock: faClock,
   vase: faSeedling,
   books: faBoxArchive,

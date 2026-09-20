@@ -51,7 +51,8 @@ export default function Scene({ hass, config }: Props) {
       ))}
       <OrbitControls
         makeDefault
-        enablePan={false}
+        enablePan
+        screenSpacePanning={false}
         enableDamping
         dampingFactor={0.1}
         minPolarAngle={MathUtils.degToRad(CAMERA_MIN_POLAR_DEG)}

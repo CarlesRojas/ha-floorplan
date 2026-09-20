@@ -89,13 +89,13 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 | Family | Items |
 | --- | --- |
 | Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, LED strip, spot |
-| Seating | Sofa, loveseat, armchair, dining chair, stool, bench, pouf |
+| Seating | Sofa, armchair, dining chair, stool, bench, pouf |
 | Tables | Dining table, coffee table, side table, desk, console table, nightstand |
-| Storage | Bookshelf, sideboard, wardrobe, dresser, TV stand, cabinet, shoe rack, wall shelf |
-| Beds | Double bed, single bed, crib |
+| Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |
+| Beds | Bed, crib |
 | Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, dishwasher, sink, microwave, coffee machine, kettle |
 | Laundry | Washing machine, dryer |
-| Bathroom | Toilet, basin, bathtub, shower, towel rail, mirror |
+| Bathroom | Toilet, basin, bathtub, shower, towel rail |
 | Decor | Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
 | Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector |
 | Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |

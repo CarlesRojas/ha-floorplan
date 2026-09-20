@@ -18,7 +18,6 @@ export default function ModelPreview({ item, className }: Props) {
   if (!kind) return null
   const glow = new Color(LIGHT_GLOW_COLOR)
   const centered: DecorationConfig = { ...item, position: [0, 0], rotation: 0 }
-  const onFloor = kind.mount === 'floor'
   // Ceiling items hang from a virtual ceiling 1.4 m up, so the cord does not
   // dominate the frame.
   const lift = kind.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : kind.mount === 'wall' ? -1.2 : 0
@@ -28,12 +27,6 @@ export default function ModelPreview({ item, className }: Props) {
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 6, 4]} intensity={1.2} />
         <Bounds fit clip observe margin={1.3} maxDuration={0}>
-          {onFloor && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-              <circleGeometry args={[0.7, 24]} />
-              <meshStandardMaterial color="#6b7c8c" roughness={0.9} />
-            </mesh>
-          )}
           <group position={[0, lift, 0]}>
             <DecorationModel item={centered} state={{ on: true, level: 0.8, glow: [glow.r, glow.g, glow.b] }} />
           </group>

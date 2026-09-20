@@ -199,14 +199,16 @@ export default function DecorationPanel({
         </p>
       )}
 
-      <div className="h-44 w-full overflow-hidden rounded-xl bg-(--secondary-background-color)">
-        {previewItem ? (
-          <ModelPreview item={previewItem} className="h-full w-full" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-(--secondary-text-color)">
-            Hover an item to preview it
-          </div>
-        )}
+      <div className="sticky top-0 z-10 -mx-1 bg-(--card-background-color) px-1 pb-2">
+        <div className="h-44 w-full overflow-hidden rounded-xl bg-(--secondary-background-color)">
+          {previewItem ? (
+            <ModelPreview item={previewItem} className="h-full w-full" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs text-(--secondary-text-color)">
+              Hover an item to preview it
+            </div>
+          )}
+        </div>
       </div>
 
       <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />

@@ -39,6 +39,8 @@ export const EDITOR_SNAP_PX = 10
 export const EDITOR_HANDLE_PX = 7
 export const EDITOR_CANVAS_HEIGHT_PX = 440
 export const EDITOR_SIDEBAR_WIDTH_PX = 340
+// The sidebar never goes below this, nor past half the window.
+export const EDITOR_SIDEBAR_MIN_PX = 260
 // How long typing must pause before a text edit is sent to Home Assistant.
 export const EDITOR_TEXT_COMMIT_DELAY_MS = 500
 // Distance from the canvas border where dragging starts to pan the view.

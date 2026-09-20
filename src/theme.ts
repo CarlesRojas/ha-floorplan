@@ -65,12 +65,12 @@ export const DEVICE_SPHERE_COLOR = '#ffffff'
 
 // Floor materials a room can have. Color is the default tint, roughness the
 // sheen of the surface.
-export const FLOOR_MATERIALS: Record<string, { label: string; color: string; roughness: number }> = {
-  wood: { label: 'Wood', color: '#dcc3a0', roughness: 0.7 },
-  tiles: { label: 'Tiles', color: '#d9d2c5', roughness: 0.35 },
-  terracotta: { label: 'Terracotta', color: '#c4764f', roughness: 0.8 },
-  carpet: { label: 'Carpet', color: '#9fb3c8', roughness: 1 },
-  concrete: { label: 'Concrete', color: '#9a9a9a', roughness: 0.9 },
+export const FLOOR_MATERIALS: Record<string, { label: string; color: string; surface: string }> = {
+  wood: { label: 'Wood', color: '#dcc3a0', surface: 'wood_floor' },
+  tiles: { label: 'Tiles', color: '#d9d2c5', surface: 'tiles' },
+  terracotta: { label: 'Terracotta', color: '#c4764f', surface: 'terracotta' },
+  carpet: { label: 'Carpet', color: '#9fb3c8', surface: 'carpet' },
+  concrete: { label: 'Concrete', color: '#b3b3b0', surface: 'concrete' },
 }
 
 // Surfaces a decoration material slot can use.

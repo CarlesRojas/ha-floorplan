@@ -8,13 +8,13 @@ export type Surface = {
   map: Texture
   normalMap: Texture
   roughness: number
-  // Tiles per meter on floors, per item on decoration.
+  // How many times the tile fits in one meter.
   repeat: number
   normalScale: number
 }
 
 export type SurfaceKind =
-  'wood' | 'tiles' | 'terracotta' | 'carpet' | 'concrete' | 'fabric' | 'ceramic' | 'metal' | 'matte'
+  'wood' | 'wood_floor' | 'tiles' | 'terracotta' | 'carpet' | 'concrete' | 'fabric' | 'ceramic' | 'metal' | 'matte'
 
 const SIZE = 256
 const cache = new Map<SurfaceKind, Surface>()
@@ -52,20 +52,33 @@ function fbm(x: number, y: number, seed: number, octaves = 4) {
 // Height and brightness per pixel, both 0 to 1, u and v in 0 to 1 tiling.
 type Field = (u: number, v: number) => { height: number; light: number }
 
+// `repeat` is how many times the tile fits in a meter, so a surface keeps the
+// same physical scale on a small stool and on a whole floor.
+
 const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: number; normalScale: number }> = {
   wood: {
-    // Planks along u, four per tile, with grain along the plank.
+    // Furniture oak: a continuous grain with no plank seams, in long streaks.
+    field: (u, v) => {
+      const grain = fbm(u * 1.5, v * 9, 41, 3)
+      const fleck = fbm(u * 6, v * 26, 43, 2)
+      return { height: 0.5 + grain * 0.35 + fleck * 0.15, light: 0.9 + grain * 0.07 + fleck * 0.03 }
+    },
+    roughness: 0.65,
+    repeat: 4,
+    normalScale: 0.18,
+  },
+  wood_floor: {
+    // Floorboards: planks along u with a shadow gap and grain per board.
     field: (u, v) => {
       const plank = Math.floor(v * 4)
-      const gap = Math.abs(v * 4 - plank - 0.5) > 0.47 ? 1 : 0
-      // Grain runs along the plank: slow across u, quicker across v.
+      const gap = Math.abs(v * 4 - plank - 0.5) > 0.47
       const grain = fbm(u * 2, v * 12 + plank * 17, 1)
-      const tone = 0.84 + grain * 0.1 + (noise2(plank, 0, 3) - 0.5) * 0.05
-      return { height: gap ? 0.25 : 0.6 + grain * 0.2, light: gap ? tone * 0.82 : tone }
+      const tone = 0.88 + grain * 0.07 + (noise2(plank, 0, 3) - 0.5) * 0.04
+      return { height: gap ? 0.25 : 0.6 + grain * 0.2, light: gap ? tone * 0.86 : tone }
     },
     roughness: 0.7,
-    repeat: 1,
-    normalScale: 0.3,
+    repeat: 0.8,
+    normalScale: 0.25,
   },
   tiles: {
     // Square tiles with grout lines.
@@ -77,8 +90,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: grout ? 0.1 : 0.7 + speck * 0.1, light: grout ? 0.7 : 0.93 + speck * 0.06 }
     },
     roughness: 0.35,
-    repeat: 1,
-    normalScale: 0.6,
+    repeat: 1.6,
+    normalScale: 0.5,
   },
   terracotta: {
     // Larger warm tiles, slightly uneven.
@@ -90,8 +103,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: grout ? 0.15 : 0.5 + wobble * 0.4, light: grout ? 0.74 : 0.9 + wobble * 0.09 }
     },
     roughness: 0.85,
-    repeat: 1,
-    normalScale: 0.7,
+    repeat: 1.1,
+    normalScale: 0.55,
   },
   carpet: {
     // Soft pile: broad clumps with a fine fuzz over them.
@@ -100,19 +113,18 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: n, light: 0.9 + n * 0.09 }
     },
     roughness: 1,
-    repeat: 1.5,
-    normalScale: 0.2,
+    repeat: 5,
+    normalScale: 0.18,
   },
   concrete: {
-    // Broad mottling with a light speckle.
+    // Almost plain: a faint cloudiness and nothing else.
     field: (u, v) => {
-      const broad = fbm(u * 3, v * 3, 17)
-      const fine = fbm(u * 22, v * 22, 19, 2)
-      return { height: broad * 0.7 + fine * 0.3, light: 0.86 + broad * 0.1 + fine * 0.04 }
+      const broad = fbm(u * 2, v * 2, 17)
+      return { height: broad, light: 0.95 + broad * 0.04 }
     },
     roughness: 0.9,
-    repeat: 1,
-    normalScale: 0.18,
+    repeat: 0.5,
+    normalScale: 0.05,
   },
   fabric: {
     // A quiet weave: just enough cross hatch to catch the light.
@@ -122,8 +134,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: weave * 0.5 + n * 0.5, light: 0.94 + weave * 0.03 + n * 0.03 }
     },
     roughness: 1,
-    repeat: 1.5,
-    normalScale: 0.12,
+    repeat: 7,
+    normalScale: 0.1,
   },
   ceramic: {
     // Smooth with faint glaze ripples.
@@ -132,8 +144,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: n, light: 0.96 + n * 0.04 }
     },
     roughness: 0.25,
-    repeat: 1,
-    normalScale: 0.07,
+    repeat: 3,
+    normalScale: 0.06,
   },
   metal: {
     // Fine brushed lines in one direction.
@@ -142,8 +154,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: brush, light: 0.9 + brush * 0.1 }
     },
     roughness: 0.4,
-    repeat: 1,
-    normalScale: 0.1,
+    repeat: 4,
+    normalScale: 0.08,
   },
   matte: {
     field: (u, v) => {
@@ -151,8 +163,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: n, light: 0.97 + n * 0.03 }
     },
     roughness: 0.95,
-    repeat: 1,
-    normalScale: 0.06,
+    repeat: 4,
+    normalScale: 0.05,
   },
 }
 

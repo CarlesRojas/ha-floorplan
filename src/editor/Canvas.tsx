@@ -71,6 +71,7 @@ type Drag =
   | { kind: 'room'; roomId: string; start: Point; origin: Point[] }
   | { kind: 'device'; entityId: string; start: Point; origin: Point }
   | { kind: 'decoration'; id: string; start: Point; origin: Point }
+  | { kind: 'rotate'; id: string; center: Point }
 
 type Menu =
   | { kind: 'vertex'; roomId: string; index: number }
@@ -183,6 +184,16 @@ export default function Canvas({
     liveDevices.current = devices
     drag.current = { kind: 'device', entityId: device.entity_id, start: planPoint(e), origin: device.position }
     setDraggingDevice(device.entity_id)
+  }
+
+  // Dragging the handle swings the item around its own center.
+  const onRotateDown = (e: React.PointerEvent, item: DecorationConfig) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    capture(e)
+    onSelectDecoration(item.id)
+    liveDecorations.current = decorations
+    drag.current = { kind: 'rotate', id: item.id, center: item.position }
   }
 
   const onDecorationDown = (e: React.PointerEvent, item: DecorationConfig) => {
@@ -350,6 +361,16 @@ export default function Canvas({
           ),
           false,
         )
+        break
+      }
+      case 'rotate': {
+        const current = liveDecorations.current ?? latest.current.decorations
+        // The handle sits at the item's front, which faces plan -y at zero.
+        const degrees = (Math.atan2(p[1] - d.center[1], p[0] - d.center[0]) * 180) / Math.PI + 90
+        const rotation = (((Math.round(degrees / 5) * 5) % 360) + 360) % 360
+        const next = current.map(x => (x.id === d.id ? { ...x, rotation } : x))
+        liveDecorations.current = next
+        onDecorations(next, false)
         break
       }
       case 'decoration': {
@@ -608,7 +629,7 @@ export default function Canvas({
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
-    if (d.kind === 'decoration') {
+    if (d.kind === 'rotate' || d.kind === 'decoration') {
       const source = resolvedDecorations ?? decorations
       onDecorations(
         source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
@@ -964,6 +985,9 @@ export default function Canvas({
           const r = EDITOR_DEVICE_RADIUS_PX
           const halfW = Math.max(r, (fw / 2) * view.scale)
           const halfD = Math.max(r, (fd / 2) * view.scale)
+          // Zero rotation faces plan -y, so the handle starts below the item.
+          const handleAngle = ((item.rotation ?? 0) - 90) * (Math.PI / 180)
+          const handleDist = Math.max(halfW, halfD) + 22
           return (
             <g
               key={item.id}
@@ -988,9 +1012,50 @@ export default function Canvas({
                 strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
               />
               {isSelected && (
-                <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
+                <>
+                  {/* A dashed halo around the whole footprint. */}
+                  <rect
+                    x={sx - halfW - 5}
+                    y={sy - (kind.mount === 'wall' ? 10 : halfD + 5)}
+                    width={halfW * 2 + 10}
+                    height={(kind.mount === 'wall' ? 10 : halfD + 5) * 2}
+                    rx={8}
+                    transform={`rotate(${angle} ${sx} ${sy})`}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                  />
+                  {/* Rotation handle on the item's front, with a stem. */}
+                  <line
+                    x1={sx}
+                    y1={sy}
+                    x2={sx + Math.cos(handleAngle) * handleDist}
+                    y2={sy - Math.sin(handleAngle) * handleDist}
+                    stroke={color}
+                    strokeWidth={1.5}
+                    className="pointer-events-none"
+                  />
+                  <circle
+                    cx={sx + Math.cos(handleAngle) * handleDist}
+                    cy={sy - Math.sin(handleAngle) * handleDist}
+                    r={7}
+                    fill="var(--card-background-color)"
+                    stroke={color}
+                    strokeWidth={2}
+                    className="cursor-grab"
+                    onPointerDown={e => onRotateDown(e, item)}
+                  />
+                </>
               )}
-              <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
+              <circle
+                cx={sx}
+                cy={sy}
+                r={r}
+                fill="var(--card-background-color)"
+                stroke={color}
+                strokeWidth={isSelected ? 3 : 2}
+              />
               <IconGlyph
                 icon={decorationIcon(item.kind, kind.family)}
                 x={sx}

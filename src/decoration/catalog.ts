@@ -146,7 +146,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
 
   // Seating
   kind('sofa', 'seating', 'Sofa', 'floor', [width(2.1, 1.2, 3.4), depth(0.88, 0.7, 1.1)], softBody, softMat),
-  kind('loveseat', 'seating', 'Loveseat', 'floor', [width(1.4, 1, 1.9), depth(0.85, 0.7, 1)], softBody, softMat),
   kind('armchair', 'seating', 'Armchair', 'floor', [width(0.78, 0.6, 1.1), depth(0.8, 0.6, 1)], softBody, softMat),
   kind(
     'dining_chair',
@@ -255,24 +254,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: 'wood', front: 'matte' },
   ),
   kind(
-    'tv_stand',
-    'storage',
-    'TV stand',
-    'floor',
-    [width(1.6, 0.9, 2.6), depth(0.4, 0.3, 0.55), height(0.45, 0.3, 0.7)],
-    { body: SCANDI.oak, front: SCANDI.offWhite },
-    { body: 'wood', front: 'matte' },
-  ),
-  kind(
-    'cabinet',
-    'storage',
-    'Cabinet',
-    'floor',
-    [width(0.7, 0.4, 1.2), depth(0.4, 0.3, 0.55), height(1.1, 0.7, 1.8)],
-    { body: SCANDI.oak, front: SCANDI.offWhite },
-    { body: 'wood', front: 'matte' },
-  ),
-  kind(
     'shoe_rack',
     'storage',
     'Shoe rack',
@@ -295,18 +276,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
   kind(
     'bed_double',
     'bed',
-    'Double bed',
+    'Bed',
     'floor',
-    [width(1.6, 1.3, 2), length(2.05, 1.8, 2.3, 0.05)],
-    { body: SCANDI.oak, bedding: SCANDI.offWhite, pillow: SCANDI.linen },
-    { body: 'wood', bedding: 'fabric', pillow: 'fabric' },
-  ),
-  kind(
-    'bed_single',
-    'bed',
-    'Single bed',
-    'floor',
-    [width(0.95, 0.8, 1.3), length(2, 1.6, 2.2, 0.05)],
+    [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05)],
     { body: SCANDI.oak, bedding: SCANDI.offWhite, pillow: SCANDI.linen },
     { body: 'wood', bedding: 'fabric', pillow: 'fabric' },
   ),
@@ -506,15 +478,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: SCANDI.slate, towel: SCANDI.linen },
     { body: 'metal', towel: 'fabric' },
     TOGGLE,
-  ),
-  kind(
-    'bath_mirror',
-    'bathroom',
-    'Mirror',
-    'wall',
-    [width(0.6, 0.3, 1.4), height(1.5, 1, 2)],
-    { frame: SCANDI.oak, glass: SCANDI.mist },
-    { frame: 'wood', glass: 'ceramic' },
   ),
 
   // Decor

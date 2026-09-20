@@ -19,6 +19,7 @@ export function Material({
   emissiveIntensity = 0,
   doubleSide = false,
   repeat,
+  span,
 }: {
   color: string
   material?: string
@@ -26,12 +27,14 @@ export function Material({
   emissiveIntensity?: number
   doubleSide?: boolean
   repeat?: number
+  span?: number
 }) {
   return (
     <SurfaceMaterial
       kind={material as SurfaceKind}
       color={color}
       repeat={repeat}
+      span={span}
       doubleSide={doubleSide}
       emissive={emissive}
       emissiveIntensity={emissiveIntensity}

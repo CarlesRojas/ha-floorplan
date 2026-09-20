@@ -311,7 +311,22 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             <cylinderGeometry args={[w * 0.27, w * 0.27, 0.02, SEG]} />
             <meshStandardMaterial color="#2f3336" roughness={0.3} />
           </mesh>
-          <Drum running={on} position={[0, h * 0.48, d / 2 - 0.03]} radius={w * 0.27} />
+          {kind.id === 'washing_machine' ? (
+            <Drum running={on} position={[0, h * 0.48, d / 2 - 0.03]} radius={w * 0.27} />
+          ) : (
+            // A dryer shows a vent grille instead of a drum.
+            [0, 1, 2].map(i => (
+              <Slab
+                key={i}
+                size={[w * 0.34, 0.012, 0.012]}
+                radius={0.005}
+                bevel={0.003}
+                position={[0, h * 0.4 + i * 0.05, d / 2 + 0.005]}
+              >
+                {trim()}
+              </Slab>
+            ))
+          )}
           {/* Control strip along the top. */}
           <Slab size={[w - 0.05, 0.055, 0.015]} radius={0.01} position={[0, h - 0.11, d / 2]}>
             {trim()}
@@ -465,21 +480,6 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           <Cushion size={[w * 0.4, 0.34, 0.07]} position={[w * 0.18, -0.04, 0.09]}>
             <Material color={c('towel')} material={m('towel')} />
           </Cushion>
-        </group>
-      )
-    }
-    case 'bath_mirror': {
-      const w = p('width')
-      return (
-        <group>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.02]}>
-            <cylinderGeometry args={[w / 2, w / 2, 0.035, SEG]} />
-            <Material color={c('frame')} material={m('frame')} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.04]}>
-            <cylinderGeometry args={[w / 2 - 0.025, w / 2 - 0.025, 0.01, SEG]} />
-            <Material color={c('glass')} material={m('glass')} />
-          </mesh>
         </group>
       )
     }

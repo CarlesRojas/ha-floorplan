@@ -23,7 +23,7 @@ import {
 } from '#/components/ui/alert-dialog.tsx'
 import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
+import { EDITOR_SIDEBAR_MIN_PX, EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -55,6 +55,8 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
+  const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
   // Rooms as they were when the fullscreen editor opened, for Discard.
   const [opened, setOpened] = useState<{
     rooms: RoomConfig[]
@@ -502,9 +504,30 @@ export default function Editor({ hass, config, onChange }: Props) {
               </button>
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 gap-4">
+          <div className="flex min-h-0 flex-1 gap-2">
             <div className="min-w-0 flex-1">{canvas}</div>
-            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto" style={{ width: EDITOR_SIDEBAR_WIDTH_PX }}>
+            {/* Drag to resize the sidebar, between a minimum and half the window. */}
+            <div
+              className="group flex w-3 shrink-0 cursor-col-resize touch-none items-center justify-center"
+              onPointerDown={e => {
+                if (e.button !== 0) return
+                e.currentTarget.setPointerCapture(e.pointerId)
+                sidebarDrag.current = { startX: e.clientX, width: sidebarWidth }
+              }}
+              onPointerMove={e => {
+                const d = sidebarDrag.current
+                if (!d) return
+                const next = d.width - (e.clientX - d.startX)
+                setSidebarWidth(Math.min(Math.max(next, EDITOR_SIDEBAR_MIN_PX), window.innerWidth / 2))
+              }}
+              onPointerUp={e => {
+                sidebarDrag.current = null
+                e.currentTarget.releasePointerCapture(e.pointerId)
+              }}
+            >
+              <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
+            </div>
+            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
               {panels}
             </div>
           </div>

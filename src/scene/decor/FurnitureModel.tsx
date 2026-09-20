@@ -18,8 +18,7 @@ export default function FurnitureModel({ kind, item }: Props) {
 
   switch (kind.id) {
     // Seating
-    case 'sofa':
-    case 'loveseat': {
+    case 'sofa': {
       const w = p('width')
       const d = p('depth')
       const seatH = 0.42
@@ -255,29 +254,20 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'side_table': {
-      // A round top on three splayed legs.
-      const r = p('size') / 2
+      // A small square top on four thin legs, with a lower shelf.
+      const w = p('size')
       const h = p('height')
       return (
         <group>
-          {[0, 1, 2].map(i => {
-            const a = (i / 3) * Math.PI * 2 + 0.5
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * r * 0.62, (h - 0.03) / 2, Math.sin(a) * r * 0.62]}
-                rotation={[Math.sin(a) * 0.1, 0, -Math.cos(a) * 0.1]}
-                castShadow
-              >
-                <cylinderGeometry args={[0.02, 0.014, h - 0.03, 8]} />
-                {body}
-              </mesh>
-            )
-          })}
-          <mesh position={[0, h - 0.015, 0]} castShadow>
-            <cylinderGeometry args={[r, r, 0.03, SEG]} />
+          <Legs width={w} depth={w} height={h - 0.03} inset={0.05} top={0.017} bottom={0.012}>
             {body}
-          </mesh>
+          </Legs>
+          <Slab size={[w - 0.06, 0.02, w - 0.06]} radius={0.02} position={[0, h * 0.3, 0]}>
+            {body}
+          </Slab>
+          <Slab size={[w, 0.03, w]} radius={0.04} position={[0, h - 0.03, 0]}>
+            {body}
+          </Slab>
         </group>
       )
     }
@@ -351,14 +341,12 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'sideboard':
-    case 'tv_stand':
     case 'dresser':
-    case 'cabinet':
     case 'wardrobe': {
       const w = p('width')
       const d = p('depth')
       const h = p('height')
-      const onLegs = kind.id === 'sideboard' || kind.id === 'tv_stand' || kind.id === 'dresser'
+      const onLegs = kind.id === 'sideboard' || kind.id === 'dresser'
       const legH = onLegs ? 0.16 : 0.04
       const boxH = h - legH
       const drawers = kind.id === 'dresser'
@@ -452,7 +440,6 @@ export default function FurnitureModel({ kind, item }: Props) {
 
     // Beds
     case 'bed_double':
-    case 'bed_single':
     case 'crib': {
       const w = p('width')
       const l = p('length')
@@ -494,11 +481,11 @@ export default function FurnitureModel({ kind, item }: Props) {
             <Material color={c('bedding')} material={m('bedding')} />
           </Slab>
           {!isCrib &&
-            (kind.id === 'bed_double' ? [-1, 1] : [0]).map(s => (
+            (w > 1.2 ? [-1, 1] : [0]).map(s => (
               <Cushion
                 key={s}
-                size={[kind.id === 'bed_double' ? w / 2 - 0.09 : w - 0.16, 0.12, 0.34]}
-                position={[(s * w) / 4, frameH + mattress, -l / 2 + 0.26]}
+                size={[w > 1.2 ? w / 2 - 0.09 : w - 0.16, 0.12, 0.34]}
+                position={[w > 1.2 ? (s * w) / 4 : 0, frameH + mattress, -l / 2 + 0.26]}
               >
                 <Material color={c('pillow')} material={m('pillow')} />
               </Cushion>
