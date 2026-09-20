@@ -660,6 +660,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         onRemove={removeDecoration}
         onBind={(id, entityId) => (entityId ? bindDecoration(entityId, id, true) : bindDecoration('', id, false))}
         onStandOn={standOn}
+        onSelect={setSelectedDecoration}
         onFloor={setFloor}
       />
     ) : mode === 'devices' ? (

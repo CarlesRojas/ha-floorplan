@@ -9,11 +9,12 @@ import { Color } from 'three'
 type Props = {
   item: DecorationConfig
   className?: string
+  style?: React.CSSProperties
 }
 
 // Small turntable view of one decoration item, shown lit. The camera fits
 // the model and keeps it centered as its size changes.
-export default function ModelPreview({ item, className }: Props) {
+export default function ModelPreview({ item, className, style }: Props) {
   const kind = decorationKind(item.kind)
   if (!kind) return null
   const glow = new Color(LIGHT_GLOW_COLOR)
@@ -25,7 +26,7 @@ export default function ModelPreview({ item, className }: Props) {
   const lift =
     kind.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : -mountHeight(kind, item.params)
   return (
-    <div className={className}>
+    <div className={className} style={style}>
       <Canvas dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ fov: 35, position: [3, 2.4, 3] }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 6, 4]} intensity={1.2} />

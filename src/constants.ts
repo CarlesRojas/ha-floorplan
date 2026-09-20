@@ -55,3 +55,5 @@ export const EDITOR_DEVICE_RADIUS_PX = 14
 // column it takes when it opens, and neither of them goes below this height.
 export const EDITOR_PREVIEW_FRACTION = 0.5
 export const EDITOR_PREVIEW_MIN_PX = 140
+// Height of the 3D preview at the top of the sidebar, before it is dragged.
+export const EDITOR_SIDEBAR_PREVIEW_PX = 224

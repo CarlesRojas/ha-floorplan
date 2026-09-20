@@ -10,6 +10,8 @@ import {
 import { ridersOf } from '#/decoration/surfaces.ts'
 import { entityName } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
+import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
+import { EDITOR_SIDEBAR_PREVIEW_PX } from '#/constants.ts'
 import { cn } from '#/lib/utils.ts'
 import { DECORATION_MATERIALS, EDITOR_MODE_COLORS, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
@@ -30,6 +32,7 @@ type Props = {
   onRemove: (id: string) => void
   onBind: (id: string, entityId: string | null) => void
   onStandOn: (id: string, supportId: string | null) => void
+  onSelect: (id: string | null) => void
   onFloor: (roomId: string, floor: RoomConfig['floor']) => void
 }
 
@@ -49,10 +52,12 @@ export default function DecorationPanel({
   onRemove,
   onBind,
   onStandOn,
+  onSelect,
   onFloor,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
   const [query, setQuery] = useState('')
+  const [previewHeight, setPreviewHeight] = useState(EDITOR_SIDEBAR_PREVIEW_PX)
   const item = selected ? decorations.find(d => d.id === selected) : undefined
   const kind = item ? decorationKind(item.kind) : undefined
 
@@ -67,23 +72,26 @@ export default function DecorationPanel({
     })
     const itemRoom = rooms.find(r => r.id === item.room)
     const roomIndex = rooms.findIndex(r => r.id === item.room)
+    const roomTag = itemRoom ? (
+      <span
+        className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
+        style={{ backgroundColor: itemRoom.color ?? ROOM_COLORS[roomIndex % ROOM_COLORS.length] }}
+      >
+        {itemRoom.name ?? itemRoom.id}
+      </span>
+    ) : undefined
     return (
       <div className="flex flex-col gap-3">
-        <ModelPreview
-          item={item}
-          className="h-56 w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-        />
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold">{kind.label}</p>
-          {itemRoom && (
-            <span
-              className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
-              style={{ backgroundColor: itemRoom.color ?? ROOM_COLORS[roomIndex % ROOM_COLORS.length] }}
-            >
-              {itemRoom.name ?? itemRoom.id}
-            </span>
-          )}
-        </div>
+        <Sticky>
+          <SelectedHeader title={kind.label} tag={roomTag} accent={accent} onBack={() => onSelect(null)} />
+          <ModelPreview
+            item={item}
+            className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
+            style={{ height: previewHeight }}
+          />
+          <PreviewHandle onDrag={dy => setPreviewHeight(h => Math.min(Math.max(h + dy, 120), 520))} />
+          <Signals signals={kind.expresses} accent={accent} />
+        </Sticky>
 
         {kind.params.map(p => {
           const value = item.params?.[p.id] ?? p.default
@@ -184,7 +192,8 @@ export default function DecorationPanel({
             ))}
           </select>
           <p className="text-xs text-(--secondary-text-color)">
-            Clicking this item in 3D acts on the device. It lights up when the device has an on state.
+            Clicking this item in 3D acts on the device, and double clicking opens the device's own dialog in Home
+            Assistant, where brightness, color and the rest live.
           </p>
         </div>
 
@@ -288,8 +297,11 @@ export default function DecorationPanel({
         </p>
       )}
 
-      <div className="sticky top-0 z-10 -mx-1 bg-(--card-background-color) px-1 pb-2">
-        <div className="h-44 w-full overflow-hidden rounded-xl bg-(--secondary-background-color)">
+      <Sticky>
+        <div
+          className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
+          style={{ height: previewHeight }}
+        >
           {previewItem ? (
             <ModelPreview item={previewItem} className="h-full w-full" />
           ) : (
@@ -298,13 +310,17 @@ export default function DecorationPanel({
             </div>
           )}
         </div>
-      </div>
-
-      <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />
+        <PreviewHandle onDrag={dy => setPreviewHeight(h => Math.min(Math.max(h + dy, 120), 520))} />
+        <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />
+      </Sticky>
 
       {families.map(family => {
+        // A family name matches everything in it, so searching kitchen
+        // lists the whole kitchen.
+        const q = query.trim().toLowerCase()
+        const familyMatch = !!q && (FAMILY_LABELS[family] ?? family).toLowerCase().includes(q)
         const shown = DECORATION_KINDS.filter(
-          k => k.family === family && (!query.trim() || k.label.toLowerCase().includes(query.trim().toLowerCase())),
+          k => k.family === family && (!q || familyMatch || k.label.toLowerCase().includes(q)),
         )
         if (shown.length === 0) return null
         return (
@@ -325,7 +341,10 @@ export default function DecorationPanel({
                   className="size-4 text-(--secondary-text-color)"
                 />
                 <div className="min-w-0">
-                  <p className="truncate text-sm text-(--primary-text-color)">{k.label}</p>
+                  <p className="flex items-center gap-2 text-sm text-(--primary-text-color)">
+                    <span className="truncate">{k.label}</span>
+                    <Signals signals={k.expresses} size="sm" />
+                  </p>
                   <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
                 </div>
                 {rooms.length > 0 ? (
