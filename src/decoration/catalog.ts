@@ -1,5 +1,5 @@
 import type { Signal } from '#/signals.ts'
-import { LIGHT_BASE_COLOR, LIGHT_CORD_COLOR, LIGHT_SHADE_COLOR, SCANDI } from '#/theme.ts'
+import { CEILING_HEIGHT_M, LIGHT_BASE_COLOR, LIGHT_CORD_COLOR, LIGHT_SHADE_COLOR, SCANDI, SCREEN_OFF_COLOR } from '#/theme.ts'
 
 export type Mount = 'floor' | 'wall' | 'ceiling'
 
@@ -580,7 +580,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'TV',
     'floor',
     [width(1.2, 0.6, 2.2), p('ratio', 'Height ratio', 0.58, 0.4, 0.8, 0.02), lift(0.55)],
-    { body: SCANDI.charcoal, screen: SCANDI.mist, stand: SCANDI.oak },
+    { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.oak },
     { body: 'matte', screen: 'ceramic', stand: 'wood' },
     TOGGLE,
   ),
@@ -590,7 +590,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall TV',
     'wall',
     [width(1.2, 0.6, 2.2), p('ratio', 'Height ratio', 0.58, 0.4, 0.8, 0.02), height(1.3, 0.8, 2)],
-    { body: SCANDI.charcoal, screen: SCANDI.mist },
+    { body: SCANDI.ink, screen: SCREEN_OFF_COLOR },
     { body: 'matte', screen: 'ceramic' },
     TOGGLE,
   ),
@@ -630,7 +630,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Monitor',
     'floor',
     [width(0.6, 0.4, 1.1), p('ratio', 'Height ratio', 0.6, 0.4, 0.8, 0.02), lift(0.74)],
-    { body: SCANDI.charcoal, screen: SCANDI.mist, stand: SCANDI.slate },
+    { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.slate },
     { body: 'matte', screen: 'ceramic', stand: 'metal' },
     TOGGLE,
   ),
@@ -763,7 +763,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Window',
     'wall',
-    [width(1.2, 0.5, 3), height(1.9, 1, 2.4), p('sill', 'Sill height', 0.9, 0.1, 1.6)],
+    [width(1.2, 0.5, 3), height(1.2, 0.5, 2), p('sill', 'Sill height', 0.9, 0, 1.6)],
     { frame: SCANDI.offWhite, glass: SCANDI.mist },
     { frame: 'matte', glass: 'ceramic' },
     TOGGLE,
@@ -936,4 +936,20 @@ export function footprint(kind: DecorationKind, params: Record<string, number> |
     paramValue(kind, params, 'length') ||
     (kind.params.some(p => p.id === 'size') ? w : 0.3)
   return [w, d]
+}
+
+// Items that hang on a wall but stand on the floor, so their height
+// parameter is their own size and not how high they are mounted.
+const FLOOR_STANDING = new Set(['door', 'garage_door', 'radiator'])
+
+// How high above the floor an item's own origin sits. Lights build
+// themselves at full height, ceiling items hang from the ceiling, a window
+// starts at its sill, and most wall items hang at their height parameter.
+export function mountHeight(kind: DecorationKind, params: Record<string, number> | undefined): number {
+  if (kind.family === 'light') return 0
+  if (kind.mount === 'ceiling') return CEILING_HEIGHT_M
+  if (kind.mount !== 'wall') return 0
+  if (FLOOR_STANDING.has(kind.id)) return 0
+  if (kind.id === 'window') return paramValue(kind, params, 'sill')
+  return paramValue(kind, params, 'height')
 }

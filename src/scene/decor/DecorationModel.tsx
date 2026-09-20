@@ -1,4 +1,4 @@
-import { decorationKind } from '#/decoration/catalog.ts'
+import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
 import ApplianceModel from '#/scene/decor/ApplianceModel.tsx'
 import DecorModel from '#/scene/decor/DecorModel.tsx'
 import DeviceModel from '#/scene/decor/DeviceModel.tsx'
@@ -7,7 +7,6 @@ import LightModel from '#/scene/decor/LightModel.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationKind } from '#/decoration/catalog.ts'
 import type { ReactNode } from 'react'
-import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { MathUtils } from 'three'
 
@@ -37,8 +36,8 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 }
 
 // Places one decoration item in the scene. Wall and ceiling items are lifted
-// to their mounting height here, so every model can be built from the floor
-// up around its own origin.
+// to their mounting height here, so every model can be built from its own
+// base up around its origin.
 export default function DecorationModel({ item, state, onClick }: Props) {
   const kind = decorationKind(item.kind)
   if (!kind) return null
@@ -46,16 +45,7 @@ export default function DecorationModel({ item, state, onClick }: Props) {
   if (!Model) return null
 
   const rotation = MathUtils.degToRad(item.rotation ?? 0)
-  // Lights place themselves at full height, the rest hang from the height
-  // parameter or the ceiling.
-  const lift =
-    kind.family === 'light'
-      ? 0
-      : kind.mount === 'ceiling'
-        ? CEILING_HEIGHT_M
-        : kind.mount === 'wall'
-          ? (item.params?.height ?? kind.params.find(p => p.id === 'height')?.default ?? 1.5)
-          : 0
+  const lift = mountHeight(kind, item.params)
 
   const interactive = onClick
     ? {

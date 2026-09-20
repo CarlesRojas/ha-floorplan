@@ -1,10 +1,11 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Bar, Blob, Dome, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef, type ReactNode } from 'react'
-import type { Group } from 'three'
+import { DoubleSide, type Group } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
@@ -52,7 +53,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
   // An unbound cover shows closed, so the item is visible on the plan.
   const coverLevel = state?.level ?? 0
 
-  // A dark panel whose screen lights up when the device is on.
+  // A dark panel that plays a picture when the device is on and is a black
+  // mirror when it is off.
   const screen = (w: number, h: number, z: number) => (
     <group>
       <Slab size={[w, h, 0.035]} radius={0.012} bevel={0.005} position={[0, 0, z]}>
@@ -60,12 +62,11 @@ export default function DeviceModel({ kind, item, state }: Props) {
       </Slab>
       <mesh position={[0, h / 2, z + 0.021]}>
         <planeGeometry args={[w - 0.03, h - 0.03]} />
-        <meshStandardMaterial
-          color={on ? '#dbe7ef' : c('screen')}
-          emissive={on ? '#9fc4e0' : '#000000'}
-          emissiveIntensity={on ? 1.1 : 0}
-          roughness={0.2}
-        />
+        {on ? (
+          <ScreenMaterial />
+        ) : (
+          <meshStandardMaterial color={c('screen')} roughness={0.12} metalness={0.25} />
+        )}
       </mesh>
     </group>
   )
@@ -400,20 +401,54 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'window': {
+      // A frame with clear glass in it, sitting on its sill. The opening is
+      // open when the device reports open, so the casement swings inward.
       const w = p('width')
-      const h = 1.2
+      const h = p('height')
+      const f = 0.055
+      const d = 0.08
+      const frame = <Material color={c('frame')} material={m('frame')} />
+      const inner = { w: w - f * 2, h: h - f * 2 }
       return (
-        <group position={[0, -h / 2, 0]}>
-          <Slab size={[w, h, 0.06]} radius={0.015} position={[0, 0, 0.03]}>
-            <Material color={c('frame')} material={m('frame')} />
+        <group>
+          <Slab size={[w, f, d]} radius={0.012} position={[0, 0, d / 2 - 0.02]}>
+            {frame}
           </Slab>
-          <mesh position={[0, h / 2, 0.045]}>
-            <planeGeometry args={[w - 0.09, h - 0.09]} />
-            <meshStandardMaterial color={c('glass')} transparent opacity={0.4} roughness={0.1} />
-          </mesh>
-          <Slab size={[0.035, h - 0.06, 0.02]} radius={0.008} position={[0, 0.03, 0.06]}>
-            <Material color={c('frame')} material={m('frame')} />
+          <Slab size={[w, f, d]} radius={0.012} position={[0, h - f, d / 2 - 0.02]}>
+            {frame}
           </Slab>
+          <Slab size={[f, inner.h, d]} radius={0.012} position={[-(w - f) / 2, f, d / 2 - 0.02]}>
+            {frame}
+          </Slab>
+          <Slab size={[f, inner.h, d]} radius={0.012} position={[(w - f) / 2, f, d / 2 - 0.02]}>
+            {frame}
+          </Slab>
+          {/* The casement, hinged on the left, with the glass in it. */}
+          <group position={[-inner.w / 2, f, 0.02]} rotation={[0, on ? 0.9 : 0, 0]}>
+            <Slab size={[0.03, inner.h, 0.03]} radius={0.008} position={[0.015, 0, 0]}>
+              {frame}
+            </Slab>
+            <Slab size={[0.03, inner.h, 0.03]} radius={0.008} position={[inner.w - 0.015, 0, 0]}>
+              {frame}
+            </Slab>
+            <Slab size={[inner.w, 0.03, 0.03]} radius={0.008} position={[inner.w / 2, 0, 0]}>
+              {frame}
+            </Slab>
+            <Slab size={[inner.w, 0.03, 0.03]} radius={0.008} position={[inner.w / 2, inner.h - 0.03, 0]}>
+              {frame}
+            </Slab>
+            <mesh position={[inner.w / 2, inner.h / 2, 0.015]}>
+              <planeGeometry args={[inner.w - 0.05, inner.h - 0.05]} />
+              <meshPhysicalMaterial
+                color={c('glass')}
+                transparent
+                opacity={0.22}
+                roughness={0.05}
+                metalness={0}
+                side={DoubleSide}
+              />
+            </mesh>
+          </group>
         </group>
       )
     }

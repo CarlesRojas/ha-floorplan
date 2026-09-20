@@ -48,7 +48,13 @@ export const SCANDI = {
   sage: '#b6c3ae',
   leaf: '#7f9c6d',
   clay: '#cfa08a',
+  // Near black, for screens and the devices built around them.
+  ink: '#2b2e31',
 }
+
+// A screen that is off: almost black, with just enough life to catch the
+// room light.
+export const SCREEN_OFF_COLOR = '#16191b'
 
 // Scandinavian defaults: warm white fabric shades, light oak, grey cords.
 export const LIGHT_SHADE_COLOR = '#f4eee3'

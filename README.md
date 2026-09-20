@@ -95,7 +95,7 @@ The mode switch on the left of the toolbar changes between Rooms and Devices. In
 
 The third mode places furniture and fixtures. The sidebar shows the catalog, and the selected room's floor material, tint, pattern size and pattern angle when one is picked. Floor patterns are drawn at their real size, boards 16 cm wide and 1.25 m long, tiles 21 cm across, so the pattern size only has to change when a room should read coarser or finer. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
 
-- Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
+- Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline. A wall item hangs at its height, except a door, a garage door and a radiator, which stand on the floor, and a window, which starts at its sill.
 - A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change.
 - Items are grouped by family in the sidebar, with a search box. Every model is built from primitives in code, in a Scandinavian vocabulary: pale oak, chalky whites, muted greens and clays, rounded frames on tapered legs, plump linen upholstery.
 
@@ -123,8 +123,8 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 A bound device drives what the item does in 3D, when its signals match:
 
 - Lamps and LED strips glow with the light's brightness, color and color temperature.
-- TVs, monitors and projectors light their screens. Speakers and soundbars light a small indicator.
-- Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors swing open.
+- TVs, monitors and projectors play a picture on their screen, and are black glass when off. Speakers and soundbars light a small indicator.
+- Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors and window casements swing open.
 - Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.
 - Radiators and towel rails warm up, hobs light their rings, ovens glow behind the glass.
 - Fridges, dishwashers, kettles and coffee machines show a status light.
