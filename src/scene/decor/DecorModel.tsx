@@ -1,5 +1,5 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
-import { useEased } from '#/scene/decor/ease.ts'
+import { useTravel } from '#/scene/decor/ease.ts'
 import { Bar, Blob, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -13,7 +13,7 @@ export default function DecorModel({ kind, item, state }: Props) {
   const m = (slot: string) => materialValue(kind, item.materials, slot)
   // An unbound curtain hangs closed. Eased, so it draws rather than jumps
   // as Home Assistant reports its position on the way.
-  const level = useEased(state?.level ?? 0, 4)
+  const level = useTravel(state?.level ?? 0)
 
   switch (kind.id) {
     case 'rug': {
@@ -239,17 +239,22 @@ export default function DecorModel({ kind, item, state }: Props) {
       const w = p('width')
       const h = 2.1
       const part = (w / 2) * 0.55 * level
-      const panelW = w / 2 - part * 0.4
+      // The panels are cut once at their widest and gathered by scaling, so
+      // nothing is rebuilt while they draw.
+      const full = w / 2
+      const gather = 1 - 0.4 * (part / full)
       return (
         <group position={[0, -h, 0]}>
           <Bar length={w + 0.12} radius={0.012} rotation={[0, 0, Math.PI / 2]} position={[0, h + 0.04, 0.05]}>
             <Material color={c('rail')} material={m('rail')} />
           </Bar>
           {[-1, 1].map(s => (
-            <mesh key={s} position={[s * (w / 2 - panelW / 2 + part * 0.4), h / 2, 0.06]} castShadow>
-              <boxGeometry args={[panelW, h, 0.05]} />
-              <Material color={c('body')} material={m('body')} repeat={3} />
-            </mesh>
+            <group key={s} position={[s * (w / 2 + part * 0.4), 0, 0]} scale={[gather, 1, 1]}>
+              <mesh position={[(-s * full) / 2, h / 2, 0.06]} castShadow>
+                <boxGeometry args={[full, h, 0.05]} />
+                <Material color={c('body')} material={m('body')} repeat={3} />
+              </mesh>
+            </group>
           ))}
         </group>
       )

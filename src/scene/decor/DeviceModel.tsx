@@ -10,7 +10,7 @@ import { Bar, Blob, Dome, Glass, Material, Panel, SEG, Slab } from '#/scene/deco
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
-import { useEased } from '#/scene/decor/ease.ts'
+import { useEased, useTravel } from '#/scene/decor/ease.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef, type ReactNode } from 'react'
 import { DoubleSide, type Group } from 'three'
@@ -65,9 +65,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
   // it to run down rather than stopping dead.
   const lit = useEased(on ? 1 : 0, 9)
   // An unbound cover shows closed, so the item is visible on the plan.
-  const coverLevel = useEased(state?.level ?? 0, 4)
+  const coverLevel = useTravel(state?.level ?? 0)
   // Same, but a cover with no position at all counts as fully open.
-  const openAmount = useEased(state ? (state.level ?? (state.on ? 1 : 0)) : 0, 4)
+  const openAmount = useTravel(state ? (state.level ?? (state.on ? 1 : 0)) : 0)
   const runLevel = useEased(level, 6)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or
@@ -423,28 +423,37 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const w = p('width')
       const full = p('drop')
       // Home Assistant reports 1 as open, so an open cover is gathered up.
-      const extent = Math.max(0.03, full * (1 - coverLevel))
+      // The parts are built once at full size and the group is scaled, which
+      // keeps the travel smooth: rebuilding a slat or a slab every frame is
+      // what made these move in steps.
+      const out = Math.max(1 - coverLevel, 0.001)
       const awning = kind.id === 'awning'
-      const slats = Math.max(1, Math.round(extent / 0.09))
+      const slats = Math.max(1, Math.round(full / 0.09))
       return (
         <group>
           <Slab size={[w + 0.06, 0.07, 0.08]} radius={0.02} position={[0, -0.07, 0.04]}>
             <Material color={c('rail')} material={m('rail')} />
           </Slab>
           {awning ? (
-            <Slab size={[w, 0.02, extent]} radius={0.01} position={[0, -0.14, extent / 2]} rotation={[0.25, 0, 0]}>
-              {body}
-            </Slab>
-          ) : kind.id === 'blind' ? (
-            <Slab size={[w, extent, 0.015]} radius={0.006} position={[0, -0.07 - extent, 0.04]}>
-              {body}
-            </Slab>
-          ) : (
-            Array.from({ length: slats }).map((_, i) => (
-              <Slab key={i} size={[w, 0.075, 0.018]} radius={0.008} position={[0, -0.09 - i * 0.085, 0.04]}>
+            <group position={[0, -0.14, 0]} rotation={[0.25, 0, 0]} scale={[1, 1, out]}>
+              <Slab size={[w, 0.02, full]} radius={0.01} position={[0, 0, full / 2]}>
                 {body}
               </Slab>
-            ))
+            </group>
+          ) : (
+            <group position={[0, -0.07, 0]} scale={[1, out, 1]}>
+              {kind.id === 'blind' ? (
+                <Slab size={[w, full, 0.015]} radius={0.006} position={[0, -full, 0.04]}>
+                  {body}
+                </Slab>
+              ) : (
+                Array.from({ length: slats }).map((_, i) => (
+                  <Slab key={i} size={[w, 0.075, 0.018]} radius={0.008} position={[0, -0.02 - i * 0.085, 0.04]}>
+                    {body}
+                  </Slab>
+                ))
+              )}
+            </group>
           )}
         </group>
       )
@@ -558,7 +567,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
     }
     case 'projector_screen': {
       // A case at the ceiling with the screen rolling out of it. Closed is
-      // rolled up, so an unbound one shows as just the case.
+      // rolled up, so an unbound one shows as just the case. The sheet is one
+      // mesh, scaled rather than resized, so nothing is rebuilt as it moves.
       const [w, h] = screenSize(p('inches'))
       const drop = h * openAmount
       const caseH = 0.09
@@ -569,11 +579,11 @@ export default function DeviceModel({ kind, item, state }: Props) {
           </Slab>
           {drop > 0.01 && (
             <>
-              {/* The sheet, and the weighted bar along its bottom edge. */}
-              <mesh position={[0, -caseH - drop / 2, 0]}>
-                <planeGeometry args={[w, drop]} />
+              <mesh position={[0, -caseH - drop / 2, 0]} scale={[1, openAmount, 1]}>
+                <planeGeometry args={[w, h]} />
                 <meshStandardMaterial color={c('screen')} roughness={0.9} side={DoubleSide} />
               </mesh>
+              {/* The weighted bar along the bottom edge keeps its own size. */}
               <Slab size={[w, 0.03, 0.03]} radius={0.008} position={[0, -caseH - drop, 0]}>
                 <Material color={c('case')} material={m('case')} />
               </Slab>
@@ -585,20 +595,20 @@ export default function DeviceModel({ kind, item, state }: Props) {
     case 'garage_door': {
       const w = p('width')
       const h = p('height')
-      const shown = Math.max(0.05, h * (1 - coverLevel))
-      const panels = Math.max(1, Math.round(shown / 0.45))
+      // The panels are cut once for the full height and the stack is scaled,
+      // so none of them is rebuilt or dropped while the door runs up.
+      const panels = Math.max(1, Math.round(h / 0.45))
+      const panelH = h / panels
+      const out = Math.max(1 - coverLevel, 0.001)
       return (
         <group>
-          {Array.from({ length: panels }).map((_, i) => (
-            <Slab
-              key={i}
-              size={[w, shown / panels - 0.01, 0.05]}
-              radius={0.012}
-              position={[0, (shown / panels) * i, 0.03]}
-            >
-              {body}
-            </Slab>
-          ))}
+          <group scale={[1, out, 1]}>
+            {Array.from({ length: panels }).map((_, i) => (
+              <Slab key={i} size={[w, panelH - 0.01, 0.05]} radius={0.012} position={[0, panelH * i, 0.03]}>
+                {body}
+              </Slab>
+            ))}
+          </group>
           <Slab size={[w + 0.08, 0.07, 0.09]} radius={0.02} position={[0, h - 0.07, 0.04]}>
             <Material color={c('rail')} material={m('rail')} />
           </Slab>

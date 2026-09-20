@@ -21,3 +21,21 @@ export function useEased(target: number, rate = 3) {
   })
   return shown
 }
+
+// Moves at a constant rate, in units per second, rather than easing in.
+// A cover reports its position while it travels, and easing coasts to a halt
+// at every report, which is what makes the motion look stepped. At a steady
+// speed it is still moving when the next position arrives, so the whole
+// travel reads as one.
+export function useTravel(target: number, speed = 0.9) {
+  const [shown, setShown] = useState(target)
+  const from = useRef(target)
+  useFrame((_, delta) => {
+    if (from.current === target) return
+    const step = speed * Math.min(delta, 0.1)
+    const gap = target - from.current
+    from.current = Math.abs(gap) <= step ? target : from.current + Math.sign(gap) * step
+    setShown(from.current)
+  })
+  return shown
+}
