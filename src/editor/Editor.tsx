@@ -355,7 +355,8 @@ export default function Editor({ hass, config, onChange }: Props) {
     setModeState(next)
     setTool('select')
     setDraft([])
-    setSelection({ roomId: null, vertex: null })
+    // The room stays picked across modes, since rooms are only picked in
+    // Rooms mode and what is added next still belongs in one.
     setSelectedDevice(null)
     setSelectedDecoration(null)
   }
@@ -647,8 +648,6 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   const toolbar = (
     <div className="flex items-center gap-3">
-      <ModeSwitch mode={mode} onMode={setMode} />
-      <span className="h-6 w-px bg-(--divider-color)" />
       <Toolbar
         mode={mode}
         tool={tool}
@@ -705,11 +704,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         decorations={decorations}
         onBindDecoration={bindDecoration}
         selected={selectedDevice}
-        onSelect={entityId => {
-          setSelectedDevice(entityId)
-          const device = devices.find(d => d.entity_id === entityId)
-          if (device) setSelection({ roomId: device.room, vertex: null })
-        }}
+        onSelect={setSelectedDevice}
         onAdd={addDevice}
         onUpdate={updateDevice}
         onRemove={removeDevice}
@@ -824,6 +819,10 @@ export default function Editor({ hass, config, onChange }: Props) {
               <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
             </div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
+              {/* The mode is the first thing in the sidebar and stays put. */}
+              <div className="sticky top-0 z-20 -mx-1 bg-(--card-background-color) px-1 pb-2">
+                <ModeSwitch mode={mode} onMode={setMode} />
+              </div>
               {roomInfo ?? panels}
             </div>
           </div>

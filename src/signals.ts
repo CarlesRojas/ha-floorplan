@@ -5,6 +5,48 @@ import type { HomeAssistant } from '#/types.ts'
 // knowing about domains.
 export type Signal = 'toggle' | 'level' | 'color' | 'warmth' | 'value' | 'enum'
 
+// A device can offer more than one percentage: a cover has its position and
+// often a tilt, a light its brightness. One of them drives what an item
+// does, and an item with two of its own, a window that opens and tilts, can
+// take a different one for each.
+export type LevelChannel = { id: string; label: string }
+
+export function levelChannels(hass: HomeAssistant, entityId: string): LevelChannel[] {
+  const attrs = hass.states[entityId]?.attributes ?? {}
+  const out: LevelChannel[] = []
+  switch (domainOf(entityId)) {
+    case 'cover':
+      if (typeof attrs.current_position === 'number') out.push({ id: 'position', label: 'Position' })
+      if (typeof attrs.current_tilt_position === 'number') out.push({ id: 'tilt', label: 'Tilt' })
+      break
+    case 'light':
+      if (typeof attrs.brightness === 'number') out.push({ id: 'brightness', label: 'Brightness' })
+      break
+    case 'fan':
+      if (typeof attrs.percentage === 'number') out.push({ id: 'percentage', label: 'Speed' })
+      break
+    case 'media_player':
+      if (typeof attrs.volume_level === 'number') out.push({ id: 'volume', label: 'Volume' })
+      break
+  }
+  return out
+}
+
+// Every percentage the device reports, by channel id, 0 to 1.
+export function levelValues(hass: HomeAssistant, entityId: string): Record<string, number> {
+  const attrs = hass.states[entityId]?.attributes ?? {}
+  const out: Record<string, number> = {}
+  const put = (id: string, value: unknown, scale: number) => {
+    if (typeof value === 'number') out[id] = Math.min(Math.max(value / scale, 0), 1)
+  }
+  put('position', attrs.current_position, 100)
+  put('tilt', attrs.current_tilt_position, 100)
+  put('brightness', attrs.brightness, 255)
+  put('percentage', attrs.percentage, 100)
+  put('volume', attrs.volume_level, 1)
+  return out
+}
+
 export type SignalValues = {
   on?: boolean
   // 0 to 1

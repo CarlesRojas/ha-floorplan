@@ -216,7 +216,6 @@ export default function Canvas({
     if (e.button !== 0) return
     e.stopPropagation()
     capture(e)
-    onSelect({ roomId: device.room, vertex: null })
     onSelectDevice(device.entity_id)
     liveDevices.current = devices
     drag.current = { kind: 'device', entityId: device.entity_id, start: planPoint(e), origin: device.position }
@@ -250,7 +249,6 @@ export default function Canvas({
       liveDecorations.current = next
       onDecorations(next, false)
     } else liveDecorations.current = decorations
-    onSelect({ roomId: item.room, vertex: null })
     onSelectDecoration(dragged.id)
     drag.current = { kind: 'decoration', id: dragged.id, start: planPoint(e), origin: item.position }
     setDraggingDecoration(dragged.id)
@@ -631,15 +629,16 @@ export default function Canvas({
     if (tool !== 'select' || e.button !== 0) return
     e.stopPropagation()
     capture(e)
-    onSelect({ roomId: room.id, vertex: null })
     if (mode !== 'rooms') {
-      // Rooms are only picked here. Clicking a room clears the item selection.
+      // A room is picked in Rooms mode. Elsewhere, clicking one only lets go
+      // of whatever item was selected and pans the view.
       onSelectDevice(null)
       onSelectDecoration(null)
       drag.current = { kind: 'pan', start: screenPoint(e), view }
       setPanning(true)
       return
     }
+    onSelect({ roomId: room.id, vertex: null })
     // Alt or Option drags out a copy of the room, shape, floor and all.
     if (e.altKey) {
       const { id, name } = newRoomName()
@@ -719,8 +718,6 @@ export default function Canvas({
         source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
         true,
       )
-      const landed = source.find(x => x.id === d.id)
-      if (landed) onSelect({ roomId: landed.room, vertex: null })
       return
     }
     if (d.kind === 'device') {
@@ -729,8 +726,6 @@ export default function Canvas({
         source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
         true,
       )
-      const landed = source.find(x => x.entity_id === d.entityId)
-      if (landed) onSelect({ roomId: landed.room, vertex: null })
       return
     }
     // Land on the resolved position, whatever the pointer showed.
@@ -761,16 +756,8 @@ export default function Canvas({
     e.stopPropagation()
     if (target.kind === 'room') onSelect({ roomId: target.roomId, vertex: null })
     if (target.kind === 'vertex') onSelect({ roomId: target.roomId, vertex: target.index })
-    if (target.kind === 'decoration') {
-      const item = decorations.find(x => x.id === target.id)
-      if (item) onSelect({ roomId: item.room, vertex: null })
-      onSelectDecoration(target.id)
-    }
-    if (target.kind === 'device') {
-      const device = devices.find(x => x.entity_id === target.entityId)
-      if (device) onSelect({ roomId: device.room, vertex: null })
-      onSelectDevice(target.entityId)
-    }
+    if (target.kind === 'decoration') onSelectDecoration(target.id)
+    if (target.kind === 'device') onSelectDevice(target.entityId)
     setMenu({ at: { x: e.clientX, y: e.clientY }, target })
   }
 

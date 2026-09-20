@@ -68,9 +68,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
   // Home Assistant says so outright while a cover runs, which is a better
   // signal than the positions alone.
   const moving = state?.text === 'opening' ? 1 : state?.text === 'closing' ? -1 : 0
-  const coverLevel = useTravel(state?.level ?? 0, moving)
+  // How far open the item is: the percentage feeding it, or its switch when
+  // it has none. Without the switch, a cover bound to something that only
+  // turns on and off would never move.
+  const openTarget = state ? (state.levels.open ?? (state.on ? 1 : 0)) : 0
+  const coverLevel = useTravel(openTarget, moving)
   // Same, but a cover with no position at all counts as fully open.
-  const openAmount = useTravel(state ? (state.level ?? (state.on ? 1 : 0)) : 0, moving)
+  const openAmount = coverLevel
+  // Slats, or a window's tilt, when a second percentage feeds it.
+  // Home Assistant counts a tilt up from shut, so nothing feeding it means
+  // slats closed and a window standing straight.
+  const tiltAmount = useTravel(state?.levels.tilt ?? 0, 0)
   const runLevel = useEased(level, 6)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or
@@ -243,11 +251,10 @@ export default function DeviceModel({ kind, item, state }: Props) {
       // A flat panel with vertical fins, warm when it runs.
       const w = p('width')
       const h = p('height')
-      const base = p('base')
       const fins = Math.max(4, Math.round(w / 0.09))
       const warm = 0.45 * level * lit
       return (
-        <group position={[0, base, 0]}>
+        <group>
           <Slab size={[w, h, 0.05]} radius={0.02} position={[0, 0, 0.03]}>
             <Material
               color={c('body')}
@@ -432,6 +439,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const out = Math.max(1 - coverLevel, 0.001)
       const awning = kind.id === 'awning'
       const slats = Math.max(1, Math.round(full / 0.09))
+      // A blind's slats turn with its second percentage: flat lets the light
+      // through, upright shuts it out.
+      const slatAngle = (1 - tiltAmount) * 1.2
       return (
         <group>
           <Slab size={[w + 0.06, 0.07, 0.08]} radius={0.02} position={[0, -0.07, 0.04]}>
@@ -445,17 +455,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
             </group>
           ) : (
             <group position={[0, -0.07, 0]} scale={[1, out, 1]}>
-              {kind.id === 'blind' ? (
-                <Slab size={[w, full, 0.015]} radius={0.006} position={[0, -full, 0.04]}>
+              {Array.from({ length: slats }).map((_, i) => (
+                <Slab
+                  key={i}
+                  size={[w, 0.075, 0.018]}
+                  radius={0.008}
+                  position={[0, -0.02 - i * 0.085, 0.04]}
+                  rotation={kind.id === 'blind' ? [slatAngle, 0, 0] : undefined}
+                >
                   {body}
                 </Slab>
-              ) : (
-                Array.from({ length: slats }).map((_, i) => (
-                  <Slab key={i} size={[w, 0.075, 0.018]} radius={0.008} position={[0, -0.02 - i * 0.085, 0.04]}>
-                    {body}
-                  </Slab>
-                ))
-              )}
+              ))}
             </group>
           )}
         </group>
@@ -491,10 +501,14 @@ export default function DeviceModel({ kind, item, state }: Props) {
             const left = i < leaves / 2
             const edge = -inner.w / 2 + i * leafW
             const hinge = left ? edge : edge + leafW
-            const open = (left ? 0.85 : -0.85) * swing
+            const open = (left ? 0.85 : -0.85) * coverLevel
             return (
               <group key={i} position={[hinge, f, 0.02]} rotation={[0, open, 0]}>
-                {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, c('glass'))}
+                {/* Tilt and turn: the top leans in when a tilt percentage
+                    feeds it, on top of whatever the swing is doing. */}
+                <group rotation={[-tiltAmount * 0.3, 0, 0]}>
+                  {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, c('glass'))}
+                </group>
               </group>
             )
           })}
@@ -506,7 +520,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const h = p('height')
       // Swings open on its hinge when the device reports open.
       return (
-        <group position={[-w / 2, 0, 0]} rotation={[0, -1.1 * swing, 0]}>
+        <group position={[-w / 2, 0, 0]} rotation={[0, -1.1 * coverLevel, 0]}>
           <Slab size={[w, h, 0.045]} radius={0.01} position={[w / 2, 0, 0.02]}>
             {body}
           </Slab>

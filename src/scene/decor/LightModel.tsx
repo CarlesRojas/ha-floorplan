@@ -6,8 +6,9 @@ import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Color } from 'three'
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 
 export type LightState = ItemState
 
@@ -61,25 +62,29 @@ function BaseMaterial({ color, material = 'matte' }: { color: string; material?:
 function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; spread?: number }) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
+  // Rect area lights need their uniform tables built once, and they only
+  // light standard materials, which is what every model here uses.
+  useEffect(() => {
+    RectAreaLightUniformsLib.init()
+  }, [])
   if (lit < 0.01) return null
-  // A strip lights its whole length, so the light is shared between a few
-  // points spread along it instead of one in the middle.
-  const count = spread > 0.6 ? Math.min(5, Math.max(2, Math.round(spread / 0.6))) : 1
   const total = LIGHT_POINT_INTENSITY * lit * (0.3 + lit * 0.7)
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <pointLight
-          key={i}
-          position={[count === 1 ? 0 : -spread / 2 + (spread / (count - 1)) * i, y, 0]}
-          color={[r, g, b]}
-          intensity={total / count}
-          distance={7}
-          decay={1.6}
-        />
-      ))}
-    </>
-  )
+  // A strip is a line of light, not a point. A rect area light is one
+  // continuous source, so the wash along a long strip is even instead of
+  // beading wherever a point happens to sit.
+  if (spread > 0.4) {
+    return (
+      <rectAreaLight
+        position={[0, y - 0.02, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        width={spread}
+        height={0.06}
+        color={[r, g, b]}
+        intensity={total * 4}
+      />
+    )
+  }
+  return <pointLight position={[0, y, 0]} color={[r, g, b]} intensity={total} distance={7} decay={1.6} />
 }
 
 // A sphere squashed vertically: the basic soft volume of the family.

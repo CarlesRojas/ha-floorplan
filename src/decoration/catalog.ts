@@ -29,6 +29,24 @@ export type DecorationKind = {
   expresses: Signal[]
 }
 
+// Percentages an item can take, and what each one does to it. Most take a
+// single one. A window opens and tilts, so it takes two, and each can be fed
+// by a different percentage of the device.
+const ITEM_LEVELS: Record<string, { id: string; label: string }[]> = {
+  window: [
+    { id: 'open', label: 'Open' },
+    { id: 'tilt', label: 'Tilt' },
+  ],
+  blind: [
+    { id: 'open', label: 'Open' },
+    { id: 'tilt', label: 'Slats' },
+  ],
+}
+
+export function itemLevels(kind: DecorationKind) {
+  return ITEM_LEVELS[kind.id] ?? (kind.expresses.includes('level') ? [{ id: 'open', label: 'Level' }] : [])
+}
+
 // Parameter shorthands. Every length is in meters.
 
 // Vertical parameters: how tall something is, or how high it sits. They are
@@ -72,6 +90,8 @@ const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Leng
 // Height an item stands at when it is not standing on anything.
 const lift = (d: number, max = 1.5) => p('lift', 'Standing on', d, 0, max)
 const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1, '')
+// How far an appliance is raised off the floor, to sit in a run of units.
+const base = (d = 0) => p('base', 'Off floor', d, 0, 1.6)
 // Screens are sold by the diagonal, and they are all 16:9.
 const inches = (d: number, min = 24, max = 120) => p('inches', 'Screen', d, min, max, 1, '"')
 
@@ -377,7 +397,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Fridge',
     'floor',
-    [width(0.6, 0.5, 0.95), depth(0.65, 0.5, 0.8), height(1.85, 0.8, 2.1)],
+    [width(0.6, 0.5, 0.95), depth(0.65, 0.5, 0.8), height(1.85, 0.8, 2.1), base()],
     applianceBody,
     applianceMat,
     TOGGLE,
@@ -387,7 +407,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Oven',
     'floor',
-    [width(0.6, 0.5, 0.9), depth(0.6, 0.5, 0.7), height(0.88, 0.6, 1)],
+    [width(0.6, 0.5, 0.9), depth(0.6, 0.5, 0.7), height(0.88, 0.6, 1), base()],
     applianceBody,
     applianceMat,
     TOGGLE,
@@ -417,7 +437,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Dishwasher',
     'floor',
-    [width(0.6, 0.45, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 0.95)],
+    [width(0.6, 0.45, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 0.95), base()],
     applianceBody,
     applianceMat,
     TOGGLE,
@@ -468,7 +488,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'laundry',
     'Washing machine',
     'floor',
-    [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1)],
+    [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), base()],
     applianceBody,
     applianceMat,
     TOGGLE_LEVEL,
@@ -478,7 +498,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'laundry',
     'Dryer',
     'floor',
-    [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), lift(0)],
+    [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), base()],
     applianceBody,
     applianceMat,
     TOGGLE_LEVEL,

@@ -84,11 +84,11 @@ Alt and drag copies furniture and rooms. A duplicated room keeps its shape and f
 
 ### Devices mode
 
-The mode switch on the left of the toolbar changes between Rooms and Devices. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Adding with no room selected drops the entity in a random room. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
+The mode switch sits at the top of the sidebar and stays there while the rest scrolls. Rooms are picked in Rooms mode, and the pick carries into the other modes, so what you add next lands in it. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Adding with no room selected drops the entity in a random room. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 
 - Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
 - A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
-- Selecting a device fills the sidebar the same way, with the controls the entity offers written out: on and off, level, color, warmth, a reading, modes. The items it could stand in for are listed under Suggested first, the ones that express the most of those controls, each with the same icons. Searching a domain, light or cover, lists every entity in it.
+- Selecting a device fills the sidebar the same way, with the controls the entity offers written out: on and off, percentage, color, warmth, reading, modes. The same icons are on every row of the list. The items it could stand in for are listed under Suggested first, the ones that express the most of those controls, each with the same icons. Searching a domain, light or cover, lists every entity in it.
 - Right click a device to rotate it or remove it. Delete removes the selected device.
 - Deleting a room removes its devices.
 
@@ -129,7 +129,8 @@ A bound device drives what the item does in 3D, when its signals match:
 
 - Lamps and LED strips glow with the light's brightness, color and color temperature, taking on the color themselves rather than only tinting the room. A strip lights along its whole length.
 - TVs and monitors play a picture on their screen, and are black glass when off. A TV is set by its diagonal in inches, always in 16:9, and a motorized projector screen rolls out of its case at the ceiling by the cover's position. Speakers and soundbars light a small indicator.
-- Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors and window casements swing open, and sliding doors run along their track, partway when the cover reports a position.
+- Blinds, shutters, curtains, garage doors and awnings move to the cover's position, and a blind's slats turn with its tilt. Doors and window casements swing open, a window tilts as well, and sliding doors run along their track, partway when the cover reports a position. A device that only switches drives the same items fully open and shut.
+- A device with more than one percentage, a cover with a position and a tilt, says which one feeds each percentage of the item it stands behind. A window and a blind take two: how far open they are, and how far tilted.
 - Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.
 - Radiators and towel rails warm up, hobs light their rings, ovens glow behind the glass.
 - Fridges, dishwashers, kettles and coffee machines show a status light.

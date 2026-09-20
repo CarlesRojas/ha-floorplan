@@ -64,6 +64,9 @@ export type DeviceConfig = {
   rotation?: number
   // Meters, for strip-like types such as LED strips and blinds.
   length?: number
+  // Which of the device's percentages feeds each percentage of the items it
+  // stands behind, for example its tilt driving a blind's slats.
+  levels?: Record<string, string>
   // Decoration items that stand in for this device in 3D. With none, the
   // device shows as a sphere.
   decorations?: string[]

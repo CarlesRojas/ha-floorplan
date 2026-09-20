@@ -1,9 +1,9 @@
 import { deviceType, entityName, placeableEntities, typesFor, type EntityInfo } from '#/devices/catalog.ts'
 import { SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
-import { deviceSignals } from '#/signals.ts'
+import { deviceSignals, levelChannels } from '#/signals.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
-import { decorationKind } from '#/decoration/catalog.ts'
+import { decorationKind, itemLevels } from '#/decoration/catalog.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -94,6 +94,7 @@ export default function DevicePanel({
         <div className="min-w-0 text-(--primary-text-color)">
           <p className="flex items-center gap-2 text-sm">
             <span className="truncate">{e.name}</span>
+            <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" />
             {device && (
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
@@ -133,6 +134,7 @@ export default function DevicePanel({
 
   if (selectedDevice) {
     const signals = deviceSignals(hass, selectedDevice.entity_id)
+    const channels = levelChannels(hass, selectedDevice.entity_id)
     const deviceRoom = roomOf(selectedDevice.room)
     const roomTag = deviceRoom ? (
       <span
@@ -234,28 +236,62 @@ export default function DevicePanel({
                       const itemRoom = rooms.find(r => r.id === item.room)
                       const itemKind = decorationKind(item.kind)
                       return (
-                        <label
-                          key={item.id}
-                          className={cn(
-                            'flex items-center gap-2 rounded-lg px-2 py-1 text-sm',
-                            // An item stands in for one device, so one that
-                            // another device already has is not on offer.
-                            owner && 'opacity-50',
-                          )}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={bound}
-                            disabled={!!owner}
-                            style={{ accentColor: accent }}
-                            onChange={e => onBindDecoration(selectedDevice.entity_id, item.id, e.target.checked)}
-                          />
-                          <span className="truncate">{itemKind?.label ?? item.kind}</span>
-                          {itemKind && <Signals signals={itemKind.expresses} size="sm" />}
-                          <span className="ml-auto truncate text-xs text-(--secondary-text-color)">
-                            {owner ? `bound to ${entityName(hass, owner.entity_id)}` : (itemRoom?.name ?? item.room)}
-                          </span>
-                        </label>
+                        <div key={item.id} className="flex flex-col gap-1">
+                          <label
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg px-2 py-1 text-sm',
+                              // An item stands in for one device, so one that
+                              // another device already has is not on offer.
+                              owner && 'opacity-50',
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={bound}
+                              disabled={!!owner}
+                              style={{ accentColor: accent }}
+                              onChange={e => onBindDecoration(selectedDevice.entity_id, item.id, e.target.checked)}
+                            />
+                            <span className="truncate">{itemKind?.label ?? item.kind}</span>
+                            {itemKind && <Signals signals={itemKind.expresses} size="sm" />}
+                            <span className="ml-auto truncate text-xs text-(--secondary-text-color)">
+                              {owner ? `bound to ${entityName(hass, owner.entity_id)}` : (itemRoom?.name ?? item.room)}
+                            </span>
+                          </label>
+                          {/* Which of the device's percentages drives each of
+                            the item's: its position, its tilt. Only worth
+                            asking when there is a choice to make. */}
+                          {bound &&
+                            channels.length > 0 &&
+                            itemKind &&
+                            (channels.length > 1 || itemLevels(itemKind).length > 1) &&
+                            itemLevels(itemKind).map(level => (
+                              <label
+                                key={level.id}
+                                className="ml-6 grid grid-cols-[72px_1fr] items-center gap-2 text-xs"
+                              >
+                                {level.label}
+                                <select
+                                  className={input}
+                                  value={selectedDevice.levels?.[level.id] ?? ''}
+                                  onChange={e =>
+                                    onUpdate(selectedDevice.entity_id, {
+                                      levels: { ...selectedDevice.levels, [level.id]: e.target.value },
+                                    })
+                                  }
+                                >
+                                  <option value="">
+                                    {level.id === 'tilt' ? 'None' : (channels[0]?.label ?? 'None')}
+                                  </option>
+                                  {channels.map(ch => (
+                                    <option key={ch.id} value={ch.id}>
+                                      {ch.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            ))}
+                        </div>
                       )
                     })}
                   </div>
@@ -279,12 +315,7 @@ export default function DevicePanel({
   return (
     <div className="flex flex-col gap-3">
       <Sticky>
-        <input
-          className={input}
-          placeholder="Search entities"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-        />
+        <input className={input} placeholder="Search entities" value={query} onChange={e => setQuery(e.target.value)} />
       </Sticky>
       <div className="flex flex-col gap-1">
         {entities.length === 0 ? (

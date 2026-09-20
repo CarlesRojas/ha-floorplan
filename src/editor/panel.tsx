@@ -1,4 +1,4 @@
-import { SIGNAL_ICONS, SIGNAL_LABELS } from '#/editor/signalIcons.ts'
+import { SIGNAL_HINTS, SIGNAL_ICONS, SIGNAL_LABELS } from '#/editor/signalIcons.ts'
 import { cn } from '#/lib/utils.ts'
 import type { Signal } from '#/signals.ts'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -10,7 +10,8 @@ import { useRef, type ReactNode } from 'react'
 // Stays at the top of the sidebar while the rest of it scrolls.
 export function Sticky({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('sticky top-0 z-10 -mx-1 flex flex-col gap-2 bg-(--card-background-color) px-1 pb-2', className)}>
+    <div className={cn(// Under the mode switch, which is the sticky block above it.
+      'sticky top-13 z-10 -mx-1 flex flex-col gap-2 bg-(--card-background-color) px-1 pb-2', className)}>
       {children}
     </div>
   )
@@ -55,7 +56,7 @@ export function Signals({ signals, accent, size = 'md' }: { signals: Signal[]; a
           <FontAwesomeIcon
             key={s}
             icon={SIGNAL_ICONS[s]}
-            title={SIGNAL_LABELS[s]}
+            title={SIGNAL_HINTS[s]}
             className="size-3 text-(--secondary-text-color)"
           />
         ))}
@@ -67,6 +68,7 @@ export function Signals({ signals, accent, size = 'md' }: { signals: Signal[]; a
       {signals.map(s => (
         <span
           key={s}
+          title={SIGNAL_HINTS[s]}
           className="flex items-center gap-1.5 rounded-full border border-current px-2 py-0.5 text-xs font-semibold"
           style={{ color: accent }}
         >
