@@ -30,7 +30,7 @@ import {
 } from '#/geometry/overlap.ts'
 import { shortcut } from '#/lib/shortcuts.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_MODE_COLORS, EDITOR_SELECTED_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useRef, useState } from 'react'
@@ -1139,7 +1139,12 @@ export default function Canvas({
             const isSelected = selectedDecoration === item.id
             const target = hoverSupport === item.id
             const raised = item.on !== undefined
-            const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.decoration
+            // What is selected turns blue, so it reads apart from the rest.
+            const color = invalid
+              ? 'var(--error-color)'
+              : isSelected
+                ? EDITOR_SELECTED_COLOR
+                : EDITOR_MODE_COLORS.decoration
             const angle = -(item.rotation ?? 0)
             const [fw, fd] = footprint(kind, item.params)
             const r = EDITOR_DEVICE_RADIUS_PX
@@ -1188,19 +1193,6 @@ export default function Canvas({
                 )}
                 {isSelected && (
                   <>
-                    {/* A dashed halo around the whole footprint. */}
-                    <rect
-                      x={sx - halfW - 5}
-                      y={sy - (kind.mount === 'wall' ? 10 : halfD + 5)}
-                      width={halfW * 2 + 10}
-                      height={(kind.mount === 'wall' ? 10 : halfD + 5) * 2}
-                      rx={8}
-                      transform={`rotate(${angle} ${sx} ${sy})`}
-                      fill="none"
-                      stroke={color}
-                      strokeWidth={2}
-                      strokeDasharray="6 4"
-                    />
                     {/* Rotation handle on the item's front, with a stem. */}
                     <line
                       x1={sx}

@@ -43,6 +43,8 @@ const size = (d: number, min = 0.1, max = 1.5) => p('size', 'Size', d, min, max)
 const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Length', d, min, max, step)
 // Height an item stands at when it is not standing on anything.
 const lift = (d: number, max = 1.5) => p('lift', 'Standing on', d, 0, max)
+// A count rather than a length. A whole step is what marks it as one.
+const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1)
 
 // Signal sets.
 const NONE: Signal[] = []
@@ -784,7 +786,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Sliding door',
     'wall',
-    [width(1.8, 0.9, 4), height(2.1, 1.8, 2.5)],
+    [width(1.8, 0.9, 5), height(2.1, 1.8, 2.5), panels()],
     { body: SCANDI.offWhite, frame: SCANDI.slate },
     { body: 'matte', frame: 'metal' },
     TOGGLE_LEVEL,
@@ -794,7 +796,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Sliding glass door',
     'wall',
-    [width(2.4, 1.2, 5), height(2.2, 1.8, 2.6)],
+    [width(2.4, 1.2, 6), height(2.2, 1.8, 2.6), panels()],
     { frame: SCANDI.slate, glass: SCANDI.mist },
     { frame: 'metal' },
     TOGGLE_LEVEL,

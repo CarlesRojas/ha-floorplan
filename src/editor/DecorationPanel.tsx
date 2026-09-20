@@ -99,7 +99,10 @@ export default function DecorationPanel({
                 style={{ accentColor: accent }}
                 onChange={e => onUpdate(item.id, { params: { ...item.params, [p.id]: Number(e.target.value) } })}
               />
-              <span className="text-right text-xs text-(--secondary-text-color)">{value.toFixed(2)} m</span>
+              <span className="text-right text-xs text-(--secondary-text-color)">
+                {/* A whole step means a count, everything else is meters. */}
+                {p.step >= 1 ? value : `${value.toFixed(2)} m`}
+              </span>
             </label>
           )
         })}

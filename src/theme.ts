@@ -21,6 +21,9 @@ export const CARD_CORNER_RADIUS_PX = 24
 
 // Editor
 
+// What is selected on the canvas is drawn in this, whatever the mode.
+export const EDITOR_SELECTED_COLOR = '#03a9f4'
+
 // Accent color of each editor mode.
 export const EDITOR_MODE_COLORS = {
     rooms: '#03a9f4',
