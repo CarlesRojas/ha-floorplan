@@ -1,4 +1,4 @@
-import { decorationKind } from '#/decoration/catalog.ts'
+import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { CEILING_HEIGHT_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -18,9 +18,12 @@ export default function ModelPreview({ item, className }: Props) {
   if (!kind) return null
   const glow = new Color(LIGHT_GLOW_COLOR)
   const centered: DecorationConfig = { ...item, position: [0, 0], rotation: 0 }
-  // Ceiling items hang from a virtual ceiling 1.4 m up, so the cord does not
+  // Centered on where the item actually sits, so a door standing on the
+  // floor is in frame and a wall light hangs at its own height. Ceiling
+  // items hang from a virtual ceiling 1.4 m up, so the cord does not
   // dominate the frame.
-  const lift = kind.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : kind.mount === 'wall' ? -1.2 : 0
+  const lift =
+    kind.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : -mountHeight(kind, item.params)
   return (
     <div className={className}>
       <Canvas dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ fov: 35, position: [3, 2.4, 3] }}>

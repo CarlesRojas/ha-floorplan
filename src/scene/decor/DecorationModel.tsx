@@ -17,6 +17,9 @@ type Props = {
   all: DecorationConfig[]
   state: ItemState | null
   onClick?: () => void
+  // Double click asks Home Assistant for the entity's own dialog, where
+  // everything a click cannot do lives: brightness, color, position.
+  onOpen?: () => void
 }
 
 type FamilyModel = (props: { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }) => ReactNode
@@ -41,7 +44,7 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-export default function DecorationModel({ item, all, state, onClick }: Props) {
+export default function DecorationModel({ item, all, state, onClick, onOpen }: Props) {
   const kind = decorationKind(item.kind)
   if (!kind) return null
   const Model = FAMILY_MODELS[kind.family]
@@ -55,6 +58,10 @@ export default function DecorationModel({ item, all, state, onClick }: Props) {
         onClick: (e: { stopPropagation: () => void }) => {
           e.stopPropagation()
           onClick()
+        },
+        onDoubleClick: (e: { stopPropagation: () => void }) => {
+          e.stopPropagation()
+          onOpen?.()
         },
         onPointerOver: () => (document.body.style.cursor = 'pointer'),
         onPointerOut: () => (document.body.style.cursor = ''),

@@ -4,6 +4,7 @@ import type { ItemState } from '#/scene/decor/state.ts'
 import { clickAction, deviceSignals, kelvinToRgb, signalValues } from '#/signals.ts'
 import { CEILING_HEIGHT_M, DEVICE_SPHERE_COLOR, DEVICE_SPHERE_RADIUS_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
+import { useThree } from '@react-three/fiber'
 import { Color } from 'three'
 
 type Props = {
@@ -50,6 +51,16 @@ export default function Devices({ hass, config }: Props) {
     if (hass && action) void hass.callService(action.domain, action.service, { entity_id: entityId })
   }
 
+  // Home Assistant's own dialog for the entity, which carries the controls a
+  // click cannot stand in for: brightness, color, a cover's position. The
+  // event has to cross the card's shadow root to reach it.
+  const gl = useThree(state => state.gl)
+  const openMoreInfo = (entityId: string) => {
+    gl.domElement.dispatchEvent(
+      new CustomEvent('hass-more-info', { detail: { entityId }, bubbles: true, composed: true }),
+    )
+  }
+
   return (
     <>
       {devices.map(device => {
@@ -63,6 +74,10 @@ export default function Devices({ hass, config }: Props) {
             onClick={e => {
               e.stopPropagation()
               act(device.entity_id)
+            }}
+            onDoubleClick={e => {
+              e.stopPropagation()
+              openMoreInfo(device.entity_id)
             }}
             onPointerOver={() => (document.body.style.cursor = 'pointer')}
             onPointerOut={() => (document.body.style.cursor = '')}
@@ -87,6 +102,7 @@ export default function Devices({ hass, config }: Props) {
             all={decorations}
             state={state}
             onClick={device ? () => act(device.entity_id) : undefined}
+            onOpen={device ? () => openMoreInfo(device.entity_id) : undefined}
           />
         )
       })}

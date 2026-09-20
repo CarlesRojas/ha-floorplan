@@ -13,14 +13,11 @@ const LED_ON = '#8fd6a0'
 
 // A small status light, the only bright spot on an otherwise chalky front.
 function Led({ on, position, color = LED_ON }: { on: boolean; position: [number, number, number]; color?: string }) {
+  const lit = useEased(on ? 1 : 0, 11)
   return (
     <mesh position={position}>
       <sphereGeometry args={[0.012, 8, 6]} />
-      <meshStandardMaterial
-        color={on ? color : '#c8c8c8'}
-        emissive={on ? color : '#000000'}
-        emissiveIntensity={on ? 2 : 0}
-      />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * lit} />
     </mesh>
   )
 }
@@ -50,8 +47,10 @@ export default function ApplianceModel({ kind, item, state }: Props) {
   const body = <Material color={c('body')} material={m('body')} />
   const trim = () => <Material color={c('trim')} material={m('trim')} />
   const on = state?.on ?? false
-  // Eased, so a ring or a drum comes up to speed rather than stepping.
-  const level = useEased(state?.level ?? 1, 3)
+  // Eased, so a ring or a drum comes up to speed and a light fades rather
+  // than stepping.
+  const level = useEased(state?.level ?? 1, 6)
+  const lit = useEased(on ? 1 : 0, 9)
 
   switch (kind.id) {
     case 'kitchen_counter':
@@ -159,8 +158,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               <Material
                 color="#3c4144"
                 material="ceramic"
-                emissive={on ? [1, 0.72, 0.35] : undefined}
-                emissiveIntensity={on ? 0.6 : 0}
+                emissive={[1, 0.72, 0.35]}
+                emissiveIntensity={(0.6) * lit}
               />
             </Panel>
           )}
@@ -195,8 +194,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               <ringGeometry args={[w * 0.08, w * 0.13, SEG]} />
               <meshStandardMaterial
                 color={on ? '#d96a3c' : '#6c7175'}
-                emissive={on ? '#ff6a2a' : '#000000'}
-                emissiveIntensity={on ? 1.6 * level : 0}
+                emissive={'#ff6a2a'}
+                emissiveIntensity={(1.6 * level) * lit}
               />
             </mesh>
           ))}
@@ -221,8 +220,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             <planeGeometry args={[w * 0.6, d * 0.6]} />
             <meshStandardMaterial
               color={c('trim')}
-              emissive={on ? '#ffd9a0' : '#000000'}
-              emissiveIntensity={on ? 1.4 * level : 0}
+              emissive={'#ffd9a0'}
+              emissiveIntensity={(1.4 * level) * lit}
             />
           </mesh>
         </group>
@@ -277,8 +276,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             <Material
               color={c('body')}
               material={m('body')}
-              emissive={on ? [1, 0.6, 0.3] : undefined}
-              emissiveIntensity={on ? 0.25 : 0}
+              emissive={[1, 0.6, 0.3]}
+              emissiveIntensity={(0.25) * lit}
             />
           </mesh>
           <mesh position={[r * 0.9, r * 1.4, 0]} rotation={[0, 0, 0.5]}>
@@ -472,8 +471,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               <Material
                 color={c('body')}
                 material={m('body')}
-                emissive={on ? [1, 0.55, 0.3] : undefined}
-                emissiveIntensity={on ? 0.5 * level : 0}
+                emissive={[1, 0.55, 0.3]}
+                emissiveIntensity={(0.5 * level) * lit}
               />
             </Bar>
           ))}

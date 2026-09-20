@@ -6,7 +6,7 @@ import {
   screenSize,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { Bar, Blob, Dome, Glass, Material, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Blob, Dome, Glass, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -37,14 +37,11 @@ function Led({
   color?: string
   radius?: number
 }) {
+  const lit = useEased(on ? 1 : 0, 11)
   return (
     <mesh position={position}>
       <sphereGeometry args={[radius, 8, 6]} />
-      <meshStandardMaterial
-        color={on ? color : '#b6b6b6'}
-        emissive={on ? color : '#000000'}
-        emissiveIntensity={on ? 2 : 0}
-      />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * lit} />
     </mesh>
   )
 }
@@ -63,12 +60,15 @@ export default function DeviceModel({ kind, item, state }: Props) {
   // snapping. The hooks are called here, never inside the switch, so their
   // order does not depend on which kind is being drawn.
   // How far open a hinged or sliding thing is, 0 to 1.
-  const swing = useEased(on ? 1 : 0, 2.5)
+  const swing = useEased(on ? 1 : 0, 6)
+  // Anything that lights up fades with this, and anything that spins uses
+  // it to run down rather than stopping dead.
+  const lit = useEased(on ? 1 : 0, 9)
   // An unbound cover shows closed, so the item is visible on the plan.
-  const coverLevel = useEased(state?.level ?? 0, 1.6)
+  const coverLevel = useEased(state?.level ?? 0, 4)
   // Same, but a cover with no position at all counts as fully open.
-  const openAmount = useEased(state ? (state.level ?? (state.on ? 1 : 0)) : 0, 1.6)
-  const runLevel = useEased(level, 3)
+  const openAmount = useEased(state ? (state.level ?? (state.on ? 1 : 0)) : 0, 4)
+  const runLevel = useEased(level, 6)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or
   // around a solid panel. It stands on its own base, centered on `cx`, so
@@ -227,8 +227,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
             <cylinderGeometry args={[s * 0.16, s * 0.16, 0.03, SEG]} />
             <meshStandardMaterial
               color="#2f3336"
-              emissive={on ? '#cfe4f5' : '#000000'}
-              emissiveIntensity={on ? 2 : 0}
+              emissive={'#cfe4f5'}
+              emissiveIntensity={(2) * lit}
             />
           </mesh>
         </group>
@@ -242,14 +242,14 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const h = p('height')
       const base = p('base')
       const fins = Math.max(4, Math.round(w / 0.09))
-      const warm = on ? 0.45 * level : 0
+      const warm = 0.45 * level * lit
       return (
         <group position={[0, base, 0]}>
           <Slab size={[w, h, 0.05]} radius={0.02} position={[0, 0, 0.03]}>
             <Material
               color={c('body')}
               material={m('body')}
-              emissive={on ? [1, 0.45, 0.25] : undefined}
+              emissive={[1, 0.45, 0.25]}
               emissiveIntensity={warm}
             />
           </Slab>
@@ -263,7 +263,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
               <Material
                 color={c('body')}
                 material={m('body')}
-                emissive={on ? [1, 0.45, 0.25] : undefined}
+                emissive={[1, 0.45, 0.25]}
                 emissiveIntensity={warm}
               />
             </Slab>
@@ -290,7 +290,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
     case 'fan_ceiling': {
       const r = p('size') / 2
       const drop = p('drop')
-      const speed = on ? 2 + runLevel * 10 : 0
+      const speed = (2 + runLevel * 10) * lit
       return (
         <group position={[0, -drop, 0]}>
           <Bar length={drop} radius={0.018} position={[0, drop / 2 + 0.05, 0]}>
@@ -322,7 +322,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
     case 'fan_standing': {
       const r = p('size') / 2
       const h = p('height')
-      const speed = on ? 3 + runLevel * 12 : 0
+      const speed = (3 + runLevel * 12) * lit
       return (
         <group>
           <Blob radius={r * 0.7} squash={0.18} position={[0, 0.03, 0]}>
@@ -365,8 +365,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
             <Material
               color={c('trim')}
               material={m('trim')}
-              emissive={on ? [0.6, 0.8, 1] : undefined}
-              emissiveIntensity={on ? 0.3 * level : 0}
+              emissive={[0.6, 0.8, 1]}
+              emissiveIntensity={(0.3 * level) * lit}
             />
           </mesh>
           <Led on={on} position={[0, h + 0.012, r * 0.4]} color="#7fb3e8" radius={0.009} />
@@ -408,8 +408,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
             <Material
               color={c('face')}
               material={m('face')}
-              emissive={on ? [1, 0.6, 0.35] : undefined}
-              emissiveIntensity={on ? 0.9 : 0}
+              emissive={[1, 0.6, 0.35]}
+              emissiveIntensity={(0.9) * lit}
             />
           </mesh>
         </group>
@@ -489,6 +489,27 @@ export default function DeviceModel({ kind, item, state }: Props) {
         </group>
       )
     }
+    case 'door': {
+      const w = p('width')
+      const h = p('height')
+      // Swings open on its hinge when the device reports open.
+      return (
+        <group position={[-w / 2, 0, 0]} rotation={[0, -1.1 * swing, 0]}>
+          <Slab size={[w, h, 0.045]} radius={0.01} position={[w / 2, 0, 0.02]}>
+            {body}
+          </Slab>
+          <Panel size={[w - 0.16, h * 0.38, 0.012]} position={[w / 2, h * 0.12, 0.045]}>
+            {body}
+          </Panel>
+          <Panel size={[w - 0.16, h * 0.32, 0.012]} position={[w / 2, h * 0.56, 0.045]}>
+            {body}
+          </Panel>
+          <Bar length={0.11} radius={0.015} position={[w - 0.1, h * 0.46, 0.06]}>
+            <Material color={c('trim')} material={m('trim')} />
+          </Bar>
+        </group>
+      )
+    }
     case 'sliding_door':
     case 'sliding_glass': {
       // Panels in their own tracks, side by side in depth. They run toward
@@ -502,21 +523,29 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const frame = <Material color={c('frame')} material={m('frame')} />
       const glazed = kind.id === 'sliding_glass'
       const count = Math.max(1, Math.round(p('panels')))
-      const panelW = w / count
+      const run = w - f * 2
+      const panelW = run / count
       const depth = count * track + 0.03
       return (
         <group>
-          {/* Head rail and floor track, as deep as the panels they carry. */}
+          {/* Head rail and floor track, as deep as the panels they carry,
+              and a jamb at each end so the opening stays framed. */}
           <Slab size={[w, f, depth]} radius={0.012} position={[0, h - f, 0]}>
             {frame}
           </Slab>
           <Slab size={[w, 0.02, depth]} radius={0.006} position={[0, 0, 0]}>
             {frame}
           </Slab>
+          <Slab size={[f, h - f, depth]} radius={0.012} position={[-(w - f) / 2, 0, 0]}>
+            {frame}
+          </Slab>
+          <Slab size={[f, h - f, depth]} radius={0.012} position={[(w - f) / 2, 0, 0]}>
+            {frame}
+          </Slab>
           {Array.from({ length: count }).map((_, i) => {
             // The last panel stays put and the others gather in front of it.
             const slide = openAmount * (count - 1 - i) * panelW
-            const cx = -w / 2 + panelW * (i + 0.5) + slide
+            const cx = -run / 2 + panelW * (i + 0.5) + slide
             const z = (i - (count - 1) / 2) * track
             return (
               <group key={i} position={[cx, 0.02, z]}>
@@ -615,8 +644,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
               <torusGeometry args={[s * 0.26, 0.006, 6, SEG]} />
               <meshStandardMaterial
                 color={on ? '#7fb3e8' : c('face')}
-                emissive={on ? '#7fb3e8' : '#000000'}
-                emissiveIntensity={on ? 2 : 0}
+                emissive={'#7fb3e8'}
+                emissiveIntensity={(2) * lit}
               />
             </mesh>
           )}
@@ -667,8 +696,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
             <Material
               color={c('face')}
               material={m('face')}
-              emissive={on ? [0.55, 0.78, 1] : undefined}
-              emissiveIntensity={on ? 1 : 0}
+              emissive={[0.55, 0.78, 1]}
+              emissiveIntensity={(1) * lit}
             />
           </mesh>
         </group>
@@ -691,8 +720,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
               <Material
                 color={c('face')}
                 material={m('face')}
-                emissive={on && i === 0 ? [0.6, 0.85, 0.7] : undefined}
-                emissiveIntensity={on && i === 0 ? 0.6 : 0}
+                emissive={[0.6, 0.85, 0.7]}
+                emissiveIntensity={i === 0 ? (0.6) * lit : 0}
               />
             </Slab>
           ))}
@@ -717,7 +746,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
             {trim()}
           </mesh>
           <Led on={on} position={[0, 0.098, r * 0.55]} radius={0.009} />
-          <Spinner speed={on ? 9 : 0}>
+          <Spinner speed={9 * lit}>
             <mesh position={[r * 0.75, 0.012, 0]}>
               <boxGeometry args={[r * 0.5, 0.006, 0.018]} />
               <Material color={c('trim')} material={m('trim')} />

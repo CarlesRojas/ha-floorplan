@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faFloppyDisk, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
@@ -64,7 +64,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [view, setView] = useState<View | null>(null)
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
   // Share of the column under the toolbar that the 3D preview takes.
@@ -438,6 +438,13 @@ export default function Editor({ hass, config, onChange }: Props) {
     setFullscreen(true)
   }
 
+  // Sends the edits on without leaving the editor, and makes this the state
+  // that Discard would go back to.
+  const save = () => {
+    flushRename()
+    setOpened({ rooms, devices, decorations })
+  }
+
   const saveAndClose = () => {
     flushRename()
     setDraft([])
@@ -701,6 +708,14 @@ export default function Editor({ hass, config, onChange }: Props) {
               >
                 <FontAwesomeIcon icon={faTrash} className="size-3.5" />
                 Discard
+              </button>
+              <button
+                type="button"
+                onClick={save}
+                className="flex h-10 items-center gap-2 rounded-xl border border-(--divider-color) px-4 text-sm font-semibold hover:opacity-90"
+              >
+                <FontAwesomeIcon icon={faFloppyDisk} className="size-3.5" />
+                Save
               </button>
               <button
                 type="button"

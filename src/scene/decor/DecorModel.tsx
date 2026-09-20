@@ -13,7 +13,7 @@ export default function DecorModel({ kind, item, state }: Props) {
   const m = (slot: string) => materialValue(kind, item.materials, slot)
   // An unbound curtain hangs closed. Eased, so it draws rather than jumps
   // as Home Assistant reports its position on the way.
-  const level = useEased(state?.level ?? 0, 1.6)
+  const level = useEased(state?.level ?? 0, 4)
 
   switch (kind.id) {
     case 'rug': {

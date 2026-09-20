@@ -33,7 +33,7 @@ function ShadeMaterial({
   const glow = state?.glow ?? [1, 1, 1]
   // Eased, so a lamp fades up and down and follows a dimmer smoothly
   // instead of stepping with each update.
-  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 4)
+  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   return (
     <SurfaceMaterial
       kind={material as SurfaceKind}
@@ -50,7 +50,7 @@ function BaseMaterial({ color, material = 'matte' }: { color: string; material?:
 }
 
 function Glow({ state, y }: { state: LightState | null; y: number }) {
-  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 4)
+  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
   if (lit < 0.01) return null
   return (
@@ -201,10 +201,13 @@ export default function LightModel({ kind, item, state }: Props) {
       )
       break
     }
-    case 'light_strip': {
-      // A rounded glowing bar.
+    case 'light_strip':
+    case 'light_strip_ceiling':
+    case 'light_strip_wall': {
+      // A rounded glowing bar. Lights place themselves, so the ceiling one
+      // goes up to the ceiling and the other two take their own height.
       const length = p('length')
-      const height = p('height')
+      const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.04 : p('height')
       glowY = height + 0.05
       body = (
         <mesh position={[0, height + 0.02, 0]} rotation={[0, 0, Math.PI / 2]}>
