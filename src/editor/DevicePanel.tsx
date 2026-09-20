@@ -234,10 +234,19 @@ export default function DevicePanel({
                       const itemRoom = rooms.find(r => r.id === item.room)
                       const itemKind = decorationKind(item.kind)
                       return (
-                        <label key={item.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm">
+                        <label
+                          key={item.id}
+                          className={cn(
+                            'flex items-center gap-2 rounded-lg px-2 py-1 text-sm',
+                            // An item stands in for one device, so one that
+                            // another device already has is not on offer.
+                            owner && 'opacity-50',
+                          )}
+                        >
                           <input
                             type="checkbox"
                             checked={bound}
+                            disabled={!!owner}
                             style={{ accentColor: accent }}
                             onChange={e => onBindDecoration(selectedDevice.entity_id, item.id, e.target.checked)}
                           />

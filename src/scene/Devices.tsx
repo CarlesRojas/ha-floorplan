@@ -23,6 +23,12 @@ function sphereHeight(device: DeviceConfig) {
 }
 
 // What a bound device tells its decoration items. Null when the device says
+// The last color each light was seen with. Home Assistant drops rgb_color
+// and brightness the moment a light goes off, so without this the shade
+// jumps to the default warm glow for the length of the fade out: a flicker
+// of the wrong color on the way down.
+const lastGlow = new Map<string, [number, number, number]>()
+
 // nothing a model can draw, so the item stays neutral.
 function itemState(hass: HomeAssistant, entityId: string): ItemState | null {
   const signals = deviceSignals(hass, entityId)
@@ -39,8 +45,13 @@ function itemState(hass: HomeAssistant, entityId: string): ItemState | null {
   }
   if (v.color) glow = fromSrgb([v.color[0] / 255, v.color[1] / 255, v.color[2] / 255])
   else if (v.warmth) glow = fromSrgb(kelvinToRgb(v.warmth))
+  const on = v.on ?? false
+  if (v.color || v.warmth) lastGlow.set(entityId, glow)
+  // Off, and saying nothing about its color: it fades out in the color it
+  // was lit with.
+  else if (!on) glow = lastGlow.get(entityId) ?? glow
   return {
-    on: v.on ?? false,
+    on,
     level: signals.includes('level') ? (v.level ?? 1) : 1,
     glow,
     value: v.value,

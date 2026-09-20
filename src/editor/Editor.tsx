@@ -4,6 +4,7 @@ import DevicePanel from '#/editor/DevicePanel.tsx'
 import ModeSwitch from '#/editor/ModeSwitch.tsx'
 import Scene from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
+import { cn } from '#/lib/utils.ts'
 import RoomInfo from '#/editor/RoomInfo.tsx'
 import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
@@ -29,6 +30,7 @@ import {
   EDITOR_GRID_M,
   EDITOR_PREVIEW_FRACTION,
   EDITOR_PREVIEW_MIN_PX,
+  EDITOR_SAVED_FLASH_MS,
   EDITOR_SIDEBAR_MIN_PX,
   EDITOR_SIDEBAR_WIDTH_PX,
 } from '#/constants.ts'
@@ -447,10 +449,16 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   // Sends the edits on without leaving the editor, and makes this the state
-  // that Discard would go back to.
+  // that Discard would go back to. The button says so for a moment, since
+  // nothing else on screen changes.
+  const [saved, setSaved] = useState(false)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const save = () => {
     flushRename()
     setOpened({ rooms, devices, decorations })
+    setSaved(true)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSaved(false), EDITOR_SAVED_FLASH_MS)
   }
 
   const saveAndClose = () => {
@@ -734,10 +742,13 @@ export default function Editor({ hass, config, onChange }: Props) {
               <button
                 type="button"
                 onClick={save}
-                className="flex h-10 items-center gap-2 rounded-xl border border-(--divider-color) px-4 text-sm font-semibold hover:opacity-90"
+                className={cn(
+                  'flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors hover:opacity-90',
+                  saved ? 'border-emerald-600 text-emerald-500' : 'border-(--divider-color)',
+                )}
               >
-                <FontAwesomeIcon icon={faFloppyDisk} className="size-3.5" />
-                Save
+                <FontAwesomeIcon icon={saved ? faCheck : faFloppyDisk} className="size-3.5" />
+                {saved ? 'Saved' : 'Save'}
               </button>
               <button
                 type="button"
