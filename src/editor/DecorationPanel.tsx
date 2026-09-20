@@ -182,15 +182,45 @@ export default function DecorationPanel({
             </select>
           </label>
           {room.floor && (
-            <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-              Tint
-              <input
-                type="color"
-                className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
-                value={room.floor.color ?? FLOOR_MATERIALS[room.floor.material]?.color ?? '#ffffff'}
-                onChange={e => onFloor(room.id, { ...room.floor!, color: e.target.value })}
-              />
-            </label>
+            <>
+              <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                Tint
+                <input
+                  type="color"
+                  className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
+                  value={room.floor.color ?? FLOOR_MATERIALS[room.floor.material]?.color ?? '#ffffff'}
+                  onChange={e => onFloor(room.id, { ...room.floor!, color: e.target.value })}
+                />
+              </label>
+              <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
+                Pattern size
+                <input
+                  type="range"
+                  min={0.25}
+                  max={4}
+                  step={0.05}
+                  value={room.floor.scale ?? 1}
+                  style={{ accentColor: accent }}
+                  onChange={e => onFloor(room.id, { ...room.floor!, scale: Number(e.target.value) })}
+                />
+                <span className="text-right text-xs text-(--secondary-text-color)">
+                  {(room.floor.scale ?? 1).toFixed(2)}x
+                </span>
+              </label>
+              <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
+                Pattern angle
+                <input
+                  type="range"
+                  min={0}
+                  max={175}
+                  step={5}
+                  value={room.floor.rotation ?? 0}
+                  style={{ accentColor: accent }}
+                  onChange={e => onFloor(room.id, { ...room.floor!, rotation: Number(e.target.value) })}
+                />
+                <span className="text-right text-xs text-(--secondary-text-color)">{room.floor.rotation ?? 0}°</span>
+              </label>
+            </>
           )}
         </div>
       ) : (

@@ -10,6 +10,9 @@ export type Surface = {
   roughness: number
   // How many times the tile fits in one meter.
   repeat: number
+  // How much longer the tile is along u than along v. Floorboards use it to
+  // run long down the room while staying narrow across it.
+  stretch: number
   normalScale: number
 }
 
@@ -55,7 +58,7 @@ type Field = (u: number, v: number) => { height: number; light: number }
 // `repeat` is how many times the tile fits in a meter, so a surface keeps the
 // same physical scale on a small stool and on a whole floor.
 
-const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: number; normalScale: number }> = {
+const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: number; stretch?: number; normalScale: number }> = {
   wood: {
     // Furniture oak: a continuous grain with no plank seams, in long streaks.
     field: (u, v) => {
@@ -68,20 +71,28 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
     normalScale: 0.18,
   },
   wood_floor: {
-    // Floorboards: planks along u with a shadow gap and grain per board.
+    // Floorboards. The tile is four boards across and two boards long, and it
+    // is stretched four times along u, so a board is 16 cm wide and 1.25 m
+    // long. Rows are staggered, so the short joints never line up.
     field: (u, v) => {
-      const plank = Math.floor(v * 4)
-      const gap = Math.abs(v * 4 - plank - 0.5) > 0.47
-      const grain = fbm(u * 2, v * 12 + plank * 17, 1)
-      const tone = 0.88 + grain * 0.07 + (noise2(plank, 0, 3) - 0.5) * 0.04
-      return { height: gap ? 0.25 : 0.6 + grain * 0.2, light: gap ? tone * 0.86 : tone }
+      const row = Math.floor(v * 4)
+      const along = u + noise2(row, 1, 7)
+      const board = Math.floor(along * 2)
+      const joint = Math.abs(v * 4 - row - 0.5) > 0.45 || Math.abs(along * 2 - board - 0.5) > 0.492
+      // Grain runs the length of the board, so it is slow along u and fine
+      // across v. Anything busy along u would read as another joint.
+      const grain = fbm(u * 1.5, v * 30, 1)
+      const tone = 0.9 + grain * 0.06 + (noise2(row, board, 3) - 0.5) * 0.05
+      return { height: joint ? 0.15 : 0.62 + grain * 0.1, light: joint ? tone * 0.78 : tone }
     },
     roughness: 0.7,
-    repeat: 0.8,
+    repeat: 1.6,
+    stretch: 4,
     normalScale: 0.25,
   },
   tiles: {
-    // Square tiles with grout lines.
+    // Square tiles with grout lines. Three per tile at 1.6 tiles per meter,
+    // so a tile is 21 cm across.
     field: (u, v) => {
       const gu = Math.abs(((u * 3) % 1) - 0.5) > 0.46
       const gv = Math.abs(((v * 3) % 1) - 0.5) > 0.46
@@ -94,7 +105,8 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
     normalScale: 0.5,
   },
   terracotta: {
-    // Larger warm tiles, slightly uneven.
+    // Larger warm tiles, slightly uneven. Two per tile at 1.6 tiles per
+    // meter, so a tile is 31 cm across.
     field: (u, v) => {
       const gu = Math.abs(((u * 2) % 1) - 0.5) > 0.47
       const gv = Math.abs(((v * 2) % 1) - 0.5) > 0.47
@@ -103,7 +115,7 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       return { height: grout ? 0.15 : 0.5 + wobble * 0.4, light: grout ? 0.74 : 0.9 + wobble * 0.09 }
     },
     roughness: 0.85,
-    repeat: 1.1,
+    repeat: 1.6,
     normalScale: 0.55,
   },
   carpet: {
@@ -219,7 +231,14 @@ export function surface(kind: SurfaceKind): Surface {
   normalMap.wrapS = normalMap.wrapT = RepeatWrapping
   normalMap.needsUpdate = true
 
-  const out: Surface = { map, normalMap, roughness: spec.roughness, repeat: spec.repeat, normalScale: spec.normalScale }
+  const out: Surface = {
+    map,
+    normalMap,
+    roughness: spec.roughness,
+    repeat: spec.repeat,
+    stretch: spec.stretch ?? 1,
+    normalScale: spec.normalScale,
+  }
   cache.set(kind, out)
   return out
 }

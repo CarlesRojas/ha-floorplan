@@ -12,7 +12,7 @@ type Props = {
 }
 
 // Small turntable view of one decoration item, shown lit. The camera fits
-// the model, with a floor disc under items that stand on the floor.
+// the model and keeps it centered as its size changes.
 export default function ModelPreview({ item, className }: Props) {
   const kind = decorationKind(item.kind)
   if (!kind) return null

@@ -1,12 +1,17 @@
 import { surface, type SurfaceKind } from '#/materials/textures.ts'
 import { useMemo } from 'react'
-import { DoubleSide, Vector2 } from 'three'
+import { DoubleSide, Matrix3, Vector2 } from 'three'
 
 type Props = {
   kind: SurfaceKind
   color: string
   // Tiles per meter. Defaults to the surface's own scale.
   repeat?: number
+  // Multiplier on the size of the pattern. Two makes the planks, tiles or
+  // weave twice as large on the same surface.
+  scale?: number
+  // Turns the pattern on the surface, in degrees.
+  rotation?: number
   // Size in meters of the object this material wraps. Geometry with
   // normalized UVs, a sphere or a cylinder, needs it to tile at the same
   // physical scale as extruded geometry, whose UVs are already in meters.
@@ -22,6 +27,8 @@ export default function SurfaceMaterial({
   kind,
   color,
   repeat,
+  scale = 1,
+  rotation = 0,
   span,
   emissive,
   emissiveIntensity = 0,
@@ -31,14 +38,25 @@ export default function SurfaceMaterial({
   const maps = useMemo(() => {
     const map = s.map.clone()
     const normalMap = s.normalMap.clone()
-    const perMeter = repeat ?? s.repeat
+    const perMeter = (repeat ?? s.repeat) / Math.max(scale, 0.01)
     const r = span ? perMeter * span : perMeter
-    map.repeat.set(r, r)
-    normalMap.repeat.set(r, r)
-    map.needsUpdate = true
-    normalMap.needsUpdate = true
+    // The pattern turns on the surface first and is scaled into the tile
+    // after, so a stretched tile keeps its long side along the pattern and
+    // not along the room. Three multiplies the other way round when it builds
+    // the matrix itself, so build it here instead.
+    const a = (rotation * Math.PI) / 180
+    const cos = Math.cos(a)
+    const sin = Math.sin(a)
+    const sx = r / s.stretch
+    const sy = r
+    const matrix = new Matrix3().set(sx * cos, -sx * sin, 0, sy * sin, sy * cos, 0, 0, 0, 1)
+    for (const t of [map, normalMap]) {
+      t.matrixAutoUpdate = false
+      t.matrix.copy(matrix)
+      t.needsUpdate = true
+    }
     return { map, normalMap }
-  }, [s, repeat, span])
+  }, [s, repeat, scale, rotation, span])
   return (
     <meshStandardMaterial
       color={color}

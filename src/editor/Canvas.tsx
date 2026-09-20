@@ -1,6 +1,7 @@
 import {
   ContextMenu,
   ContextMenuItem,
+  ContextMenuLabel,
   ContextMenuSeparator,
   type ContextMenuPosition,
 } from '#/components/ui/context-menu.tsx'
@@ -20,12 +21,14 @@ import type { Mode, Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import {
+  freePlacement,
   furthestValid,
   isValidRoom,
   pointOnBoundary,
   pointStrictlyInside,
   segmentEntersAny,
 } from '#/geometry/overlap.ts'
+import { ALT_KEY, shortcut } from '#/lib/shortcuts.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
@@ -48,6 +51,14 @@ type Props = {
   onSelectDecoration: (id: string | null) => void
   onRemoveDecoration: (id: string) => void
   onRotateDecoration: (id: string) => void
+  onDuplicateDecoration: (id: string) => void
+  onCopyDecoration: (id: string) => void
+  onPasteDecoration: () => void
+  canPaste: boolean
+  onDuplicateRoom: (roomId: string) => void
+  // Fresh ids, so a copy made mid drag can be dragged right away.
+  newDecorationId: (kindId: string) => string
+  newRoomName: () => { id: string; name: string }
   tool: Tool
   showLengths: boolean
   selection: Selection
@@ -99,6 +110,13 @@ export default function Canvas({
   onSelectDecoration,
   onRemoveDecoration,
   onRotateDecoration,
+  onDuplicateDecoration,
+  onCopyDecoration,
+  onPasteDecoration,
+  canPaste,
+  onDuplicateRoom,
+  newDecorationId,
+  newRoomName,
   tool,
   showLengths,
   selection,
@@ -134,6 +152,12 @@ export default function Canvas({
   const liveDecorations = useRef<DecorationConfig[] | null>(null)
   const [draggingDecoration, setDraggingDecoration] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
+  // The room a drag just copied, so an overlapping release can be resolved
+  // to a free spot instead of landing on top of the original.
+  const duplicatedRoom = useRef<string | null>(null)
+  // While a copy is being dragged out, the room it came from does not block
+  // it, so the drag follows the pointer instead of sticking to the original.
+  const duplicateSource = useRef<string | null>(null)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
   // The view only changes on pan, zoom, fit or auto-pan. It is fitted once
@@ -204,11 +228,19 @@ export default function Canvas({
     if (e.button !== 0) return
     e.stopPropagation()
     capture(e)
+    // Alt or Option drags a copy out and leaves the original behind, the way
+    // every drawing program does it.
+    let dragged = item
+    if (e.altKey) {
+      dragged = { ...item, id: newDecorationId(item.kind) }
+      const next = [...decorations, dragged]
+      liveDecorations.current = next
+      onDecorations(next, false)
+    } else liveDecorations.current = decorations
     onSelect({ roomId: item.room, vertex: null })
-    onSelectDecoration(item.id)
-    liveDecorations.current = decorations
-    drag.current = { kind: 'decoration', id: item.id, start: planPoint(e), origin: item.position }
-    setDraggingDecoration(item.id)
+    onSelectDecoration(dragged.id)
+    drag.current = { kind: 'decoration', id: dragged.id, start: planPoint(e), origin: item.position }
+    setDraggingDecoration(dragged.id)
   }
 
   const applyDrag = (screen: Point, v: View, renderedRooms: RoomConfig[]) => {
@@ -224,7 +256,7 @@ export default function Canvas({
     // furthest valid point on the way to one, so a blocked room still slides
     // along the free axis and lands right against its neighbour on release.
     const patch = (roomId: string, candidates: Point[][]) => {
-      const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
+      const others = currentRooms.filter(r => r.id !== roomId && r.id !== duplicateSource.current).map(r => r.points)
       const from = currentRooms.find(r => r.id === roomId)!.points
       let resolved: Point[] = from
       for (const target of candidates) {
@@ -572,6 +604,21 @@ export default function Canvas({
       setPanning(true)
       return
     }
+    // Alt or Option drags out a copy of the room, shape, floor and all.
+    if (e.altKey) {
+      const { id, name } = newRoomName()
+      const { area_id: _dropped, ...rest } = room
+      const copy: RoomConfig = { ...rest, id, name, points: room.points.map(p => [...p] as Point) }
+      const next = [...rooms, copy]
+      liveRooms.current = next
+      duplicatedRoom.current = id
+      duplicateSource.current = room.id
+      onRooms(next, false)
+      onSelect({ roomId: id, vertex: null })
+      drag.current = { kind: 'room', roomId: id, start: planPoint(e), origin: copy.points }
+      setDraggingId(id)
+      return
+    }
     liveRooms.current = rooms
     drag.current = { kind: 'room', roomId: room.id, start: planPoint(e), origin: room.points }
     setDraggingId(room.id)
@@ -651,10 +698,25 @@ export default function Canvas({
     }
     // Land on the resolved position, whatever the pointer showed.
     const source = resolved ?? rooms
-    onRooms(
-      source.map(r => ({ ...r, points: r.points.map(([x, y]) => [round(x), round(y)] as Point) })),
-      true,
-    )
+    let landed = source.map(r => ({ ...r, points: r.points.map(([x, y]) => [round(x), round(y)] as Point) }))
+    // A copy released while it still overlaps goes to the nearest free spot,
+    // and is dropped only when the plan has no room for it at all.
+    const copied = duplicatedRoom.current
+    duplicatedRoom.current = null
+    duplicateSource.current = null
+    if (copied) {
+      const copy = landed.find(r => r.id === copied)
+      const others = landed.filter(r => r.id !== copied).map(r => r.points)
+      if (copy && !isValidRoom(copy.points, others)) {
+        const placed = freePlacement(copy.points, others)
+        landed = placed
+          ? landed.map(r =>
+              r.id === copied ? { ...r, points: placed.map(([x, y]) => [round(x), round(y)] as Point) } : r,
+            )
+          : landed.filter(r => r.id !== copied)
+      }
+    }
+    onRooms(landed, true)
   }
 
   const openMenu = (e: React.MouseEvent, target: Menu) => {
@@ -751,15 +813,37 @@ export default function Canvas({
         const room = rooms.find(r => r.id === t.roomId)
         if (mode !== 'rooms') return null
         return (
-          <ContextMenuItem
-            variant="destructive"
-            onSelect={() => {
-              closeMenu()
-              if (room && window.confirm(`Delete ${room.name ?? room.id}?`)) onDeleteRoom(t.roomId)
-            }}
-          >
-            Delete room
-          </ContextMenuItem>
+          <>
+            <ContextMenuItem
+              onSelect={() => {
+                onDuplicateRoom(t.roomId)
+                closeMenu()
+              }}
+              shortcut={shortcut('D', true)}
+            >
+              Duplicate room
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => {
+                onView(null)
+                closeMenu()
+              }}
+              shortcut="F"
+            >
+              Fit view
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onSelect={() => {
+                closeMenu()
+                if (room && window.confirm(`Delete ${room.name ?? room.id}?`)) onDeleteRoom(t.roomId)
+              }}
+              shortcut="Del"
+            >
+              Delete room
+            </ContextMenuItem>
+          </>
         )
       }
       case 'device':
@@ -770,9 +854,11 @@ export default function Canvas({
                 onRotateDevice(t.entityId)
                 closeMenu()
               }}
+              shortcut="R"
             >
               Rotate 90°
             </ContextMenuItem>
+            <ContextMenuLabel>Arrows move it, Shift for a finer step</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
@@ -791,12 +877,42 @@ export default function Canvas({
           <>
             <ContextMenuItem
               onSelect={() => {
+                onDuplicateDecoration(t.id)
+                closeMenu()
+              }}
+              shortcut={shortcut('D', true)}
+            >
+              Duplicate
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => {
+                onCopyDecoration(t.id)
+                closeMenu()
+              }}
+              shortcut={shortcut('C', true)}
+            >
+              Copy
+            </ContextMenuItem>
+            <ContextMenuItem
+              disabled={!canPaste}
+              onSelect={() => {
+                onPasteDecoration()
+                closeMenu()
+              }}
+              shortcut={shortcut('V', true)}
+            >
+              Paste
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => {
                 onRotateDecoration(t.id)
                 closeMenu()
               }}
+              shortcut="R"
             >
               Rotate 90°
             </ContextMenuItem>
+            <ContextMenuLabel>{ALT_KEY} drag copies it, arrows move it</ContextMenuLabel>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
@@ -823,6 +939,21 @@ export default function Canvas({
                   shortcut="D"
                 >
                   Draw room
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+              </>
+            )}
+            {mode === 'decoration' && (
+              <>
+                <ContextMenuItem
+                  disabled={!canPaste}
+                  onSelect={() => {
+                    onPasteDecoration()
+                    closeMenu()
+                  }}
+                  shortcut={shortcut('V', true)}
+                >
+                  Paste
                 </ContextMenuItem>
                 <ContextMenuSeparator />
               </>

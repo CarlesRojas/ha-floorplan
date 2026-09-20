@@ -51,8 +51,14 @@ export default function Room({ room, index, radius, gap }: Props) {
   return (
     <mesh geometry={geometry} castShadow receiveShadow>
       {floor ? (
-        // Extrude UVs are plan meters, so the texture tiles once per meter.
-        <SurfaceMaterial kind={(floor.surface ?? 'matte') as SurfaceKind} color={color} />
+        // Extrude UVs are plan meters, so the surface tiles at its own
+        // physical size, scaled and turned by what the room asks for.
+        <SurfaceMaterial
+          kind={(floor.surface ?? 'matte') as SurfaceKind}
+          color={color}
+          scale={room.floor?.scale ?? 1}
+          rotation={room.floor?.rotation ?? 0}
+        />
       ) : (
         <meshStandardMaterial color={color} roughness={0.85} />
       )}

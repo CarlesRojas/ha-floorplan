@@ -9,9 +9,9 @@ import Toolbar from '#/editor/Toolbar.tsx'
 import type { Mode, Selection, Tool } from '#/editor/types.ts'
 import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
-import { isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
+import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
 import { deviceType, type EntityInfo } from '#/devices/catalog.ts'
-import type { DecorationKind } from '#/decoration/catalog.ts'
+import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
 } from '#/components/ui/alert-dialog.tsx'
 import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { EDITOR_SIDEBAR_MIN_PX, EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
+import { EDITOR_DEVICE_GRID_M, EDITOR_GRID_M, EDITOR_SIDEBAR_MIN_PX, EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -46,6 +46,9 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [devices, setDevices] = useState<DeviceConfig[]>(config.devices ?? [])
   const [decorations, setDecorations] = useState<DecorationConfig[]>(config.decorations ?? [])
   const [selectedDecoration, setSelectedDecoration] = useState<string | null>(null)
+  // A copied item, kept whole so it can be pasted into another room later,
+  // even after the original is gone.
+  const [clipboard, setClipboard] = useState<DecorationConfig | null>(null)
   const [mode, setModeState] = useState<Mode>('rooms')
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null)
   const [tool, setTool] = useState<Tool>('select')
@@ -103,17 +106,20 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   // Decoration
 
-  const nextDecorationId = (kind: DecorationKind) => {
+  const nextDecorationId = (kindId: string) => {
     let n = 1
-    while (decorations.some(d => d.id === `${kind.id}-${n}`)) n++
-    return `${kind.id}-${n}`
+    while (decorations.some(d => d.id === `${kindId}-${n}`)) n++
+    return `${kindId}-${n}`
   }
+
+  // Inside the room, or on its wall for a wall item.
+  const within = (p: Point, points: Point[]) => pointStrictlyInside(p, points) || pointOnBoundary(p, points)
 
   const addDecoration = (kind: DecorationKind) => {
     const room = targetRoom()
     if (!room) return
     const item: DecorationConfig = {
-      id: nextDecorationId(kind),
+      id: nextDecorationId(kind.id),
       kind: kind.id,
       room: room.id,
       position: pointInside(room.points),
@@ -151,6 +157,128 @@ export default function Editor({ hass, config, onChange }: Props) {
       decorations.filter(d => d.id !== id),
     )
     if (selectedDecoration === id) setSelectedDecoration(null)
+  }
+
+  // A copy sits one grid step away, so it does not hide under the original.
+  const offsetCopy = (item: DecorationConfig, room: RoomConfig | undefined): DecorationConfig => {
+    const kind = decorationKind(item.kind)
+    const copy: DecorationConfig = {
+      ...item,
+      params: item.params ? { ...item.params } : undefined,
+      colors: item.colors ? { ...item.colors } : undefined,
+      materials: item.materials ? { ...item.materials } : undefined,
+      room: room?.id ?? item.room,
+    }
+    if (!copy.params) delete copy.params
+    if (!copy.colors) delete copy.colors
+    if (!copy.materials) delete copy.materials
+    if (!room) return copy
+    const step: Point = [round(item.position[0] + EDITOR_GRID_M), round(item.position[1] - EDITOR_GRID_M)]
+    copy.position = within(step, room.points) ? step : item.position
+    if (!within(copy.position, room.points)) copy.position = pointInside(room.points)
+    if (kind?.mount === 'wall') {
+      const snapped = snapToWall(copy.position, room.points)
+      copy.position = snapped.point
+      copy.rotation = snapped.rotation
+    }
+    return copy
+  }
+
+  const duplicateDecoration = (id: string) => {
+    const item = decorations.find(d => d.id === id)
+    if (!item) return
+    const copy = offsetCopy(item, rooms.find(r => r.id === item.room))
+    copy.id = nextDecorationId(item.kind)
+    commit(rooms, devices, [...decorations, copy])
+    setSelection({ roomId: copy.room, vertex: null })
+    setSelectedDecoration(copy.id)
+  }
+
+  const copyDecoration = (id: string) => {
+    const item = decorations.find(d => d.id === id)
+    if (item) setClipboard(item)
+  }
+
+  const pasteDecoration = () => {
+    const item = clipboard
+    if (!item) return
+    const room = selectedRoom ?? rooms.find(r => r.id === item.room) ?? targetRoom()
+    if (!room) return
+    const copy = offsetCopy(item, room)
+    copy.id = nextDecorationId(item.kind)
+    if (!within(copy.position, room.points)) copy.position = pointInside(room.points)
+    setMode('decoration')
+    commit(rooms, devices, [...decorations, copy])
+    setSelection({ roomId: room.id, vertex: null })
+    setSelectedDecoration(copy.id)
+  }
+
+  // A duplicated room keeps its shape and floor but not its area, since an
+  // area can stand for one room only.
+  const duplicateRoom = (id: string) => {
+    const room = rooms.find(r => r.id === id)
+    if (!room) return
+    const placed = freePlacement(
+      room.points,
+      rooms.map(r => r.points),
+    )
+    if (!placed) return
+    const n = nextRoomId(rooms)
+    const { area_id: _dropped, ...rest } = room
+    const copy: RoomConfig = {
+      ...rest,
+      id: `room-${n}`,
+      name: room.name ? `${room.name} copy` : `Room ${n}`,
+      points: placed.map(([x, y]) => [round(x), round(y)] as Point),
+    }
+    commit([...rooms, copy])
+    setSelection({ roomId: copy.id, vertex: null })
+  }
+
+  // Arrow keys move whatever is selected by one grid step, or by the fine
+  // step while Shift is held.
+  const nudge = (dx: number, dy: number, fine: boolean) => {
+    const step = fine ? EDITOR_DEVICE_GRID_M : EDITOR_GRID_M
+    const move = ([x, y]: Point): Point => [round(x + dx * step), round(y + dy * step)]
+    if (mode === 'decoration' && selectedDecoration) {
+      const item = decorations.find(d => d.id === selectedDecoration)
+      const room = rooms.find(r => r.id === item?.room)
+      if (!item || !room) return
+      const target = move(item.position)
+      if (!within(target, room.points)) return
+      const kind = decorationKind(item.kind)
+      if (kind?.mount === 'wall') {
+        const snapped = snapToWall(target, room.points)
+        updateDecoration(item.id, { position: snapped.point, rotation: snapped.rotation })
+      } else updateDecoration(item.id, { position: target })
+      return
+    }
+    if (mode === 'devices' && selectedDevice) {
+      const device = devices.find(d => d.entity_id === selectedDevice)
+      const room = rooms.find(r => r.id === device?.room)
+      if (!device || !room) return
+      const target = move(device.position)
+      if (within(target, room.points)) updateDevice(device.entity_id, { position: target })
+      return
+    }
+    const room = selectedRoom
+    if (!room) return
+    const others = rooms.filter(r => r.id !== room.id).map(r => r.points)
+    const points =
+      selection.vertex === null
+        ? room.points.map(move)
+        : room.points.map((p, i) => (i === selection.vertex ? move(p) : p))
+    if (isValidRoom(points, others)) updateRoom(room.id, { points })
+  }
+
+  const duplicateSelected = () => {
+    if (mode === 'decoration' && selectedDecoration) duplicateDecoration(selectedDecoration)
+    else if (mode === 'rooms' && selection.roomId) duplicateRoom(selection.roomId)
+  }
+
+  const rotateSelected = () => {
+    if (mode === 'decoration' && selectedDecoration) rotateDecoration(selectedDecoration)
+    else if (mode === 'devices' && selectedDevice) rotateDevice(selectedDevice)
   }
 
   const rotateDecoration = (id: string) => {
@@ -323,8 +451,42 @@ export default function Editor({ hass, config, onChange }: Props) {
     // so look at the real element through the composed path.
     const target = e.composedPath()[0] as HTMLElement
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable) return
+    // The usual editing commands, on Ctrl everywhere and Cmd on a Mac.
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      switch (e.key.toLowerCase()) {
+        case 'd':
+          duplicateSelected()
+          break
+        case 'c':
+          if (selectedDecoration) copyDecoration(selectedDecoration)
+          break
+        case 'v':
+          pasteDecoration()
+          break
+        default:
+          return
+      }
+      e.preventDefault()
+      return
+    }
     if (e.ctrlKey || e.metaKey || e.altKey) return
     switch (e.key) {
+      case 'ArrowLeft':
+        nudge(-1, 0, e.shiftKey)
+        break
+      case 'ArrowRight':
+        nudge(1, 0, e.shiftKey)
+        break
+      case 'ArrowUp':
+        nudge(0, 1, e.shiftKey)
+        break
+      case 'ArrowDown':
+        nudge(0, -1, e.shiftKey)
+        break
+      case 'r':
+      case 'R':
+        rotateSelected()
+        break
       case 'v':
       case 'V':
         setTool('select')
@@ -398,6 +560,16 @@ export default function Editor({ hass, config, onChange }: Props) {
       onSelectDecoration={setSelectedDecoration}
       onRemoveDecoration={removeDecoration}
       onRotateDecoration={rotateDecoration}
+      onDuplicateDecoration={duplicateDecoration}
+      onCopyDecoration={copyDecoration}
+      onPasteDecoration={pasteDecoration}
+      canPaste={clipboard !== null}
+      onDuplicateRoom={duplicateRoom}
+      newDecorationId={nextDecorationId}
+      newRoomName={() => {
+        const n = nextRoomId(rooms)
+        return { id: `room-${n}`, name: `Room ${n}` }
+      }}
       tool={tool}
       showLengths={showLengths}
       selection={selection}

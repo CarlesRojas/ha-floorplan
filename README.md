@@ -57,15 +57,30 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D". The card opens with a
 
 The card's visual editor is a top-down drawing tool. Open it from the card's edit dialog.
 
-It opens fullscreen. Save & Close keeps the edits and Discard restores the state from when it opened, leaving an Open editor button in the dialog. The cube toolbar button (P) opens a floating live 3D preview of the card, with the card's aspect ratio. Drag it by the top left handle, resize it from the bottom right one, close it with the top right one.
+It opens fullscreen. Save & Close keeps the edits and Discard restores the state from when it opened, leaving an Open editor button in the dialog. The cube toolbar button (P) opens a floating live 3D preview of the card, with the card's aspect ratio. Drag it by the top left handle, resize it from the bottom right one, close it with the top right one. The 3D view frames the plan by itself until you orbit, pan or zoom it. From then on the camera stays where you put it, so editing does not throw your view away.
 
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
-- Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu: delete corner, add corner, delete room, fit view.
+- Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu.
 - Fit view (F), drag empty space to pan, wheel to zoom.
 - Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
 - Rooms never overlap. While dragging, the room follows the pointer and turns red where it would overlap. On release it lands on the nearest valid position, sliding along the free axis. A corner cannot be drawn inside a room or through one.
 
 Each room in the list can be named and linked to a Home Assistant area. An area can be linked to one room only. Radius and color can be set per room in the YAML.
+
+### Editing commands
+
+The commands every drawing program has, with the same keys. They all show in the right click menu of whatever they act on, with their shortcut.
+
+| Command | How |
+| --- | --- |
+| Duplicate | Alt or Option and drag, or Ctrl D, Cmd D on a Mac |
+| Copy and paste an item | Ctrl C and Ctrl V. Paste drops the copy in the selected room, so an item can be copied from one room to another |
+| Rotate 90° | R |
+| Move by one grid step | Arrow keys, with Shift for a 5 cm step |
+| Delete | Del or Backspace |
+| Deselect, cancel a drawing | Escape |
+
+Alt and drag copies furniture and rooms. A duplicated room keeps its shape and floor but not its area, since an area stands for one room. A copy released on top of another room moves to the nearest free spot. Devices are never duplicated, since an entity is placed once.
 
 ### Devices mode
 
@@ -78,7 +93,7 @@ The mode switch on the left of the toolbar changes between Rooms and Devices. In
 
 ### Decoration mode
 
-The third mode places furniture and fixtures. The sidebar shows the catalog, and the selected room's floor material and tint when one is picked. Adding with no room selected drops the item in a random room, from where it can be dragged.of items. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
+The third mode places furniture and fixtures. The sidebar shows the catalog, and the selected room's floor material, tint, pattern size and pattern angle when one is picked. Floor patterns are drawn at their real size, boards 16 cm wide and 1.25 m long, tiles 21 cm across, so the pattern size only has to change when a room should read coarser or finer. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for.
 
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
 - A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change.
@@ -140,7 +155,7 @@ Each room:
 | `name` | Label override |
 | `radius` | Corner radius override |
 | `color` | Fill color override |
-| `floor` | `material` from wood, tiles, terracotta, carpet, concrete, and an optional `color` tint |
+| `floor` | `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size and `rotation` in degrees |
 
 Each device:
 

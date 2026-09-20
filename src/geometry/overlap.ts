@@ -151,3 +151,24 @@ export function furthestValid(from: Point[], to: Point[], others: Point[][]): Po
   if (isValidRoom(cm, others)) return cm
   return reached.map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000] as Point)
 }
+
+// Finds a spot for a copy of a polygon that does not touch any other, by
+// stepping it out in rings around where it is. Returns the moved points, or
+// null when even a wide search finds nothing free.
+export function freePlacement(points: Point[], others: Point[][], gap = 0.2): Point[] | null {
+  const xs = points.map(p => p[0])
+  const ys = points.map(p => p[1])
+  const stepX = Math.max(...xs) - Math.min(...xs) + gap
+  const stepY = Math.max(...ys) - Math.min(...ys) + gap
+  const moved = (dx: number, dy: number) => points.map(([x, y]) => [x + dx, y + dy] as Point)
+  for (let ring = 1; ring <= 6; ring++) {
+    for (let ox = -ring; ox <= ring; ox++) {
+      for (let oy = -ring; oy <= ring; oy++) {
+        if (Math.max(Math.abs(ox), Math.abs(oy)) !== ring) continue
+        const target = moved(ox * stepX, oy * stepY)
+        if (isValidRoom(target, others)) return target
+      }
+    }
+  }
+  return null
+}
