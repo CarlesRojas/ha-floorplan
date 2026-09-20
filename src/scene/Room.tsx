@@ -42,6 +42,16 @@ export default function Room({ room, index, radius, gap }: Props) {
     // everything placed in the room sits on top of it.
     geo.rotateX(-Math.PI / 2)
     geo.translate(0, -(ROOM_SLAB_THICKNESS_M + ROOM_SLAB_EDGE_RADIUS_M), 0)
+    // The floor is painted from above: every vertex takes its uv from where
+    // it sits on the plan, so the rounded edge and the sides carry the same
+    // boards as the top instead of a strip of their own that meets it at an
+    // angle. Units are meters, which is what the surface scale expects.
+    const position = geo.attributes.position
+    const uv = geo.attributes.uv
+    for (let i = 0; i < position.count; i++) {
+      uv.setXY(i, position.getX(i), -position.getZ(i))
+    }
+    uv.needsUpdate = true
     return geo
   }, [points, room.radius, radius, gap])
 

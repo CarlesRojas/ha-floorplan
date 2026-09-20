@@ -78,17 +78,19 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
       const row = Math.floor(v * 4)
       const along = u + noise2(row, 1, 7)
       const board = Math.floor(along * 2)
-      const joint = Math.abs(v * 4 - row - 0.5) > 0.45 || Math.abs(along * 2 - board - 0.5) > 0.492
+      const joint = Math.abs(v * 4 - row - 0.5) > 0.47 || Math.abs(along * 2 - board - 0.5) > 0.495
       // Grain runs the length of the board, so it is slow along u and fine
       // across v. Anything busy along u would read as another joint.
       const grain = fbm(u * 1.5, v * 30, 1)
-      const tone = 0.9 + grain * 0.06 + (noise2(row, board, 3) - 0.5) * 0.05
-      return { height: joint ? 0.15 : 0.62 + grain * 0.1, light: joint ? tone * 0.78 : tone }
+      const tone = 0.9 + grain * 0.06 + (noise2(row, board, 3) - 0.5) * 0.07
+      // The joints are a hairline, not a groove: boards read from the tone
+      // of each one more than from the lines between them.
+      return { height: joint ? 0.42 : 0.62 + grain * 0.1, light: joint ? tone * 0.9 : tone }
     },
     roughness: 0.7,
     repeat: 1.6,
     stretch: 4,
-    normalScale: 0.25,
+    normalScale: 0.12,
   },
   tiles: {
     // Square tiles with grout lines. Three per tile at 1.6 tiles per meter,
