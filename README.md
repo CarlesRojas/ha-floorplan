@@ -114,7 +114,7 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 | Laundry | Washing machine, dryer |
 | Bathroom | Toilet, basin, bathtub, shower, towel rail |
 | Decor | Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
-| Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector |
+| Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, projector screen |
 | Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
 | Windows and doors | Blind, roller shutter, window, door, sliding door, sliding glass door, garage door, awning |
 | Security and sensors | Camera, doorbell, motion sensor, door sensor, smoke detector, alarm panel, smart lock, air quality sensor |
@@ -125,7 +125,7 @@ The third mode places furniture and fixtures. The sidebar shows the catalog, and
 A bound device drives what the item does in 3D, when its signals match:
 
 - Lamps and LED strips glow with the light's brightness, color and color temperature.
-- TVs, monitors and projectors play a picture on their screen, and are black glass when off. Speakers and soundbars light a small indicator.
+- TVs and monitors play a picture on their screen, and are black glass when off. A TV is set by its diagonal in inches, always in 16:9, and a motorized projector screen rolls out of its case at the ceiling by the cover's position. Speakers and soundbars light a small indicator.
 - Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors and window casements swing open, and sliding doors run along their track, partway when the cover reports a position.
 - Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.
 - Radiators and towel rails warm up, hobs light their rings, ovens glow behind the glass.

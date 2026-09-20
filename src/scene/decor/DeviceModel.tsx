@@ -1,11 +1,18 @@
-import { colorValue, leafCount, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import {
+  colorValue,
+  leafCount,
+  materialValue,
+  paramValue,
+  screenSize,
+  type DecorationKind,
+} from '#/decoration/catalog.ts'
 import { Bar, Blob, Dome, Glass, Material, SEG, Slab } from '#/scene/decor/parts.tsx'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef, type ReactNode } from 'react'
-import type { Group } from 'three'
+import { DoubleSide, type Group } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
@@ -108,8 +115,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
   switch (kind.id) {
     // Media
     case 'tv': {
-      const w = p('width')
-      const h = w * p('ratio')
+      const [w, h] = screenSize(p('inches'))
       return (
         <group>
           <Slab size={[w * 0.3, 0.02, 0.22]} radius={0.02} position={[0, 0, 0]}>
@@ -124,8 +130,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
     }
     case 'tv_wall':
     case 'monitor': {
-      const w = p('width')
-      const h = w * p('ratio')
+      const [w, h] = kind.id === 'monitor' ? [p('width'), p('width') * p('ratio')] : screenSize(p('inches'))
       if (kind.id === 'monitor') {
         return (
           <group>
@@ -510,6 +515,33 @@ export default function DeviceModel({ kind, item, state }: Props) {
               </group>
             )
           })}
+        </group>
+      )
+    }
+    case 'projector_screen': {
+      // A case at the ceiling with the screen rolling out of it. Closed is
+      // rolled up, so an unbound one shows as just the case.
+      const [w, h] = screenSize(p('inches'))
+      const out = state ? (state.level ?? (state.on ? 1 : 0)) : 0
+      const drop = h * out
+      const caseH = 0.09
+      return (
+        <group>
+          <Slab size={[w + 0.12, caseH, 0.11]} radius={0.03} position={[0, -caseH, 0]}>
+            <Material color={c('case')} material={m('case')} />
+          </Slab>
+          {drop > 0.01 && (
+            <>
+              {/* The sheet, and the weighted bar along its bottom edge. */}
+              <mesh position={[0, -caseH - drop / 2, 0]}>
+                <planeGeometry args={[w, drop]} />
+                <meshStandardMaterial color={c('screen')} roughness={0.9} side={DoubleSide} />
+              </mesh>
+              <Slab size={[w, 0.03, 0.03]} radius={0.008} position={[0, -caseH - drop, 0]}>
+                <Material color={c('case')} material={m('case')} />
+              </Slab>
+            </>
+          )}
         </group>
       )
     }

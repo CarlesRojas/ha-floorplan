@@ -10,6 +10,8 @@ export type DecorationParam = {
   min: number
   max: number
   step: number
+  // How the editor writes the value. Meters when it is missing.
+  unit?: string
 }
 
 export type DecorationKind = {
@@ -28,13 +30,22 @@ export type DecorationKind = {
 }
 
 // Parameter shorthands. Every length is in meters.
-const p = (id: string, label: string, d: number, min: number, max: number, step = 0.05): DecorationParam => ({
+const p = (
+  id: string,
+  label: string,
+  d: number,
+  min: number,
+  max: number,
+  step = 0.05,
+  unit?: string,
+): DecorationParam => ({
   id,
   label,
   default: d,
   min,
   max,
   step,
+  unit,
 })
 const width = (d: number, min = 0.3, max = 4) => p('width', 'Width', d, min, max)
 const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max)
@@ -43,8 +54,9 @@ const size = (d: number, min = 0.1, max = 1.5) => p('size', 'Size', d, min, max)
 const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Length', d, min, max, step)
 // Height an item stands at when it is not standing on anything.
 const lift = (d: number, max = 1.5) => p('lift', 'Standing on', d, 0, max)
-// A count rather than a length. A whole step is what marks it as one.
-const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1)
+const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1, '')
+// Screens are sold by the diagonal, and they are all 16:9.
+const inches = (d: number, min = 24, max = 120) => p('inches', 'Screen', d, min, max, 1, '"')
 
 // Signal sets.
 const NONE: Signal[] = []
@@ -582,7 +594,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'TV',
     'floor',
-    [width(1.2, 0.6, 2.2), p('ratio', 'Height ratio', 0.58, 0.4, 0.8, 0.02), lift(0)],
+    [inches(60, 24, 110), lift(0)],
     { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.oak },
     { body: 'matte', screen: 'ceramic', stand: 'wood' },
     TOGGLE,
@@ -592,7 +604,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'Wall TV',
     'wall',
-    [width(1.2, 0.6, 2.2), p('ratio', 'Height ratio', 0.58, 0.4, 0.8, 0.02), height(1.3, 0.8, 2)],
+    [inches(60, 24, 110), height(1.3, 0.8, 2)],
     { body: SCANDI.ink, screen: SCREEN_OFF_COLOR },
     { body: 'matte', screen: 'ceramic' },
     TOGGLE,
@@ -656,6 +668,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: SCANDI.offWhite, trim: SCANDI.slate },
     { body: 'matte', trim: 'metal' },
     TOGGLE,
+  ),
+  kind(
+    'projector_screen',
+    'media',
+    'Projector screen',
+    'ceiling',
+    [inches(100, 60, 160)],
+    { case: SCANDI.ink, screen: '#f4f3ef' },
+    { case: 'matte', screen: 'matte' },
+    TOGGLE_LEVEL,
   ),
 
   // Climate
@@ -952,8 +974,18 @@ export function materialValue(kind: DecorationKind, materials: Record<string, st
 }
 
 // Footprint on the plan, for the 2D editor.
+// A screen's diagonal in inches as its width and height in meters, always
+// in 16:9.
+export function screenSize(inches: number): [number, number] {
+  const diagonal = inches * 0.0254
+  return [(diagonal * 16) / Math.hypot(16, 9), (diagonal * 9) / Math.hypot(16, 9)]
+}
+
 export function footprint(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
-  const w = paramValue(kind, params, 'width') || paramValue(kind, params, 'size') || 0.3
+  const screen = kind.params.some(x => x.id === 'inches')
+  const w = screen
+    ? screenSize(paramValue(kind, params, 'inches'))[0]
+    : paramValue(kind, params, 'width') || paramValue(kind, params, 'size') || 0.3
   const d =
     paramValue(kind, params, 'depth') ||
     paramValue(kind, params, 'length') ||

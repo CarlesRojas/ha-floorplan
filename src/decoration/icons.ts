@@ -74,6 +74,7 @@ const BY_KIND: Record<string, IconDefinition> = {
   monitor: faTv,
   game_console: faTv,
   projector: faTv,
+  projector_screen: faTv,
   radiator: faFire,
   ac_unit: faSnowflake,
   fan_ceiling: faFan,
