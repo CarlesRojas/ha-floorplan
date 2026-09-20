@@ -6,7 +6,7 @@ import { clickAction, deviceSignals, kelvinToRgb, signalValues } from '#/signals
 import { CEILING_HEIGHT_M, DEVICE_SPHERE_COLOR, DEVICE_SPHERE_RADIUS_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
-import { Color } from 'three'
+import { Color, SRGBColorSpace } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
@@ -30,8 +30,15 @@ function itemState(hass: HomeAssistant, entityId: string): ItemState | null {
   const v = signalValues(hass, entityId)
   const base = new Color(LIGHT_GLOW_COLOR)
   let glow: [number, number, number] = [base.r, base.g, base.b]
-  if (v.color) glow = [v.color[0] / 255, v.color[1] / 255, v.color[2] / 255]
-  else if (v.warmth) glow = kelvinToRgb(v.warmth)
+  // Home Assistant's colors are sRGB. Handing the raw numbers to three,
+  // which works in linear, washed every color out toward white: a magenta
+  // light came out pale pink.
+  const fromSrgb = ([r, g, b]: [number, number, number]): [number, number, number] => {
+    const c = new Color().setRGB(r, g, b, SRGBColorSpace)
+    return [c.r, c.g, c.b]
+  }
+  if (v.color) glow = fromSrgb([v.color[0] / 255, v.color[1] / 255, v.color[2] / 255])
+  else if (v.warmth) glow = fromSrgb(kelvinToRgb(v.warmth))
   return {
     on: v.on ?? false,
     level: signals.includes('level') ? (v.level ?? 1) : 1,

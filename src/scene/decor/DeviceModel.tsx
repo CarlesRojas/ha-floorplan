@@ -65,9 +65,12 @@ export default function DeviceModel({ kind, item, state }: Props) {
   // it to run down rather than stopping dead.
   const lit = useEased(on ? 1 : 0, 9)
   // An unbound cover shows closed, so the item is visible on the plan.
-  const coverLevel = useTravel(state?.level ?? 0)
+  // Home Assistant says so outright while a cover runs, which is a better
+  // signal than the positions alone.
+  const moving = state?.text === 'opening' ? 1 : state?.text === 'closing' ? -1 : 0
+  const coverLevel = useTravel(state?.level ?? 0, moving)
   // Same, but a cover with no position at all counts as fully open.
-  const openAmount = useTravel(state ? (state.level ?? (state.on ? 1 : 0)) : 0)
+  const openAmount = useTravel(state ? (state.level ?? (state.on ? 1 : 0)) : 0, moving)
   const runLevel = useEased(level, 6)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or

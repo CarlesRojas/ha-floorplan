@@ -6,6 +6,8 @@ import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
+import { useMemo } from 'react'
+import { Color } from 'three'
 
 export type LightState = ItemState
 
@@ -34,13 +36,20 @@ function ShadeMaterial({
   // Eased, so a lamp fades up and down and follows a dimmer smoothly
   // instead of stepping with each update.
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
+  // A colored light on a chalky shade was barely a tint, since the shade's
+  // own color carried the surface. The shade takes the light's color as it
+  // comes up, so a green lamp reads green from across the room.
+  const [gr, gg, gb] = glow
+  const tint = useMemo(() => new Color(color).lerp(new Color(gr, gg, gb), 0.85 * lit).getStyle(), [color, gr, gg, gb, lit])
   return (
     <SurfaceMaterial
       kind={material as SurfaceKind}
-      color={color}
+      color={tint}
       doubleSide
       emissive={[glow[0], glow[1], glow[2]]}
-      emissiveIntensity={lit * (0.5 + lit * 1.5)}
+      // Kept under one: past that the tone mapping rolls a bright color off
+      // toward white, which is what made a colored lamp read as pale.
+      emissiveIntensity={lit * (0.25 + lit * 0.7)}
     />
   )
 }
@@ -49,18 +58,27 @@ function BaseMaterial({ color, material = 'matte' }: { color: string; material?:
   return <SurfaceMaterial kind={material as SurfaceKind} color={color} />
 }
 
-function Glow({ state, y }: { state: LightState | null; y: number }) {
+function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; spread?: number }) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
   if (lit < 0.01) return null
+  // A strip lights its whole length, so the light is shared between a few
+  // points spread along it instead of one in the middle.
+  const count = spread > 0.6 ? Math.min(5, Math.max(2, Math.round(spread / 0.6))) : 1
+  const total = LIGHT_POINT_INTENSITY * lit * (0.3 + lit * 0.7)
   return (
-    <pointLight
-      position={[0, y, 0]}
-      color={[r, g, b]}
-      intensity={LIGHT_POINT_INTENSITY * lit * (0.3 + lit * 0.7)}
-      distance={7}
-      decay={1.6}
-    />
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <pointLight
+          key={i}
+          position={[count === 1 ? 0 : -spread / 2 + (spread / (count - 1)) * i, y, 0]}
+          color={[r, g, b]}
+          intensity={total / count}
+          distance={7}
+          decay={1.6}
+        />
+      ))}
+    </>
   )
 }
 
@@ -109,6 +127,8 @@ export default function LightModel({ kind, item, state }: Props) {
   const size = p('size')
   let body: React.ReactNode
   let glowY = 1
+  // How far the light is spread along the item, for a strip.
+  let glowSpread = 0
   switch (kind.id) {
     case 'light_ceiling': {
       // A soft puck under the ceiling.
@@ -209,6 +229,7 @@ export default function LightModel({ kind, item, state }: Props) {
       const length = p('length')
       const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.04 : p('height')
       glowY = height + 0.05
+      glowSpread = length
       body = (
         <mesh position={[0, height + 0.02, 0]} rotation={[0, 0, Math.PI / 2]}>
           <capsuleGeometry args={[0.02, Math.max(length - 0.04, 0.05), 4, 10]} />
@@ -241,7 +262,7 @@ export default function LightModel({ kind, item, state }: Props) {
   return (
     <>
       {body}
-      <Glow state={state} y={glowY} />
+      <Glow state={state} y={glowY} spread={glowSpread} />
     </>
   )
 }

@@ -65,7 +65,7 @@ export const LIGHT_BASE_COLOR = '#d8b98e'
 export const LIGHT_CORD_COLOR = '#8f877b'
 // Glow of a light that is on, before level and color are applied.
 export const LIGHT_GLOW_COLOR = '#ffd27a'
-export const LIGHT_POINT_INTENSITY = 6
+export const LIGHT_POINT_INTENSITY = 9
 // Radius of the sphere shown for a device with no decoration bound.
 export const DEVICE_SPHERE_RADIUS_M = 0.12
 export const DEVICE_SPHERE_COLOR = '#ffffff'

@@ -65,7 +65,7 @@ It opens fullscreen. Save sends the edits on without leaving, Save & Close keeps
 - Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
 - Rooms never overlap. While dragging, the room follows the pointer and turns red where it would overlap. On release it lands on the nearest valid position, sliding along the free axis. A corner cannot be drawn inside a room or through one.
 
-The selected room reads the same in every mode, at the top of the sidebar: its name, the Home Assistant area it stands for, the floor under it, and a cross back to the list. An area can be linked to one room only. Radius and color can be set per room in the YAML.
+The selected room fills the sidebar in every mode, on its own: its name, the Home Assistant area it stands for, the floor under it, and a cross back to the list. The cross lets go of the block, not of the room, so what you add next still lands in it. Selecting a device or an item inside the room shows that instead. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 
 ### Editing commands
 
@@ -127,7 +127,7 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 
 A bound device drives what the item does in 3D, when its signals match:
 
-- Lamps and LED strips glow with the light's brightness, color and color temperature.
+- Lamps and LED strips glow with the light's brightness, color and color temperature, taking on the color themselves rather than only tinting the room. A strip lights along its whole length.
 - TVs and monitors play a picture on their screen, and are black glass when off. A TV is set by its diagonal in inches, always in 16:9, and a motorized projector screen rolls out of its case at the ceiling by the cover's position. Speakers and soundbars light a small indicator.
 - Blinds, shutters, curtains, garage doors and awnings move to the cover's position. Doors and window casements swing open, and sliding doors run along their track, partway when the cover reports a position.
 - Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.

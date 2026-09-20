@@ -66,6 +66,13 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
+  // Whether the selected room fills the sidebar. Picking a room opens it,
+  // the cross closes it again.
+  const [showRoom, setShowRoom] = useState(true)
+  const pickRoom = (next: Selection) => {
+    if (next.roomId) setShowRoom(true)
+    setSelection(next)
+  }
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
   // Share of the column under the toolbar that the 3D preview takes.
@@ -620,7 +627,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       view={view}
       onView={setView}
       fit={fit}
-      onSelect={setSelection}
+      onSelect={pickRoom}
       onRooms={(next, done) => (done ? commit(next) : setRooms(next))}
       onDraftPoint={p => setDraft([...draft, p])}
       onCloseDraft={closeDraft}
@@ -647,9 +654,13 @@ export default function Editor({ hass, config, onChange }: Props) {
     </div>
   )
 
-  // The selected room reads the same in every mode, above whatever that
-  // mode lists.
-  const roomInfo = selectedRoom ? (
+  // The selected room fills the sidebar on its own, the way a selected item
+  // or device does. Selecting something inside the room is what is being
+  // looked at then, so the room steps aside.
+  const nothingElseSelected = mode === 'rooms' ? true : mode === 'devices' ? !selectedDevice : !selectedDecoration
+  // The cross closes the room's block without letting go of the room, since
+  // what is added next still belongs in it.
+  const roomInfo = selectedRoom && showRoom && nothingElseSelected ? (
     <RoomInfo
       room={selectedRoom}
       rooms={rooms}
@@ -659,7 +670,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       onRenameDone={flushRename}
       onAssignArea={assignArea}
       onFloor={setFloor}
-      onDeselect={() => setSelection({ roomId: null, vertex: null })}
+      onDeselect={() => setShowRoom(false)}
     />
   ) : null
 
@@ -700,7 +711,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         rooms={rooms}
         areas={Object.values(hass?.areas ?? {})}
         selection={selection}
-        onSelect={roomId => setSelection({ roomId, vertex: null })}
+        onSelect={roomId => pickRoom({ roomId, vertex: null })}
         onDelete={deleteRoom}
       />
     )
@@ -802,8 +813,7 @@ export default function Editor({ hass, config, onChange }: Props) {
               <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
             </div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
-              {roomInfo}
-              {panels}
+              {roomInfo ?? panels}
             </div>
           </div>
         </div>

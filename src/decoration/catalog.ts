@@ -1019,6 +1019,11 @@ export function screenSize(inches: number): [number, number] {
 }
 
 export function footprint(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
+  // A strip lies along its length, which is the x of its model, so the plan
+  // has to read the same way round or the two disagree by a right angle.
+  if (kind.family === 'light' && kind.params.some(x => x.id === 'length')) {
+    return [paramValue(kind, params, 'length'), 0.08]
+  }
   const screen = kind.params.some(x => x.id === 'inches')
   const w = screen
     ? screenSize(paramValue(kind, params, 'inches'))[0]
