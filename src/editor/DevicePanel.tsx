@@ -4,7 +4,7 @@ import { deviceSignals } from '#/signals.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
-import type { Area, DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
+import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
@@ -12,12 +12,10 @@ import { useState } from 'react'
 type Props = {
   hass: HomeAssistant | null
   rooms: RoomConfig[]
-  room: RoomConfig | null
   devices: DeviceConfig[]
   decorations: DecorationConfig[]
   onBindDecoration: (entityId: string, decorationId: string, bound: boolean) => void
   selected: string | null
-  onAssignArea: (roomId: string, areaId: string | undefined) => void
   onSelect: (entityId: string | null) => void
   onAdd: (entity: EntityInfo) => void
   onUpdate: (entityId: string, patch: Partial<DeviceConfig>) => void
@@ -31,60 +29,23 @@ const accent = EDITOR_MODE_COLORS.devices
 export default function DevicePanel({
   hass,
   rooms,
-  room,
   devices,
   decorations,
   onBindDecoration,
   selected,
-  onAssignArea,
   onSelect,
   onAdd,
   onUpdate,
   onRemove,
 }: Props) {
   const [query, setQuery] = useState('')
-  const areas: Area[] = Object.values(hass?.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name))
   const areaName = (id: string | null | undefined) => (id ? (hass?.areas?.[id]?.name ?? id) : undefined)
-
-  const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
-  const header = !room ? (
-    <p className="text-sm text-(--secondary-text-color)">
-      {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas, or add and drag.'}
-    </p>
-  ) : (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-semibold">{room.name ?? room.id}</p>
-      <label className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-        Area
-        <select
-          className={input}
-          value={room.area_id ?? ''}
-          onChange={e => onAssignArea(room.id, e.target.value || undefined)}
-        >
-          <option value="">No area</option>
-          {areas.map(a => {
-            const owner = used.get(a.area_id)
-            const taken = owner !== undefined && owner !== room.id
-            return (
-              <option key={a.area_id} value={a.area_id} disabled={taken}>
-                {a.name}
-                {taken ? ' (used)' : ''}
-              </option>
-            )
-          })}
-        </select>
-      </label>
-    </div>
-  )
 
   if (!hass?.entities) {
     return (
-      <div className="flex flex-col gap-3">
-        {header}
-        <p className="text-sm text-(--secondary-text-color)">
-          This Home Assistant version does not expose the entity registry.
-        </p>
-      </div>
+      <p className="text-sm text-(--secondary-text-color)">
+        This Home Assistant version does not expose the entity registry.
+      </p>
     )
   }
 
@@ -308,7 +269,6 @@ export default function DevicePanel({
 
   return (
     <div className="flex flex-col gap-3">
-      {header}
       <Sticky>
         <input
           className={input}

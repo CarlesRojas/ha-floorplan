@@ -4,6 +4,7 @@ import DevicePanel from '#/editor/DevicePanel.tsx'
 import ModeSwitch from '#/editor/ModeSwitch.tsx'
 import Scene from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
+import RoomInfo from '#/editor/RoomInfo.tsx'
 import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Mode, Selection, Tool } from '#/editor/types.ts'
@@ -646,12 +647,27 @@ export default function Editor({ hass, config, onChange }: Props) {
     </div>
   )
 
+  // The selected room reads the same in every mode, above whatever that
+  // mode lists.
+  const roomInfo = selectedRoom ? (
+    <RoomInfo
+      room={selectedRoom}
+      rooms={rooms}
+      areas={Object.values(hass?.areas ?? {})}
+      mode={mode}
+      onRename={renameRoom}
+      onRenameDone={flushRename}
+      onAssignArea={assignArea}
+      onFloor={setFloor}
+      onDeselect={() => setSelection({ roomId: null, vertex: null })}
+    />
+  ) : null
+
   const panels =
     mode === 'decoration' ? (
       <DecorationPanel
         hass={hass}
         rooms={rooms}
-        room={selectedRoom}
         devices={devices}
         decorations={decorations}
         selected={selectedDecoration}
@@ -661,14 +677,11 @@ export default function Editor({ hass, config, onChange }: Props) {
         onBind={(id, entityId) => (entityId ? bindDecoration(entityId, id, true) : bindDecoration('', id, false))}
         onStandOn={standOn}
         onSelect={setSelectedDecoration}
-        onFloor={setFloor}
       />
     ) : mode === 'devices' ? (
       <DevicePanel
         hass={hass}
         rooms={rooms}
-        room={selectedRoom}
-        onAssignArea={assignArea}
         devices={devices}
         decorations={decorations}
         onBindDecoration={bindDecoration}
@@ -688,9 +701,6 @@ export default function Editor({ hass, config, onChange }: Props) {
         areas={Object.values(hass?.areas ?? {})}
         selection={selection}
         onSelect={roomId => setSelection({ roomId, vertex: null })}
-        onUpdate={updateRoom}
-        onRename={renameRoom}
-        onRenameDone={flushRename}
         onDelete={deleteRoom}
       />
     )
@@ -792,6 +802,7 @@ export default function Editor({ hass, config, onChange }: Props) {
               <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
             </div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
+              {roomInfo}
               {panels}
             </div>
           </div>

@@ -13,7 +13,7 @@ import ModelPreview from '#/editor/ModelPreview.tsx'
 import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
 import { EDITOR_SIDEBAR_PREVIEW_PX } from '#/constants.ts'
 import { cn } from '#/lib/utils.ts'
-import { DECORATION_MATERIALS, EDITOR_MODE_COLORS, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
+import { DECORATION_MATERIALS, EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -23,7 +23,6 @@ import { useState } from 'react'
 type Props = {
   hass: HomeAssistant | null
   rooms: RoomConfig[]
-  room: RoomConfig | null
   devices: DeviceConfig[]
   decorations: DecorationConfig[]
   selected: string | null
@@ -33,7 +32,6 @@ type Props = {
   onBind: (id: string, entityId: string | null) => void
   onStandOn: (id: string, supportId: string | null) => void
   onSelect: (id: string | null) => void
-  onFloor: (roomId: string, floor: RoomConfig['floor']) => void
 }
 
 const input =
@@ -43,7 +41,6 @@ const accent = EDITOR_MODE_COLORS.decoration
 export default function DecorationPanel({
   hass,
   rooms,
-  room,
   devices,
   decorations,
   selected,
@@ -53,7 +50,6 @@ export default function DecorationPanel({
   onBind,
   onStandOn,
   onSelect,
-  onFloor,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
   const [query, setQuery] = useState('')
@@ -216,85 +212,8 @@ export default function DecorationPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      {room ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold">{room.name ?? room.id}</p>
-          <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-            Floor
-            <select
-              className={input}
-              value={room.floor?.material ?? ''}
-              onChange={e => onFloor(room.id, e.target.value ? { material: e.target.value } : undefined)}
-            >
-              <option value="">Room color</option>
-              {Object.entries(FLOOR_MATERIALS).map(([id, m]) => (
-                <option key={id} value={id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {room.floor && (
-            <>
-              <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-                Tint
-                <input
-                  type="color"
-                  className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
-                  value={room.floor.color ?? FLOOR_MATERIALS[room.floor.material]?.color ?? '#ffffff'}
-                  onChange={e => onFloor(room.id, { ...room.floor!, color: e.target.value })}
-                />
-              </label>
-              <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
-                Pattern size
-                <input
-                  type="range"
-                  min={0.25}
-                  max={4}
-                  step={0.05}
-                  value={room.floor.scale ?? 1}
-                  style={{ accentColor: accent }}
-                  onChange={e => onFloor(room.id, { ...room.floor!, scale: Number(e.target.value) })}
-                />
-                <span className="text-right text-xs text-(--secondary-text-color)">
-                  {(room.floor.scale ?? 1).toFixed(2)}x
-                </span>
-              </label>
-              <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
-                Pattern depth
-                <input
-                  type="range"
-                  min={0}
-                  max={2}
-                  step={0.05}
-                  value={room.floor.intensity ?? 1}
-                  style={{ accentColor: accent }}
-                  onChange={e => onFloor(room.id, { ...room.floor!, intensity: Number(e.target.value) })}
-                />
-                <span className="text-right text-xs text-(--secondary-text-color)">
-                  {(room.floor.intensity ?? 1).toFixed(2)}x
-                </span>
-              </label>
-              <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
-                Pattern angle
-                <input
-                  type="range"
-                  min={0}
-                  max={175}
-                  step={5}
-                  value={room.floor.rotation ?? 0}
-                  style={{ accentColor: accent }}
-                  onChange={e => onFloor(room.id, { ...room.floor!, rotation: Number(e.target.value) })}
-                />
-                <span className="text-right text-xs text-(--secondary-text-color)">{room.floor.rotation ?? 0}°</span>
-              </label>
-            </>
-          )}
-        </div>
-      ) : (
-        <p className="text-sm text-(--secondary-text-color)">
-          {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas, or add and drag.'}
-        </p>
+      {rooms.length === 0 && (
+        <p className="text-sm text-(--secondary-text-color)">Draw rooms in the Rooms mode first.</p>
       )}
 
       <Sticky>
