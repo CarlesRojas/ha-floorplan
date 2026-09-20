@@ -51,8 +51,7 @@ export const EDITOR_AUTOPAN_SPEED_PX_S = 500
 export const EDITOR_DEVICE_GRID_M = 0.05
 // Radius of a device marker on the canvas.
 export const EDITOR_DEVICE_RADIUS_PX = 14
-// Floating 3D preview inside the editor.
-export const EDITOR_PREVIEW_DEFAULT_WIDTH_PX = 420
-export const EDITOR_PREVIEW_MIN_WIDTH_PX = 240
-// Space kept between the floating preview and the window edges.
-export const EDITOR_PREVIEW_MARGIN_PX = 40
+// The 3D preview is docked under the plan. This is the share of their
+// column it takes when it opens, and neither of them goes below this height.
+export const EDITOR_PREVIEW_FRACTION = 0.5
+export const EDITOR_PREVIEW_MIN_PX = 140

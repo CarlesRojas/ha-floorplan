@@ -57,7 +57,7 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D". The card opens with a
 
 The card's visual editor is a top-down drawing tool. Open it from the card's edit dialog.
 
-It opens fullscreen. Save & Close keeps the edits and Discard restores the state from when it opened, leaving an Open editor button in the dialog. The cube toolbar button (P) opens a floating live 3D preview of the card, with the card's aspect ratio. Drag it by the top left handle, resize it from the bottom right one, close it with the top right one. The 3D view frames the plan by itself until you orbit, pan or zoom it. From then on the camera stays where you put it, so editing does not throw your view away.
+It opens fullscreen. Save & Close keeps the edits and Discard restores the state from when it opened, leaving an Open editor button in the dialog. The cube toolbar button (P) opens a live 3D view under the plan, taking the bottom half of the column. Drag the divider between them to give either one more room. The 3D view frames the plan by itself until you orbit, pan or zoom it. From then on the camera stays where you put it, so editing does not throw your view away. The plan frames itself the same way, so changing the split keeps everything in view unless you have panned or zoomed it yourself.
 
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
 - Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu.

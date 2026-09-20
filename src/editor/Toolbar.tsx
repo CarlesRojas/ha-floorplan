@@ -64,7 +64,7 @@ type Props = {
   showLengths: boolean
   onShowLengths: (value: boolean) => void
   showPreview: boolean
-  onShowPreview: (value: boolean) => void
+  onShowPreview: () => void
 }
 
 export default function Toolbar({
@@ -100,7 +100,7 @@ export default function Toolbar({
         active={showPreview}
         color={color}
         toggle
-        onClick={() => onShowPreview(!showPreview)}
+        onClick={onShowPreview}
       />
       {mode === 'rooms' && (
         <ToolButton

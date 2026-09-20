@@ -163,11 +163,21 @@ export default function Canvas({
   const duplicateSource = useRef<string | null>(null)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
-  // The view only changes on pan, zoom, fit or auto-pan. It is fitted once
-  // when unset, never re-fitted as rooms change.
+  // The view only changes on pan, zoom, fit or auto-pan. It is fitted when
+  // unset, and again when the canvas changes shape while the view is still
+  // exactly where it was fitted, so opening the 3D pane or dragging the
+  // divider does not leave the plan half out of frame. Once the viewer has
+  // panned or zoomed, the view is theirs and is left alone.
   const view = viewProp ?? (width && height ? fit(width, height) : null)
+  const lastFit = useRef<{ size: string; view: View } | null>(null)
   useEffect(() => {
-    if (!viewProp && width && height) onView(fit(width, height))
+    if (!width || !height) return
+    const size = `${width}x${height}`
+    if (!viewProp || (lastFit.current?.view === viewProp && lastFit.current.size !== size)) {
+      const fitted = fit(width, height)
+      lastFit.current = { size, view: fitted }
+      onView(fitted)
+    }
   }, [viewProp, width, height, fit, onView])
 
   // Latest values for the auto-pan loop and the document wide draft

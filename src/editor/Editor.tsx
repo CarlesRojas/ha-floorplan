@@ -2,7 +2,7 @@ import Canvas from '#/editor/Canvas.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import DevicePanel from '#/editor/DevicePanel.tsx'
 import ModeSwitch from '#/editor/ModeSwitch.tsx'
-import PreviewWindow from '#/editor/PreviewWindow.tsx'
+import Scene from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
@@ -23,7 +23,14 @@ import {
 } from '#/components/ui/alert-dialog.tsx'
 import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { EDITOR_DEVICE_GRID_M, EDITOR_GRID_M, EDITOR_SIDEBAR_MIN_PX, EDITOR_SIDEBAR_WIDTH_PX } from '#/constants.ts'
+import {
+  EDITOR_DEVICE_GRID_M,
+  EDITOR_GRID_M,
+  EDITOR_PREVIEW_FRACTION,
+  EDITOR_PREVIEW_MIN_PX,
+  EDITOR_SIDEBAR_MIN_PX,
+  EDITOR_SIDEBAR_WIDTH_PX,
+} from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -60,6 +67,10 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [showPreview, setShowPreview] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
+  // Share of the column under the toolbar that the 3D preview takes.
+  const [previewShare, setPreviewShare] = useState(EDITOR_PREVIEW_FRACTION)
+  const previewDrag = useRef<{ startY: number; share: number; height: number } | null>(null)
+  const plan = useRef<HTMLDivElement>(null)
   // Rooms as they were when the fullscreen editor opened, for Discard.
   const [opened, setOpened] = useState<{
     rooms: RoomConfig[]
@@ -420,6 +431,8 @@ export default function Editor({ hass, config, onChange }: Props) {
     if (selection.roomId === id) setSelection({ roomId: null, vertex: null })
   }
 
+  const togglePreview = () => setShowPreview(!showPreview)
+
   const openEditor = () => {
     setOpened({ rooms, devices, decorations })
     setFullscreen(true)
@@ -527,7 +540,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'p':
       case 'P':
-        setShowPreview(!showPreview)
+        togglePreview()
         break
       case 'Enter':
         closeDraft()
@@ -621,7 +634,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         showLengths={showLengths}
         onShowLengths={setShowLengths}
         showPreview={showPreview}
-        onShowPreview={setShowPreview}
+        onShowPreview={togglePreview}
       />
     </div>
   )
@@ -700,7 +713,47 @@ export default function Editor({ hass, config, onChange }: Props) {
             </div>
           </div>
           <div className="flex min-h-0 flex-1 gap-2">
-            <div className="min-w-0 flex-1">{canvas}</div>
+            <div ref={plan} className="flex min-w-0 flex-1 flex-col">
+              <div className="flex min-h-0" style={{ flex: showPreview ? 1 - previewShare : 1 }}>
+                {canvas}
+              </div>
+              {showPreview && (
+                <>
+                  {/* Drag to share the column between the plan and the view. */}
+                  <div
+                    className="group flex h-3 shrink-0 cursor-row-resize touch-none items-center justify-center"
+                    onPointerDown={e => {
+                      if (e.button !== 0) return
+                      e.currentTarget.setPointerCapture(e.pointerId)
+                      previewDrag.current = {
+                        startY: e.clientY,
+                        share: previewShare,
+                        height: plan.current?.clientHeight ?? window.innerHeight,
+                      }
+                    }}
+                    onPointerMove={e => {
+                      const d = previewDrag.current
+                      if (!d || d.height <= 0) return
+                      const next = d.share - (e.clientY - d.startY) / d.height
+                      const min = EDITOR_PREVIEW_MIN_PX / d.height
+                      setPreviewShare(Math.min(Math.max(next, min), 1 - min))
+                    }}
+                    onPointerUp={e => {
+                      previewDrag.current = null
+                      e.currentTarget.releasePointerCapture(e.pointerId)
+                    }}
+                  >
+                    <span className="h-1 w-14 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
+                  </div>
+                  <div
+                    className="min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
+                    style={{ flex: previewShare }}
+                  >
+                    <Scene hass={hass} config={{ ...config, rooms, devices, decorations }} />
+                  </div>
+                </>
+              )}
+            </div>
             {/* Drag to resize the sidebar, between a minimum and half the window. */}
             <div
               className="group flex w-3 shrink-0 cursor-col-resize touch-none items-center justify-center"
@@ -727,13 +780,6 @@ export default function Editor({ hass, config, onChange }: Props) {
             </div>
           </div>
         </div>
-        {showPreview && (
-          <PreviewWindow
-            hass={hass}
-            config={{ ...config, rooms, devices, decorations }}
-            onClose={() => setShowPreview(false)}
-          />
-        )}
         <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
