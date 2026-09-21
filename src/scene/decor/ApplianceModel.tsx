@@ -103,23 +103,33 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       )
     }
     case 'upper_cabinets': {
+      // Handleless wall units: a carcass, a door per bay with a shadow gap
+      // and a lip pull running under the bottom edge.
       const w = p('width')
       const d = p('depth')
       const cabH = 0.7
       const cols = Math.max(1, Math.round(w / 0.6))
+      const cw = w / cols
       return (
         <group position={[0, -cabH, 0]}>
           <Slab size={[w, cabH, d]} radius={0.02} position={[0, 0, d / 2]}>
             {body}
           </Slab>
-          {Array.from({ length: cols }).map((_, i) => {
-            const cw = w / cols
-            return (
-              <Panel key={i} size={[cw - 0.015, cabH - 0.02, 0.018]} position={[-w / 2 + cw * (i + 0.5), 0.01, d]}>
-                {body}
-              </Panel>
-            )
-          })}
+          {Array.from({ length: cols }).map((_, i) => (
+            <Panel key={i} size={[cw - 0.015, cabH - 0.025, 0.018]} position={[-w / 2 + cw * (i + 0.5), 0.015, d]}>
+              {body}
+            </Panel>
+          ))}
+          {/* The pull, a rail set back under the doors. */}
+          <mesh position={[0, 0.006, d - 0.012]}>
+            <boxGeometry args={[w - 0.02, 0.012, 0.03]} />
+            {trim()}
+          </mesh>
+          {/* A light valance, so the units read as fitted joinery. */}
+          <mesh position={[0, cabH - 0.006, d - 0.006]}>
+            <boxGeometry args={[w, 0.012, 0.02]} />
+            {body}
+          </mesh>
         </group>
       )
     }
@@ -192,121 +202,224 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       )
     }
     case 'hob': {
-      // A dark ceramic panel flush in the worktop, four rings.
+      // A black glass induction panel, flush in the worktop: four rings and
+      // a touch strip along the front edge.
       const w = p('width')
       const d = p('depth')
+      const slider = Math.min(w * 0.4, 0.26)
       return (
         <group>
-          <Slab size={[w, 0.02, d]} radius={0.02} position={[0, 0, 0]}>
+          <Slab size={[w, 0.02, d]} radius={0.012} bevel={0.005} position={[0, 0, 0]}>
             {body}
           </Slab>
           {[
-            [-0.25, -0.22],
-            [0.25, -0.22],
-            [-0.25, 0.22],
-            [0.25, 0.22],
-          ].map(([fx, fz], i) => (
-            <mesh key={i} position={[fx * w, 0.021, fz * d]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[w * 0.08, w * 0.13, SEG]} />
-              <meshStandardMaterial
-                color={on ? '#d96a3c' : '#6c7175'}
-                emissive={'#ff6a2a'}
-                emissiveIntensity={(1.6 * level) * lit}
-              />
+            [-0.25, -0.2, 0.13],
+            [0.25, -0.2, 0.11],
+            [-0.25, 0.18, 0.11],
+            [0.25, 0.18, 0.13],
+          ].map(([fx, fz, size], i) => (
+            <group key={i}>
+              <mesh position={[fx * w, 0.021, fz * d]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[w * (size - 0.05), w * size, SEG * 2]} />
+                <meshStandardMaterial
+                  color={on ? '#d96a3c' : '#6c7175'}
+                  emissive={'#ff6a2a'}
+                  emissiveIntensity={1.6 * level * lit}
+                />
+              </mesh>
+              {/* A short cross mark in the middle of each zone. */}
+              <mesh position={[fx * w, 0.021, fz * d]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[w * 0.012, w * 0.02, 10]} />
+                <meshStandardMaterial color="#6c7175" />
+              </mesh>
+            </group>
+          ))}
+          {/* Touch slider and power dots, printed on the front edge. */}
+          <mesh position={[0, 0.021, d * 0.41]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[slider, 0.012]} />
+            <meshStandardMaterial color="#5c6165" emissive="#ff6a2a" emissiveIntensity={0.8 * level * lit} />
+          </mesh>
+          {[-1, 1].map(side => (
+            <mesh key={side} position={[side * (slider / 2 + 0.035), 0.021, d * 0.41]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[0.008, 10]} />
+              <meshStandardMaterial color="#5c6165" emissive="#ff6a2a" emissiveIntensity={1.2 * lit} />
             </mesh>
           ))}
         </group>
       )
     }
     case 'extractor_hood': {
-      // A tapered chimney over the hob.
+      // A box canopy with a slim chimney, a grease filter panel underneath
+      // and two task lights in it.
       const w = p('width')
       const d = p('depth')
       const hoodY = 1.55
+      const canopy = 0.14
       return (
         <group>
-          <mesh position={[0, hoodY + 0.12, 0]} castShadow>
-            <cylinderGeometry args={[w * 0.18, w * 0.5, 0.26, 4, 1, false, Math.PI / 4]} />
+          <Slab size={[w, canopy, d]} radius={0.015} bevel={0.01} position={[0, hoodY, 0]}>
             {body}
-          </mesh>
-          <Slab size={[w * 0.26, 2.6 - hoodY - 0.24, d * 0.26]} radius={0.01} position={[0, hoodY + 0.24, 0]}>
+          </Slab>
+          {/* The chimney, narrower than the canopy, up to the ceiling. */}
+          <Slab
+            size={[w * 0.36, 2.6 - hoodY - canopy, d * 0.36]}
+            radius={0.012}
+            bevel={0.006}
+            position={[0, hoodY + canopy, -d * 0.08]}
+          >
             {trim()}
           </Slab>
-          <mesh position={[0, hoodY - 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[w * 0.6, d * 0.6]} />
-            <meshStandardMaterial
-              color={c('trim')}
-              emissive={'#ffd9a0'}
-              emissiveIntensity={(1.4 * level) * lit}
-            />
-          </mesh>
+          {/* Filter panel, recessed into the underside. */}
+          <Slab size={[w - 0.06, 0.014, d - 0.06]} radius={0.01} bevel={0.004} position={[0, hoodY - 0.012, 0]}>
+            {trim()}
+          </Slab>
+          {[-1, 1].map(side => (
+            <mesh key={side} position={[side * w * 0.28, hoodY - 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[Math.min(0.05, w * 0.09), SEG]} />
+              <meshStandardMaterial color={c('trim')} emissive={'#ffd9a0'} emissiveIntensity={1.4 * level * lit} />
+            </mesh>
+          ))}
+          {/* Control buttons on the front lip. */}
+          {[-1, 0, 1].map(i => (
+            <mesh key={i} position={[w * 0.3 + i * 0.035, hoodY + canopy * 0.4, d / 2 + 0.002]}>
+              <cylinderGeometry args={[0.008, 0.008, 0.004, 10]} />
+              {trim()}
+            </mesh>
+          ))}
         </group>
       )
     }
     case 'kitchen_sink': {
+      // An undermount bowl: a rim flush with the worktop, a hollow with a
+      // drain in it and a tall lever tap behind.
       const w = p('width')
       const d = p('depth')
+      const wall = 0.035
       return (
         <group>
-          <Slab size={[w, 0.03, d]} radius={0.03} position={[0, -0.03, 0]}>
+          <Slab size={[w, 0.03, d]} radius={0.02} bevel={0.006} position={[0, -0.03, 0]}>
             {body}
           </Slab>
-          <Slab size={[w - 0.08, 0.14, d - 0.08]} radius={0.04} position={[0, -0.17, 0]}>
+          {/* Bowl walls and floor, so the sink reads as hollow. */}
+          <Slab size={[w - wall * 2, 0.13, d - wall * 2]} radius={0.03} bevel={0.008} position={[0, -0.17, 0]}>
+            <Material color="#dfe5e7" material={m('body')} />
+          </Slab>
+          <Slab size={[w - wall * 4, 0.1, d - wall * 4]} radius={0.025} bevel={0.006} position={[0, -0.145, 0]}>
             {body}
           </Slab>
-          {/* Arched tap at the back. */}
-          <Bar length={0.28} radius={0.014} position={[0, 0.14, -d / 2 + 0.05]}>
-            {trim()}
-          </Bar>
-          <mesh position={[0, 0.28, -d / 2 + 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.06, 0.014, 6, 12, Math.PI]} />
+          <mesh position={[0, -0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.026, 0.026, 0.008, 12]} />
             {trim()}
           </mesh>
+          {/* A tall tap: a straight riser, a curved neck and a lever. */}
+          <mesh position={[0, 0.14, -d / 2 + 0.05]}>
+            <cylinderGeometry args={[0.016, 0.02, 0.28, 12]} />
+            {trim()}
+          </mesh>
+          <mesh position={[0, 0.28, -d / 2 + 0.11]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.06, 0.015, 8, 16, Math.PI]} />
+            {trim()}
+          </mesh>
+          <mesh position={[0, 0.255, -d / 2 + 0.17]}>
+            <cylinderGeometry args={[0.014, 0.014, 0.04, 10]} />
+            {trim()}
+          </mesh>
+          <Bar length={0.07} radius={0.008} rotation={[0.5, 0, Math.PI / 2]} position={[0.035, 0.27, -d / 2 + 0.02]}>
+            {trim()}
+          </Bar>
         </group>
       )
     }
     case 'coffee_machine': {
+      // An espresso machine: a body with a cup recess, a group head with a
+      // portafilter, a steam wand and a cup shelf on top.
       const s = p('size')
       const h = p('height')
       return (
         <group>
-          <Slab size={[s, h * 0.72, s * 0.9]} radius={0.03} position={[0, 0, 0]}>
+          <Slab size={[s, h * 0.75, s * 0.9]} radius={0.025} bevel={0.01} position={[0, 0, 0]}>
             {body}
           </Slab>
-          <Slab size={[s, h * 0.28, s * 0.5]} radius={0.02} position={[0, h * 0.72, -s * 0.2]}>
-            {body}
-          </Slab>
-          <Bar length={s * 0.4} radius={0.012} rotation={[Math.PI / 2, 0, 0]} position={[0, h * 0.42, s * 0.2]}>
+          {/* The cup recess, cut out of the lower front. */}
+          <mesh position={[0, h * 0.14, s * 0.32]}>
+            <boxGeometry args={[s * 0.6, h * 0.28, s * 0.3]} />
+            <Material color="#2f3336" material="matte" />
+          </mesh>
+          <mesh position={[0, 0.012, s * 0.32]}>
+            <boxGeometry args={[s * 0.58, 0.012, s * 0.28]} />
             {trim()}
+          </mesh>
+          {/* Group head and portafilter handle. */}
+          <mesh position={[0, h * 0.44, s * 0.4]}>
+            <cylinderGeometry args={[s * 0.16, s * 0.18, 0.05, SEG]} />
+            {trim()}
+          </mesh>
+          <Bar length={s * 0.34} radius={0.012} rotation={[Math.PI / 2, 0, 0]} position={[0, h * 0.42, s * 0.58]}>
+            <Material color={c('trim')} material="matte" />
           </Bar>
-          <Led on={on} position={[s * 0.3, h * 0.58, s * 0.45]} />
+          {/* Steam wand on the side. */}
+          <mesh position={[s * 0.42, h * 0.5, s * 0.3]} rotation={[0.5, 0, 0.2]}>
+            <cylinderGeometry args={[0.007, 0.009, s * 0.5, 8]} />
+            {trim()}
+          </mesh>
+          {/* Warming shelf and water tank behind it. */}
+          <Slab size={[s, h * 0.25, s * 0.5]} radius={0.02} bevel={0.008} position={[0, h * 0.75, -s * 0.2]}>
+            {body}
+          </Slab>
+          <mesh position={[0, h * 0.755, s * 0.16]}>
+            <boxGeometry args={[s * 0.8, 0.008, s * 0.28]} />
+            {trim()}
+          </mesh>
+          <Led on={on} position={[s * 0.3, h * 0.6, s * 0.46]} />
         </group>
       )
     }
     case 'kettle': {
+      // A stoneware style kettle on its power base: a tapered body, a
+      // gooseneck spout, a lid knob and a handle.
       const r = p('size') / 2
+      const h = r * 2.4
       return (
         <group>
-          <mesh position={[0, r * 1.1, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.82, r, r * 2.2, SEG]} />
+          <mesh position={[0, 0.012, 0]}>
+            <cylinderGeometry args={[r * 1.05, r * 1.1, 0.024, SEG * 2]} />
+            {trim()}
+          </mesh>
+          <mesh position={[0, 0.024 + h / 2, 0]} castShadow>
+            <cylinderGeometry args={[r * 0.8, r, h, SEG * 2]} />
             <Material
               color={c('body')}
               material={m('body')}
               emissive={[1, 0.6, 0.3]}
-              emissiveIntensity={(0.25) * lit}
+              emissiveIntensity={0.25 * lit}
             />
           </mesh>
-          <mesh position={[r * 0.9, r * 1.4, 0]} rotation={[0, 0, 0.5]}>
-            <torusGeometry args={[r * 0.55, r * 0.09, 6, 12, Math.PI * 1.1]} />
-            <Material color={c('trim')} material={m('trim')} />
+          {/* Lid and knob. */}
+          <mesh position={[0, h + 0.03, 0]}>
+            <cylinderGeometry args={[r * 0.78, r * 0.82, 0.02, SEG * 2]} />
+            {trim()}
           </mesh>
-          <Bar length={r * 0.7} radius={r * 0.12} rotation={[0, 0, -0.9]} position={[-r * 0.85, r * 1.7, 0]}>
+          <mesh position={[0, h + 0.05, 0]}>
+            <sphereGeometry args={[r * 0.16, 10, 8]} />
+            {trim()}
+          </mesh>
+          {/* Gooseneck spout, rising and curling forward. */}
+          <mesh position={[r * 0.72, h * 0.55, 0]} rotation={[0, 0, -0.25]}>
+            <cylinderGeometry args={[r * 0.1, r * 0.13, h * 0.75, 10]} />
             <Material color={c('body')} material={m('body')} />
-          </Bar>
+          </mesh>
+          <mesh position={[r * 0.98, h * 0.95, 0]} rotation={[Math.PI / 2, 0, 0.6]}>
+            <torusGeometry args={[r * 0.28, r * 0.09, 6, 12, Math.PI * 0.8]} />
+            <Material color={c('body')} material={m('body')} />
+          </mesh>
+          {/* Handle, a loop off the back. */}
+          <mesh position={[-r * 0.95, h * 0.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.5, r * 0.09, 6, 14, Math.PI]} />
+            {trim()}
+          </mesh>
         </group>
       )
     }
-
     // Laundry
     case 'washing_machine':
     case 'dryer': {
@@ -343,10 +456,20 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               </Slab>
             ))
           )}
-          {/* Control strip along the top. */}
+          {/* Control strip along the top, with a dial and, on the washer,
+              the detergent drawer beside it. */}
           <Slab size={[w - 0.05, 0.055, 0.015]} radius={0.01} position={[0, h - 0.11, d / 2]}>
             {trim()}
           </Slab>
+          <mesh position={[w / 2 - 0.09, h - 0.082, d / 2 + 0.018]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.026, 0.028, 0.02, 12]} />
+            {body}
+          </mesh>
+          {kind.id === 'washing_machine' && (
+            <Slab size={[w * 0.34, 0.07, 0.016]} radius={0.008} position={[-w * 0.24, h - 0.2, d / 2]}>
+              {body}
+            </Slab>
+          )}
           <Led on={on} position={[-w / 2 + 0.07, h - 0.085, d / 2 + 0.02]} />
         </group>
       )
