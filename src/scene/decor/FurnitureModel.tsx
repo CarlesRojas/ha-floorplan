@@ -211,9 +211,10 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'stool': {
-      // Three splayed legs under a round oak seat.
+      // Three splayed legs under a dished oak seat, tied by a stretcher.
       const r = p('size') / 2
       const h = p('height')
+      const feet = r * 0.72
       return (
         <group>
           {[0, 1, 2].map(i => {
@@ -221,56 +222,107 @@ export default function FurnitureModel({ kind, item }: Props) {
             return (
               <mesh
                 key={i}
-                position={[Math.cos(a) * r * 0.5, h / 2, Math.sin(a) * r * 0.5]}
-                rotation={[Math.sin(a) * 0.13, 0, -Math.cos(a) * 0.13]}
+                position={[Math.cos(a) * feet * 0.5, h / 2, Math.sin(a) * feet * 0.5]}
+                rotation={[Math.sin(a) * 0.16, 0, -Math.cos(a) * 0.16]}
                 castShadow
               >
-                <cylinderGeometry args={[0.02, 0.014, h, 8]} />
+                <cylinderGeometry args={[0.019, 0.013, h, 8]} />
                 {body}
               </mesh>
             )
           })}
-          <mesh position={[0, h + 0.02, 0]} castShadow>
-            <cylinderGeometry args={[r, r, 0.04, SEG]} />
+          {/* Stretcher ring, low between the legs. */}
+          <mesh position={[0, h * 0.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.52, 0.008, 6, SEG]} />
+            {body}
+          </mesh>
+          <mesh position={[0, h + 0.018, 0]} castShadow>
+            <cylinderGeometry args={[r, r * 0.94, 0.036, SEG * 2]} />
+            {body}
+          </mesh>
+          {/* The seat is dished, so the rim stands a little proud of the
+              middle rather than reading as a flat disc. */}
+          <mesh position={[0, h + 0.05, 0]} scale={[r * 0.98, 0.03, r * 0.98]}>
+            <sphereGeometry args={[1, SEG * 2, SEG, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5]} />
+            {body}
+          </mesh>
+          <mesh position={[0, h + 0.036, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.97, 0.012, 6, SEG * 2]} />
             {body}
           </mesh>
         </group>
       )
     }
     case 'bench': {
+      // A slatted oak bench on splayed legs, with a rail tying them.
       const w = p('width')
       const d = p('depth')
       const h = 0.45
+      const slats = Math.max(3, Math.round(d / 0.09))
+      const gap = d / slats
       return (
         <group>
-          <Legs width={w} depth={d} height={h} inset={0.1} top={0.024} bottom={0.016}>
+          <Legs
+            width={w}
+            depth={d}
+            height={h}
+            inset={0.1}
+            top={0.024}
+            bottom={0.016}
+            columns={w > 1.6 ? 3 : 2}
+            splay={0.05}
+          >
             {body}
           </Legs>
-          <Slab size={[w, 0.05, d]} radius={0.04} position={[0, h, 0]}>
-            {body}
-          </Slab>
+          {/* Side rails, under the slats. */}
+          {[-1, 1].map(side => (
+            <mesh key={side} position={[0, h - 0.045, (side * (d - 0.14)) / 2]}>
+              <boxGeometry args={[w - 0.14, 0.03, 0.022]} />
+              {body}
+            </mesh>
+          ))}
+          {Array.from({ length: slats }).map((_, i) => (
+            <Slab
+              key={i}
+              size={[w, 0.028, gap * 0.78]}
+              radius={0.008}
+              bevel={0.004}
+              position={[0, h, -d / 2 + gap * (i + 0.5)]}
+            >
+              {body}
+            </Slab>
+          ))}
         </group>
       )
     }
     case 'pouf': {
-      // A soft fabric drum, slightly wider at the middle.
+      // A knitted pouf: a barrelled drum with a seam around the middle and
+      // a dimple where the cord is tied in the top.
       const r = p('size') / 2
       const h = p('height')
-      // A soft fabric drum, slightly barrelled.
       return (
         <group>
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.95, r * 0.88, h, SEG]} />
-            <Material color={c('body')} material={m('body')} />
+          <mesh position={[0, h * 0.48, 0]} castShadow>
+            <cylinderGeometry args={[r * 0.93, r * 0.86, h * 0.96, SEG * 2]} />
+            <Material color={c('body')} material={m('body')} repeat={8} />
           </mesh>
-          <mesh position={[0, h * 0.55, 0]} scale={[r, h * 0.42, r]}>
+          <mesh position={[0, h * 0.52, 0]} scale={[r, h * 0.42, r]}>
+            <sphereGeometry args={[1, SEG * 2, SEG]} />
+            <Material color={c('body')} material={m('body')} repeat={8} />
+          </mesh>
+          {/* The seam, a soft cord right around the widest point. */}
+          <mesh position={[0, h * 0.52, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.99, r * 0.045, 6, SEG * 2]} />
+            <Material color={c('body')} material={m('body')} repeat={8} />
+          </mesh>
+          {/* Top dimple. */}
+          <mesh position={[0, h * 0.99, 0]} scale={[r * 0.4, h * 0.08, r * 0.4]}>
             <sphereGeometry args={[1, SEG, SEG]} />
-            <Material color={c('body')} material={m('body')} />
+            <Material color={c('body')} material={m('body')} repeat={4} />
           </mesh>
         </group>
       )
     }
-
     // Tables
     case 'dining_table':
     case 'desk':
@@ -375,28 +427,45 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'nightstand': {
+      // A small cabinet on tapered legs: one or two drawers, a slim pull
+      // each, depending on how tall it is.
       const w = p('width')
       const d = p('depth')
       const h = p('height')
       const legH = 0.16
+      const carcass = h - legH
+      const drawers = carcass > 0.42 ? 2 : 1
+      const dh = (carcass - 0.03) / drawers
       return (
         <group>
-          <Legs width={w} depth={d} height={legH} inset={0.05} top={0.02} bottom={0.014}>
+          <Legs width={w} depth={d} height={legH} inset={0.05} top={0.02} bottom={0.014} splay={0.05}>
             {body}
           </Legs>
-          <Slab size={[w, h - legH, d]} radius={0.03} position={[0, legH, 0]}>
+          <Slab size={[w, carcass, d]} radius={0.025} position={[0, legH, 0]}>
             {body}
           </Slab>
-          <Panel size={[w - 0.06, (h - legH) * 0.42, 0.015]} position={[0, legH + (h - legH) * 0.5, d / 2]}>
-            <Material color={c('body')} material={m('body')} />
-          </Panel>
-          <Knob position={[0, legH + (h - legH) * 0.72, d / 2 + 0.02]}>
-            <Material color={c('body')} material="metal" />
-          </Knob>
+          {Array.from({ length: drawers }).map((_, i) => (
+            <group key={i}>
+              <Panel
+                size={[w - 0.03, dh - 0.012, 0.016]}
+                position={[0, legH + 0.015 + dh * i, d / 2 + 0.006]}
+                radius={0.01}
+              >
+                <Material color={c('body')} material={m('body')} />
+              </Panel>
+              <Bar
+                length={w * 0.34}
+                radius={0.007}
+                rotation={[0, 0, Math.PI / 2]}
+                position={[0, legH + 0.015 + dh * (i + 0.72), d / 2 + 0.028]}
+              >
+                <Material color={c('body')} material="metal" />
+              </Bar>
+            </group>
+          ))}
         </group>
       )
     }
-
     // Storage
     case 'bookshelf': {
       // Open case with a back, standing on a recessed plinth. Shelves are
