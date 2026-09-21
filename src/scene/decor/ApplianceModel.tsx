@@ -70,17 +70,25 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           <Slab size={[w, h - topH - plinth, d]} radius={0.02} position={[0, plinth, 0]}>
             {body}
           </Slab>
-          {/* Handleless fronts with a shadow gap between them. */}
+          {/* Handleless fronts with a shadow gap between them, each bay a
+              drawer over a door the way a run of base units is built. */}
           {Array.from({ length: cols }).map((_, i) => {
             const cw = w / cols
+            const x = -w / 2 + cw * (i + 0.5)
+            const frontH = h - topH - plinth - 0.02
+            const drawerH = Math.min(0.16, frontH * 0.3)
             return (
-              <Panel
-                key={i}
-                size={[cw - 0.015, h - topH - plinth - 0.02, 0.018]}
-                position={[-w / 2 + cw * (i + 0.5), plinth + 0.01, d / 2]}
-              >
-                {body}
-              </Panel>
+              <group key={i}>
+                <Panel
+                  size={[cw - 0.015, drawerH, 0.018]}
+                  position={[x, plinth + frontH - drawerH + 0.01, d / 2]}
+                >
+                  {body}
+                </Panel>
+                <Panel size={[cw - 0.015, frontH - drawerH - 0.012, 0.018]} position={[x, plinth + 0.01, d / 2]}>
+                  {body}
+                </Panel>
+              </group>
             )
           })}
           {/* Oak worktop with a slight overhang. */}
@@ -171,7 +179,15 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           <Bar length={w - 0.12} radius={0.011} rotation={[0, 0, Math.PI / 2]} position={[0, h - 0.07, d / 2 + 0.035]}>
             {trim()}
           </Bar>
-          <Led on={on} position={[w / 2 - 0.06, h - 0.035, d / 2 + 0.012]} />
+          {/* Control knobs either side of the panel above the door. */}
+          {kind.id === 'oven' &&
+            [-1, 1].map(side => (
+              <mesh key={side} position={[side * (w / 2 - 0.07), h - 0.035, d / 2 + 0.012]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.018, 0.02, 0.022, 12]} />
+                {trim()}
+              </mesh>
+            ))}
+          <Led on={on} position={[kind.id === 'oven' ? 0 : w / 2 - 0.06, h - 0.035, d / 2 + 0.012]} />
         </group>
       )
     }

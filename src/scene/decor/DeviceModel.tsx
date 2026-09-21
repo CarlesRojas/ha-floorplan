@@ -180,20 +180,26 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'speaker': {
-      // A fabric wrapped cylinder on a small oak foot.
+      // A smart speaker: a fabric drum with a hard top plate, sitting on a
+      // small recessed foot.
       const r = p('size') / 2
       const h = p('height')
       return (
         <group>
-          <mesh position={[0, 0.012, 0]}>
-            <cylinderGeometry args={[r * 0.9, r * 0.95, 0.024, SEG]} />
+          <mesh position={[0, 0.008, 0]}>
+            <cylinderGeometry args={[r * 0.86, r * 0.9, 0.016, SEG]} />
             {trim()}
           </mesh>
-          <mesh position={[0, h / 2 + 0.02, 0]} castShadow>
-            <cylinderGeometry args={[r, r, h, SEG]} />
-            {body}
+          <mesh position={[0, h / 2 + 0.016, 0]} castShadow>
+            <cylinderGeometry args={[r, r * 0.98, h - 0.03, SEG]} />
+            <Material color={c('body')} material={m('body')} repeat={18} />
           </mesh>
-          <Led on={on} position={[0, h + 0.03, 0]} radius={0.008} />
+          {/* Top plate, slightly dished, where the buttons would be. */}
+          <mesh position={[0, h + 0.002, 0]}>
+            <cylinderGeometry args={[r * 0.99, r, 0.02, SEG]} />
+            {trim()}
+          </mesh>
+          <Led on={on} position={[0, h + 0.014, r * 0.45]} radius={0.007} />
         </group>
       )
     }
@@ -405,21 +411,25 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'thermostat': {
-      // A round dial with a dark face, as a wall puck.
+      // A round dial: a steel ring around a face that lights when it runs.
       const r = p('size') / 2
       return (
         <group>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.02]}>
-            <cylinderGeometry args={[r, r * 0.92, 0.04, SEG]} />
-            {body}
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.012]}>
+            <cylinderGeometry args={[r * 0.72, r * 0.72, 0.024, SEG]} />
+            {trim()}
           </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.042]}>
-            <cylinderGeometry args={[r * 0.7, r * 0.7, 0.006, SEG]} />
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.034]}>
+            <cylinderGeometry args={[r, r * 0.96, 0.03, SEG]} />
+            <Material color={c('body')} material="metal" />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
+            <cylinderGeometry args={[r * 0.82, r * 0.82, 0.004, SEG]} />
             <Material
               color={c('face')}
               material={m('face')}
               emissive={[1, 0.6, 0.35]}
-              emissiveIntensity={(0.9) * lit}
+              emissiveIntensity={0.9 * lit}
             />
           </mesh>
         </group>
@@ -635,21 +645,34 @@ export default function DeviceModel({ kind, item, state }: Props) {
 
     // Security and small fittings
     case 'camera': {
+      // A matte body on a short stand, the way every indoor camera looks
+      // now: a dark glass face ringed by the shell, aimed into the room.
       const r = p('size') / 2
       return (
         <group>
-          <Bar length={0.07} radius={0.012} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.035]}>
-            {body}
+          {/* Plate against the wall and the stem out of it. */}
+          <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[r * 0.72, r * 0.8, 0.024, SEG]} />
+            {trim()}
+          </mesh>
+          <Bar length={0.05} radius={0.011} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.045]}>
+            {trim()}
           </Bar>
+          {/* Body: a rounded drum lying on its side. */}
           <mesh position={[0, 0, 0.1]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <capsuleGeometry args={[r, r * 1.1, 4, SEG]} />
+            <capsuleGeometry args={[r, r * 0.5, 6, SEG]} />
             {body}
           </mesh>
-          <mesh position={[0, 0, 0.16]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[r * 0.6, r * 0.6, 0.012, SEG]} />
+          {/* The face: black glass, with the lens sunk into it. */}
+          <mesh position={[0, 0, 0.132]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[r * 0.88, r * 0.94, 0.01, SEG]} />
             <Material color={c('lens')} material={m('lens')} />
           </mesh>
-          <Led on={on} position={[r * 0.6, r * 0.6, 0.158]} color="#e8846a" radius={0.007} />
+          <mesh position={[0, 0, 0.138]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[r * 0.4, r * 0.44, 0.008, SEG]} />
+            <Material color="#0d1013" material="ceramic" />
+          </mesh>
+          <Led on={on} position={[0, -r * 0.62, 0.135]} color="#e8846a" radius={0.006} />
         </group>
       )
     }
@@ -756,26 +779,43 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'vacuum_robot': {
-      // A low disc with a bumper band and a spinning brush when it runs.
+      // A low puck: a bumper wrapping the front half, a lidar turret set
+      // back on the top plate, and a side brush that spins while it runs.
       const r = p('size') / 2
+      const h = 0.085
       return (
         <group>
-          <mesh position={[0, 0.045, 0]} castShadow>
-            <cylinderGeometry args={[r, r * 0.97, 0.09, SEG]} />
+          <mesh position={[0, h / 2, 0]} castShadow>
+            <cylinderGeometry args={[r, r * 0.98, h, SEG]} />
             {body}
           </mesh>
-          <mesh position={[0, 0.03, 0]}>
-            <cylinderGeometry args={[r * 1.01, r * 1.01, 0.03, SEG]} />
+          {/* Bumper, the front half of the rim only. */}
+          <mesh position={[0, h * 0.34, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <cylinderGeometry args={[r * 1.02, r * 1.02, h * 0.42, SEG, 1, true, 0, Math.PI]} />
+            <Material color={c('trim')} material={m('trim')} doubleSide />
+          </mesh>
+          {/* Lidar turret, behind the middle. */}
+          <mesh position={[0, h + 0.012, -r * 0.34]}>
+            <cylinderGeometry args={[r * 0.3, r * 0.32, 0.024, SEG]} />
             {trim()}
           </mesh>
-          <mesh position={[0, 0.093, 0]}>
-            <cylinderGeometry args={[r * 0.3, r * 0.3, 0.012, SEG]} />
+          <mesh position={[0, h + 0.026, -r * 0.34]}>
+            <cylinderGeometry args={[r * 0.26, r * 0.28, 0.006, SEG]} />
+            <Material color={c('body')} material={m('body')} />
+          </mesh>
+          {/* A round button in front of the turret. */}
+          <mesh position={[0, h + 0.002, r * 0.3]}>
+            <cylinderGeometry args={[r * 0.16, r * 0.16, 0.006, SEG]} />
             {trim()}
           </mesh>
-          <Led on={on} position={[0, 0.098, r * 0.55]} radius={0.009} />
+          <Led on={on} position={[0, h + 0.008, r * 0.62]} radius={0.007} />
           <Spinner speed={9 * lit}>
-            <mesh position={[r * 0.75, 0.012, 0]}>
-              <boxGeometry args={[r * 0.5, 0.006, 0.018]} />
+            <mesh position={[r * 0.72, 0.01, 0]}>
+              <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
+              <Material color={c('trim')} material={m('trim')} />
+            </mesh>
+            <mesh position={[-r * 0.72, 0.01, 0]}>
+              <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
               <Material color={c('trim')} material={m('trim')} />
             </mesh>
           </Spinner>
