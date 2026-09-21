@@ -117,13 +117,18 @@ export default function DeviceModel({ kind, item, state }: Props) {
 
   // A dark panel that plays a picture when the device is on and is a black
   // mirror when it is off.
+  // A modern panel: nearly frameless, thin at the edge, with the
+  // electronics in a box behind the lower half.
   const screen = (w: number, h: number, z: number) => (
     <group>
-      <Slab size={[w, h, 0.035]} radius={0.012} bevel={0.005} position={[0, 0, z]}>
+      <Slab size={[w, h, 0.016]} radius={0.008} bevel={0.004} position={[0, 0, z]}>
         {body}
       </Slab>
-      <mesh position={[0, h / 2, z + 0.021]}>
-        <planeGeometry args={[w - 0.03, h - 0.03]} />
+      <Slab size={[w * 0.55, h * 0.4, 0.032]} radius={0.012} bevel={0.006} position={[0, h * 0.05, z - 0.024]}>
+        {body}
+      </Slab>
+      <mesh position={[0, h / 2, z + 0.0095]}>
+        <planeGeometry args={[w - 0.012, h - 0.012]} />
         {on ? (
           <ScreenMaterial />
         ) : (
@@ -136,13 +141,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
   switch (kind.id) {
     // Media
     case 'tv': {
+      // A panel on a low blade foot, the way a Nordic set is stood on a
+      // sideboard.
       const [w, h] = screenSize(p('inches'))
+      const foot = Math.max(0.28, w * 0.26)
       return (
         <group>
-          <Slab size={[w * 0.3, 0.02, 0.22]} radius={0.02} position={[0, 0, 0]}>
+          <Slab size={[foot, 0.016, 0.24]} radius={0.02} bevel={0.005} position={[0, 0, 0]}>
             <Material color={c('stand')} material={m('stand')} />
           </Slab>
-          <Slab size={[0.05, 0.1, 0.05]} radius={0.015} position={[0, 0.02, 0]}>
+          {/* The neck, a flat blade rather than a post. */}
+          <Slab size={[foot * 0.5, 0.11, 0.03]} radius={0.01} bevel={0.005} position={[0, 0.016, 0]}>
             <Material color={c('stand')} material={m('stand')} />
           </Slab>
           <group position={[0, 0.12, 0]}>{screen(w, h, 0)}</group>
@@ -153,29 +162,59 @@ export default function DeviceModel({ kind, item, state }: Props) {
     case 'monitor': {
       const [w, h] = kind.id === 'monitor' ? [p('width'), p('width') * p('ratio')] : screenSize(p('inches'))
       if (kind.id === 'monitor') {
+        // A desk monitor: an oval base plate, an upright arm and a small
+        // hinge block behind the panel.
         return (
           <group>
-            <Slab size={[w * 0.35, 0.015, 0.16]} radius={0.02} position={[0, 0, 0]}>
+            <mesh position={[0, 0.008, 0.02]} scale={[1, 1, 0.55]}>
+              <cylinderGeometry args={[w * 0.19, w * 0.2, 0.016, SEG * 2]} />
+              <Material color={c('stand')} material={m('stand')} />
+            </mesh>
+            <Slab size={[0.05, 0.16, 0.025]} radius={0.012} bevel={0.005} position={[0, 0.014, 0.02]}>
               <Material color={c('stand')} material={m('stand')} />
             </Slab>
-            <Bar length={0.14} radius={0.016} position={[0, 0.08, 0]}>
+            <Slab size={[0.09, 0.07, 0.035]} radius={0.012} bevel={0.006} position={[0, 0.13, 0.008]}>
               <Material color={c('stand')} material={m('stand')} />
-            </Bar>
-            <group position={[0, 0.14, 0]}>{screen(w, h, 0)}</group>
+            </Slab>
+            <group position={[0, 0.16, 0]}>{screen(w, h, 0)}</group>
           </group>
         )
       }
       return <group position={[0, -h / 2, 0]}>{screen(w, h, 0.03)}</group>
     }
     case 'soundbar': {
+      // A fabric wrapped bar with hard end caps and a control strip on top.
       const w = p('width')
       const h = p('height')
+      const d = 0.1
       return (
         <group>
-          <Slab size={[w, h, 0.09]} radius={h / 2.2} position={[0, 0, 0]}>
-            {body}
+          <Slab size={[w, h, d]} radius={h / 2.4} bevel={0.008} position={[0, 0, 0]}>
+            <Material color={c('body')} material={m('body')} repeat={w * 12} />
           </Slab>
-          <Led on={on} position={[0, h / 2, 0.048]} radius={0.008} />
+          {[-1, 1].map(side => (
+            <Slab
+              key={side}
+              size={[0.022, h, d]}
+              radius={h / 2.6}
+              bevel={0.006}
+              position={[(side * (w - 0.02)) / 2, 0, 0]}
+            >
+              {trim()}
+            </Slab>
+          ))}
+          {/* Control strip and feet. */}
+          <mesh position={[0, h + 0.001, -d * 0.2]}>
+            <boxGeometry args={[w * 0.3, 0.004, d * 0.3]} />
+            {trim()}
+          </mesh>
+          {[-1, 1].map(side => (
+            <mesh key={side} position={[side * w * 0.36, 0.004, 0]}>
+              <cylinderGeometry args={[0.012, 0.012, 0.008, 8]} />
+              {trim()}
+            </mesh>
+          ))}
+          <Led on={on} position={[0, h * 0.4, d / 2 + 0.002]} radius={0.007} />
         </group>
       )
     }
@@ -204,50 +243,121 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'floor_speaker': {
+      // A slim tower on a plinth: a fabric front over the drivers, with a
+      // wooden cabinet behind it.
       const w = p('width')
       const h = p('height')
+      const d = w * 0.85
+      const drivers = 2
       return (
         <group>
-          <Slab size={[w * 1.2, 0.03, w * 1.2]} radius={0.02} position={[0, 0, 0]}>
+          <Slab size={[w * 1.25, 0.022, d * 1.2]} radius={0.02} bevel={0.006} position={[0, 0, 0]}>
             {trim()}
           </Slab>
-          <Slab size={[w, h - 0.03, w * 0.85]} radius={w * 0.35} position={[0, 0.03, 0]}>
-            {body}
+          {/* Small feet, lifting the cabinet off the plinth. */}
+          {[-1, 1].flatMap(sx =>
+            [-1, 1].map(sz => (
+              <mesh key={`${sx}:${sz}`} position={[sx * w * 0.36, 0.03, sz * d * 0.36]}>
+                <cylinderGeometry args={[0.012, 0.012, 0.016, 8]} />
+                {trim()}
+              </mesh>
+            )),
+          )}
+          <Slab size={[w, h - 0.06, d]} radius={w * 0.18} bevel={0.012} position={[0, 0.038, 0]}>
+            <Material color={c('trim')} material={m('trim')} />
           </Slab>
-          <Led on={on} position={[0, h - 0.06, w * 0.44]} radius={0.008} />
+          {/* The grille, a fabric panel proud of the front face. */}
+          <Slab size={[w - 0.02, h - 0.12, 0.016]} radius={w * 0.14} bevel={0.006} position={[0, 0.068, d / 2]}>
+            <Material color={c('body')} material={m('body')} repeat={h * 14} />
+          </Slab>
+          {/* Driver rings, showing through the grille. */}
+          {Array.from({ length: drivers }).map((_, i) => (
+            <mesh
+              key={i}
+              position={[0, h * (0.32 + i * 0.36), d / 2 + 0.005]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <torusGeometry args={[w * (i === 0 ? 0.3 : 0.22), 0.006, 6, SEG]} />
+              {trim()}
+            </mesh>
+          ))}
+          <Led on={on} position={[0, h - 0.07, d / 2 + 0.012]} radius={0.007} />
         </group>
       )
     }
     case 'game_console': {
+      // A console standing on its edge on a small cradle, with a vent slot
+      // down the side.
       const w = p('width')
       const h = p('height')
+      const tall = w * 0.9
       return (
         <group>
-          <Slab size={[w, h, w * 0.6]} radius={0.015} position={[0, 0, 0]}>
+          <mesh position={[0, 0.008, 0]} scale={[1, 1, 0.6]}>
+            <cylinderGeometry args={[w * 0.34, w * 0.36, 0.016, SEG]} />
+            {trim()}
+          </mesh>
+          <Slab size={[h * 1.9, tall, w * 0.52]} radius={h * 0.3} bevel={0.008} position={[0, 0.016, 0]}>
             {body}
           </Slab>
-          <Led on={on} position={[w / 2 - 0.03, h / 2, w * 0.3 + 0.005]} color="#7fb3e8" radius={0.008} />
+          {/* Side panel, the two tone front the current consoles have. */}
+          <Slab
+            size={[h * 0.5, tall * 0.92, w * 0.54]}
+            radius={h * 0.2}
+            bevel={0.006}
+            position={[h * 0.75, 0.024, 0]}
+          >
+            {trim()}
+          </Slab>
+          {/* Vent slots along the top. */}
+          {[0, 1, 2].map(i => (
+            <mesh key={i} position={[-h * 0.3 + i * h * 0.25, tall + 0.018, 0]}>
+              <boxGeometry args={[h * 0.12, 0.004, w * 0.36]} />
+              {trim()}
+            </mesh>
+          ))}
+          <Led on={on} position={[0, tall * 0.2, w * 0.27]} color="#7fb3e8" radius={0.006} />
         </group>
       )
     }
     case 'projector': {
+      // A ceiling projector: a boxy body on a drop arm, with a lens barrel
+      // at the front and vents on the side.
       const s = p('size')
       return (
         <group position={[0, -0.18, 0]}>
-          <Bar length={0.16} radius={0.014} position={[0, 0.24, 0]}>
+          <mesh position={[0, 0.3, 0]}>
+            <cylinderGeometry args={[0.055, 0.06, 0.02, SEG]} />
+            {trim()}
+          </mesh>
+          <Bar length={0.16} radius={0.013} position={[0, 0.235, 0]}>
             {trim()}
           </Bar>
-          <Slab size={[s, s * 0.5, s * 0.8]} radius={0.025} position={[0, 0, 0]}>
+          {/* The yoke that holds the body. */}
+          <mesh position={[0, s * 0.53, 0]}>
+            <boxGeometry args={[s * 0.5, 0.012, s * 0.2]} />
+            {trim()}
+          </mesh>
+          <Slab size={[s, s * 0.46, s * 0.82]} radius={0.022} bevel={0.01} position={[0, 0, 0]}>
             {body}
           </Slab>
-          <mesh position={[0, s * 0.25, s * 0.4]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[s * 0.16, s * 0.16, 0.03, SEG]} />
-            <meshStandardMaterial
-              color="#2f3336"
-              emissive={'#cfe4f5'}
-              emissiveIntensity={(2) * lit}
-            />
+          {/* Vent grille on one side. */}
+          {[0, 1, 2, 3].map(i => (
+            <mesh key={i} position={[s / 2 + 0.002, s * 0.12 + i * s * 0.07, -s * 0.1]}>
+              <boxGeometry args={[0.004, s * 0.035, s * 0.4]} />
+              {trim()}
+            </mesh>
+          ))}
+          {/* Lens barrel, stepping out of the front face. */}
+          <mesh position={[0, s * 0.24, s * 0.45]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[s * 0.19, s * 0.21, 0.05, SEG]} />
+            {trim()}
           </mesh>
+          <mesh position={[0, s * 0.24, s * 0.48]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[s * 0.15, s * 0.15, 0.03, SEG]} />
+            <meshStandardMaterial color="#2f3336" emissive="#cfe4f5" emissiveIntensity={2 * lit} />
+          </mesh>
+          <Led on={on} position={[s * 0.3, s * 0.05, s * 0.42]} radius={0.006} />
         </group>
       )
     }
