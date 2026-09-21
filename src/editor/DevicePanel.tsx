@@ -1,7 +1,10 @@
 import { deviceType, entityName, placeableEntities, typesFor, type EntityInfo } from '#/devices/catalog.ts'
+import { SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
+import { deviceSignals, levelChannels } from '#/signals.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
-import type { Area, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
+import { decorationKind, itemLevels } from '#/decoration/catalog.ts'
+import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { faPlus, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useState } from 'react'
@@ -9,10 +12,10 @@ import { useState } from 'react'
 type Props = {
   hass: HomeAssistant | null
   rooms: RoomConfig[]
-  room: RoomConfig | null
   devices: DeviceConfig[]
+  decorations: DecorationConfig[]
+  onBindDecoration: (entityId: string, decorationId: string, bound: boolean) => void
   selected: string | null
-  onAssignArea: (roomId: string, areaId: string | undefined) => void
   onSelect: (entityId: string | null) => void
   onAdd: (entity: EntityInfo) => void
   onUpdate: (entityId: string, patch: Partial<DeviceConfig>) => void
@@ -26,58 +29,23 @@ const accent = EDITOR_MODE_COLORS.devices
 export default function DevicePanel({
   hass,
   rooms,
-  room,
   devices,
+  decorations,
+  onBindDecoration,
   selected,
-  onAssignArea,
   onSelect,
   onAdd,
   onUpdate,
   onRemove,
 }: Props) {
   const [query, setQuery] = useState('')
-  const areas: Area[] = Object.values(hass?.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name))
   const areaName = (id: string | null | undefined) => (id ? (hass?.areas?.[id]?.name ?? id) : undefined)
-
-  const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
-  const header = !room ? (
-    <p className="text-sm text-(--secondary-text-color)">
-      {rooms.length === 0 ? 'Draw rooms in the Rooms mode first.' : 'Pick a room on the canvas to add devices to it.'}
-    </p>
-  ) : (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-semibold">{room.name ?? room.id}</p>
-      <label className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-        Area
-        <select
-          className={input}
-          value={room.area_id ?? ''}
-          onChange={e => onAssignArea(room.id, e.target.value || undefined)}
-        >
-          <option value="">No area</option>
-          {areas.map(a => {
-            const owner = used.get(a.area_id)
-            const taken = owner !== undefined && owner !== room.id
-            return (
-              <option key={a.area_id} value={a.area_id} disabled={taken}>
-                {a.name}
-                {taken ? ' (used)' : ''}
-              </option>
-            )
-          })}
-        </select>
-      </label>
-    </div>
-  )
 
   if (!hass?.entities) {
     return (
-      <div className="flex flex-col gap-3">
-        {header}
-        <p className="text-sm text-(--secondary-text-color)">
-          This Home Assistant version does not expose the entity registry.
-        </p>
-      </div>
+      <p className="text-sm text-(--secondary-text-color)">
+        This Home Assistant version does not expose the entity registry.
+      </p>
     )
   }
 
@@ -94,7 +62,13 @@ export default function DevicePanel({
     .map(id => ({ entity_id: id, name: entityName(hass, id), domain: id.split('.')[0], area_id: null }))
   const q = query.trim().toLowerCase()
   const entities = [...all, ...orphans]
-    .filter(e => !q || e.name.toLowerCase().includes(q) || e.entity_id.toLowerCase().includes(q))
+    .filter(
+      e =>
+        !q ||
+        e.name.toLowerCase().includes(q) ||
+        e.entity_id.toLowerCase().includes(q) ||
+        e.domain.toLowerCase().startsWith(q),
+    )
     .sort((a, b) => a.name.localeCompare(b.name))
   const selectedDevice = selected ? placed.get(selected) : undefined
 
@@ -120,6 +94,7 @@ export default function DevicePanel({
         <div className="min-w-0 text-(--primary-text-color)">
           <p className="flex items-center gap-2 text-sm">
             <span className="truncate">{e.name}</span>
+            <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" />
             {device && (
               <span
                 className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
@@ -137,7 +112,7 @@ export default function DevicePanel({
             </p>
           )}
         </div>
-        {!device && room ? (
+        {!device && rooms.length > 0 ? (
           <button
             type="button"
             aria-label={`Add ${e.name}`}
@@ -157,21 +132,44 @@ export default function DevicePanel({
     )
   }
 
-  return (
-    <div className="flex flex-col gap-3">
-      {header}
-      <input className={input} placeholder="Search entities" value={query} onChange={e => setQuery(e.target.value)} />
-      <div className="flex flex-col gap-1">
-        {entities.length === 0 ? (
-          <p className="px-2 text-xs text-(--secondary-text-color)">No matches.</p>
-        ) : (
-          entities.map(row)
-        )}
-      </div>
-
-      {selectedDevice && (
-        <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-          <p className="truncate text-sm font-semibold">{entityName(hass, selectedDevice.entity_id)}</p>
+  if (selectedDevice) {
+    const signals = deviceSignals(hass, selectedDevice.entity_id)
+    const channels = levelChannels(hass, selectedDevice.entity_id)
+    const deviceRoom = roomOf(selectedDevice.room)
+    const roomTag = deviceRoom ? (
+      <span
+        className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
+        style={{ backgroundColor: roomColor(selectedDevice.room) }}
+      >
+        {deviceRoom.name ?? deviceRoom.id}
+      </span>
+    ) : undefined
+    // Items that can express the most of what this device offers come
+    // first, so binding suggests itself.
+    const score = (item: DecorationConfig) => {
+      const k = decorationKind(item.kind)
+      if (!k) return 0
+      return k.expresses.filter(x => signals.includes(x)).length
+    }
+    const best = Math.max(0, ...decorations.map(score))
+    const suggested = best > 0 ? decorations.filter(d => score(d) === best) : []
+    const rest = decorations.filter(d => !suggested.includes(d))
+    return (
+      <div className="flex flex-col gap-3">
+        <Sticky>
+          <SelectedHeader
+            title={entityName(hass, selectedDevice.entity_id)}
+            tag={roomTag}
+            accent={accent}
+            onBack={() => onSelect(null)}
+          />
+          <p className="truncate text-xs text-(--secondary-text-color)">{selectedDevice.entity_id}</p>
+          <Signals signals={signals} accent={accent} />
+          {signals.length === 0 && (
+            <p className="text-xs text-(--secondary-text-color)">This entity offers nothing an item can show.</p>
+          )}
+        </Sticky>
+        <div className="flex flex-col gap-2">
           <label className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
             Type
             <select
@@ -217,6 +215,90 @@ export default function DevicePanel({
               />
             </label>
           )}
+          {decorations.length > 0 && (
+            <div className="flex flex-col gap-1 border-t border-(--divider-color) pt-3">
+              <p className="text-xs font-semibold text-(--secondary-text-color)">Decoration items standing in for it</p>
+              <p className="text-xs text-(--secondary-text-color)">
+                With none, the device shows as a sphere in 3D. Bound items take its clicks and its state.
+              </p>
+              {[
+                { label: 'Suggested', items: suggested },
+                { label: suggested.length > 0 ? 'Everything else' : 'In the plan', items: rest },
+              ].map(group =>
+                group.items.length === 0 ? null : (
+                  <div key={group.label} className="flex flex-col gap-1">
+                    <p className="mt-1 text-[11px] font-semibold text-(--secondary-text-color)">{group.label}</p>
+                    {group.items.map(item => {
+                      const bound = selectedDevice.decorations?.includes(item.id) ?? false
+                      const owner = devices.find(
+                        d => d.entity_id !== selectedDevice.entity_id && d.decorations?.includes(item.id),
+                      )
+                      const itemRoom = rooms.find(r => r.id === item.room)
+                      const itemKind = decorationKind(item.kind)
+                      return (
+                        <div key={item.id} className="flex flex-col gap-1">
+                          <label
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg px-2 py-1 text-sm',
+                              // An item stands in for one device, so one that
+                              // another device already has is not on offer.
+                              owner && 'opacity-50',
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={bound}
+                              disabled={!!owner}
+                              style={{ accentColor: accent }}
+                              onChange={e => onBindDecoration(selectedDevice.entity_id, item.id, e.target.checked)}
+                            />
+                            <span className="truncate">{itemKind?.label ?? item.kind}</span>
+                            {itemKind && <Signals signals={itemKind.expresses} size="sm" />}
+                            <span className="ml-auto truncate text-xs text-(--secondary-text-color)">
+                              {owner ? `bound to ${entityName(hass, owner.entity_id)}` : (itemRoom?.name ?? item.room)}
+                            </span>
+                          </label>
+                          {/* Which of the device's percentages drives each of
+                            the item's: its position, its tilt. Only worth
+                            asking when there is a choice to make. */}
+                          {bound &&
+                            channels.length > 0 &&
+                            itemKind &&
+                            (channels.length > 1 || itemLevels(itemKind).length > 1) &&
+                            itemLevels(itemKind).map(level => (
+                              <label
+                                key={level.id}
+                                className="ml-6 grid grid-cols-[72px_1fr] items-center gap-2 text-xs"
+                              >
+                                {level.label}
+                                <select
+                                  className={input}
+                                  value={selectedDevice.levels?.[level.id] ?? ''}
+                                  onChange={e =>
+                                    onUpdate(selectedDevice.entity_id, {
+                                      levels: { ...selectedDevice.levels, [level.id]: e.target.value },
+                                    })
+                                  }
+                                >
+                                  <option value="">
+                                    {level.id === 'tilt' ? 'None' : (channels[0]?.label ?? 'None')}
+                                  </option>
+                                  {channels.map(ch => (
+                                    <option key={ch.id} value={ch.id}>
+                                      {ch.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            ))}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ),
+              )}
+            </div>
+          )}
           <button
             type="button"
             onClick={() => onRemove(selectedDevice.entity_id)}
@@ -226,7 +308,22 @@ export default function DevicePanel({
             Remove from plan
           </button>
         </div>
-      )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Sticky>
+        <input className={input} placeholder="Search entities" value={query} onChange={e => setQuery(e.target.value)} />
+      </Sticky>
+      <div className="flex flex-col gap-1">
+        {entities.length === 0 ? (
+          <p className="px-2 text-xs text-(--secondary-text-color)">No matches.</p>
+        ) : (
+          entities.map(row)
+        )}
+      </div>
     </div>
   )
 }

@@ -13,19 +13,25 @@ import {
   EDITOR_GRID_M,
   EDITOR_HANDLE_PX,
 } from '#/constants.ts'
+import { canRide, decorationKind, footprint, isSupport } from '#/decoration/catalog.ts'
+import { ridersOf, standHeight, supportUnder } from '#/decoration/surfaces.ts'
+import { decorationIcon } from '#/decoration/icons.ts'
 import { deviceType } from '#/devices/catalog.ts'
 import type { Mode, Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
+import { snapToWall } from '#/editor/walls.ts'
 import {
+  freePlacement,
   furthestValid,
   isValidRoom,
   pointOnBoundary,
   pointStrictlyInside,
   segmentEntersAny,
 } from '#/geometry/overlap.ts'
+import { shortcut } from '#/lib/shortcuts.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
-import type { DeviceConfig, Point, RoomConfig } from '#/types.ts'
+import { EDITOR_MODE_COLORS, EDITOR_SELECTED_COLOR, ROOM_COLORS } from '#/theme.ts'
+import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useRef, useState } from 'react'
 import { useResizeObserver } from 'usehooks-ts'
@@ -39,6 +45,20 @@ type Props = {
   onSelectDevice: (entityId: string | null) => void
   onRemoveDevice: (entityId: string) => void
   onRotateDevice: (entityId: string) => void
+  decorations: DecorationConfig[]
+  selectedDecoration: string | null
+  onDecorations: (decorations: DecorationConfig[], done: boolean) => void
+  onSelectDecoration: (id: string | null) => void
+  onRemoveDecoration: (id: string) => void
+  onRotateDecoration: (id: string) => void
+  onDuplicateDecoration: (id: string) => void
+  onCopyDecoration: (id: string) => void
+  onPasteDecoration: () => void
+  canPaste: boolean
+  onDuplicateRoom: (roomId: string) => void
+  // Fresh ids, so a copy made mid drag can be dragged right away.
+  newDecorationId: (kindId: string) => string
+  newRoomName: () => { id: string; name: string }
   tool: Tool
   showLengths: boolean
   selection: Selection
@@ -61,12 +81,15 @@ type Drag =
   | { kind: 'edge'; roomId: string; index: number; start: Point; origin: Point[] }
   | { kind: 'room'; roomId: string; start: Point; origin: Point[] }
   | { kind: 'device'; entityId: string; start: Point; origin: Point }
+  | { kind: 'decoration'; id: string; start: Point; origin: Point }
+  | { kind: 'rotate'; id: string; center: Point }
 
 type Menu =
   | { kind: 'vertex'; roomId: string; index: number }
   | { kind: 'edge'; roomId: string; index: number; point: Point }
   | { kind: 'room'; roomId: string }
   | { kind: 'device'; entityId: string }
+  | { kind: 'decoration'; id: string }
   | { kind: 'canvas' }
 
 const HANDLE = EDITOR_HANDLE_PX
@@ -81,6 +104,19 @@ export default function Canvas({
   onSelectDevice,
   onRemoveDevice,
   onRotateDevice,
+  decorations,
+  selectedDecoration,
+  onDecorations,
+  onSelectDecoration,
+  onRemoveDecoration,
+  onRotateDecoration,
+  onDuplicateDecoration,
+  onCopyDecoration,
+  onPasteDecoration,
+  canPaste,
+  onDuplicateRoom,
+  newDecorationId,
+  newRoomName,
   tool,
   showLengths,
   selection,
@@ -113,14 +149,35 @@ export default function Canvas({
   // its room, lands on the last valid spot.
   const liveDevices = useRef<DeviceConfig[] | null>(null)
   const [draggingDevice, setDraggingDevice] = useState<string | null>(null)
+  const liveDecorations = useRef<DecorationConfig[] | null>(null)
+  const [draggingDecoration, setDraggingDecoration] = useState<string | null>(null)
+  // The item a dragged one would come to rest on, highlighted while it is
+  // over it.
+  const [hoverSupport, setHoverSupport] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
+  // The room a drag just copied, so an overlapping release can be resolved
+  // to a free spot instead of landing on top of the original.
+  const duplicatedRoom = useRef<string | null>(null)
+  // While a copy is being dragged out, the room it came from does not block
+  // it, so the drag follows the pointer instead of sticking to the original.
+  const duplicateSource = useRef<string | null>(null)
   const [menu, setMenu] = useState<{ at: ContextMenuPosition; target: Menu } | null>(null)
 
-  // The view only changes on pan, zoom, fit or auto-pan. It is fitted once
-  // when unset, never re-fitted as rooms change.
+  // The view only changes on pan, zoom, fit or auto-pan. It is fitted when
+  // unset, and again when the canvas changes shape while the view is still
+  // exactly where it was fitted, so opening the 3D pane or dragging the
+  // divider does not leave the plan half out of frame. Once the viewer has
+  // panned or zoomed, the view is theirs and is left alone.
   const view = viewProp ?? (width && height ? fit(width, height) : null)
+  const lastFit = useRef<{ size: string; view: View } | null>(null)
   useEffect(() => {
-    if (!viewProp && width && height) onView(fit(width, height))
+    if (!width || !height) return
+    const size = `${width}x${height}`
+    if (!viewProp || (lastFit.current?.view === viewProp && lastFit.current.size !== size)) {
+      const fitted = fit(width, height)
+      lastFit.current = { size, view: fitted }
+      onView(fitted)
+    }
   }, [viewProp, width, height, fit, onView])
 
   // Latest values for the auto-pan loop and the document wide draft
@@ -129,10 +186,11 @@ export default function Canvas({
     view: View | null
     rooms: RoomConfig[]
     devices: DeviceConfig[]
+    decorations: DecorationConfig[]
     draft: Point[]
     tool: Tool
     updateAutopan: (screen: Point) => void
-  }>({ view, rooms, devices, draft, tool, updateAutopan: () => {} })
+  }>({ view, rooms, devices, decorations, draft, tool, updateAutopan: () => {} })
   const lastScreen = useRef<Point | null>(null)
   const autopan = useRef<{ raf: number; time: number; vx: number; vy: number } | null>(null)
 
@@ -158,11 +216,42 @@ export default function Canvas({
     if (e.button !== 0) return
     e.stopPropagation()
     capture(e)
-    onSelect({ roomId: device.room, vertex: null })
     onSelectDevice(device.entity_id)
     liveDevices.current = devices
     drag.current = { kind: 'device', entityId: device.entity_id, start: planPoint(e), origin: device.position }
     setDraggingDevice(device.entity_id)
+  }
+
+  // Dragging the handle swings the item around its own center.
+  const onRotateDown = (e: React.PointerEvent, item: DecorationConfig) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    capture(e)
+    onSelectDecoration(item.id)
+    liveDecorations.current = decorations
+    drag.current = { kind: 'rotate', id: item.id, center: item.position }
+  }
+
+  const onDecorationDown = (e: React.PointerEvent, item: DecorationConfig) => {
+    if (e.button === 2) {
+      e.stopPropagation()
+      return
+    }
+    if (e.button !== 0) return
+    e.stopPropagation()
+    capture(e)
+    // Alt or Option drags a copy out and leaves the original behind, the way
+    // every drawing program does it.
+    let dragged = item
+    if (e.altKey) {
+      dragged = { ...item, id: newDecorationId(item.kind) }
+      const next = [...decorations, dragged]
+      liveDecorations.current = next
+      onDecorations(next, false)
+    } else liveDecorations.current = decorations
+    onSelectDecoration(dragged.id)
+    drag.current = { kind: 'decoration', id: dragged.id, start: planPoint(e), origin: item.position }
+    setDraggingDecoration(dragged.id)
   }
 
   const applyDrag = (screen: Point, v: View, renderedRooms: RoomConfig[]) => {
@@ -178,7 +267,7 @@ export default function Canvas({
     // furthest valid point on the way to one, so a blocked room still slides
     // along the free axis and lands right against its neighbour on release.
     const patch = (roomId: string, candidates: Point[][]) => {
-      const others = currentRooms.filter(r => r.id !== roomId).map(r => r.points)
+      const others = currentRooms.filter(r => r.id !== roomId && r.id !== duplicateSource.current).map(r => r.points)
       const from = currentRooms.find(r => r.id === roomId)!.points
       let resolved: Point[] = from
       for (const target of candidates) {
@@ -317,6 +406,84 @@ export default function Canvas({
         )
         break
       }
+      case 'rotate': {
+        const current = liveDecorations.current ?? latest.current.decorations
+        // The handle sits at the item's front, which faces plan -y at zero.
+        const degrees = (Math.atan2(p[1] - d.center[1], p[0] - d.center[0]) * 180) / Math.PI + 90
+        const rotation = (((Math.round(degrees / 5) * 5) % 360) + 360) % 360
+        const next = current.map(x => (x.id === d.id ? { ...x, rotation } : x))
+        liveDecorations.current = next
+        onDecorations(next, false)
+        break
+      }
+      case 'decoration': {
+        const current = liveDecorations.current ?? latest.current.decorations
+        const item = current.find(x => x.id === d.id)
+        if (!item) break
+        const kind = decorationKind(item.kind)
+        const g = EDITOR_DEVICE_GRID_M
+        const target: Point = [
+          Math.round((d.origin[0] + p[0] - d.start[0]) / g) * g,
+          Math.round((d.origin[1] + p[1] - d.start[1]) / g) * g,
+        ]
+        const within = (q: Point, points: Point[]) => pointStrictlyInside(q, points) || pointOnBoundary(q, points)
+        const over = currentRooms.find(r => within(target, r.points))
+        const home = currentRooms.find(r => r.id === item.room)
+        const roomFor = over ?? home
+        let landing: DecorationConfig = { ...item, position: target, room: roomFor?.id ?? item.room }
+        if (kind?.mount === 'wall' && roomFor) {
+          // Wall items sit on the nearest wall of the room and face inward.
+          const snapped = snapToWall(target, roomFor.points)
+          landing = { ...landing, position: snapped.point, rotation: snapped.rotation }
+        } else if (!over && home) {
+          const from = item.position
+          let lo = 0
+          let hi = 1
+          for (let i = 0; i < 16; i++) {
+            const mid = (lo + hi) / 2
+            const q: Point = [from[0] + (target[0] - from[0]) * mid, from[1] + (target[1] - from[1]) * mid]
+            if (within(q, home.points)) lo = mid
+            else hi = mid
+          }
+          landing = {
+            ...item,
+            position: [
+              Math.round((from[0] + (target[0] - from[0]) * lo) * 100) / 100,
+              Math.round((from[1] + (target[1] - from[1]) * lo) * 100) / 100,
+            ],
+          }
+        }
+        // What it comes to rest on: the highest top under it, or the floor.
+        if (kind && canRide(kind)) {
+          const support = supportUnder(landing.position, { ...item, room: landing.room }, current)
+          if (support) landing = { ...landing, on: support.id, room: support.room }
+          else if (landing.on) {
+            const { on: _dropped, ...rest } = landing
+            landing = rest
+          }
+          setHoverSupport(support?.id ?? null)
+        }
+        // Whatever stands on this item travels with it.
+        const riders = new Set(ridersOf(d.id, current).map(r => r.id))
+        const dx = landing.position[0] - item.position[0]
+        const dy = landing.position[1] - item.position[1]
+        const carry = (x: DecorationConfig): DecorationConfig =>
+          riders.has(x.id)
+            ? {
+                ...x,
+                position: [round(x.position[0] + dx), round(x.position[1] + dy)] as Point,
+                room: landing.room,
+              }
+            : x
+        liveDecorations.current = current.map(x => (x.id === d.id ? landing : carry(x)))
+        const shown =
+          kind?.mount === 'wall' ? landing : { ...landing, position: target, room: over?.id ?? landing.room }
+        onDecorations(
+          current.map(x => (x.id === d.id ? shown : carry(x))),
+          false,
+        )
+        break
+      }
     }
   }
 
@@ -362,7 +529,7 @@ export default function Canvas({
   }
 
   useEffect(() => {
-    latest.current = { view, rooms, devices, draft, tool, updateAutopan }
+    latest.current = { view, rooms, devices, decorations, draft, tool, updateAutopan }
   })
 
   // A drag captures the pointer, so moves outside the canvas still arrive.
@@ -427,6 +594,7 @@ export default function Canvas({
       if (tool === 'select' && e.button === 0) {
         onSelect({ roomId: null, vertex: null })
         onSelectDevice(null)
+        onSelectDecoration(null)
       }
       return
     }
@@ -461,12 +629,29 @@ export default function Canvas({
     if (tool !== 'select' || e.button !== 0) return
     e.stopPropagation()
     capture(e)
-    onSelect({ roomId: room.id, vertex: null })
-    if (mode === 'devices') {
-      // Rooms are only picked here. Clicking a room clears the device selection.
+    if (mode !== 'rooms') {
+      // A room is picked in Rooms mode. Elsewhere, clicking one only lets go
+      // of whatever item was selected and pans the view.
       onSelectDevice(null)
+      onSelectDecoration(null)
       drag.current = { kind: 'pan', start: screenPoint(e), view }
       setPanning(true)
+      return
+    }
+    onSelect({ roomId: room.id, vertex: null })
+    // Alt or Option drags out a copy of the room, shape, floor and all.
+    if (e.altKey) {
+      const { id, name } = newRoomName()
+      const { area_id: _dropped, ...rest } = room
+      const copy: RoomConfig = { ...rest, id, name, points: room.points.map(p => [...p] as Point) }
+      const next = [...rooms, copy]
+      liveRooms.current = next
+      duplicatedRoom.current = id
+      duplicateSource.current = room.id
+      onRooms(next, false)
+      onSelect({ roomId: id, vertex: null })
+      drag.current = { kind: 'room', roomId: id, start: planPoint(e), origin: copy.points }
+      setDraggingId(id)
       return
     }
     liveRooms.current = rooms
@@ -510,35 +695,101 @@ export default function Canvas({
     updateAutopan(screen)
   }
 
+  // Everything whose footprint covers a point on the plan, in the order they
+  // are drawn, so the last one is the one on top. A press that does not turn
+  // into a drag steps down through them, since something underneath cannot
+  // be reached any other way.
+  const stackAt = (point: Point): DecorationConfig[] => {
+    const covers = (item: DecorationConfig) => {
+      const kind = decorationKind(item.kind)
+      if (!kind) return false
+      const [fw, fd] = footprint(kind, item.params)
+      const least = EDITOR_DEVICE_RADIUS_PX / view.scale
+      const halfW = Math.max(fw / 2, least)
+      const halfD = Math.max(kind.mount === 'wall' ? 0.05 : fd / 2, least)
+      const a = (-(item.rotation ?? 0) * Math.PI) / 180
+      const dx = point[0] - item.position[0]
+      const dy = point[1] - item.position[1]
+      const lx = dx * Math.cos(a) - dy * Math.sin(a)
+      const ly = dx * Math.sin(a) + dy * Math.cos(a)
+      return Math.abs(lx) <= halfW && Math.abs(ly) <= halfD
+    }
+    const all = latest.current.decorations
+    return all.filter(covers).sort((x, y) => standHeight(x, all) - standHeight(y, all))
+  }
+
+  // The next one down from whatever is selected, wrapping around.
+  const stepDown = (point: Point) => {
+    const stack = stackAt(point)
+    if (stack.length < 2) return null
+    const at = stack.findIndex(x => x.id === selectedDecoration)
+    return at < 0 ? stack[stack.length - 1].id : stack[(at + 1) % stack.length].id
+  }
+
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current
     const resolved = liveRooms.current
     const resolvedDevices = liveDevices.current
+    const resolvedDecorations = liveDecorations.current
     drag.current = null
     liveRooms.current = null
     liveDevices.current = null
+    liveDecorations.current = null
     setDraggingId(null)
     setDraggingDevice(null)
+    setDraggingDecoration(null)
+    setHoverSupport(null)
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
     if (!d || d.kind === 'pan') return
+    if (d.kind === 'rotate' || d.kind === 'decoration') {
+      const source = resolvedDecorations ?? decorations
+      onDecorations(
+        source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
+        true,
+      )
+      // A press that moved nothing was a click, so it picks what is under
+      // the one already picked instead of picking the same thing again.
+      if (d.kind === 'decoration') {
+        const landed = source.find(x => x.id === d.id)
+        const still = landed && landed.position[0] === d.origin[0] && landed.position[1] === d.origin[1]
+        if (still) {
+          const next = stepDown(d.start)
+          if (next && next !== d.id) onSelectDecoration(next)
+        }
+      }
+      return
+    }
     if (d.kind === 'device') {
       const source = resolvedDevices ?? devices
       onDevices(
         source.map(x => ({ ...x, position: [round(x.position[0]), round(x.position[1])] as Point })),
         true,
       )
-      const landed = source.find(x => x.entity_id === d.entityId)
-      if (landed) onSelect({ roomId: landed.room, vertex: null })
       return
     }
     // Land on the resolved position, whatever the pointer showed.
     const source = resolved ?? rooms
-    onRooms(
-      source.map(r => ({ ...r, points: r.points.map(([x, y]) => [round(x), round(y)] as Point) })),
-      true,
-    )
+    let landed = source.map(r => ({ ...r, points: r.points.map(([x, y]) => [round(x), round(y)] as Point) }))
+    // A copy released while it still overlaps goes to the nearest free spot,
+    // and is dropped only when the plan has no room for it at all.
+    const copied = duplicatedRoom.current
+    duplicatedRoom.current = null
+    duplicateSource.current = null
+    if (copied) {
+      const copy = landed.find(r => r.id === copied)
+      const others = landed.filter(r => r.id !== copied).map(r => r.points)
+      if (copy && !isValidRoom(copy.points, others)) {
+        const placed = freePlacement(copy.points, others)
+        landed = placed
+          ? landed.map(r =>
+              r.id === copied ? { ...r, points: placed.map(([x, y]) => [round(x), round(y)] as Point) } : r,
+            )
+          : landed.filter(r => r.id !== copied)
+      }
+    }
+    onRooms(landed, true)
   }
 
   const openMenu = (e: React.MouseEvent, target: Menu) => {
@@ -546,11 +797,8 @@ export default function Canvas({
     e.stopPropagation()
     if (target.kind === 'room') onSelect({ roomId: target.roomId, vertex: null })
     if (target.kind === 'vertex') onSelect({ roomId: target.roomId, vertex: target.index })
-    if (target.kind === 'device') {
-      const device = devices.find(x => x.entity_id === target.entityId)
-      if (device) onSelect({ roomId: device.room, vertex: null })
-      onSelectDevice(target.entityId)
-    }
+    if (target.kind === 'decoration') onSelectDecoration(target.id)
+    if (target.kind === 'device') onSelectDevice(target.entityId)
     setMenu({ at: { x: e.clientX, y: e.clientY }, target })
   }
 
@@ -630,15 +878,37 @@ export default function Canvas({
         const room = rooms.find(r => r.id === t.roomId)
         if (mode !== 'rooms') return null
         return (
-          <ContextMenuItem
-            variant="destructive"
-            onSelect={() => {
-              closeMenu()
-              if (room && window.confirm(`Delete ${room.name ?? room.id}?`)) onDeleteRoom(t.roomId)
-            }}
-          >
-            Delete room
-          </ContextMenuItem>
+          <>
+            <ContextMenuItem
+              onSelect={() => {
+                onDuplicateRoom(t.roomId)
+                closeMenu()
+              }}
+              shortcut={shortcut('D', true)}
+            >
+              Duplicate room
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => {
+                onView(null)
+                closeMenu()
+              }}
+              shortcut="F"
+            >
+              Fit view
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onSelect={() => {
+                closeMenu()
+                if (room && window.confirm(`Delete ${room.name ?? room.id}?`)) onDeleteRoom(t.roomId)
+              }}
+              shortcut="Del"
+            >
+              Delete room
+            </ContextMenuItem>
+          </>
         )
       }
       case 'device':
@@ -649,6 +919,7 @@ export default function Canvas({
                 onRotateDevice(t.entityId)
                 closeMenu()
               }}
+              shortcut="R"
             >
               Rotate 90°
             </ContextMenuItem>
@@ -657,6 +928,59 @@ export default function Canvas({
               variant="destructive"
               onSelect={() => {
                 onRemoveDevice(t.entityId)
+                closeMenu()
+              }}
+              shortcut="Del"
+            >
+              Remove from plan
+            </ContextMenuItem>
+          </>
+        )
+      case 'decoration':
+        return (
+          <>
+            <ContextMenuItem
+              onSelect={() => {
+                onDuplicateDecoration(t.id)
+                closeMenu()
+              }}
+              shortcut={shortcut('D', true)}
+            >
+              Duplicate
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => {
+                onCopyDecoration(t.id)
+                closeMenu()
+              }}
+              shortcut={shortcut('C', true)}
+            >
+              Copy
+            </ContextMenuItem>
+            <ContextMenuItem
+              disabled={!canPaste}
+              onSelect={() => {
+                onPasteDecoration()
+                closeMenu()
+              }}
+              shortcut={shortcut('V', true)}
+            >
+              Paste
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => {
+                onRotateDecoration(t.id)
+                closeMenu()
+              }}
+              shortcut="R"
+            >
+              Rotate 90°
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onSelect={() => {
+                onRemoveDecoration(t.id)
                 closeMenu()
               }}
               shortcut="Del"
@@ -678,6 +1002,21 @@ export default function Canvas({
                   shortcut="D"
                 >
                   Draw room
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+              </>
+            )}
+            {mode === 'decoration' && (
+              <>
+                <ContextMenuItem
+                  disabled={!canPaste}
+                  onSelect={() => {
+                    onPasteDecoration()
+                    closeMenu()
+                  }}
+                  shortcut={shortcut('V', true)}
+                >
+                  Paste
                 </ContextMenuItem>
                 <ContextMenuSeparator />
               </>
@@ -717,9 +1056,11 @@ export default function Canvas({
         <Grid view={view} width={width} height={height} />
 
         {rooms.map((room, i) => {
-          // While a device is dragged, the room under the pointer lights up.
+          // While a device is dragged, the room under the pointer lifts a
+          // little. Enough to see which one it would land in, no more.
           const dropTarget =
-            draggingDevice !== null && devices.find(x => x.entity_id === draggingDevice)?.room === room.id
+            (draggingDevice !== null && devices.find(x => x.entity_id === draggingDevice)?.room === room.id) ||
+            (draggingDecoration !== null && decorations.find(x => x.id === draggingDecoration)?.room === room.id)
           const invalid =
             draggingId === room.id &&
             !isValidRoom(
@@ -731,7 +1072,7 @@ export default function Canvas({
               key={room.id}
               points={polygon(room.points)}
               fill={invalid ? 'var(--error-color)' : (room.color ?? ROOM_COLORS[i % ROOM_COLORS.length])}
-              fillOpacity={dropTarget ? 0.9 : selection.roomId === room.id ? 0.75 : 0.5}
+              fillOpacity={dropTarget ? 0.62 : selection.roomId === room.id ? 0.7 : 0.5}
               stroke={
                 invalid
                   ? 'var(--error-color)'
@@ -741,7 +1082,7 @@ export default function Canvas({
                       ? EDITOR_MODE_COLORS[mode]
                       : 'rgba(0,0,0,0.35)'
               }
-              strokeWidth={dropTarget ? 3 : selection.roomId === room.id ? 2 : 1}
+              strokeWidth={dropTarget ? 2 : selection.roomId === room.id ? 2 : 1}
               strokeLinejoin="round"
               className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
               onPointerDown={e => onRoomDown(e, room)}
@@ -822,50 +1163,171 @@ export default function Canvas({
           </>
         )}
 
-        {devices.map(device => {
-          const room = rooms.find(r => r.id === device.room)
-          if (!room) return null
-          const type = deviceType(device)
-          const [sx, sy] = toScreen(view, device.position)
-          const active = mode === 'devices'
-          const dim = active && selection.roomId !== null && selection.roomId !== device.room
-          const invalid =
-            draggingDevice === device.entity_id &&
-            !(pointStrictlyInside(device.position, room.points) || pointOnBoundary(device.position, room.points))
-          const isSelected = selectedDevice === device.entity_id
-          const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.devices
-          const r = EDITOR_DEVICE_RADIUS_PX
-          const length = type?.hasLength ? (device.length ?? type.defaultLength ?? 1) : 0
-          const angle = -(device.rotation ?? 0)
-          return (
-            <g
-              key={device.entity_id}
-              opacity={dim ? 0.35 : 1}
-              className={active ? 'cursor-move' : 'pointer-events-none'}
-              onPointerDown={e => onDeviceDown(e, device)}
-              onContextMenu={e => openMenu(e, { kind: 'device', entityId: device.entity_id })}
-            >
-              {length > 0 && (
-                <line
-                  x1={sx - (length / 2) * view.scale}
-                  y1={sy}
-                  x2={sx + (length / 2) * view.scale}
-                  y2={sy}
+        {[...decorations]
+          .sort((a, b) => {
+            // Whatever is selected goes last: on top, and first to take a
+            // press when two items sit over each other.
+            if (a.id === selectedDecoration) return 1
+            if (b.id === selectedDecoration) return -1
+            return standHeight(a, decorations) - standHeight(b, decorations)
+          })
+          .map(item => {
+            const room = rooms.find(r => r.id === item.room)
+            const kind = decorationKind(item.kind)
+            if (!room || !kind) return null
+            const [sx, sy] = toScreen(view, item.position)
+            const active = mode === 'decoration'
+            const dim = active && selection.roomId !== null && selection.roomId !== item.room
+            const invalid =
+              draggingDecoration === item.id &&
+              !(pointStrictlyInside(item.position, room.points) || pointOnBoundary(item.position, room.points))
+            const isSelected = selectedDecoration === item.id
+            const target = hoverSupport === item.id
+            const raised = item.on !== undefined
+            // What is selected turns blue, so it reads apart from the rest.
+            const color = invalid
+              ? 'var(--error-color)'
+              : isSelected
+                ? EDITOR_SELECTED_COLOR
+                : EDITOR_MODE_COLORS.decoration
+            const angle = -(item.rotation ?? 0)
+            const [fw, fd] = footprint(kind, item.params)
+            const r = EDITOR_DEVICE_RADIUS_PX
+            const halfW = Math.max(r, (fw / 2) * view.scale)
+            const halfD = Math.max(r, (fd / 2) * view.scale)
+            // Zero rotation faces plan -y, so the handle starts below the item.
+            const handleAngle = ((item.rotation ?? 0) - 90) * (Math.PI / 180)
+            const handleDist = Math.max(halfW, halfD) + 22
+            return (
+              <g
+                key={item.id}
+                opacity={active ? (dim ? 0.35 : 1) : 0.4}
+                className={active ? 'cursor-move' : 'pointer-events-none'}
+                onPointerDown={e => onDecorationDown(e, item)}
+                onContextMenu={e => openMenu(e, { kind: 'decoration', id: item.id })}
+              >
+                {/* The item's real footprint, rotated with it. Wall items read as
+                  a bar on the wall, ceiling items as a dashed outline. */}
+                <rect
+                  x={sx - halfW}
+                  y={sy - (kind.mount === 'wall' ? 5 : halfD)}
+                  width={halfW * 2}
+                  height={kind.mount === 'wall' ? 10 : halfD * 2}
+                  rx={kind.mount === 'wall' ? 4 : Math.min(8, Math.min(halfW, halfD) * 0.4)}
                   transform={`rotate(${angle} ${sx} ${sy})`}
+                  fill={color}
+                  fillOpacity={kind.mount === 'wall' ? 0.7 : 0.18}
                   stroke={color}
-                  strokeWidth={6}
-                  strokeLinecap="round"
-                  opacity={0.8}
+                  strokeWidth={1.5}
+                  strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
                 />
-              )}
-              {isSelected && (
-                <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
-              )}
-              <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
-              {type && <IconGlyph icon={type.icon} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />}
-            </g>
-          )
-        })}
+                {/* The usable part of a top, lit up while something is over it. */}
+                {target && isSupport(kind) && (
+                  <rect
+                    x={sx - halfW + 4}
+                    y={sy - halfD + 4}
+                    width={Math.max(halfW * 2 - 8, 4)}
+                    height={Math.max(halfD * 2 - 8, 4)}
+                    rx={6}
+                    transform={`rotate(${angle} ${sx} ${sy})`}
+                    fill={color}
+                    fillOpacity={0.3}
+                    stroke={color}
+                    strokeWidth={2}
+                  />
+                )}
+                {isSelected && (
+                  <>
+                    {/* Rotation handle on the item's front, with a stem. */}
+                    <line
+                      x1={sx}
+                      y1={sy}
+                      x2={sx + Math.cos(handleAngle) * handleDist}
+                      y2={sy - Math.sin(handleAngle) * handleDist}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      className="pointer-events-none"
+                    />
+                    <circle
+                      cx={sx + Math.cos(handleAngle) * handleDist}
+                      cy={sy - Math.sin(handleAngle) * handleDist}
+                      r={7}
+                      fill="var(--card-background-color)"
+                      stroke={color}
+                      strokeWidth={2}
+                      className="cursor-grab"
+                      onPointerDown={e => onRotateDown(e, item)}
+                    />
+                  </>
+                )}
+                {raised && (
+                  <circle cx={sx} cy={sy} r={r + 3} fill="none" stroke={color} strokeWidth={1.5} opacity={0.7} />
+                )}
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={r}
+                  fill="var(--card-background-color)"
+                  stroke={color}
+                  strokeWidth={isSelected ? 3 : 2}
+                />
+                <IconGlyph
+                  icon={decorationIcon(item.kind, kind.family)}
+                  x={sx}
+                  y={sy}
+                  size={r * 1.1}
+                  fill="var(--primary-text-color)"
+                />
+              </g>
+            )
+          })}
+
+        {[...devices]
+          .sort((a, b) => (a.entity_id === selectedDevice ? 1 : b.entity_id === selectedDevice ? -1 : 0))
+          .map(device => {
+            const room = rooms.find(r => r.id === device.room)
+            if (!room) return null
+            const type = deviceType(device)
+            const [sx, sy] = toScreen(view, device.position)
+            const active = mode === 'devices'
+            const dim = active && selection.roomId !== null && selection.roomId !== device.room
+            const invalid =
+              draggingDevice === device.entity_id &&
+              !(pointStrictlyInside(device.position, room.points) || pointOnBoundary(device.position, room.points))
+            const isSelected = selectedDevice === device.entity_id
+            const color = invalid ? 'var(--error-color)' : EDITOR_MODE_COLORS.devices
+            const r = EDITOR_DEVICE_RADIUS_PX
+            const length = type?.hasLength ? (device.length ?? type.defaultLength ?? 1) : 0
+            const angle = -(device.rotation ?? 0)
+            return (
+              <g
+                key={device.entity_id}
+                opacity={dim ? 0.35 : 1}
+                className={active ? 'cursor-move' : 'pointer-events-none'}
+                onPointerDown={e => onDeviceDown(e, device)}
+                onContextMenu={e => openMenu(e, { kind: 'device', entityId: device.entity_id })}
+              >
+                {length > 0 && (
+                  <line
+                    x1={sx - (length / 2) * view.scale}
+                    y1={sy}
+                    x2={sx + (length / 2) * view.scale}
+                    y2={sy}
+                    transform={`rotate(${angle} ${sx} ${sy})`}
+                    stroke={color}
+                    strokeWidth={6}
+                    strokeLinecap="round"
+                    opacity={0.8}
+                  />
+                )}
+                {isSelected && (
+                  <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />
+                )}
+                <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" stroke={color} strokeWidth={2} />
+                {type && <IconGlyph icon={type.icon} x={sx} y={sy} size={r * 1.1} fill="var(--primary-text-color)" />}
+              </g>
+            )
+          })}
 
         {tool === 'draw' && draft.length > 0 && (
           <>

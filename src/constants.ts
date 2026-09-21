@@ -39,6 +39,8 @@ export const EDITOR_SNAP_PX = 10
 export const EDITOR_HANDLE_PX = 7
 export const EDITOR_CANVAS_HEIGHT_PX = 440
 export const EDITOR_SIDEBAR_WIDTH_PX = 340
+// The sidebar never goes below this, nor past half the window.
+export const EDITOR_SIDEBAR_MIN_PX = 260
 // How long typing must pause before a text edit is sent to Home Assistant.
 export const EDITOR_TEXT_COMMIT_DELAY_MS = 500
 // Distance from the canvas border where dragging starts to pan the view.
@@ -49,3 +51,14 @@ export const EDITOR_AUTOPAN_SPEED_PX_S = 500
 export const EDITOR_DEVICE_GRID_M = 0.05
 // Radius of a device marker on the canvas.
 export const EDITOR_DEVICE_RADIUS_PX = 14
+// The 3D preview is docked under the plan. This is the share of their
+// column it takes when it opens, and neither of them goes below this height.
+export const EDITOR_PREVIEW_FRACTION = 0.5
+export const EDITOR_PREVIEW_MIN_PX = 140
+// Narrower than this and the mode switch drops the names, keeping the
+// icons, so it still fits the sidebar.
+export const EDITOR_MODE_LABELS_PX = 330
+// How long the Save button says Saved after it is pressed.
+export const EDITOR_SAVED_FLASH_MS = 1600
+// Height of the 3D preview at the top of the sidebar, before it is dragged.
+export const EDITOR_SIDEBAR_PREVIEW_PX = 224

@@ -1,6 +1,8 @@
 import { CAMERA_DIRECTION, CAMERA_FIT_MARGIN, CAMERA_FOV_DEG } from '#/constants.ts'
-import { ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
-import type { RoomConfig } from '#/types.ts'
+import { decorationKind, paramValue } from '#/decoration/catalog.ts'
+import { standHeight } from '#/decoration/surfaces.ts'
+import { CEILING_HEIGHT_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
+import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils, Vector3 } from 'three'
 
 export type Framing = {
@@ -10,7 +12,20 @@ export type Framing = {
 
 // Places the camera along a fixed direction so the flat's bounding box fits
 // the viewport. Plan y maps to -z in the scene.
-export function frameRooms(rooms: RoomConfig[], aspect: number): Framing {
+// Tallest point the scene reaches, so the camera frames fixtures too.
+export function sceneHeight(decorations: DecorationConfig[] = []) {
+  let top = 0.6
+  for (const item of decorations) {
+    const kind = decorationKind(item.kind)
+    if (!kind) continue
+    if (kind.mount === 'ceiling') return CEILING_HEIGHT_M
+    const height = paramValue(kind, item.params, 'height')
+    top = Math.max(top, standHeight(item, decorations) + height + 0.4)
+  }
+  return top
+}
+
+export function frameRooms(rooms: RoomConfig[], aspect: number, height = 0.6): Framing {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -28,7 +43,7 @@ export function frameRooms(rooms: RoomConfig[], aspect: number): Framing {
     maxX = maxY = 1
   }
 
-  const target = new Vector3((minX + maxX) / 2, 0, -(minY + maxY) / 2)
+  const target = new Vector3((minX + maxX) / 2, height * 0.35, -(minY + maxY) / 2)
   const direction = new Vector3(...CAMERA_DIRECTION).normalize()
 
   // Camera basis for a camera at `target + direction * d` looking at target.
@@ -46,7 +61,7 @@ export function frameRooms(rooms: RoomConfig[], aspect: number): Framing {
   const corner = new Vector3()
   for (const x of [minX, maxX]) {
     for (const y of [minY, maxY]) {
-      for (const z of [0, ROOM_SLAB_THICKNESS_M]) {
+      for (const z of [-ROOM_SLAB_THICKNESS_M, height]) {
         corner.set(x, z, -y).sub(target)
         const depth = corner.dot(forward)
         const dx = Math.abs(corner.dot(right))

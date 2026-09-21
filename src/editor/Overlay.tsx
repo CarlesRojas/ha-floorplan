@@ -37,7 +37,23 @@ function createHost() {
     'keydown',
     'keyup',
   ]
-  for (const type of isolated) dialog.addEventListener(type, e => e.stopPropagation())
+  for (const type of isolated) {
+    dialog.addEventListener(type, e => {
+      e.stopPropagation()
+      // Three's OrbitControls waits for the pointer release on the document.
+      // Hand it a copy straight on the document, which never reaches HA's
+      // dialog, when the release belongs to a canvas.
+      if (type === 'pointerup' && e.composedPath().some(n => n instanceof HTMLCanvasElement)) {
+        document.dispatchEvent(new PointerEvent('pointerup', e as PointerEvent))
+      }
+    })
+  }
+  dialog.addEventListener('pointercancel', e => {
+    e.stopPropagation()
+    if (e.composedPath().some(n => n instanceof HTMLCanvasElement)) {
+      document.dispatchEvent(new PointerEvent('pointercancel', e as PointerEvent))
+    }
+  })
   const host = document.createElement('div')
   host.style.height = '100%'
   const shadow = host.attachShadow({ mode: 'open' })

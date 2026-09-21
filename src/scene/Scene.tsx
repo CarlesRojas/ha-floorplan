@@ -12,17 +12,20 @@ import {
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import CameraRig from '#/scene/CameraRig.tsx'
+import Devices from '#/scene/Devices.tsx'
+import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
-import type { CardConfig } from '#/types.ts'
+import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils } from 'three'
 
 type Props = {
+  hass: HomeAssistant | null
   config: CardConfig
 }
 
-export default function Scene({ config }: Props) {
+export default function Scene({ hass, config }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
@@ -42,13 +45,18 @@ export default function Scene({ config }: Props) {
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0005}
       />
-      <CameraRig rooms={rooms} />
+      <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
+      <Devices hass={hass} config={config} />
+      {/* A press that misses everything looks around itself for something
+          to act on, so small things are still easy to hit. */}
+      <PickFallback />
       {rooms.map((room, i) => (
         <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
       ))}
       <OrbitControls
         makeDefault
-        enablePan={false}
+        enablePan
+        screenSpacePanning={false}
         enableDamping
         dampingFactor={0.1}
         minPolarAngle={MathUtils.degToRad(CAMERA_MIN_POLAR_DEG)}

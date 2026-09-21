@@ -49,6 +49,8 @@ export type RoomConfig = {
   points: Point[]
   radius?: number
   color?: string
+  // Floor material from the theme's list, with an optional color tint.
+  floor?: { material: string; color?: string; scale?: number; rotation?: number; intensity?: number }
 }
 
 // A Home Assistant entity placed in a room.
@@ -62,12 +64,39 @@ export type DeviceConfig = {
   rotation?: number
   // Meters, for strip-like types such as LED strips and blinds.
   length?: number
+  // Which of the device's percentages feeds each percentage of the items it
+  // stands behind, for example its tilt driving a blind's slats.
+  levels?: Record<string, string>
+  // Decoration items that stand in for this device in 3D. With none, the
+  // device shows as a sphere.
+  decorations?: string[]
+}
+
+// A decoration item placed in a room: furniture, lamps, plants and the like.
+export type DecorationConfig = {
+  id: string
+  // One of the kinds in the decoration catalog.
+  kind: string
+  room: string
+  position: Point
+  // Degrees, counter clockwise on the plan.
+  rotation?: number
+  // Id of the item this one stands on, for example the table under a lamp.
+  // Its height follows that item's top, and it moves when that item moves.
+  on?: string
+  // Kind specific numbers, for example size or cord length, in meters.
+  params?: Record<string, number>
+  // Colors per material slot, as hex strings.
+  colors?: Record<string, string>
+  // Surface per material slot: matte, fabric, wood, ceramic, metal.
+  materials?: Record<string, string>
 }
 
 export type CardConfig = {
   type: string
   rooms?: RoomConfig[]
   devices?: DeviceConfig[]
+  decorations?: DecorationConfig[]
   // Corner radius in meters applied to rooms without their own.
   radius?: number
   // Gap in meters between adjacent rooms.
