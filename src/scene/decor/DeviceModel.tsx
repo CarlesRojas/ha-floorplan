@@ -254,158 +254,322 @@ export default function DeviceModel({ kind, item, state }: Props) {
 
     // Climate
     case 'radiator': {
-      // A flat panel with vertical fins, warm when it runs.
+      // A flat panel radiator: two welded panels, a slotted top grille and
+      // side covers, with a valve at one end. Warm when it runs.
       const w = p('width')
       const h = p('height')
-      const fins = Math.max(4, Math.round(w / 0.09))
+      const slots = Math.max(6, Math.round(w / 0.055))
       const warm = 0.45 * level * lit
+      const hot = () => (
+        <Material color={c('body')} material={m('body')} emissive={[1, 0.45, 0.25]} emissiveIntensity={warm} />
+      )
       return (
         <group>
-          <Slab size={[w, h, 0.05]} radius={0.02} position={[0, 0, 0.03]}>
-            <Material
-              color={c('body')}
-              material={m('body')}
-              emissive={[1, 0.45, 0.25]}
-              emissiveIntensity={warm}
-            />
-          </Slab>
-          {Array.from({ length: fins }).map((_, i) => (
-            <Slab
-              key={i}
-              size={[0.03, h - 0.06, 0.07]}
-              radius={0.01}
-              position={[-w / 2 + (w / fins) * (i + 0.5), 0.03, 0.055]}
-            >
-              <Material
-                color={c('body')}
-                material={m('body')}
-                emissive={[1, 0.45, 0.25]}
-                emissiveIntensity={warm}
-              />
+          {/* Front and back panel, with a narrow gap between them. */}
+          {[0.022, 0.072].map(z => (
+            <Slab key={z} size={[w, h, 0.028]} radius={0.014} bevel={0.008} position={[0, 0, z]}>
+              {hot()}
             </Slab>
           ))}
+          {/* Side covers, closing the gap at each end. */}
+          {[-1, 1].map(s => (
+            <Slab key={s} size={[0.022, h, 0.08]} radius={0.01} bevel={0.006} position={[(s * w) / 2, 0, 0.047]}>
+              {hot()}
+            </Slab>
+          ))}
+          {/* The top grille, a run of short slots. */}
+          <Slab size={[w, 0.016, 0.082]} radius={0.008} bevel={0.005} position={[0, h - 0.016, 0.046]}>
+            {hot()}
+          </Slab>
+          {Array.from({ length: slots }).map((_, i) => (
+            <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / slots, h - 0.004, 0.046]}>
+              <boxGeometry args={[(w / slots) * 0.5, 0.004, 0.05]} />
+              <Material color={c('body')} material={m('body')} />
+            </mesh>
+          ))}
+          {/* Valve and tail, at the lower left. */}
+          <mesh position={[-w / 2 - 0.02, 0.07, 0.046]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.018, 0.018, 0.05, 10]} />
+            <Material color={c('body')} material="metal" />
+          </mesh>
+          <mesh position={[-w / 2 - 0.05, 0.07, 0.046]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.024, 0.021, 0.05, 10]} />
+            <Material color={c('body')} material="metal" />
+          </mesh>
         </group>
       )
     }
     case 'ac_unit': {
-      // A rounded wall cassette with a louvre slot underneath.
+      // A split cassette: a soft rounded shell, the intake grille across the
+      // top, a louvre that tips open underneath and a small display.
       const w = p('width')
-      const h = 0.28
+      const h = 0.3
+      const d = 0.2
+      const vents = Math.max(8, Math.round(w / 0.06))
       return (
         <group position={[0, -h, 0]}>
-          <Slab size={[w, h, 0.22]} radius={0.07} position={[0, 0, 0.11]}>
+          <Slab size={[w, h, d]} radius={0.05} bevel={0.035} position={[0, 0, d / 2]}>
             {body}
           </Slab>
-          <Slab size={[w - 0.1, 0.03, 0.06]} radius={0.012} position={[0, 0.03, 0.2]} rotation={[-0.5 * swing, 0, 0]}>
+          {/* Intake slots, raked across the top face. */}
+          {Array.from({ length: vents }).map((_, i) => (
+            <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / vents, h - 0.004, d * 0.45]}>
+              <boxGeometry args={[(w / vents) * 0.55, 0.005, d * 0.5]} />
+              {trim()}
+            </mesh>
+          ))}
+          {/* The outlet, a recess under the front with the flap in it. */}
+          <mesh position={[0, 0.045, d - 0.03]}>
+            <boxGeometry args={[w - 0.09, 0.06, 0.05]} />
+            <Material color="#2f3336" material="matte" />
+          </mesh>
+          <Slab
+            size={[w - 0.1, 0.022, 0.075]}
+            radius={0.01}
+            bevel={0.006}
+            position={[0, 0.04, d - 0.012]}
+            rotation={[-0.7 * swing, 0, 0]}
+          >
             {trim()}
           </Slab>
-          <Led on={on} position={[w / 2 - 0.08, h * 0.55, 0.222]} color="#7fb3e8" radius={0.009} />
+          {/* Display strip, dark until it runs. */}
+          <mesh position={[w / 2 - 0.1, h * 0.42, d + 0.001]}>
+            <planeGeometry args={[0.11, 0.028]} />
+            <meshStandardMaterial color="#20262a" emissive="#7fb3e8" emissiveIntensity={0.8 * lit} />
+          </mesh>
+          <Led on={on} position={[w / 2 - 0.16, h * 0.42, d + 0.004]} color="#7fb3e8" radius={0.008} />
         </group>
       )
     }
     case 'fan_ceiling': {
+      // Three oak blades on flat arms under a shallow motor housing, the
+      // quiet Nordic version rather than a five blade lodge fan.
       const r = p('size') / 2
       const drop = p('drop')
       const speed = (2 + runLevel * 10) * lit
+      const blades = 3
       return (
         <group position={[0, -drop, 0]}>
-          <Bar length={drop} radius={0.018} position={[0, drop / 2 + 0.05, 0]}>
+          {/* Ceiling rose and downrod. */}
+          <mesh position={[0, drop + 0.04, 0]}>
+            <cylinderGeometry args={[0.07, 0.075, 0.03, SEG]} />
+            {body}
+          </mesh>
+          <Bar length={drop} radius={0.014} position={[0, drop / 2 + 0.05, 0]}>
             {body}
           </Bar>
-          <Blob radius={r * 0.22} squash={0.6} position={[0, 0, 0]}>
+          <mesh position={[0, 0.015, 0]} castShadow>
+            <cylinderGeometry args={[r * 0.19, r * 0.22, 0.07, SEG]} />
             {body}
-          </Blob>
+          </mesh>
+          <Dome radius={r * 0.22} position={[0, -0.016, 0]} sweep={0.5} rotation={[Math.PI, 0, 0]}>
+            {body}
+          </Dome>
           <Spinner speed={speed}>
-            {[0, 1, 2, 3].map(i => (
-              <Slab
-                key={i}
-                size={[r * 0.9, 0.012, r * 0.26]}
-                radius={r * 0.1}
-                position={[
-                  Math.cos((i / 4) * Math.PI * 2) * r * 0.55,
-                  -0.02,
-                  Math.sin((i / 4) * Math.PI * 2) * r * 0.55,
-                ]}
-                rotation={[0, -(i / 4) * Math.PI * 2, 0.06]}
-              >
-                <Material color={c('blade')} material={m('blade')} />
-              </Slab>
-            ))}
+            {Array.from({ length: blades }).map((_, i) => {
+              const a = (i / blades) * Math.PI * 2
+              return (
+                <group key={i} rotation={[0, -a, 0]}>
+                  {/* The arm that carries the blade out of the housing. */}
+                  <mesh position={[r * 0.24, 0.005, 0]}>
+                    <boxGeometry args={[r * 0.2, 0.014, 0.05]} />
+                    {body}
+                  </mesh>
+                  <Slab
+                    size={[r * 0.68, 0.011, r * 0.24]}
+                    radius={r * 0.08}
+                    bevel={0.004}
+                    position={[r * 0.63, -0.012, 0]}
+                    rotation={[0.16, 0, 0]}
+                  >
+                    <Material color={c('blade')} material={m('blade')} />
+                  </Slab>
+                </group>
+              )
+            })}
           </Spinner>
         </group>
       )
     }
     case 'fan_standing': {
+      // A pedestal fan: weighted base, telescopic stem, a hub with five
+      // blades and a wire guard in front of them.
       const r = p('size') / 2
       const h = p('height')
       const speed = (3 + runLevel * 12) * lit
       return (
         <group>
-          <Blob radius={r * 0.7} squash={0.18} position={[0, 0.03, 0]}>
+          <mesh position={[0, 0.02, 0]} castShadow>
+            <cylinderGeometry args={[r * 0.72, r * 0.78, 0.04, SEG * 2]} />
             {body}
-          </Blob>
-          <Bar length={h - r} radius={0.022} position={[0, (h - r) / 2, 0]}>
+          </mesh>
+          <mesh position={[0, 0.055, 0]}>
+            <cylinderGeometry args={[r * 0.3, r * 0.5, 0.05, SEG]} />
             {body}
-          </Bar>
-          <group position={[0, h - r * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <Spinner speed={speed}>
-              {[0, 1, 2, 3, 4].map(i => (
-                <mesh key={i} rotation={[0, (i / 5) * Math.PI * 2, 0]} position={[0, 0, 0]}>
-                  <boxGeometry args={[r * 0.8, 0.008, r * 0.3]} />
-                  <Material color={c('blade')} material={m('blade')} />
-                </mesh>
-              ))}
-            </Spinner>
-            <mesh>
-              <torusGeometry args={[r, 0.014, 6, SEG]} />
+          </mesh>
+          <mesh position={[0, (h - r) / 2, 0]}>
+            <cylinderGeometry args={[0.018, 0.026, h - r, 12]} />
+            {body}
+          </mesh>
+          <group position={[0, h - r * 0.4, 0]}>
+            {/* Motor can, behind the blades. */}
+            <mesh position={[0, 0, -0.07]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[r * 0.26, r * 0.3, 0.12, SEG]} />
               {body}
             </mesh>
+            {/* The blades spin about the forward axis, so their group is
+                tipped a quarter turn and the guard stays upright. */}
+            <group rotation={[Math.PI / 2, 0, 0]}>
+              <Spinner speed={speed}>
+                <mesh>
+                  <cylinderGeometry args={[r * 0.14, r * 0.14, 0.05, SEG]} />
+                  {trim()}
+                </mesh>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <mesh
+                    key={i}
+                    rotation={[0.35, (i / 5) * Math.PI * 2, 0]}
+                    position={[
+                      Math.cos((i / 5) * Math.PI * 2) * r * 0.38,
+                      0,
+                      -Math.sin((i / 5) * Math.PI * 2) * r * 0.38,
+                    ]}
+                  >
+                    <boxGeometry args={[r * 0.7, 0.006, r * 0.36]} />
+                    <Material color={c('blade')} material={m('blade')} />
+                  </mesh>
+                ))}
+              </Spinner>
+            </group>
+            {/* The guard: two rings held by radial spokes, plus the rim. */}
+            <group position={[0, 0, 0.055]}>
+              {[0.45, 0.98].map(k => (
+                <mesh key={k}>
+                  <torusGeometry args={[r * k, k > 0.9 ? 0.012 : 0.006, 6, SEG * 2]} />
+                  {trim()}
+                </mesh>
+              ))}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <mesh key={i} rotation={[0, 0, (i / 6) * Math.PI]}>
+                  <cylinderGeometry args={[0.004, 0.004, r * 1.96, 6]} />
+                  {trim()}
+                </mesh>
+              ))}
+            </group>
           </group>
         </group>
       )
     }
-    case 'fan_tower':
-    case 'air_purifier': {
-      // A soft column with a fabric or slotted band.
+    case 'fan_tower': {
+      // A slim oval column with the outlet mesh down its front face.
       const r = p('size') / 2
       const h = p('height')
-      const tower = kind.id === 'fan_tower'
       return (
         <group>
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * (tower ? 0.85 : 1), r, h, SEG]} />
+          <mesh position={[0, 0.022, 0]} castShadow>
+            <cylinderGeometry args={[r * 1.35, r * 1.5, 0.044, SEG * 2]} />
             {body}
           </mesh>
-          <mesh position={[0, h * (tower ? 0.55 : 0.4), 0]}>
-            <cylinderGeometry args={[r * 1.01, r * 1.01, h * (tower ? 0.5 : 0.45), SEG]} />
-            <Material
-              color={c('trim')}
-              material={m('trim')}
-              emissive={[0.6, 0.8, 1]}
-              emissiveIntensity={(0.3 * level) * lit}
-            />
+          <group scale={[1, 1, 0.62]}>
+            <mesh position={[0, h / 2 + 0.04, 0]} castShadow>
+              <cylinderGeometry args={[r * 0.78, r, h - 0.08, SEG * 2]} />
+              {body}
+            </mesh>
+            <Dome radius={r * 0.78} position={[0, h - 0.04, 0]} sweep={0.5}>
+              {body}
+            </Dome>
+            {/* The mesh outlet, a tall recessed band on the front. */}
+            <mesh position={[0, h * 0.54, r * 0.72]}>
+              <boxGeometry args={[r * 1.1, h * 0.66, r * 0.6]} />
+              <Material
+                color={c('trim')}
+                material={m('trim')}
+                repeat={10}
+                emissive={[0.6, 0.8, 1]}
+                emissiveIntensity={0.25 * level * lit}
+              />
+            </mesh>
+          </group>
+          {/* Control ring on the top. */}
+          <mesh position={[0, h + 0.004, 0]} scale={[1, 1, 0.62]}>
+            <cylinderGeometry args={[r * 0.4, r * 0.4, 0.012, SEG]} />
+            {trim()}
           </mesh>
-          <Led on={on} position={[0, h + 0.012, r * 0.4]} color="#7fb3e8" radius={0.009} />
+          <Led on={on} position={[0, h + 0.014, 0]} color="#7fb3e8" radius={0.008} />
+        </group>
+      )
+    }
+    case 'air_purifier': {
+      // A drum wrapped in filter fabric, with a domed outlet grille and a
+      // round display on the top.
+      const r = p('size') / 2
+      const h = p('height')
+      const spokes = 10
+      return (
+        <group>
+          <mesh position={[0, 0.018, 0]}>
+            <cylinderGeometry args={[r * 0.88, r * 0.92, 0.036, SEG * 2]} />
+            {trim()}
+          </mesh>
+          {/* The filter band, the part that reads as fabric. */}
+          <mesh position={[0, h * 0.45, 0]} castShadow>
+            <cylinderGeometry args={[r, r, h * 0.78, SEG * 2, 1, true]} />
+            <Material color={c('trim')} material={m('trim')} doubleSide repeat={12} />
+          </mesh>
+          <mesh position={[0, h * 0.88, 0]}>
+            <cylinderGeometry args={[r * 0.98, r, h * 0.1, SEG * 2]} />
+            {body}
+          </mesh>
+          {/* Outlet grille: a sunken disc crossed by radial bars. */}
+          <mesh position={[0, h - 0.012, 0]}>
+            <cylinderGeometry args={[r * 0.9, r * 0.95, 0.024, SEG * 2]} />
+            <Material color="#2f3336" material="matte" />
+          </mesh>
+          {Array.from({ length: spokes }).map((_, i) => (
+            <mesh key={i} position={[0, h, 0]} rotation={[0, (i / spokes) * Math.PI, 0]}>
+              <boxGeometry args={[r * 1.7, 0.008, 0.012]} />
+              {body}
+            </mesh>
+          ))}
+          <mesh position={[0, h + 0.008, 0]}>
+            <cylinderGeometry args={[r * 0.3, r * 0.3, 0.012, SEG]} />
+            <meshStandardMaterial color="#20262a" emissive="#7fb3e8" emissiveIntensity={0.9 * level * lit} />
+          </mesh>
         </group>
       )
     }
     case 'humidifier': {
+      // A stoneware jar with a stepped shoulder and a nozzle in the neck.
       const r = p('size') / 2
       const h = p('height')
       return (
         <group>
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.8, r, h, SEG]} />
+          <mesh position={[0, h * 0.42, 0]} castShadow>
+            <cylinderGeometry args={[r, r * 0.86, h * 0.84, SEG * 2]} />
             {body}
           </mesh>
-          <Dome radius={r * 0.8} position={[0, h, 0]} sweep={0.4}>
+          <mesh position={[0, h * 0.88, 0]}>
+            <cylinderGeometry args={[r * 0.72, r, h * 0.1, SEG * 2]} />
             {trim()}
-          </Dome>
+          </mesh>
+          <mesh position={[0, h - 0.008, 0]}>
+            <cylinderGeometry args={[r * 0.46, r * 0.62, 0.03, SEG * 2]} />
+            {trim()}
+          </mesh>
+          <mesh position={[0, h + 0.004, 0]}>
+            <cylinderGeometry args={[r * 0.3, r * 0.3, 0.016, SEG]} />
+            <Material color="#2f3336" material="matte" />
+          </mesh>
           {on && (
-            // A soft plume of mist above the spout.
-            <Blob radius={r * 0.5} squash={1.6} position={[0, h + r * 0.9, 0]}>
-              <meshStandardMaterial color="#e8f2f6" transparent opacity={0.3 * (0.4 + level * 0.6)} roughness={1} />
-            </Blob>
+            // A soft plume rising out of the nozzle.
+            <>
+              <Blob radius={r * 0.34} squash={1.5} position={[0, h + r * 0.55, 0]}>
+                <meshStandardMaterial color="#e8f2f6" transparent opacity={0.28 * (0.4 + level * 0.6)} roughness={1} />
+              </Blob>
+              <Blob radius={r * 0.5} squash={1.2} position={[0, h + r * 1.25, 0]}>
+                <meshStandardMaterial color="#e8f2f6" transparent opacity={0.18 * (0.4 + level * 0.6)} roughness={1} />
+              </Blob>
+            </>
           )}
         </group>
       )
