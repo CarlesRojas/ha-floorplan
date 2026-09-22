@@ -14,7 +14,7 @@ export default function FurnitureModel({ kind, item }: Props) {
   const c = (slot: string) => colorValue(kind, item.colors, slot)
   const m = (slot: string) => materialValue(kind, slot)
   // Every part names itself, so a piece's colors read as its parts.
-  const M = (slot: string, repeat?: number) => <Material color={c(slot)} material={m(slot)} repeat={repeat} />
+  const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
 
   switch (kind.id) {
     // Seating
@@ -163,7 +163,7 @@ export default function FurnitureModel({ kind, item }: Props) {
             {M('frame')}
           </Slab>
           <Slab size={[w - 0.05, 0.02, d - 0.05]} radius={0.02} bevel={0.004} position={[0, seatH + 0.032, 0]}>
-            <Material color={c('seat')} material={m('seat')} repeat={26} />
+            <Material color={c('seat')} material={m('seat')} />
           </Slab>
           {/* Uprights, leaning back a little, and the wrapping top rail. */}
           {[-1, 1].map(s => (
@@ -293,21 +293,21 @@ export default function FurnitureModel({ kind, item }: Props) {
         <group>
           <mesh position={[0, h * 0.48, 0]} castShadow>
             <cylinderGeometry args={[r * 0.93, r * 0.86, h * 0.96, SEG * 2]} />
-            <Material color={c('cover')} material={m('cover')} repeat={8} />
+            <Material color={c('cover')} material={m('cover')} />
           </mesh>
           <mesh position={[0, h * 0.52, 0]} scale={[r, h * 0.42, r]}>
             <sphereGeometry args={[1, SEG * 2, SEG]} />
-            <Material color={c('cover')} material={m('cover')} repeat={8} />
+            <Material color={c('cover')} material={m('cover')} />
           </mesh>
           {/* The seam, a soft cord right around the widest point. */}
           <mesh position={[0, h * 0.52, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[r * 0.99, r * 0.045, 6, SEG * 2]} />
-            <Material color={c('cover')} material={m('cover')} repeat={8} />
+            <Material color={c('cover')} material={m('cover')} />
           </mesh>
           {/* Top dimple. */}
           <mesh position={[0, h * 0.99, 0]} scale={[r * 0.4, h * 0.08, r * 0.4]}>
             <sphereGeometry args={[1, SEG, SEG]} />
-            <Material color={c('cover')} material={m('cover')} repeat={4} />
+            <Material color={c('cover')} material={m('cover')} />
           </mesh>
         </group>
       )
@@ -501,7 +501,7 @@ export default function FurnitureModel({ kind, item }: Props) {
                   bevel={0.002}
                   position={[-bookSpan / 2 + 0.02 + j * 0.046, plinth + gap * i + 0.022, 0.01]}
                 >
-                  <Material color={c('books')} material={m('books')} repeat={6} />
+                  <Material color={c('books')} material={m('books')} />
                 </Slab>
               )
             })

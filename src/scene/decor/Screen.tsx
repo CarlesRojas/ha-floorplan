@@ -38,5 +38,7 @@ export default function ScreenMaterial() {
   useFrame((_, delta) => {
     if (ref.current) ref.current.uniforms.uTime.value += delta
   })
-  return <shaderMaterial ref={ref} uniforms={uniforms} vertexShader={VERTEX} fragmentShader={FRAGMENT} toneMapped={false} />
+  return (
+    <shaderMaterial ref={ref} uniforms={uniforms} vertexShader={VERTEX} fragmentShader={FRAGMENT} toneMapped={false} />
+  )
 }

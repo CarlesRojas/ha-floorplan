@@ -77,7 +77,10 @@ type Field = (u: number, v: number) => { height: number; light: number }
 // `repeat` is how many times the tile fits in a meter, so a surface keeps the
 // same physical scale on a small stool and on a whole floor.
 
-const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: number; stretch?: number; normalScale: number }> = {
+const FIELDS: Record<
+  SurfaceKind,
+  { field: Field; roughness: number; repeat: number; stretch?: number; normalScale: number }
+> = {
   wood: {
     // Furniture oak: a continuous grain with no plank seams, in long streaks.
     field: (u, v) => {
@@ -205,6 +208,13 @@ const FIELDS: Record<SurfaceKind, { field: Field; roughness: number; repeat: num
     repeat: 4,
     normalScale: 0.05,
   },
+}
+
+// How a surface catches the light, without building its pattern. Decorations
+// are painted plain, so they take this and no maps: a metal fitting still
+// reads as metal next to a chalky one, with nothing drawn on either.
+export function surfaceRoughness(kind: SurfaceKind) {
+  return FIELDS[kind]?.roughness ?? 0.9
 }
 
 // `intensity` scales how much the pattern shows: 0 is a plain tint, 1 is the

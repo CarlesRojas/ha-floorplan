@@ -1,6 +1,5 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
-import type { SurfaceKind } from '#/materials/textures.ts'
-import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
+import { Material } from '#/scene/decor/parts.tsx'
 import { CEILING_HEIGHT_M, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
@@ -46,8 +45,8 @@ function ShadeMaterial({
     [color, gr, gg, gb, lit],
   )
   return (
-    <SurfaceMaterial
-      kind={material as SurfaceKind}
+    <Material
+      material={material}
       color={tint}
       doubleSide
       emissive={[glow[0], glow[1], glow[2]]}
@@ -59,7 +58,7 @@ function ShadeMaterial({
 }
 
 function BaseMaterial({ color, material = 'matte' }: { color: string; material?: string }) {
-  return <SurfaceMaterial kind={material as SurfaceKind} color={color} />
+  return <Material material={material} color={color} />
 }
 
 function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; spread?: number }) {

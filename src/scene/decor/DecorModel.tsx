@@ -71,25 +71,24 @@ export default function DecorModel({ kind, item, state }: Props) {
       // short ends, the way a Nordic wool rug is finished.
       const w = p('width')
       const d = p('depth')
-      const tiles = Math.max(w, d) * 1.5
       const band = Math.min(0.12, Math.min(w, d) * 0.12)
       const tufts = Math.max(6, Math.round(w / 0.06))
       return (
         <group>
           <Slab size={[w, 0.011, d]} radius={0.02} bevel={0.004} position={[0, 0.001, 0]}>
-            <Material color={c('field')} material={m('field')} repeat={tiles} />
+            <Material color={c('field')} material={m('field')} />
           </Slab>
           {/* The border, drawn as four stripes so the field stays plain. */}
           {[-1, 1].map(s => (
             <mesh key={`x${s}`} position={[0, 0.013, (s * (d - band)) / 2]} rotation={[-Math.PI / 2, 0, 0]}>
               <planeGeometry args={[w - band * 2, band * 0.45]} />
-              <Material color={c('border')} material={m('border')} repeat={tiles} />
+              <Material color={c('border')} material={m('border')} />
             </mesh>
           ))}
           {[-1, 1].map(s => (
             <mesh key={`z${s}`} position={[(s * (w - band)) / 2, 0.013, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
               <planeGeometry args={[d - band * 2, band * 0.45]} />
-              <Material color={c('border')} material={m('border')} repeat={tiles} />
+              <Material color={c('border')} material={m('border')} />
             </mesh>
           ))}
           {/* Fringes, on the short ends only. */}
@@ -120,7 +119,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, potH / 2, 0]} castShadow>
             <cylinderGeometry args={[r * 0.9, r * 0.66, potH, SEG]} />
-            <Material color={c('pot')} material={m('pot')} repeat={3} />
+            <Material color={c('pot')} material={m('pot')} />
           </mesh>
           <mesh position={[0, potH, 0]}>
             <cylinderGeometry args={[r * 0.94, r * 0.9, 0.035, SEG]} />
@@ -173,7 +172,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, potH / 2, 0]} castShadow>
             <cylinderGeometry args={[r * 0.85, r * 0.65, potH, SEG]} />
-            <Material color={c('pot')} material={m('pot')} repeat={2} />
+            <Material color={c('pot')} material={m('pot')} />
           </mesh>
           <mesh position={[0, potH, 0]}>
             <cylinderGeometry args={[r * 0.9, r * 0.85, 0.018, SEG]} />
@@ -377,7 +376,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, h / 2, 0]} castShadow>
             <cylinderGeometry args={[r, r * 0.76, h, SEG * 2, 1, true]} />
-            <Material color={c('weave')} material={m('weave')} doubleSide repeat={5} />
+            <Material color={c('weave')} material={m('weave')} doubleSide />
           </mesh>
           <mesh position={[0, 0.012, 0]}>
             <cylinderGeometry args={[r * 0.76, r * 0.76, 0.024, SEG * 2]} />
@@ -425,7 +424,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                 return (
                   <mesh key={i} position={[x, h / 2, 0.06 + fold]} scale={[full / pleats / 0.09, 1, 1]} castShadow>
                     <cylinderGeometry args={[0.045, 0.05, h, 8, 1, false, 0, Math.PI * 2]} />
-                    <Material color={c('fabric')} material={m('fabric')} repeat={3} />
+                    <Material color={c('fabric')} material={m('fabric')} />
                   </mesh>
                 )
               })}

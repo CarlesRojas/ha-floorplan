@@ -1,6 +1,5 @@
 import { roundedShape } from '#/geometry/polygon.ts'
-import type { SurfaceKind } from '#/materials/textures.ts'
-import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
+import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
 import { useMemo, type ReactNode } from 'react'
 import { DoubleSide, ExtrudeGeometry } from 'three'
 
@@ -18,25 +17,22 @@ export function Material({
   emissive,
   emissiveIntensity = 0,
   doubleSide = false,
-  repeat,
-  span,
 }: {
   color: string
   material?: string
   emissive?: [number, number, number]
   emissiveIntensity?: number
   doubleSide?: boolean
-  repeat?: number
-  span?: number
 }) {
+  // Plain paint. Decorations carry no pattern: the surface only decides how
+  // matte or how polished the part is, and the color does the rest. Floors
+  // are the only thing in the room with a texture on it.
   return (
-    <SurfaceMaterial
-      kind={material as SurfaceKind}
+    <meshStandardMaterial
       color={color}
-      repeat={repeat}
-      span={span}
-      doubleSide={doubleSide}
-      emissive={emissive}
+      roughness={surfaceRoughness(material as SurfaceKind)}
+      side={doubleSide ? DoubleSide : undefined}
+      emissive={emissive ?? [0, 0, 0]}
       emissiveIntensity={emissiveIntensity}
     />
   )

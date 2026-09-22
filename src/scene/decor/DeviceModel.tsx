@@ -217,7 +217,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[w, h, d]} radius={h / 2.4} bevel={0.008} position={[0, 0, 0]}>
-            <Material color={c('grille')} material={m('grille')} repeat={w * 12} />
+            <Material color={c('grille')} material={m('grille')} />
           </Slab>
           {[-1, 1].map(side => (
             <Slab
@@ -258,7 +258,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           </mesh>
           <mesh position={[0, h / 2 + 0.016, 0]} castShadow>
             <cylinderGeometry args={[r, r * 0.98, h - 0.03, SEG]} />
-            <Material color={c('grille')} material={m('grille')} repeat={18} />
+            <Material color={c('grille')} material={m('grille')} />
           </mesh>
           {/* Top plate, slightly dished, where the buttons would be. */}
           <mesh position={[0, h + 0.002, 0]}>
@@ -295,7 +295,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           </Slab>
           {/* The grille, a fabric panel proud of the front face. */}
           <Slab size={[w - 0.02, h - 0.12, 0.016]} radius={w * 0.14} bevel={0.006} position={[0, 0.068, d / 2]}>
-            <Material color={c('grille')} material={m('grille')} repeat={h * 14} />
+            <Material color={c('grille')} material={m('grille')} />
           </Slab>
           {/* Driver rings, showing through the grille. */}
           {Array.from({ length: drivers }).map((_, i) => (
@@ -612,7 +612,6 @@ export default function DeviceModel({ kind, item, state }: Props) {
               <Material
                 color={c('mesh')}
                 material={m('mesh')}
-                repeat={10}
                 emissive={[0.6, 0.8, 1]}
                 emissiveIntensity={0.25 * level * lit}
               />
@@ -642,7 +641,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           {/* The filter band, the part that reads as fabric. */}
           <mesh position={[0, h * 0.45, 0]} castShadow>
             <cylinderGeometry args={[r, r, h * 0.78, SEG * 2, 1, true]} />
-            <Material color={c('filter')} material={m('filter')} doubleSide repeat={12} />
+            <Material color={c('filter')} material={m('filter')} doubleSide />
           </mesh>
           <mesh position={[0, h * 0.88, 0]}>
             <cylinderGeometry args={[r * 0.98, r, h * 0.1, SEG * 2]} />
