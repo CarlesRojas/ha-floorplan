@@ -12,6 +12,8 @@ export type DecorationParam = {
   step: number
   // How the editor writes the value. Meters when it is missing.
   unit?: string
+  // A two state parameter, stored as 0 or 1 and edited as a switch.
+  toggle?: boolean
 }
 
 export type DecorationKind = {
@@ -94,6 +96,17 @@ const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1, '')
 const base = (d = 0) => p('base', 'Off floor', d, 0, 1.6)
 // Screens are sold by the diagonal, and they are all 16:9.
 const inches = (d: number, min = 24, max = 120) => p('inches', 'Screen', d, min, max, 1, '"')
+// A switch: off is 0, on is 1.
+const flag = (id: string, label: string, d = 0): DecorationParam => ({
+  id,
+  label,
+  default: d,
+  min: 0,
+  max: 1,
+  step: 1,
+  unit: '',
+  toggle: true,
+})
 
 // Signal sets.
 const NONE: Signal[] = []
@@ -855,9 +868,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Door',
     'wall',
-    [width(0.85, 0.6, 1.4), height(2.05, 1.8, 2.4)],
-    { body: SCANDI.offWhite, trim: SCANDI.oak },
-    { body: 'matte', trim: 'wood' },
+    [width(0.85, 0.6, 1.4), height(2.05, 1.8, 2.4), flag('flip', 'Hinge right')],
+    { body: SCANDI.offWhite, trim: SCANDI.charcoal },
+    { body: 'matte', trim: 'metal' },
     TOGGLE,
   ),
   kind(

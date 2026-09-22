@@ -6,7 +6,7 @@ import {
   screenSize,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { Bar, Blob, Dome, Glass, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Blob, Dome, Glass, Material, SEG, Slab } from '#/scene/decor/parts.tsx'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -800,23 +800,102 @@ export default function DeviceModel({ kind, item, state }: Props) {
       )
     }
     case 'door': {
+      // A plain flush leaf in a lining, with an architrave on both faces and
+      // a lever handle on each side. The hinge sits on the left unless the
+      // flip switch moves it to the right.
       const w = p('width')
       const h = p('height')
-      // Swings open on its hinge when the device reports open.
+      // 1 hinges on the left, -1 on the right.
+      const side = p('flip') > 0.5 ? -1 : 1
+      const leaf = 0.045
+      const jamb = 0.045
+      const lining = 0.12
+      const casing = 0.055
+      const metal = <Material color={c('trim')} material={m('trim')} />
+      // A lever on a round rose, the shape in the reference: a stub out of
+      // the rose, then a bar that runs back toward the hinge and tapers.
+      const handle = (face: number) => {
+        const z = face > 0 ? leaf : 0
+        const hx = side * (w - 0.085)
+        const reach = 0.115
+        return (
+          <group position={[hx, h * 0.47, z]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, face * 0.006]}>
+              <cylinderGeometry args={[0.034, 0.036, 0.012, SEG * 2]} />
+              {metal}
+            </mesh>
+            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, face * 0.034]}>
+              <cylinderGeometry args={[0.018, 0.022, 0.05, SEG]} />
+              {metal}
+            </mesh>
+            {/* The elbow, where the lever turns out of the stub. */}
+            <mesh position={[-side * 0.012, -0.006, face * 0.056]}>
+              <sphereGeometry args={[0.019, SEG, SEG]} />
+              {metal}
+            </mesh>
+            {/* The bar, dropping a little and thinning toward the tip. */}
+            <mesh
+              position={[-side * (0.012 + reach / 2), -0.014, face * 0.056]}
+              rotation={[0, 0, Math.PI / 2 + side * 0.07]}
+            >
+              <cylinderGeometry args={[0.012, 0.018, reach, SEG]} />
+              {metal}
+            </mesh>
+            <mesh position={[-side * (0.012 + reach), -0.021, face * 0.056]}>
+              <sphereGeometry args={[0.012, SEG, SEG]} />
+              {metal}
+            </mesh>
+          </group>
+        )
+      }
       return (
-        <group position={[-w / 2, 0, 0]} rotation={[0, -1.1 * coverLevel, 0]}>
-          <Slab size={[w, h, 0.045]} radius={0.01} position={[w / 2, 0, 0.02]}>
+        <group>
+          {/* The lining and its architrave stay put while the leaf swings. */}
+          {[-1, 1].map(s2 => (
+            <group key={s2}>
+              <Slab
+                size={[jamb, h + jamb, lining]}
+                radius={0.008}
+                bevel={0.004}
+                position={[s2 * (w + jamb) / 2, 0, leaf / 2]}
+              >
+                {body}
+              </Slab>
+              {[-1, 1].map(fz => (
+                <Slab
+                  key={fz}
+                  size={[casing, h + jamb + casing, 0.016]}
+                  radius={0.006}
+                  bevel={0.004}
+                  position={[s2 * (w + casing) / 2, 0, leaf / 2 + fz * (lining / 2 + 0.008)]}
+                >
+                  {body}
+                </Slab>
+              ))}
+            </group>
+          ))}
+          <Slab size={[w + jamb * 2, jamb, lining]} radius={0.008} bevel={0.004} position={[0, h, leaf / 2]}>
             {body}
           </Slab>
-          <Panel size={[w - 0.16, h * 0.38, 0.012]} position={[w / 2, h * 0.12, 0.045]}>
-            {body}
-          </Panel>
-          <Panel size={[w - 0.16, h * 0.32, 0.012]} position={[w / 2, h * 0.56, 0.045]}>
-            {body}
-          </Panel>
-          <Bar length={0.11} radius={0.015} position={[w - 0.1, h * 0.46, 0.06]}>
-            <Material color={c('trim')} material={m('trim')} />
-          </Bar>
+          {[-1, 1].map(fz => (
+            <Slab
+              key={fz}
+              size={[w + casing * 2, casing, 0.016]}
+              radius={0.006}
+              bevel={0.004}
+              position={[0, h + jamb, leaf / 2 + fz * (lining / 2 + 0.008)]}
+            >
+              {body}
+            </Slab>
+          ))}
+          {/* The leaf, hinged on whichever edge the switch picks. */}
+          <group position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * 1.1 * coverLevel, 0]}>
+            <Slab size={[w - 0.008, h - 0.006, leaf]} radius={0.004} bevel={0.003} position={[(side * w) / 2, 0, leaf / 2]}>
+              {body}
+            </Slab>
+            {handle(1)}
+            {handle(-1)}
+          </group>
         </group>
       )
     }
