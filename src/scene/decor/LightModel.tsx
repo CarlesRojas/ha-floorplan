@@ -89,24 +89,6 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
   return <pointLight position={[0, y, 0]} color={[r, g, b]} intensity={total} distance={7} decay={1.6} />
 }
 
-// The upper part of a sphere, open underneath: a dome shade.
-function Dome({
-  radius,
-  position,
-  children,
-}: {
-  radius: number
-  position: [number, number, number]
-  children: React.ReactNode
-}) {
-  return (
-    <mesh position={position} castShadow>
-      <sphereGeometry args={[radius, SEG, SEG, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-      {children}
-    </mesh>
-  )
-}
-
 export default function LightModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
@@ -118,139 +100,171 @@ export default function LightModel({ kind, item, state }: Props) {
   let glowSpread = 0
   switch (kind.id) {
     case 'light_ceiling': {
-      // A flush opal disc in a slim rim, the plain ceiling light.
+      // A plain round focus in the ceiling, ten centimeters across.
       const r = size / 2
-      glowY = CEILING_HEIGHT_M - r * 0.5 - 0.1
+      glowY = CEILING_HEIGHT_M - r - 0.05
       body = (
         <group>
-          <mesh position={[0, CEILING_HEIGHT_M - 0.02, 0]}>
-            <cylinderGeometry args={[r, r * 0.98, 0.04, SEG * 2]} />
+          <mesh position={[0, CEILING_HEIGHT_M - 0.006, 0]}>
+            <cylinderGeometry args={[r, r, 0.012, SEG * 2]} />
             <BaseMaterial color={c('rim')} material={m('rim')} />
           </mesh>
-          {/* The diffuser, a shallow dome hanging below the rim. */}
-          <mesh position={[0, CEILING_HEIGHT_M - 0.04, 0]} rotation={[Math.PI, 0, 0]}>
-            <sphereGeometry args={[r * 0.98, SEG * 2, SEG, 0, Math.PI * 2, 0, Math.PI * 0.3]} />
-            <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
+          <mesh position={[0, CEILING_HEIGHT_M - 0.014, 0]}>
+            <cylinderGeometry args={[r * 0.88, r * 0.88, 0.006, SEG * 2]} />
+            <ShadeMaterial color={c('focus')} material={m('focus')} state={state} />
           </mesh>
         </group>
       )
       break
     }
     case 'light_pendant': {
-      // A cone shade on a cord, with a canopy at the ceiling and the bulb
-      // showing under the rim.
+      // After the Nagoya: a drum of thin vertical wooden slats held by a ring
+      // top and bottom, open at both ends so it lights the ceiling too, with
+      // a translucent diffuser disc set inside the lower ring.
       const cord = p('cord')
       const r = size / 2
       const top = CEILING_HEIGHT_M - cord
-      const shadeH = r * 0.95
-      glowY = top - r * 0.6
+      const drumH = size * 0.58
+      const slats = Math.max(16, Math.round((Math.PI * size) / 0.035))
+      const slatW = (Math.PI * size) / slats / 1.7
+      glowY = top - drumH * 0.6
       body = (
         <>
-          <mesh position={[0, CEILING_HEIGHT_M - 0.02, 0]}>
-            <cylinderGeometry args={[0.055, 0.06, 0.035, SEG]} />
+          <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
+            <cylinderGeometry args={[0.05, 0.055, 0.03, SEG]} />
             <BaseMaterial color={c('cord')} material={m('cord')} />
           </mesh>
           <mesh position={[0, CEILING_HEIGHT_M - cord / 2, 0]}>
-            <capsuleGeometry args={[0.008, cord, 4, 8]} />
+            <capsuleGeometry args={[0.006, cord, 4, 8]} />
             <BaseMaterial color={c('cord')} material={m('cord')} />
           </mesh>
-          {/* The shade, open at the bottom, with a rolled rim. */}
-          <mesh position={[0, top - shadeH / 2, 0]} castShadow>
-            <coneGeometry args={[r, shadeH, SEG * 2, 1, true]} />
-            <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
-          </mesh>
-          <mesh position={[0, top - shadeH, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.98, 0.008, 6, SEG * 2]} />
-            <BaseMaterial color={c('shade')} material={m('shade')} />
-          </mesh>
-          <mesh position={[0, top - shadeH * 0.78, 0]}>
-            <sphereGeometry args={[r * 0.26, SEG, SEG]} />
-            <ShadeMaterial color="#fff3d6" state={state} />
+          {/* The two rings the slats are strung on. */}
+          {[top, top - drumH].map(y => (
+            <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[r, 0.006, 6, SEG * 3]} />
+              <BaseMaterial color={c('rings')} material={m('rings')} />
+            </mesh>
+          ))}
+          {Array.from({ length: slats }).map((_, i) => {
+            const a = (i / slats) * Math.PI * 2
+            return (
+              <mesh
+                key={i}
+                position={[Math.cos(a) * r, top - drumH / 2, Math.sin(a) * r]}
+                rotation={[0, -a, 0]}
+                castShadow
+              >
+                <boxGeometry args={[0.004, drumH, slatW]} />
+                <BaseMaterial color={c('slats')} material={m('slats')} />
+              </mesh>
+            )
+          })}
+          {/* The diffuser, a translucent disc across the bottom of the drum. */}
+          <mesh position={[0, top - drumH + 0.012, 0]}>
+            <cylinderGeometry args={[r * 0.96, r * 0.96, 0.01, SEG * 2]} />
+            <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
         </>
       )
       break
     }
     case 'light_floor': {
-      // A drum shade on a slim stem, standing on a weighted disc.
+      // After the TMM: a square beech shaft on a cross foot, with a
+      // cylindrical parchment shade sitting near the top of it.
       const height = p('height')
       const r = size / 2
-      const shadeH = r * 1.15
-      glowY = height - shadeH * 0.4
+      const shadeH = size * 0.85
+      const post = 0.028
+      const shadeY = height - shadeH
+      glowY = shadeY + shadeH * 0.5
       body = (
         <>
-          <mesh position={[0, 0.012, 0]}>
-            <cylinderGeometry args={[size * 0.42, size * 0.46, 0.024, SEG * 2]} />
+          {/* The foot: two flat battens crossing under the shaft. */}
+          {[0, Math.PI / 2].map(a => (
+            <mesh key={a} position={[0, 0.012, 0]} rotation={[0, a, 0]}>
+              <boxGeometry args={[size * 1.5, 0.024, post * 1.6]} />
+              <BaseMaterial color={c('stand')} material={m('stand')} />
+            </mesh>
+          ))}
+          <mesh position={[0, height / 2, 0]} castShadow>
+            <boxGeometry args={[post, height, post]} />
             <BaseMaterial color={c('stand')} material={m('stand')} />
           </mesh>
-          <mesh position={[0, 0.04, 0]}>
-            <cylinderGeometry args={[0.03, size * 0.16, 0.04, SEG]} />
-            <BaseMaterial color={c('stand')} material={m('stand')} />
-          </mesh>
-          {/* The stem stops inside the shade, so nothing pokes out the top. */}
-          <mesh position={[0, (height - shadeH * 0.5) / 2, 0]}>
-            <cylinderGeometry args={[0.014, 0.018, height - shadeH * 0.5, 12]} />
-            <BaseMaterial color={c('stand')} material={m('stand')} />
-          </mesh>
-          {/* The shade, very slightly tapered, open top and bottom. */}
-          <mesh position={[0, height - shadeH * 0.4, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.88, r, shadeH, SEG * 2, 1, true]} />
+          {/* The shade hangs on the front of the shaft, the way it is
+              hooked onto the mast, so the shaft stays outside it. */}
+          <mesh position={[0, shadeY + shadeH / 2, r + post * 0.4]} castShadow>
+            <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
-          </mesh>
-          <mesh position={[0, height - shadeH * 0.9, 0]}>
-            <sphereGeometry args={[r * 0.3, SEG, SEG]} />
-            <ShadeMaterial color="#fff3d6" state={state} />
           </mesh>
         </>
       )
       break
     }
     case 'light_table': {
-      // A mushroom lamp: a domed cap over a short waisted stem on a disc.
+      // After the Cestita: an opal glass globe sitting in a little basket of
+      // bent wooden ribs, which cross over the top into a handle.
       const height = p('height')
       const r = size / 2
-      glowY = height * 0.8
+      const globeR = height * 0.24
+      const globeY = height * 0.42
+      glowY = globeY
       body = (
         <group>
-          <mesh position={[0, 0.012, 0]}>
-            <cylinderGeometry args={[r * 0.5, r * 0.55, 0.024, SEG * 2]} />
-            <BaseMaterial color={c('stand')} material={m('stand')} />
+          {/* The ring the globe sits in. */}
+          <mesh position={[0, height * 0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[globeR * 0.86, 0.008, 6, SEG * 2]} />
+            <BaseMaterial color={c('basket')} material={m('basket')} />
           </mesh>
-          <mesh position={[0, height * 0.42, 0]}>
-            <cylinderGeometry args={[r * 0.24, r * 0.4, height * 0.8, SEG]} />
-            <BaseMaterial color={c('stand')} material={m('stand')} />
+          {/* Two ribs, each bent right over the globe, crossing at the top. */}
+          {[0, Math.PI / 2].map(a => (
+            <mesh key={a} position={[0, height * 0.5, 0]} rotation={[0, a, 0]} scale={[r, height * 0.5, r]} castShadow>
+              <torusGeometry args={[1, 0.013 / r, 6, 36, Math.PI]} />
+              <BaseMaterial color={c('basket')} material={m('basket')} />
+            </mesh>
+          ))}
+          {/* The collar where they meet, which doubles as the handle. */}
+          <mesh position={[0, height - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.016, 0.009, 6, SEG * 2]} />
+            <BaseMaterial color={c('basket')} material={m('basket')} />
           </mesh>
-          <Dome radius={r} position={[0, height * 0.82, 0]}>
-            <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
-          </Dome>
-          {/* A ring under the cap, so the shade reads as a shell. */}
-          <mesh position={[0, height * 0.82, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.98, 0.008, 6, SEG * 2]} />
-            <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
+          <mesh position={[0, globeY, 0]} castShadow>
+            <sphereGeometry args={[globeR, SEG * 2, SEG * 2]} />
+            <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
           </mesh>
         </group>
       )
       break
     }
     case 'light_wall': {
-      // A half dome sconce on a round backplate.
+      // After the TMM wall lamp: a beech channel on the wall with a
+      // cylindrical parchment shade dropped into it.
       const height = p('height')
       const r = size / 2
-      glowY = height + r * 0.3
+      const shadeH = size * 0.95
+      const rail = 0.018
+      glowY = height + shadeH * 0.1
       body = (
         <group position={[0, height, 0]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.008]}>
-            <cylinderGeometry args={[r * 0.55, r * 0.55, 0.016, SEG]} />
-            <BaseMaterial color={c('plate')} material={m('plate')} />
+          {/* The channel: a back board with a rail down each edge. */}
+          <mesh position={[0, 0, rail / 2]}>
+            <boxGeometry args={[size + rail * 2, shadeH * 1.05, rail]} />
+            <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
-          <mesh position={[0, 0, 0.012]} castShadow>
-            <sphereGeometry args={[r, SEG, SEG, 0, Math.PI]} />
+          {[-1, 1].map(s2 => (
+            <mesh key={s2} position={[(s2 * (size + rail)) / 2, 0, rail + r * 0.3]}>
+              <boxGeometry args={[rail, shadeH * 1.05, r * 0.6]} />
+              <BaseMaterial color={c('channel')} material={m('channel')} />
+            </mesh>
+          ))}
+          {/* The shade sits in the channel, proud of it at the front. */}
+          <mesh position={[0, 0, rail + r * 0.55]} castShadow>
+            <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
           </mesh>
-          {/* The open face of the shell, closed by a soft disc. */}
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.012]}>
-            <circleGeometry args={[r, SEG]} />
-            <BaseMaterial color={c('plate')} material={m('plate')} />
+          {/* The pull cord that switches it. */}
+          <mesh position={[0, -shadeH * 0.85, rail + r * 0.55]}>
+            <capsuleGeometry args={[0.003, shadeH * 0.5, 3, 6]} />
+            <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
         </group>
       )
@@ -277,25 +291,6 @@ export default function LightModel({ kind, item, state }: Props) {
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
         </group>
-      )
-      break
-    }
-    case 'light_spot': {
-      // A recessed downlight: a trim ring in the ceiling with the lens set
-      // back inside it.
-      const r = size / 2
-      glowY = CEILING_HEIGHT_M - r * 2
-      body = (
-        <>
-          <mesh position={[0, CEILING_HEIGHT_M - r * 0.3, 0]}>
-            <cylinderGeometry args={[r, r * 0.86, r * 0.6, SEG * 2]} />
-            <BaseMaterial color={c('trim')} material={m('trim')} />
-          </mesh>
-          <mesh position={[0, CEILING_HEIGHT_M - r * 0.62, 0]}>
-            <cylinderGeometry args={[r * 0.78, r * 0.78, r * 0.2, SEG * 2]} />
-            <ShadeMaterial color={c('lens')} state={state} />
-          </mesh>
-        </>
       )
       break
     }

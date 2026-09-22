@@ -87,7 +87,7 @@ Alt and drag copies furniture and rooms. A duplicated room keeps its shape and f
 The mode switch sits at the top of the sidebar and stays there while the rest scrolls. Changing mode lets go of whatever was picked. Rooms are picked in Rooms mode only, so in the other two an item is added to a room at random and dragged from there. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Adding with no room selected drops the entity in a random room. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 
 - Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
-- A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
+- A placed entity has a type that sets its look, for example ceiling light, floor lamp or floor LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
 - Selecting a device fills the sidebar the same way, with the controls the entity offers written out: on and off, percentage, color, warmth, reading, modes. The same icons are on every row of the list. The items it could stand in for are listed under Suggested first, the ones that express the most of those controls, each with the same icons. Searching a domain, light or cover, lists every entity in it.
 - Right click a device to rotate it or remove it. Delete removes the selected device.
 - Deleting a room removes its devices.
@@ -111,7 +111,7 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 
 | Family | Items |
 | --- | --- |
-| Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, LED strip, ceiling LED strip, wall LED strip, spot |
+| Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip |
 | Seating | Sofa, armchair, dining chair, stool, bench, pouf |
 | Tables | Dining table, coffee table, side table, desk, console table, nightstand |
 | Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |

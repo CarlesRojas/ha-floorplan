@@ -130,72 +130,42 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'dining_chair': {
-      // After the wishbone: round splayed legs with a stretcher, a woven
-      // seat, two uprights and a top rail that wraps around, with the Y
-      // between them.
+      // After the New Aix: one upholstered shell, seat and back in a single
+      // curved piece, on four slim lacquered steel legs.
       const w = p('width')
       const d = p('depth')
-      const seatH = 0.45
-      const backH = 0.31
-      const railR = w * 0.46
+      const seatH = 0.46
+      const seat = 0.09
+      const backH = 0.42
       return (
         <group>
-          <Legs width={w - 0.06} depth={d - 0.06} height={seatH} inset={0.02} top={0.016} bottom={0.011} splay={0.07}>
-            {M('frame')}
-          </Legs>
-          {/* Stretchers, the ring that holds the legs together. */}
-          {[-1, 1].map(s => (
-            <Bar
-              key={s}
-              length={d - 0.12}
-              radius={0.008}
-              rotation={[Math.PI / 2, 0, 0]}
-              position={[(s * (w - 0.08)) / 2, seatH * 0.4, 0]}
-            >
-              {M('frame')}
-            </Bar>
+          {[-1, 1].flatMap(sx =>
+            [-1, 1].map(sz => (
+              <mesh
+                key={`${sx}:${sz}`}
+                position={[(sx * (w - 0.08)) / 2, (seatH - seat) / 2, (sz * (d - 0.08)) / 2]}
+                rotation={[-sz * 0.05, 0, -sx * 0.05]}
+                castShadow
+              >
+                <cylinderGeometry args={[0.011, 0.014, seatH - seat, 10]} />
+                {M('legs')}
+              </mesh>
+            )),
+          )}
+          {/* A rail each side, the way a steel frame carries the shell. */}
+          {[-1, 1].map(sx => (
+            <mesh key={sx} position={[(sx * (w - 0.08)) / 2, seatH - seat - 0.01, 0]}>
+              <boxGeometry args={[0.014, 0.014, d - 0.1]} />
+              {M('legs')}
+            </mesh>
           ))}
-          <Bar length={w - 0.1} radius={0.008} rotation={[0, 0, Math.PI / 2]} position={[0, seatH * 0.4, 0]}>
-            {M('frame')}
-          </Bar>
-          {/* Frame of the seat, with the woven pad inside it. */}
-          <Slab size={[w, 0.035, d]} radius={0.03} position={[0, seatH, 0]}>
-            {M('frame')}
-          </Slab>
-          <Slab size={[w - 0.05, 0.02, d - 0.05]} radius={0.02} bevel={0.004} position={[0, seatH + 0.032, 0]}>
-            <Material color={c('seat')} material={m('seat')} />
-          </Slab>
-          {/* Uprights, leaning back a little, and the wrapping top rail. */}
-          {[-1, 1].map(s => (
-            <Bar
-              key={s}
-              length={backH}
-              radius={0.013}
-              position={[(s * (w - 0.07)) / 2, seatH + backH / 2 + 0.02, -d / 2 + 0.07]}
-              rotation={[-0.12, 0, 0]}
-            >
-              {M('frame')}
-            </Bar>
-          ))}
-          <mesh position={[0, seatH + backH + 0.02, -d / 2 + 0.03]} rotation={[Math.PI / 2 - 0.12, 0, 0]} castShadow>
-            <torusGeometry args={[railR, 0.016, 8, 24, Math.PI * 1.1]} />
-            {M('frame')}
-          </mesh>
-          {/* The Y, from the middle of the seat back up to the rail. */}
-          {[-1, 1].map(s => (
-            <Bar
-              key={s}
-              length={backH * 0.86}
-              radius={0.009}
-              position={[s * w * 0.11, seatH + backH * 0.5, -d / 2 + 0.06]}
-              rotation={[-0.12, 0, s * 0.3]}
-            >
-              {M('frame')}
-            </Bar>
-          ))}
-          <Bar length={0.07} radius={0.009} position={[0, seatH + 0.06, -d / 2 + 0.06]} rotation={[-0.12, 0, 0]}>
-            {M('frame')}
-          </Bar>
+          {/* The shell: a padded seat and a back that leans away from it. */}
+          <Cushion size={[w, seat, d]} position={[0, seatH - seat, 0]}>
+            {M('shell')}
+          </Cushion>
+          <Cushion size={[w - 0.02, backH, 0.08]} rotation={[-0.14, 0, 0]} position={[0, seatH, -d / 2 + 0.07]}>
+            {M('shell')}
+          </Cushion>
         </group>
       )
     }
@@ -313,7 +283,52 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     // Tables
-    case 'dining_table':
+    case 'dining_table': {
+      // After the New Viok: a thin natural oak top on a lacquered steel
+      // understructure, square legs set in from the corners and tied by a
+      // beam right under the top.
+      const w = p('width')
+      const d = p('depth')
+      const h = p('height')
+      const top = 0.03
+      const leg = 0.04
+      const inset = 0.09
+      const beam = 0.035
+      const frameW = w - inset * 2
+      const frameD = d - inset * 2
+      return (
+        <group>
+          {[-1, 1].flatMap(sx =>
+            [-1, 1].map(sz => (
+              <mesh
+                key={`${sx}:${sz}`}
+                position={[(sx * (frameW - leg)) / 2, (h - top) / 2, (sz * (frameD - leg)) / 2]}
+                castShadow
+              >
+                <boxGeometry args={[leg, h - top, leg]} />
+                {M('frame')}
+              </mesh>
+            )),
+          )}
+          {/* The beam runs right around, just under the top. */}
+          {[-1, 1].map(sz => (
+            <mesh key={`x${sz}`} position={[0, h - top - beam / 2, (sz * (frameD - leg)) / 2]}>
+              <boxGeometry args={[frameW - leg, beam, leg * 0.6]} />
+              {M('frame')}
+            </mesh>
+          ))}
+          {[-1, 1].map(sx => (
+            <mesh key={`z${sx}`} position={[(sx * (frameW - leg)) / 2, h - top - beam / 2, 0]}>
+              <boxGeometry args={[leg * 0.6, beam, frameD - leg]} />
+              {M('frame')}
+            </mesh>
+          ))}
+          <Slab size={[w, top, d]} radius={0.012} bevel={0.006} position={[0, h - top, 0]}>
+            {M('top')}
+          </Slab>
+        </group>
+      )
+    }
     case 'desk':
     case 'coffee_table':
     case 'console_table': {
