@@ -34,7 +34,7 @@ function Leaf({
 export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, item.materials, slot)
+  const m = (slot: string) => materialValue(kind, slot)
   // An unbound curtain hangs closed. Eased, so it draws rather than jumps
   // as Home Assistant reports its position on the way.
   const level = useTravel(state?.level ?? 0, state?.text === 'opening' ? 1 : state?.text === 'closing' ? -1 : 0)
@@ -71,25 +71,24 @@ export default function DecorModel({ kind, item, state }: Props) {
       // short ends, the way a Nordic wool rug is finished.
       const w = p('width')
       const d = p('depth')
-      const tiles = Math.max(w, d) * 1.5
       const band = Math.min(0.12, Math.min(w, d) * 0.12)
       const tufts = Math.max(6, Math.round(w / 0.06))
       return (
         <group>
           <Slab size={[w, 0.011, d]} radius={0.02} bevel={0.004} position={[0, 0.001, 0]}>
-            <Material color={c('body')} material={m('body')} repeat={tiles} />
+            <Material color={c('field')} material={m('field')} />
           </Slab>
           {/* The border, drawn as four stripes so the field stays plain. */}
           {[-1, 1].map(s => (
             <mesh key={`x${s}`} position={[0, 0.013, (s * (d - band)) / 2]} rotation={[-Math.PI / 2, 0, 0]}>
               <planeGeometry args={[w - band * 2, band * 0.45]} />
-              <Material color={c('pattern')} material={m('pattern')} repeat={tiles} />
+              <Material color={c('border')} material={m('border')} />
             </mesh>
           ))}
           {[-1, 1].map(s => (
             <mesh key={`z${s}`} position={[(s * (w - band)) / 2, 0.013, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
               <planeGeometry args={[d - band * 2, band * 0.45]} />
-              <Material color={c('pattern')} material={m('pattern')} repeat={tiles} />
+              <Material color={c('border')} material={m('border')} />
             </mesh>
           ))}
           {/* Fringes, on the short ends only. */}
@@ -101,7 +100,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                 rotation={[Math.PI / 2, 0, ((i % 3) - 1) * 0.08]}
               >
                 <capsuleGeometry args={[0.004, 0.05, 2, 5]} />
-                <Material color={c('body')} material={m('body')} />
+                <Material color={c('field')} material={m('field')} />
               </mesh>
             )),
           )}
@@ -120,7 +119,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, potH / 2, 0]} castShadow>
             <cylinderGeometry args={[r * 0.9, r * 0.66, potH, SEG]} />
-            <Material color={c('pot')} material={m('pot')} repeat={3} />
+            <Material color={c('pot')} material={m('pot')} />
           </mesh>
           <mesh position={[0, potH, 0]}>
             <cylinderGeometry args={[r * 0.94, r * 0.9, 0.035, SEG]} />
@@ -129,10 +128,10 @@ export default function DecorModel({ kind, item, state }: Props) {
           {/* Soil, sunk just below the rim. */}
           <mesh position={[0, potH - 0.02, 0]}>
             <cylinderGeometry args={[r * 0.86, r * 0.86, 0.02, SEG]} />
-            <Material color="#3c332b" material="matte" />
+            <Material color={c('soil')} material={m('soil')} />
           </mesh>
           <Bar length={trunk} radius={r * 0.075} position={[0, potH + trunk / 2 - 0.05, 0]} rotation={[0, 0, 0.03]}>
-            <Material color={c('leaves')} material={m('leaves')} />
+            <Material color={c('stems')} material={m('stems')} />
           </Bar>
           {Array.from({ length: leaves }).map((_, i) => {
             const t = (i + 1) / (leaves + 1)
@@ -149,7 +148,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                   position={[(Math.cos(a) * reach) / 2, y + size * 0.1, (Math.sin(a) * reach) / 2]}
                   rotation={[0, -a, Math.PI / 2 - 0.35]}
                 >
-                  <Material color={c('leaves')} material={m('leaves')} />
+                  <Material color={c('stems')} material={m('stems')} />
                 </Bar>
                 <Leaf
                   length={size * 1.5}
@@ -173,7 +172,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, potH / 2, 0]} castShadow>
             <cylinderGeometry args={[r * 0.85, r * 0.65, potH, SEG]} />
-            <Material color={c('pot')} material={m('pot')} repeat={2} />
+            <Material color={c('pot')} material={m('pot')} />
           </mesh>
           <mesh position={[0, potH, 0]}>
             <cylinderGeometry args={[r * 0.9, r * 0.85, 0.018, SEG]} />
@@ -181,7 +180,7 @@ export default function DecorModel({ kind, item, state }: Props) {
           </mesh>
           <mesh position={[0, potH - 0.012, 0]}>
             <cylinderGeometry args={[r * 0.8, r * 0.8, 0.015, SEG]} />
-            <Material color="#3c332b" material="matte" />
+            <Material color={c('soil')} material={m('soil')} />
           </mesh>
           {Array.from({ length: 7 }).map((_, i) => {
             const a = i * 2.39
@@ -217,7 +216,7 @@ export default function DecorModel({ kind, item, state }: Props) {
           </mesh>
           <mesh position={[0, h / 2, 0.016]}>
             <planeGeometry args={[w - bar * 2, h - bar * 2]} />
-            <Material color="#efeae2" material="matte" />
+            <Material color={c('mount')} material={m('mount')} />
           </mesh>
           <mesh position={[0, h / 2, 0.018]}>
             <planeGeometry args={[w - bar * 2 - mount * 2, h - bar * 2 - mount * 2]} />
@@ -225,7 +224,12 @@ export default function DecorModel({ kind, item, state }: Props) {
           </mesh>
           {/* The four frame members, mitred by overlap at the corners. */}
           {[-1, 1].map(s => (
-            <Panel key={`h${s}`} size={[w, bar, 0.026]} position={[0, h / 2 + (s * (h - bar)) / 2, 0.013]} radius={0.004}>
+            <Panel
+              key={`h${s}`}
+              size={[w, bar, 0.026]}
+              position={[0, h / 2 + (s * (h - bar)) / 2, 0.013]}
+              radius={0.004}
+            >
               <Material color={c('frame')} material={m('frame')} />
             </Panel>
           ))}
@@ -254,7 +258,7 @@ export default function DecorModel({ kind, item, state }: Props) {
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.018]}>
             <cylinderGeometry args={[r - ring, r - ring, 0.01, SEG * 2]} />
-            <Material color={c('mirror')} material={m('mirror')} />
+            <Material color={c('glass')} material={m('glass')} />
           </mesh>
         </group>
       )
@@ -266,7 +270,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0, 0.02]}>
             <torusGeometry args={[r - ring, ring, 8, SEG * 2]} />
-            <Material color={c('frame')} material={m('frame')} />
+            <Material color={c('rim')} material={m('rim')} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.016]}>
             <cylinderGeometry args={[r - ring * 0.6, r - ring * 0.6, 0.014, SEG * 2]} />
@@ -282,21 +286,21 @@ export default function DecorModel({ kind, item, state }: Props) {
                 rotation={[0, 0, -a]}
               >
                 <boxGeometry args={[0.006, r * 0.14, 0.004]} />
-                <Material color={c('frame')} material={m('frame')} />
+                <Material color={c('rim')} material={m('rim')} />
               </mesh>
             )
           })}
           <mesh position={[Math.sin(0.2) * r * 0.25, Math.cos(0.2) * r * 0.25, 0.03]} rotation={[0, 0, -0.2]}>
             <boxGeometry args={[0.008, r * 0.5, 0.005]} />
-            <Material color={c('frame')} material={m('frame')} />
+            <Material color={c('hands')} material={m('hands')} />
           </mesh>
           <mesh position={[r * 0.19, 0, 0.032]} rotation={[0, 0, Math.PI / 2]}>
             <boxGeometry args={[0.007, r * 0.38, 0.005]} />
-            <Material color={c('frame')} material={m('frame')} />
+            <Material color={c('hands')} material={m('hands')} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.034]}>
             <cylinderGeometry args={[r * 0.05, r * 0.05, 0.008, 10]} />
-            <Material color={c('frame')} material={m('frame')} />
+            <Material color={c('hands')} material={m('hands')} />
           </mesh>
         </group>
       )
@@ -309,7 +313,7 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           {vaseGeometry && (
             <mesh geometry={vaseGeometry} castShadow receiveShadow>
-              <Material color={c('body')} material={m('body')} doubleSide />
+              <Material color={c('vase')} material={m('vase')} doubleSide />
             </mesh>
           )}
           {Array.from({ length: stems }).map((_, i) => {
@@ -333,7 +337,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                   position={[Math.cos(a) * reach, top, Math.sin(a) * reach]}
                   rotation={[0, -a + Math.PI / 2, 0.9]}
                 >
-                  <Material color={c('stems')} material={m('stems')} doubleSide />
+                  <Material color={c('flowers')} material={m('flowers')} doubleSide />
                 </Leaf>
               </group>
             )
@@ -357,7 +361,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                 bevel={0.003}
                 position={[((i % 2) - 0.5) * 0.012, i * 0.042, ((i % 3) - 1) * 0.008]}
               >
-                <Material color={c('body')} material={m('body')} />
+                <Material color={c('covers')} material={m('covers')} />
               </Slab>
             )
           })}
@@ -372,15 +376,15 @@ export default function DecorModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, h / 2, 0]} castShadow>
             <cylinderGeometry args={[r, r * 0.76, h, SEG * 2, 1, true]} />
-            <Material color={c('body')} material={m('body')} doubleSide repeat={5} />
+            <Material color={c('weave')} material={m('weave')} doubleSide />
           </mesh>
           <mesh position={[0, 0.012, 0]}>
             <cylinderGeometry args={[r * 0.76, r * 0.76, 0.024, SEG * 2]} />
-            <Material color={c('body')} material={m('body')} />
+            <Material color={c('weave')} material={m('weave')} />
           </mesh>
           <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[r, 0.022, 8, SEG * 2]} />
-            <Material color={c('body')} material={m('body')} />
+            <Material color={c('weave')} material={m('weave')} />
           </mesh>
           {/* Handles, arching out of the rim on opposite sides. */}
           {[-1, 1].map(s => (
@@ -390,7 +394,7 @@ export default function DecorModel({ kind, item, state }: Props) {
               rotation={[Math.PI / 2, 0, s > 0 ? -Math.PI / 2 : Math.PI / 2]}
             >
               <torusGeometry args={[Math.min(0.07, h * 0.28), 0.014, 6, 14, Math.PI]} />
-              <Material color={c('body')} material={m('body')} />
+              <Material color={c('weave')} material={m('weave')} />
             </mesh>
           ))}
         </group>
@@ -418,14 +422,9 @@ export default function DecorModel({ kind, item, state }: Props) {
                 const x = -s * (full * ((i + 0.5) / pleats))
                 const fold = i % 2 === 0 ? 0.055 : 0.02
                 return (
-                  <mesh
-                    key={i}
-                    position={[x, h / 2, 0.06 + fold]}
-                    scale={[full / pleats / 0.09, 1, 1]}
-                    castShadow
-                  >
+                  <mesh key={i} position={[x, h / 2, 0.06 + fold]} scale={[full / pleats / 0.09, 1, 1]} castShadow>
                     <cylinderGeometry args={[0.045, 0.05, h, 8, 1, false, 0, Math.PI * 2]} />
-                    <Material color={c('body')} material={m('body')} repeat={3} />
+                    <Material color={c('fabric')} material={m('fabric')} />
                   </mesh>
                 )
               })}

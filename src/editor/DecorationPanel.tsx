@@ -1,10 +1,8 @@
 import {
   canRide,
   DECORATION_KINDS,
-  FIXED_SLOTS,
   decorationKind,
   isSupport,
-  materialValue,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { ridersOf } from '#/decoration/surfaces.ts'
@@ -13,7 +11,7 @@ import ModelPreview from '#/editor/ModelPreview.tsx'
 import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
 import { EDITOR_SIDEBAR_PREVIEW_PX } from '#/constants.ts'
 import { cn } from '#/lib/utils.ts'
-import { DECORATION_MATERIALS, EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -138,34 +136,20 @@ export default function DecorationPanel({
           <span className="text-right text-xs text-(--secondary-text-color)">{item.rotation ?? 0}°</span>
         </label>
 
+        {/* The surface of each part is part of what the piece is. Only its
+            color is the viewer's to pick. */}
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-          <p className="text-xs font-semibold text-(--secondary-text-color)">Materials</p>
+          <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
           {Object.entries(kind.colors).map(([slot, fallback]) => (
-            <div key={slot} className="grid grid-cols-[96px_1fr_40px] items-center gap-2 text-sm capitalize">
+            <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
               {slot}
-              {FIXED_SLOTS.has(slot) ? (
-                // Glass is glass. Only its tint is up to the viewer.
-                <span className="text-xs text-(--secondary-text-color)">Tint only</span>
-              ) : (
-                <select
-                  className={input}
-                  value={materialValue(kind, item.materials, slot)}
-                  onChange={e => onUpdate(item.id, { materials: { ...item.materials, [slot]: e.target.value } })}
-                >
-                  {Object.entries(DECORATION_MATERIALS).map(([id, label]) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              )}
               <input
                 type="color"
                 className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
                 value={item.colors?.[slot] ?? fallback}
                 onChange={e => onUpdate(item.id, { colors: { ...item.colors, [slot]: e.target.value } })}
               />
-            </div>
+            </label>
           ))}
         </div>
 

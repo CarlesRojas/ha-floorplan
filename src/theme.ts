@@ -85,12 +85,3 @@ export const FLOOR_MATERIALS: Record<string, { label: string; color: string; sur
     carpet: { label: 'Carpet', color: '#9fb3c8', surface: 'carpet' },
     concrete: { label: 'Concrete', color: '#b3b3b0', surface: 'concrete' },
 }
-
-// Surfaces a decoration material slot can use.
-export const DECORATION_MATERIALS: Record<string, string> = {
-    matte: 'Matte',
-    fabric: 'Fabric',
-    wood: 'Wood',
-    ceramic: 'Ceramic',
-    metal: 'Metal',
-}

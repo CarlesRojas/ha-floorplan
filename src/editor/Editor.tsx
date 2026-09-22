@@ -210,12 +210,10 @@ export default function Editor({ hass, config, onChange }: Props) {
       ...item,
       params: item.params ? { ...item.params } : undefined,
       colors: item.colors ? { ...item.colors } : undefined,
-      materials: item.materials ? { ...item.materials } : undefined,
       room: room?.id ?? item.room,
     }
     if (!copy.params) delete copy.params
     if (!copy.colors) delete copy.colors
-    if (!copy.materials) delete copy.materials
     if (!room) return copy
     const step: Point = [round(item.position[0] + EDITOR_GRID_M), round(item.position[1] - EDITOR_GRID_M)]
     copy.position = within(step, room.points) ? step : item.position

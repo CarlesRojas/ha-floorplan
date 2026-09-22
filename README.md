@@ -87,14 +87,14 @@ Alt and drag copies furniture and rooms. A duplicated room keeps its shape and f
 The mode switch sits at the top of the sidebar and stays there while the rest scrolls. Changing mode lets go of whatever was picked. Rooms are picked in Rooms mode only, so in the other two an item is added to a room at random and dragged from there. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Adding with no room selected drops the entity in a random room. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 
 - Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
-- A placed entity has a type that sets its look, for example ceiling light, floor lamp or LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
+- A placed entity has a type that sets its look, for example ceiling light, floor lamp or floor LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
 - Selecting a device fills the sidebar the same way, with the controls the entity offers written out: on and off, percentage, color, warmth, reading, modes. The same icons are on every row of the list. The items it could stand in for are listed under Suggested first, the ones that express the most of those controls, each with the same icons. Searching a domain, light or cover, lists every entity in it.
 - Right click a device to rotate it or remove it. Delete removes the selected device.
 - Deleting a room removes its devices.
 
 ### Decoration mode
 
-The third mode places furniture and fixtures. The sidebar shows the catalog. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per material slot, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll, and the preview has a handle under it to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
+The third mode places furniture and fixtures. The sidebar shows the catalog. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per part, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll, and the preview has a handle under it to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
 
 - Whatever is selected is drawn last, so it takes the press when two items sit over each other and its rotation handle is never covered. Clicking that spot again steps down to the one underneath, and round again, since something buried cannot be reached any other way. Dragging still moves whatever is selected.
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
@@ -111,7 +111,7 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 
 | Family | Items |
 | --- | --- |
-| Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, LED strip, ceiling LED strip, wall LED strip, spot |
+| Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip |
 | Seating | Sofa, armchair, dining chair, stool, bench, pouf |
 | Tables | Dining table, coffee table, side table, desk, console table, nightstand |
 | Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |
@@ -189,8 +189,7 @@ Each decoration:
 | `rotation` | Degrees, counter clockwise on the plan |
 | `on` | Id of the item this one stands on, for example the table under a lamp |
 | `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height |
-| `colors` | Hex color per material slot, for example `shade`, `base`, `cord` |
-| `materials` | Surface per slot: `matte`, `fabric`, `wood`, `ceramic`, `metal`. Surfaces are procedural textures with relief. A `glass` or `mirror` slot takes a tint only, never a surface |
+| `colors` | Hex color per part. Each kind names its own parts, for example a door has `frame`, `panel` and `handle`, a sofa has `frame`, `upholstery` and `cushions`. Parts are painted plain: the kind decides how matte or polished each one is, and nothing but the floor carries a pattern |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 
