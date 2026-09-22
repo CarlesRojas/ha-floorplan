@@ -3,15 +3,17 @@ import {
   DECORATION_KINDS,
   decorationKind,
   isSupport,
+  itemLevels,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { ridersOf } from '#/decoration/surfaces.ts'
-import { entityName } from '#/devices/catalog.ts'
+import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
 import { EDITOR_SIDEBAR_PREVIEW_PX } from '#/constants.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
+import { deviceSignals, levelChannels } from '#/signals.ts'
+import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -28,13 +30,14 @@ type Props = {
   onUpdate: (id: string, patch: Partial<DecorationConfig>) => void
   onRemove: (id: string) => void
   onBind: (id: string, entityId: string | null) => void
+  onDeviceLevels: (entityId: string, levels: Record<string, string>) => void
   onStandOn: (id: string, supportId: string | null) => void
   onSelect: (id: string | null) => void
 }
 
 const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
-const accent = EDITOR_MODE_COLORS.decoration
+const accent = EDITOR_ACCENT_COLOR
 
 export default function DecorationPanel({
   hass,
@@ -46,6 +49,7 @@ export default function DecorationPanel({
   onUpdate,
   onRemove,
   onBind,
+  onDeviceLevels,
   onStandOn,
   onSelect,
 }: Props) {
@@ -57,6 +61,15 @@ export default function DecorationPanel({
 
   if (item && kind) {
     const boundDevice = devices.find(d => d.decorations?.includes(item.id))
+    const boundSignals = hass && boundDevice ? deviceSignals(hass, boundDevice.entity_id) : []
+    const channels = hass && boundDevice ? levelChannels(hass, boundDevice.entity_id) : []
+    // Entities that drive at least one of the things this item can show,
+    // the ones that fit best first.
+    const shared = (entityId: string) =>
+      hass ? deviceSignals(hass, entityId).filter(x => kind.expresses.includes(x)).length : 0
+    const fits = (hass ? placeableEntities(hass) : [])
+      .filter(e => shared(e.entity_id) > 0)
+      .sort((a, b) => shared(b.entity_id) - shared(a.entity_id) || a.name.localeCompare(b.name))
     // Tops in the same room, never the item itself or anything on it.
     const mine = new Set([item.id, ...ridersOf(item.id, decorations).map(r => r.id)])
     const supports = decorations.filter(d => {
@@ -171,24 +184,78 @@ export default function DecorationPanel({
           </div>
         )}
 
+        {/* What in Home Assistant this piece stands for. Only entities that
+            can drive at least one thing the item does are on offer, and one
+            already standing behind another piece is not on offer twice. */}
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
           <p className="text-xs font-semibold text-(--secondary-text-color)">Device</p>
-          <select
-            className={input}
-            value={boundDevice?.entity_id ?? ''}
-            onChange={e => onBind(item.id, e.target.value || null)}
-          >
-            <option value="">None</option>
-            {devices.map(d => (
-              <option key={d.entity_id} value={d.entity_id}>
-                {hass ? entityName(hass, d.entity_id) : d.entity_id}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-(--secondary-text-color)">
-            Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for the
-            device's own dialog in Home Assistant, where brightness, color and the rest live.
-          </p>
+          {kind.expresses.length === 0 ? (
+            <p className="text-xs text-(--secondary-text-color)">
+              This item shows nothing a device could drive, so it stands for nothing.
+            </p>
+          ) : (
+            <>
+              <select
+                className={input}
+                style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
+                value={boundDevice?.entity_id ?? ''}
+                onChange={e => onBind(item.id, e.target.value || null)}
+              >
+                <option value="">None</option>
+                {fits.map(e => {
+                  const owner = devices.find(d => d.entity_id === e.entity_id && !d.decorations?.includes(item.id))
+                  return (
+                    <option key={e.entity_id} value={e.entity_id} disabled={!!owner}>
+                      {e.name}
+                      {owner ? ' (taken)' : ''}
+                    </option>
+                  )
+                })}
+              </select>
+              {fits.length === 0 && (
+                <p className="text-xs text-(--secondary-text-color)">
+                  Nothing in Home Assistant drives what this item shows.
+                </p>
+              )}
+              {boundDevice && (
+                <>
+                  <p className="truncate text-xs text-(--secondary-text-color)">{boundDevice.entity_id}</p>
+                  <Signals signals={boundSignals} accent={EDITOR_BOUND_COLOR} />
+                  {/* Which of the device's percentages drives each of the
+                      item's: how far it opens, how far it tilts. Only worth
+                      asking when there is a choice to make. */}
+                  {channels.length > 0 &&
+                    (channels.length > 1 || itemLevels(kind).length > 1) &&
+                    itemLevels(kind).map(level => (
+                      <label key={level.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                        {level.label}
+                        <select
+                          className={input}
+                          value={boundDevice.levels?.[level.id] ?? ''}
+                          onChange={e =>
+                            onDeviceLevels(boundDevice.entity_id, {
+                              ...boundDevice.levels,
+                              [level.id]: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="">{level.id === 'tilt' ? 'None' : (channels[0]?.label ?? 'None')}</option>
+                          {channels.map(ch => (
+                            <option key={ch.id} value={ch.id}>
+                              {ch.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  <p className="text-xs text-(--secondary-text-color)">
+                    Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for
+                    the device's own dialog in Home Assistant, where brightness, color and the rest live.
+                  </p>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         <button
@@ -211,7 +278,7 @@ export default function DecorationPanel({
   return (
     <div className="flex flex-col gap-3">
       {rooms.length === 0 && (
-        <p className="text-sm text-(--secondary-text-color)">Draw rooms in the Rooms mode first.</p>
+        <p className="text-sm text-(--secondary-text-color)">Draw a room first, with the draw tool.</p>
       )}
 
       <Sticky>

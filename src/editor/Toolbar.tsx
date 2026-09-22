@@ -1,6 +1,6 @@
-import type { Mode, Tool } from '#/editor/types.ts'
+import type { Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS } from '#/theme.ts'
+import { EDITOR_ACCENT_COLOR } from '#/theme.ts'
 import {
   type IconDefinition,
   faArrowPointer,
@@ -23,45 +23,24 @@ type Action = {
   shortcut: string
 }
 
-const TOOLS: Record<Mode, (Action & { id: Tool })[]> = {
-  rooms: [
-    {
-      id: 'select',
-      icon: faArrowPointer,
-      title: 'Select',
-      description: 'Pick rooms, drag corners, edges and rooms.',
-      shortcut: 'V',
-    },
-    {
-      id: 'draw',
-      icon: faDrawPolygon,
-      title: 'Draw room',
-      description: 'Click corners, close on the first one.',
-      shortcut: 'D',
-    },
-  ],
-  devices: [
-    {
-      id: 'select',
-      icon: faArrowPointer,
-      title: 'Select',
-      description: 'Pick a room, then drag its devices.',
-      shortcut: 'V',
-    },
-  ],
-  decoration: [
-    {
-      id: 'select',
-      icon: faArrowPointer,
-      title: 'Select',
-      description: 'Pick a room, then place and drag items.',
-      shortcut: 'V',
-    },
-  ],
-}
+const TOOLS: (Action & { id: Tool })[] = [
+  {
+    id: 'select',
+    icon: faArrowPointer,
+    title: 'Select',
+    description: 'Pick rooms and items, drag them, drag corners and edges.',
+    shortcut: 'V',
+  },
+  {
+    id: 'draw',
+    icon: faDrawPolygon,
+    title: 'Draw room',
+    description: 'Click corners, close on the first one.',
+    shortcut: 'D',
+  },
+]
 
 type Props = {
-  mode: Mode
   tool: Tool
   onTool: (tool: Tool) => void
   onFit: () => void
@@ -78,7 +57,6 @@ type Props = {
 }
 
 export default function Toolbar({
-  mode,
   tool,
   onTool,
   onFit,
@@ -92,10 +70,10 @@ export default function Toolbar({
   onSunDirection,
   onSunDirectionDone,
 }: Props) {
-  const color = EDITOR_MODE_COLORS[mode]
+  const color = EDITOR_ACCENT_COLOR
   return (
     <div className="flex items-center gap-1">
-      {TOOLS[mode].map(t => (
+      {TOOLS.map(t => (
         <ToolButton key={t.id} action={t} active={tool === t.id} color={color} onClick={() => onTool(t.id)} />
       ))}
       <span className="mx-1 h-5 w-px bg-(--divider-color)" />
@@ -147,21 +125,19 @@ export default function Toolbar({
         onChange={onSunDirection}
         onDone={onSunDirectionDone}
       />
-      {mode === 'rooms' && (
-        <ToolButton
-          action={{
-            id: 'lengths',
-            icon: faRuler,
-            title: 'Edge lengths',
-            description: 'Show the length of each edge of the selected room.',
-            shortcut: 'L',
-          }}
-          active={showLengths}
-          color={color}
-          toggle
-          onClick={() => onShowLengths(!showLengths)}
-        />
-      )}
+      <ToolButton
+        action={{
+          id: 'lengths',
+          icon: faRuler,
+          title: 'Edge lengths',
+          description: 'Show the length of each edge of the selected room.',
+          shortcut: 'L',
+        }}
+        active={showLengths}
+        color={color}
+        toggle
+        onClick={() => onShowLengths(!showLengths)}
+      />
     </div>
   )
 }

@@ -25,11 +25,10 @@ export const CARD_CORNER_RADIUS_PX = 24
 export const EDITOR_SELECTED_COLOR = '#03a9f4'
 
 // Accent color of each editor mode.
-export const EDITOR_MODE_COLORS = {
-  rooms: '#03a9f4',
-  devices: '#f59e0b',
-  decoration: '#34d399',
-}
+// The editor's own colors: what it draws and picks, and the amber that
+// marks an item a device stands behind.
+export const EDITOR_ACCENT_COLOR = '#34d399'
+export const EDITOR_BOUND_COLOR = '#f59e0b'
 
 // Decoration
 

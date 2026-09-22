@@ -1,37 +1,38 @@
 import { SelectedHeader } from '#/editor/panel.tsx'
-import { EDITOR_MODE_COLORS, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_ACCENT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, RoomConfig } from '#/types.ts'
-import type { Mode } from '#/editor/types.ts'
+import { faTrash } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
   room: RoomConfig
   rooms: RoomConfig[]
   areas: Area[]
-  mode: Mode
   onRename: (id: string, name: string | undefined) => void
   onRenameDone: () => void
   onAssignArea: (roomId: string, areaId: string | undefined) => void
   onFloor: (roomId: string, floor: RoomConfig['floor']) => void
+  onDelete: (roomId: string) => void
   onDeselect: () => void
 }
 
 const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
 
-// The selected room, written the same way in every mode: its name, the area
-// it stands for, and the floor under it.
+// The selected room: its name, the area it stands for, the floor under it,
+// and the way to be rid of it.
 export default function RoomInfo({
   room,
   rooms,
   areas,
-  mode,
   onRename,
   onRenameDone,
   onAssignArea,
   onFloor,
+  onDelete,
   onDeselect,
 }: Props) {
-  const accent = EDITOR_MODE_COLORS[mode]
+  const accent = EDITOR_ACCENT_COLOR
   const index = rooms.findIndex(r => r.id === room.id)
   const sorted = [...areas].sort((a, b) => a.name.localeCompare(b.name))
   const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
@@ -126,6 +127,16 @@ export default function RoomInfo({
           {slider('Pattern angle', 'rotation', 0, 175, 5)}
         </>
       )}
+      <button
+        type="button"
+        onClick={() => {
+          if (window.confirm(`Delete ${room.name ?? room.id}?`)) onDelete(room.id)
+        }}
+        className="mt-1 flex h-9 items-center justify-center gap-2 rounded-lg border border-(--divider-color) text-sm font-semibold text-(--error-color)"
+      >
+        <FontAwesomeIcon icon={faTrash} className="size-3.5" />
+        Delete room
+      </button>
     </div>
   )
 }
