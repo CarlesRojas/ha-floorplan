@@ -73,6 +73,15 @@ export const LIGHT_POINT_INTENSITY = 5.5
 export const LAMP_KEY_SHARE = 0.7
 export const LAMP_THROUGH_SHARE = 0.4
 export const LAMP_SHADOW_BLUR = 5
+// What each kind of lamp puts into the room, as a share of the rest. A
+// pendant hangs close over a table and sends its light down through a
+// diffuser, so it gives less than a floor lamp standing in the open.
+export const LAMP_OUTPUT: Record<string, number> = {
+  light_pendant: 0.5,
+  light_table: 0.75,
+  light_wall: 0.8,
+  light_ceiling: 0.9,
+}
 // Daylight and night. The room is warm at both ends of the day: sunlight
 // comes in soft and golden, and once the sun is down the wash left behind is
 // dim and warm so the lamps carry the room.
@@ -83,13 +92,13 @@ export const NIGHT_SKY_COLOR = '#e9ddcd'
 export const NIGHT_GROUND_COLOR = '#b9ad9e'
 export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
-export const DAY_AMBIENT_INTENSITY = 0.1
-export const DAY_HEMISPHERE_INTENSITY = 0.45
+export const DAY_AMBIENT_INTENSITY = 0.12
+export const DAY_HEMISPHERE_INTENSITY = 0.5
 export const NIGHT_AMBIENT_INTENSITY = 0.04
 export const NIGHT_HEMISPHERE_INTENSITY = 0.1
 // The sun itself. It is kept gentle, and its shadows are blurred wide, so
 // daylight models the room without cutting hard edges into it.
-export const DAY_SUN_INTENSITY = 0.7
+export const DAY_SUN_INTENSITY = 1
 export const NIGHT_SUN_INTENSITY = 0.03
 export const SUN_SHADOW_BLUR = 9
 

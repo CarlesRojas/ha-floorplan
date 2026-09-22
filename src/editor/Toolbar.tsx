@@ -14,6 +14,7 @@ import {
   faSun,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useEffect, useRef, useState } from 'react'
 
 type Action = {
   id: string
@@ -72,7 +73,9 @@ type Props = {
   sky: SkyMode
   onSky: () => void
   sunDirection: number
-  onSunDirection: () => void
+  onSunDirection: (degrees: number) => void
+  // Called when the slider is let go, to save the new direction.
+  onSunDirectionDone: () => void
 }
 
 export default function Toolbar({
@@ -88,6 +91,7 @@ export default function Toolbar({
   onSky,
   sunDirection,
   onSunDirection,
+  onSunDirectionDone,
 }: Props) {
   const color = EDITOR_MODE_COLORS[mode]
   return (
@@ -131,20 +135,7 @@ export default function Toolbar({
       />
       {/* Which way the sun comes from. It is saved with the card, so the
           room outside the editor is lit the same way. */}
-      <ToolButton
-        action={{
-          id: 'sun-direction',
-          icon: faLocationArrow,
-          title: `Sun from the ${compass(sunDirection)}`,
-          description: 'Turn the sun around the flat. Saved with the card.',
-          shortcut: 'S',
-        }}
-        color={color}
-        // The arrow points the way the light falls, so it faces away from
-        // the sun: the icon's own arrow already points up and right.
-        spin={sunDirection + 135}
-        onClick={onSunDirection}
-      />
+      <SunDial degrees={sunDirection} color={color} onChange={onSunDirection} onDone={onSunDirectionDone} />
       {mode === 'rooms' && (
         <ToolButton
           action={{
@@ -166,6 +157,72 @@ export default function Toolbar({
 
 const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
 
+// The sun's bearing, behind a button that opens a slider for it. The arrow
+// points the way the light falls, so it faces away from the sun.
+function SunDial({
+  degrees,
+  color,
+  onChange,
+  onDone,
+}: {
+  degrees: number
+  color: string
+  onChange: (degrees: number) => void
+  onDone: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  // A press anywhere else puts it away.
+  useEffect(() => {
+    if (!open) return
+    const away = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', away, true)
+    return () => document.removeEventListener('pointerdown', away, true)
+  }, [open])
+  return (
+    <div className="relative" ref={box}>
+      <button
+        type="button"
+        aria-label={`Sun from the ${compass(degrees)}`}
+        onClick={() => setOpen(!open)}
+        style={open ? { color } : undefined}
+        className="flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)"
+      >
+        <FontAwesomeIcon
+          icon={faLocationArrow}
+          className="size-4"
+          style={{ transform: `rotate(${degrees + 135}deg)` }}
+        />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 z-20 mt-1 w-56 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg">
+          <p className="flex items-center justify-between text-sm font-semibold">
+            Sun direction
+            <kbd className="rounded border border-(--divider-color) px-1 font-mono text-[11px] font-normal">S</kbd>
+          </p>
+          <p className="mt-0.5 text-sm text-(--secondary-text-color)">
+            From the {compass(degrees)}, {degrees}°. Saved with the card.
+          </p>
+          <input
+            type="range"
+            className="mt-2 w-full"
+            min={0}
+            max={345}
+            step={15}
+            value={degrees}
+            style={{ accentColor: color }}
+            onChange={e => onChange(Number(e.target.value))}
+            onPointerUp={onDone}
+            onKeyUp={onDone}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // The nearest compass point to a bearing, for naming where the sun is.
 function compass(degrees: number) {
   const turns = ((degrees % 360) + 360) % 360
@@ -179,15 +236,12 @@ function ToolButton({
   active,
   color,
   toggle = false,
-  spin,
   onClick,
 }: {
   action: Action
   active?: boolean
   color: string
   toggle?: boolean
-  // Turns the icon, for the one that shows a direction.
-  spin?: number
   onClick: () => void
 }) {
   return (
@@ -202,11 +256,7 @@ function ToolButton({
           active && !toggle && 'text-white',
         )}
       >
-        <FontAwesomeIcon
-          icon={action.icon}
-          className="size-4"
-          style={spin === undefined ? undefined : { transform: `rotate(${spin}deg)` }}
-        />
+        <FontAwesomeIcon icon={action.icon} className="size-4" />
       </button>
       <div className="pointer-events-none absolute top-full left-0 z-10 mt-1 hidden w-52 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg group-hover:block">
         <p className="flex items-center justify-between text-sm font-semibold">

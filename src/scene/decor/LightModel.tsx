@@ -4,6 +4,7 @@ import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
 import {
   CEILING_HEIGHT_M,
   LAMP_KEY_SHARE,
+  LAMP_OUTPUT,
   LAMP_SHADOW_BLUR,
   LAMP_THROUGH_SHARE,
   LIGHT_POINT_INTENSITY,
@@ -76,12 +77,15 @@ function Glow({
   state,
   at,
   spread = 0,
+  output = 1,
 }: {
   state: LightState | null
   // Where the bulb is, inside the shade rather than on the frame that holds
   // it: a floor lamp lights from the middle of its shade, not from its mast.
   at: [number, number, number]
   spread?: number
+  // What this kind of lamp puts out, against the rest of them.
+  output?: number
 }) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
@@ -93,7 +97,7 @@ function Glow({
   if (lit < 0.01) return null
   // Close to linear with the level: a lamp at a third still lights the
   // room around it, and still casts, instead of fading away first.
-  const total = LIGHT_POINT_INTENSITY * (0.25 + 0.75 * lit) * lit
+  const total = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.
@@ -182,7 +186,7 @@ export default function LightModel({ kind, item, state }: Props) {
       const drumH = size * 0.58
       const slats = Math.max(16, Math.round((Math.PI * size) / 0.035))
       const slatW = (Math.PI * size) / slats / 1.7
-      glowAt = [0, top - drumH - 0.02, 0]
+      glowAt = [0, top - drumH + drumH * 0.35, 0]
       body = (
         <>
           <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
@@ -358,7 +362,7 @@ export default function LightModel({ kind, item, state }: Props) {
   return (
     <>
       {body}
-      <Glow state={state} at={glowAt} spread={glowSpread} />
+      <Glow state={state} at={glowAt} spread={glowSpread} output={LAMP_OUTPUT[kind.id] ?? 1} />
     </>
   )
 }
