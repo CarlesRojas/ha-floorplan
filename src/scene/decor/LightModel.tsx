@@ -1,14 +1,7 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Material } from '#/scene/decor/parts.tsx'
 import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
-import {
-  CEILING_HEIGHT_M,
-  LAMP_KEY_SHARE,
-  LAMP_OUTPUT,
-  LAMP_SHADOW_BLUR,
-  LAMP_THROUGH_SHARE,
-  LIGHT_POINT_INTENSITY,
-} from '#/theme.ts'
+import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
@@ -125,7 +118,6 @@ function Glow({
         decay={1.15}
         castShadow
         shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
-        shadow-radius={LAMP_SHADOW_BLUR}
         // Small offsets: a big one pushes the sample past a thin top or
         // panel and lets the light through the middle of it.
         shadow-bias={-0.0012}

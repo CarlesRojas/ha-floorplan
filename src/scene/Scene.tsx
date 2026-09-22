@@ -17,7 +17,7 @@ import Sky, { type SkyMode } from '#/scene/Sky.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { MathUtils, PCFShadowMap } from 'three'
+import { MathUtils, PCFSoftShadowMap } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
@@ -33,9 +33,12 @@ export default function Scene({ hass, config, sky = 'auto' }: Props) {
 
   return (
     <Canvas
-      // Percentage closer filtering, which is the one shadow map that takes
-      // a blur radius, so nothing in the room gets a hard edged shadow.
-      shadows={{ type: PCFShadowMap }}
+      // Soft percentage closer filtering. The plain one takes a blur radius
+      // but spreads only a handful of taps to fill it, which at any width
+      // worth having reads as dots and dashes along the edge of a shadow.
+      // This one filters across the map instead, so the edge comes out soft
+      // and clean, and softness comes from how fine the map is.
+      shadows={{ type: PCFSoftShadowMap }}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}

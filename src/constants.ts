@@ -32,7 +32,7 @@ export const SUN_DIRECTION_DEG = 145
 export const SUN_ELEVATION_DEG = 50
 // What one press of that button turns the sun by.
 export const SUN_DIRECTION_STEP_DEG = 45
-export const SUN_SHADOW_MAP_PX = 2048
+export const SUN_SHADOW_MAP_PX = 1024
 // A lamp lights the room around it and casts shadows from what it stands
 // among. Each one costs six shadow renders, so only the first few get them.
 export const LAMP_SHADOW_MAP_PX = 512

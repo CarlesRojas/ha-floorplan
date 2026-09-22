@@ -17,7 +17,6 @@ import {
   NIGHT_SKY_COLOR,
   NIGHT_SUN_COLOR,
   NIGHT_SUN_INTENSITY,
-  SUN_SHADOW_BLUR,
 } from '#/theme.ts'
 import type { HomeAssistant, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
@@ -129,10 +128,10 @@ export default function Sky({
         intensity={DAY_SUN_INTENSITY}
         color={DAY_SUN_COLOR}
         castShadow
+        // The map is fitted to the flat and kept coarse on purpose, which is
+        // what softens daylight: a piece gets a soft pool under it rather
+        // than a hard outline of itself.
         shadow-mapSize={[SUN_SHADOW_MAP_PX, SUN_SHADOW_MAP_PX]}
-        // Blurred wide: daylight lands as a soft pool under a piece rather
-        // than a hard outline of it.
-        shadow-radius={SUN_SHADOW_BLUR}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
         shadow-camera-left={-extent}

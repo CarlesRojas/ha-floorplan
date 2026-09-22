@@ -143,8 +143,9 @@ falling back to the entity's state and then to the clock on the device
 showing the card when the sun integration is not there.
 
 - By day the room sits in soft warm light: a sky above, a floor bounce below
-  and a gentle sun on top of them, with shadows blurred wide so nothing gets
-  a hard edge cut into it.
+  and a gentle sun on top of them. Shadows are filtered soft and the sun's
+  map is kept coarse on purpose, so a piece gets a soft pool under it rather
+  than a hard outline of itself.
 - The light takes its color from how high the sun is standing: golden along
   the horizon at sunrise and sunset, near white overhead at midday.
 - By night that wash drops to a dim warm glow and the lamps carry the room.

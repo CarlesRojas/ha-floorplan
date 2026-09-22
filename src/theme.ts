@@ -72,7 +72,6 @@ export const LIGHT_POINT_INTENSITY = 5.5
 // shadows, and the part that comes through the shade itself and casts none.
 export const LAMP_KEY_SHARE = 0.7
 export const LAMP_THROUGH_SHARE = 0.4
-export const LAMP_SHADOW_BLUR = 5
 // What each kind of lamp puts into the room, as a share of the rest. A
 // pendant hangs close over a table and sends its light down through a
 // diffuser, so it gives less than a floor lamp standing in the open.
@@ -101,11 +100,10 @@ export const DAY_AMBIENT_INTENSITY = 0.12
 export const DAY_HEMISPHERE_INTENSITY = 0.6
 export const NIGHT_AMBIENT_INTENSITY = 0.04
 export const NIGHT_HEMISPHERE_INTENSITY = 0.1
-// The sun itself. It is kept gentle, and its shadows are blurred wide, so
-// daylight models the room without cutting hard edges into it.
+// The sun itself. It is kept gentle, and its shadow map is deliberately
+// coarse, so daylight models the room without cutting hard edges into it.
 export const DAY_SUN_INTENSITY = 1.35
 export const NIGHT_SUN_INTENSITY = 0.03
-export const SUN_SHADOW_BLUR = 9
 
 // How far from a press the card looks for something to act on, in pixels.
 // A ray hits one point, so a press that lands on nothing is tried again in
