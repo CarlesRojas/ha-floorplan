@@ -798,8 +798,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const h = p('height')
       // 1 hinges the first casement on the left, -1 on the right.
       const side = p('flip') > 0.5 ? -1 : 1
-      const f = 0.038
-      const d = 0.08
+      const f = 0.05
+      const d = 0.05
       const frame = <Material color={c('frame')} material={m('frame')} />
       const inner = { w: w - f * 2, h: h - f * 2 }
       const leaves = leafCount(inner.w)
@@ -847,9 +847,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
       // 1 hinges on the left, -1 on the right.
       const side = p('flip') > 0.5 ? -1 : 1
       const leaf = 0.042
-      const jamb = 0.03
-      const lining = 0.12
-      const casing = 0.035
+      const jamb = 0.05
+      // How far the frame runs into the wall.
+      const lining = 0.06
       const metal = <Material color={c('trim')} material={m('trim')} />
       // A lever on a round rose: a 5 cm rose, a 2.2 cm neck out of it and a
       // 13 by 2.5 cm bar with fully rounded ends, running back toward the
@@ -869,9 +869,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
             </mesh>
             <Plate
               width={0.13}
-              height={0.025}
+              height={0.022}
               depth={0.01}
-              position={[-side * 0.0525, 0, face > 0 ? out(0.052) : out(0.062)]}
+              position={[-side * (0.065 - 0.011), 0, face > 0 ? out(0.052) : out(0.062)]}
             >
               {metal}
             </Plate>
@@ -880,44 +880,22 @@ export default function DeviceModel({ kind, item, state }: Props) {
       }
       return (
         <group>
-          {/* The lining and its architrave stay put while the leaf swings. */}
+          {/* The frame is three rectangles, a jamb each side and the head,
+              and it stays put while the leaf swings. */}
           {[-1, 1].map(s2 => (
-            <group key={s2}>
-              <Slab
-                size={[jamb, h + jamb, lining]}
-                radius={0.008}
-                bevel={0.004}
-                position={[s2 * (w + jamb) / 2, 0, leaf / 2]}
-              >
-                {body}
-              </Slab>
-              {[-1, 1].map(fz => (
-                <Slab
-                  key={fz}
-                  size={[casing, h + jamb + casing, 0.016]}
-                  radius={0.006}
-                  bevel={0.004}
-                  position={[s2 * (w + casing) / 2, 0, leaf / 2 + fz * (lining / 2 + 0.008)]}
-                >
-                  {body}
-                </Slab>
-              ))}
-            </group>
-          ))}
-          <Slab size={[w + jamb * 2, jamb, lining]} radius={0.008} bevel={0.004} position={[0, h, leaf / 2]}>
-            {body}
-          </Slab>
-          {[-1, 1].map(fz => (
             <Slab
-              key={fz}
-              size={[w + casing * 2, casing, 0.016]}
+              key={s2}
+              size={[jamb, h + jamb, lining]}
               radius={0.006}
               bevel={0.004}
-              position={[0, h + jamb, leaf / 2 + fz * (lining / 2 + 0.008)]}
+              position={[(s2 * (w + jamb)) / 2, 0, leaf / 2]}
             >
               {body}
             </Slab>
           ))}
+          <Slab size={[w + jamb * 2, jamb, lining]} radius={0.006} bevel={0.004} position={[0, h, leaf / 2]}>
+            {body}
+          </Slab>
           {/* The leaf, hinged on whichever edge the switch picks. */}
           <group position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * 1.1 * coverLevel, 0]}>
             <Slab size={[w - 0.008, h - 0.006, leaf]} radius={0.004} bevel={0.003} position={[(side * w) / 2, 0, leaf / 2]}>
@@ -939,8 +917,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const h = p('height')
       // 1 gathers the panels at the right, -1 at the left.
       const side = p('flip') > 0.5 ? -1 : 1
-      const f = 0.035
-      const track = 0.05
+      const f = 0.05
+      const track = 0.035
       const frame = <Material color={c('frame')} material={m('frame')} />
       const glazed = kind.id === 'sliding_glass'
       const count = Math.max(1, Math.round(p('panels')))
