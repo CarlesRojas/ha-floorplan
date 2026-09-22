@@ -10,7 +10,16 @@ import { ridersOf } from '#/decoration/surfaces.ts'
 import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
-import { EDITOR_SIDEBAR_PREVIEW_PX } from '#/constants.ts'
+import { Select } from '#/components/ui/select.tsx'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '#/components/ui/alert-dialog.tsx'
 import { cn } from '#/lib/utils.ts'
 import { deviceSignals, levelChannels } from '#/signals.ts'
 import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
@@ -18,7 +27,8 @@ import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useResizeObserver } from 'usehooks-ts'
 
 type Props = {
   hass: HomeAssistant | null
@@ -55,7 +65,20 @@ export default function DecorationPanel({
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
   const [query, setQuery] = useState('')
-  const [previewHeight, setPreviewHeight] = useState(EDITOR_SIDEBAR_PREVIEW_PX)
+  // Null until the handle is dragged: the preview is square by default, so
+  // it takes the shape of the sidebar it sits in.
+  const [previewHeight, setPreviewHeight] = useState<number | null>(null)
+  const previewBox = useRef<HTMLDivElement>(null)
+  const { width: previewWidth = 0 } = useResizeObserver({
+    ref: previewBox as unknown as React.RefObject<HTMLElement>,
+    box: 'border-box',
+  })
+  const square = Math.max(previewWidth, 120)
+  const height = previewHeight ?? square
+  const resize = (dy: number) => setPreviewHeight(h => Math.min(Math.max((h ?? square) + dy, 120), 520))
+  // The item a trash icon in the device's list was clicked on, waiting for
+  // the yes.
+  const [unbinding, setUnbinding] = useState<DecorationConfig | null>(null)
   const item = selected ? decorations.find(d => d.id === selected) : undefined
   const kind = item ? decorationKind(item.kind) : undefined
 
@@ -63,8 +86,15 @@ export default function DecorationPanel({
     const boundDevice = devices.find(d => d.decorations?.includes(item.id))
     const boundSignals = hass && boundDevice ? deviceSignals(hass, boundDevice.entity_id) : []
     const channels = hass && boundDevice ? levelChannels(hass, boundDevice.entity_id) : []
+    // The other pieces the same device stands behind, so what it drives can
+    // be seen and let go of from here.
+    const siblings = (boundDevice?.decorations ?? [])
+      .filter(id => id !== item.id)
+      .map(id => decorations.find(d => d.id === id))
+      .filter((d): d is DecorationConfig => !!d)
     // Entities that drive at least one of the things this item can show,
-    // the ones that fit best first.
+    // the ones that fit best first. A device can stand behind several
+    // pieces at once, so one already in use is still on offer.
     const shared = (entityId: string) =>
       hass ? deviceSignals(hass, entityId).filter(x => kind.expresses.includes(x)).length : 0
     const fits = (hass ? placeableEntities(hass) : [])
@@ -91,12 +121,14 @@ export default function DecorationPanel({
       <div className="flex flex-col gap-3">
         <Sticky>
           <SelectedHeader title={kind.label} tag={roomTag} accent={accent} onBack={() => onSelect(null)} />
-          <ModelPreview
-            item={item}
-            className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-            style={{ height: previewHeight }}
-          />
-          <PreviewHandle onDrag={dy => setPreviewHeight(h => Math.min(Math.max(h + dy, 120), 520))} />
+          <div ref={previewBox}>
+            <ModelPreview
+              item={item}
+              className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
+              style={{ height }}
+            />
+          </div>
+          <PreviewHandle onDrag={resize} />
           <Signals signals={kind.expresses} accent={accent} />
         </Sticky>
 
@@ -169,24 +201,22 @@ export default function DecorationPanel({
         {canRide(kind) && (
           <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
             <p className="text-xs font-semibold text-(--secondary-text-color)">Standing on</p>
-            <select
-              className={input}
+            <Select
+              aria-label="Standing on"
               value={item.on ?? ''}
-              onChange={e => onStandOn(item.id, e.target.value || null)}
-            >
-              <option value="">The floor</option>
-              {supports.map(s => (
-                <option key={s.id} value={s.id}>
-                  {decorationKind(s.kind)?.label ?? s.kind}
-                </option>
-              ))}
-            </select>
+              placeholder="The floor"
+              options={[
+                { value: '', label: 'The floor' },
+                ...supports.map(s => ({ value: s.id, label: decorationKind(s.kind)?.label ?? s.kind })),
+              ]}
+              onChange={v => onStandOn(item.id, v || null)}
+            />
           </div>
         )}
 
         {/* What in Home Assistant this piece stands for. Only entities that
-            can drive at least one thing the item does are on offer, and one
-            already standing behind another piece is not on offer twice. */}
+            can drive at least one thing the item does are on offer, each
+            listed with the controls it brings. */}
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
           <p className="text-xs font-semibold text-(--secondary-text-color)">Device</p>
           {kind.expresses.length === 0 ? (
@@ -195,23 +225,21 @@ export default function DecorationPanel({
             </p>
           ) : (
             <>
-              <select
-                className={input}
-                style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
+              <Select
+                aria-label="Device"
                 value={boundDevice?.entity_id ?? ''}
-                onChange={e => onBind(item.id, e.target.value || null)}
-              >
-                <option value="">None</option>
-                {fits.map(e => {
-                  const owner = devices.find(d => d.entity_id === e.entity_id && !d.decorations?.includes(item.id))
-                  return (
-                    <option key={e.entity_id} value={e.entity_id} disabled={!!owner}>
-                      {e.name}
-                      {owner ? ' (taken)' : ''}
-                    </option>
-                  )
-                })}
-              </select>
+                style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
+                options={[
+                  { value: '', label: 'None' },
+                  ...fits.map(e => ({
+                    value: e.entity_id,
+                    label: e.name,
+                    note: e.entity_id,
+                    badge: hass ? <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" /> : undefined,
+                  })),
+                ]}
+                onChange={v => onBind(item.id, v || null)}
+              />
               {fits.length === 0 && (
                 <p className="text-xs text-(--secondary-text-color)">
                   Nothing in Home Assistant drives what this item shows.
@@ -219,7 +247,6 @@ export default function DecorationPanel({
               )}
               {boundDevice && (
                 <>
-                  <p className="truncate text-xs text-(--secondary-text-color)">{boundDevice.entity_id}</p>
                   <Signals signals={boundSignals} accent={EDITOR_BOUND_COLOR} />
                   {/* Which of the device's percentages drives each of the
                       item's: how far it opens, how far it tilts. Only worth
@@ -229,25 +256,63 @@ export default function DecorationPanel({
                     itemLevels(kind).map(level => (
                       <label key={level.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
                         {level.label}
-                        <select
-                          className={input}
+                        <Select
+                          aria-label={level.label}
                           value={boundDevice.levels?.[level.id] ?? ''}
-                          onChange={e =>
-                            onDeviceLevels(boundDevice.entity_id, {
-                              ...boundDevice.levels,
-                              [level.id]: e.target.value,
-                            })
+                          options={[
+                            {
+                              value: '',
+                              label: level.id === 'tilt' ? 'None' : (channels[0]?.label ?? 'None'),
+                            },
+                            ...channels.map(ch => ({ value: ch.id, label: ch.label })),
+                          ]}
+                          onChange={v =>
+                            onDeviceLevels(boundDevice.entity_id, { ...boundDevice.levels, [level.id]: v })
                           }
-                        >
-                          <option value="">{level.id === 'tilt' ? 'None' : (channels[0]?.label ?? 'None')}</option>
-                          {channels.map(ch => (
-                            <option key={ch.id} value={ch.id}>
-                              {ch.label}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </label>
                     ))}
+                  {/* The other pieces this same device drives. A row goes to
+                      that piece, the bin lets go of it. */}
+                  {siblings.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs font-semibold text-(--secondary-text-color)">
+                        Also driving
+                      </p>
+                      {siblings.map(other => {
+                        const k = decorationKind(other.kind)
+                        const room = rooms.find(r => r.id === other.room)
+                        return (
+                          <div key={other.id} className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => onSelect(other.id)}
+                              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1 text-left text-sm hover:bg-(--secondary-background-color)"
+                            >
+                              <FontAwesomeIcon
+                                icon={decorationIcon(other.kind, k?.family ?? 'decor')}
+                                className="size-3.5 shrink-0 text-(--secondary-text-color)"
+                              />
+                              <span className="min-w-0 flex-1 truncate">{k?.label ?? other.kind}</span>
+                              {room && (
+                                <span className="shrink-0 text-xs text-(--secondary-text-color)">
+                                  {room.name ?? room.id}
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Unbind ${k?.label ?? other.kind}`}
+                              onClick={() => setUnbinding(other)}
+                              className="flex size-7 shrink-0 items-center justify-center rounded-lg text-(--error-color)/70 hover:bg-(--secondary-background-color) hover:text-(--error-color)"
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="size-3.5" />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                   <p className="text-xs text-(--secondary-text-color)">
                     Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for
                     the device's own dialog in Home Assistant, where brightness, color and the rest live.
@@ -264,8 +329,30 @@ export default function DecorationPanel({
           className="mt-1 flex h-9 items-center justify-center gap-2 rounded-lg border border-(--divider-color) text-sm font-semibold text-(--error-color)"
         >
           <FontAwesomeIcon icon={faTrash} className="size-3.5" />
-          Remove from plan
+          Delete {kind.label}
         </button>
+
+        <AlertDialog open={unbinding !== null} onOpenChange={open => !open && setUnbinding(null)}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Let go of this piece?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {decorationKind(unbinding?.kind ?? '')?.label ?? 'The item'} stops standing in for this device. The
+              piece itself stays on the plan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUnbinding(null)}>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (unbinding) onBind(unbinding.id, null)
+                setUnbinding(null)
+              }}
+            >
+              Unbind
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialog>
       </div>
     )
   }
@@ -283,8 +370,9 @@ export default function DecorationPanel({
 
       <Sticky>
         <div
+          ref={previewBox}
           className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-          style={{ height: previewHeight }}
+          style={{ height }}
         >
           {previewItem ? (
             <ModelPreview item={previewItem} className="h-full w-full" />
@@ -294,7 +382,7 @@ export default function DecorationPanel({
             </div>
           )}
         </div>
-        <PreviewHandle onDrag={dy => setPreviewHeight(h => Math.min(Math.max(h + dy, 120), 520))} />
+        <PreviewHandle onDrag={resize} />
         <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />
       </Sticky>
 
@@ -311,12 +399,18 @@ export default function DecorationPanel({
           <div key={family} className="flex flex-col gap-1">
             <p className="text-xs font-semibold text-(--secondary-text-color)">{FAMILY_LABELS[family] ?? family}</p>
             {shown.map(k => (
-              <div
+              // The whole row adds the piece, not the plus alone: the plus
+              // is what the row does, not the only place it can be asked.
+              <button
                 key={k.id}
+                type="button"
+                disabled={rooms.length === 0}
+                aria-label={`Add ${k.label}`}
                 onMouseEnter={() => setHovered(k)}
                 onMouseLeave={() => setHovered(h => (h?.id === k.id ? null : h))}
+                onClick={() => onAdd(k)}
                 className={cn(
-                  'grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1',
+                  'grid w-full grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1 text-left disabled:cursor-default',
                   hovered?.id === k.id && 'bg-(--secondary-background-color)',
                 )}
               >
@@ -332,19 +426,13 @@ export default function DecorationPanel({
                   <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
                 </div>
                 {rooms.length > 0 ? (
-                  <button
-                    type="button"
-                    aria-label={`Add ${k.label}`}
-                    onClick={() => onAdd(k)}
-                    className="flex size-8 items-center justify-center rounded-lg hover:bg-(--card-background-color)"
-                    style={{ color: accent }}
-                  >
+                  <span className="flex size-8 items-center justify-center" style={{ color: accent }}>
                     <FontAwesomeIcon icon={faPlus} className="size-4" />
-                  </button>
+                  </span>
                 ) : (
                   <span />
                 )}
-              </div>
+              </button>
             ))}
           </div>
         )

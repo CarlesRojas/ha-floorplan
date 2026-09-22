@@ -10,6 +10,7 @@ import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { DEFAULT_FLOOR_MATERIAL } from '#/theme.ts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,9 +83,18 @@ export default function Editor({ hass, config, onChange }: Props) {
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
+  // One thing at a time is selected, a room or a piece, never both. Picking
+  // either lets go of the other.
   const pickRoom = (next: Selection) => {
-    if (next.roomId) setShowRoom(true)
+    if (next.roomId) {
+      setShowRoom(true)
+      setSelectedDecoration(null)
+    }
     setSelection(next)
+  }
+  const pickDecoration = (id: string | null) => {
+    if (id) setSelection({ roomId: null, vertex: null })
+    setSelectedDecoration(id)
   }
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
@@ -177,7 +187,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       item.rotation = snapped.rotation
     }
     commit(rooms, devices, [...decorations, item])
-    setSelection({ roomId: room.id, vertex: null })
+    setSelection({ roomId: null, vertex: null })
     setSelectedDecoration(item.id)
   }
 
@@ -260,7 +270,7 @@ export default function Editor({ hass, config, onChange }: Props) {
     )
     copy.id = nextDecorationId(item.kind)
     commit(rooms, devices, [...decorations, copy])
-    setSelection({ roomId: copy.room, vertex: null })
+    setSelection({ roomId: null, vertex: null })
     setSelectedDecoration(copy.id)
   }
 
@@ -278,7 +288,7 @@ export default function Editor({ hass, config, onChange }: Props) {
     copy.id = nextDecorationId(item.kind)
     if (!within(copy.position, room.points)) copy.position = pointInside(room.points)
     commit(rooms, devices, [...decorations, copy])
-    setSelection({ roomId: room.id, vertex: null })
+    setSelection({ roomId: null, vertex: null })
     setSelectedDecoration(copy.id)
   }
 
@@ -390,8 +400,15 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   const selectedRoom = rooms.find(r => r.id === selection.roomId) ?? null
 
-  // The selected room, or any room when none is selected.
-  const targetRoom = () => selectedRoom ?? (rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null)
+  // Where a new piece lands: the selected room, the room the selected piece
+  // stands in, or any room at all.
+  const targetRoom = () => {
+    if (selectedRoom) return selectedRoom
+    const item = decorations.find(d => d.id === selectedDecoration)
+    const its = item ? rooms.find(r => r.id === item.room) : undefined
+    if (its) return its
+    return rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null
+  }
 
   // Which of a device's percentages drives which movement of the item.
   const setDeviceLevels = (entityId: string, levels: Record<string, string>) =>
@@ -487,7 +504,12 @@ export default function Editor({ hass, config, onChange }: Props) {
     )
       return
     const n = nextRoomId(rooms)
-    const room: RoomConfig = { id: `room-${n}`, name: `Room ${n}`, points: draft.map(([x, y]) => [round(x), round(y)]) }
+    const room: RoomConfig = {
+      id: `room-${n}`,
+      name: `Room ${n}`,
+      points: draft.map(([x, y]) => [round(x), round(y)]),
+      floor: { material: DEFAULT_FLOOR_MATERIAL },
+    }
     commit([...rooms, room])
     setDraft([])
     setSelection({ roomId: room.id, vertex: null })
@@ -615,7 +637,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       decorations={decorations}
       selectedDecoration={selectedDecoration}
       onDecorations={(next, done) => (done ? commit(rooms, devices, next) : setDecorations(next))}
-      onSelectDecoration={setSelectedDecoration}
+      onSelectDecoration={pickDecoration}
       onRemoveDecoration={removeDecoration}
       onRotateDecoration={rotateDecoration}
       onDuplicateDecoration={duplicateDecoration}
@@ -670,7 +692,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   // The cross closes the room's block without letting go of the room, since
   // what is added next still belongs in it.
   const roomInfo =
-    selectedRoom && showRoom && !selectedDecoration ? (
+    selectedRoom && showRoom ? (
       <RoomInfo
         room={selectedRoom}
         rooms={rooms}
@@ -697,7 +719,7 @@ export default function Editor({ hass, config, onChange }: Props) {
       onBind={bindDecoration}
       onDeviceLevels={setDeviceLevels}
       onStandOn={standOn}
-      onSelect={setSelectedDecoration}
+      onSelect={pickDecoration}
     />
   )
 
@@ -778,6 +800,8 @@ export default function Editor({ hass, config, onChange }: Props) {
                       hass={hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
+                      onPickDecoration={pickDecoration}
+                      onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
                     />
                   </div>
                 </>

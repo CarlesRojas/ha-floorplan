@@ -10,8 +10,12 @@ import { useRef, type ReactNode } from 'react'
 // Stays at the top of the sidebar while the rest of it scrolls.
 export function Sticky({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn(// Under the mode switch, which is the sticky block above it.
-      'sticky top-13 z-10 -mx-1 flex flex-col gap-2 bg-(--card-background-color) px-1 pb-2', className)}>
+    <div
+      className={cn(
+        'sticky top-0 z-10 -mx-1 flex flex-col gap-2 bg-(--card-background-color) px-1 pb-2',
+        className,
+      )}
+    >
       {children}
     </div>
   )

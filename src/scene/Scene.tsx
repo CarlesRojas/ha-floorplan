@@ -24,9 +24,13 @@ type Props = {
   config: CardConfig
   // The editor can hold the room at day or at night to see how it looks.
   sky?: SkyMode
+  // In the editor, a press in 3D also picks what it landed on, so the plan
+  // and the sidebar follow the view.
+  onPickDecoration?: (id: string) => void
+  onPickRoom?: (id: string) => void
 }
 
-export default function Scene({ hass, config, sky = 'auto' }: Props) {
+export default function Scene({ hass, config, sky = 'auto', onPickDecoration, onPickRoom }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
@@ -48,12 +52,12 @@ export default function Scene({ hass, config, sky = 'auto' }: Props) {
           around it onto the floor. */}
       <Shadows />
       <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
-      <Devices hass={hass} config={config} />
+      <Devices hass={hass} config={config} onPick={onPickDecoration} />
       {/* A press that misses everything looks around itself for something
           to act on, so small things are still easy to hit. */}
       <PickFallback />
       {rooms.map((room, i) => (
-        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
+        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom} />
       ))}
       <OrbitControls
         makeDefault

@@ -87,8 +87,11 @@ export function deviceSignals(hass: HomeAssistant, entityId: string): Signal[] {
       return typeof attrs.percentage === 'number' ? ['toggle', 'level'] : ['toggle']
     case 'media_player':
       return typeof attrs.volume_level === 'number' ? ['toggle', 'level'] : ['toggle']
-    case 'climate':
     case 'vacuum':
+      // A vacuum is started and sent home, which is a switch as far as the
+      // models are concerned: running or not.
+      return ['toggle']
+    case 'climate':
     case 'select':
     case 'input_select':
       return ['enum']
@@ -135,6 +138,10 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
       }
     case 'lock':
       return { on: state === 'locked', state }
+    // Home Assistant has a word for each part of a vacuum's round. Only one
+    // of them means it is out on the floor.
+    case 'vacuum':
+      return { on: state === 'cleaning', state }
     case 'sensor':
     case 'number':
     case 'input_number':
@@ -155,6 +162,8 @@ export function clickAction(entityId: string): { domain: string; service: string
     case 'cover':
     case 'media_player':
     case 'humidifier':
+      return { domain, service: 'toggle' }
+    case 'vacuum':
       return { domain, service: 'toggle' }
     case 'lock':
       return { domain, service: 'unlock' }

@@ -1,7 +1,9 @@
 import { roundedShape } from '#/geometry/polygon.ts'
 import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
-import { useMemo, type ReactNode } from 'react'
-import { DoubleSide, ExtrudeGeometry } from 'three'
+import { useEased } from '#/scene/decor/ease.ts'
+import { useFrame } from '@react-three/fiber'
+import { useMemo, useRef, type ReactNode } from 'react'
+import { DoubleSide, ExtrudeGeometry, type Group } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
 // Scandinavian: softly rounded boxes, tapered legs, plump cushions and thin
@@ -313,5 +315,35 @@ export function Glass({ color, opacity = 0.22 }: { color: string; opacity?: numb
       metalness={0}
       side={DoubleSide}
     />
+  )
+}
+
+// Blades that spin while the device runs, faster at a higher level.
+export function Spinner({ speed, children }: { speed: number; children: ReactNode }) {
+  const ref = useRef<Group>(null)
+  useFrame((_, delta) => {
+    if (ref.current && speed > 0) ref.current.rotation.y += delta * speed
+  })
+  return <group ref={ref}>{children}</group>
+}
+
+// The small status light a device shows while it is running.
+export function Led({
+  on,
+  position,
+  color = '#8fd6a0',
+  radius = 0.012,
+}: {
+  on: boolean
+  position: [number, number, number]
+  color?: string
+  radius?: number
+}) {
+  const lit = useEased(on ? 1 : 0, 11)
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[radius, 8, 6]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * lit} />
+    </mesh>
   )
 }

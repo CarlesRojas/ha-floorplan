@@ -9,6 +9,8 @@ import { Color, SRGBColorSpace } from 'three'
 type Props = {
   hass: HomeAssistant | null
   config: CardConfig
+  // In the editor, a press also picks the piece it landed on.
+  onPick?: (id: string) => void
 }
 
 // The last color each light was seen with. Home Assistant drops rgb_color
@@ -69,9 +71,10 @@ function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null 
   }
 }
 
-export default function Devices({ hass, config }: Props) {
+export default function Devices({ hass, config, onPick }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
+  const rooms = config.rooms ?? []
   const boundTo = new Map<string, DeviceConfig>()
   for (const device of devices) for (const id of device.decorations ?? []) boundTo.set(id, device)
 
@@ -95,13 +98,23 @@ export default function Devices({ hass, config }: Props) {
       {decorations.map(item => {
         const device = boundTo.get(item.id)
         const state = device && hass ? itemState(hass, device) : null
+        // A press does what the device says, and in the editor also picks
+        // the piece. A piece with nothing behind it is still pickable.
+        const onClick =
+          device || onPick
+            ? () => {
+                onPick?.(item.id)
+                if (device) act(device.entity_id)
+              }
+            : undefined
         return (
           <DecorationModel
             key={item.id}
             item={item}
             all={decorations}
+            room={rooms.find(r => r.id === item.room)}
             state={state}
-            onClick={device ? () => act(device.entity_id) : undefined}
+            onClick={onClick}
             onOpen={device ? () => openMoreInfo(device.entity_id) : undefined}
           />
         )

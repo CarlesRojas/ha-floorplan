@@ -219,7 +219,9 @@ export default function Canvas({
     // Whether this one was already picked, since clicking it again is what
     // steps down to whatever is under it.
     const already = selectedDecoration === dragged.id
-    onSelect({ roomId: item.room, vertex: null })
+    // One thing at a time is selected: picking a piece lets go of the room.
+    // The room it is in only lifts a little while it is being dragged.
+    onSelect({ roomId: null, vertex: null })
     onSelectDecoration(dragged.id)
     drag.current = { kind: 'decoration', id: dragged.id, start: planPoint(e), origin: item.position, already }
     setDraggingDecoration(dragged.id)
@@ -721,7 +723,10 @@ export default function Canvas({
     e.stopPropagation()
     if (target.kind === 'room') onSelect({ roomId: target.roomId, vertex: null })
     if (target.kind === 'vertex') onSelect({ roomId: target.roomId, vertex: target.index })
-    if (target.kind === 'decoration') onSelectDecoration(target.id)
+    if (target.kind === 'decoration') {
+      onSelect({ roomId: null, vertex: null })
+      onSelectDecoration(target.id)
+    }
     setMenu({ at: { x: e.clientX, y: e.clientY }, target })
   }
 
@@ -833,7 +838,8 @@ export default function Canvas({
           </>
         )
       }
-      case 'decoration':
+      case 'decoration': {
+        const label = decorationKind(decorations.find(d => d.id === t.id)?.kind ?? '')?.label ?? 'item'
         return (
           <>
             <ContextMenuItem
@@ -882,10 +888,11 @@ export default function Canvas({
               }}
               shortcut="Del"
             >
-              Remove from plan
+              Delete {label}
             </ContextMenuItem>
           </>
         )
+      }
       case 'canvas':
         return (
           <>
@@ -899,7 +906,7 @@ export default function Canvas({
               Draw room
             </ContextMenuItem>
             <ContextMenuSeparator />
-            {(
+            {
               <>
                 <ContextMenuItem
                   disabled={!canPaste}
@@ -913,7 +920,7 @@ export default function Canvas({
                 </ContextMenuItem>
                 <ContextMenuSeparator />
               </>
-            )}
+            }
             <ContextMenuItem
               onSelect={() => {
                 onView(null)
@@ -953,9 +960,7 @@ export default function Canvas({
           // little. Enough to see which one it would land in, no more.
           const dropTarget =
             draggingDecoration !== null && decorations.find(x => x.id === draggingDecoration)?.room === room.id
-          // The room a selected item stands in is not itself picked: one
-          // thing at a time reads as selected.
-          const picked = selection.roomId === room.id && !selectedDecoration
+          const picked = selection.roomId === room.id
           const invalid =
             draggingId === room.id &&
             !isValidRoom(
@@ -1071,7 +1076,6 @@ export default function Canvas({
             const kind = decorationKind(item.kind)
             if (!room || !kind) return null
             const [sx, sy] = toScreen(view, item.position)
-            const dim = selection.roomId !== null && selection.roomId !== item.room
             const bound = devices.some(d => d.decorations?.includes(item.id))
             const invalid =
               draggingDecoration === item.id &&
@@ -1080,11 +1084,7 @@ export default function Canvas({
             const target = hoverSupport === item.id
             const raised = item.on !== undefined
             // What is selected turns blue, so it reads apart from the rest.
-            const color = invalid
-              ? 'var(--error-color)'
-              : isSelected
-                ? EDITOR_SELECTED_COLOR
-                : EDITOR_ACCENT_COLOR
+            const color = invalid ? 'var(--error-color)' : isSelected ? EDITOR_SELECTED_COLOR : EDITOR_ACCENT_COLOR
             const angle = -(item.rotation ?? 0)
             const [fw, fd] = footprint(kind, item.params)
             const r = EDITOR_DEVICE_RADIUS_PX
@@ -1096,7 +1096,6 @@ export default function Canvas({
             return (
               <g
                 key={item.id}
-                opacity={dim ? 0.35 : 1}
                 className="cursor-move"
                 onPointerDown={e => onDecorationDown(e, item)}
                 onContextMenu={e => openMenu(e, { kind: 'decoration', id: item.id })}
@@ -1108,7 +1107,7 @@ export default function Canvas({
                   y={sy - (kind.mount === 'wall' ? 5 : halfD)}
                   width={halfW * 2}
                   height={kind.mount === 'wall' ? 10 : halfD * 2}
-                  rx={kind.mount === 'wall' ? 4 : Math.min(8, Math.min(halfW, halfD) * 0.4)}
+                  rx={kind.mount === 'wall' ? 2 : Math.min(4, Math.min(halfW, halfD) * 0.25)}
                   transform={`rotate(${angle} ${sx} ${sy})`}
                   fill={color}
                   fillOpacity={kind.mount === 'wall' ? 0.7 : 0.18}

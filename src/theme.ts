@@ -97,12 +97,12 @@ export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
 export const DAY_AMBIENT_INTENSITY = 0.12
 export const DAY_HEMISPHERE_INTENSITY = 0.6
-export const NIGHT_AMBIENT_INTENSITY = 0.04
-export const NIGHT_HEMISPHERE_INTENSITY = 0.1
+export const NIGHT_AMBIENT_INTENSITY = 0.07
+export const NIGHT_HEMISPHERE_INTENSITY = 0.18
 // The sun itself. It is kept gentle, and its shadow map is deliberately
 // coarse, so daylight models the room without cutting hard edges into it.
 export const DAY_SUN_INTENSITY = 1.35
-export const NIGHT_SUN_INTENSITY = 0.03
+export const NIGHT_SUN_INTENSITY = 0.05
 
 // How far from a press the card looks for something to act on, in pixels.
 // A ray hits one point, so a press that lands on nothing is tried again in
@@ -116,6 +116,9 @@ export const DEVICE_SPHERE_COLOR = '#ffffff'
 
 // Floor materials a room can have. Color is the default tint, roughness the
 // sheen of the surface.
+// What a room is floored with until it is told otherwise: warm oak boards.
+export const DEFAULT_FLOOR_MATERIAL = 'wood'
+
 export const FLOOR_MATERIALS: Record<string, { label: string; color: string; surface: string }> = {
   wood: { label: 'Wood', color: '#dcc3a0', surface: 'wood_floor' },
   tiles: { label: 'Tiles', color: '#d9d2c5', surface: 'tiles' },
