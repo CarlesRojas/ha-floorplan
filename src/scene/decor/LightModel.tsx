@@ -63,7 +63,7 @@ function ShadeMaterial({
       emissive={[glow[0], glow[1], glow[2]]}
       // Kept under one: past that the tone mapping rolls a bright color off
       // toward white, which is what made a colored lamp read as pale.
-      emissiveIntensity={lit * (0.25 + lit * 0.7)}
+      emissiveIntensity={lit * (0.15 + lit * 0.35)}
     />
   )
 }
@@ -72,7 +72,17 @@ function BaseMaterial({ color, material = 'matte' }: { color: string; material?:
   return <Material material={material} color={color} />
 }
 
-function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; spread?: number }) {
+function Glow({
+  state,
+  at,
+  spread = 0,
+}: {
+  state: LightState | null
+  // Where the bulb is, inside the shade rather than on the frame that holds
+  // it: a floor lamp lights from the middle of its shade, not from its mast.
+  at: [number, number, number]
+  spread?: number
+}) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
   // Rect area lights need their uniform tables built once, and they only
@@ -90,7 +100,7 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
   if (spread > 0.4) {
     return (
       <rectAreaLight
-        position={[0, y - 0.02, 0]}
+        position={[at[0], at[1] - 0.02, at[2]]}
         rotation={[-Math.PI / 2, 0, 0]}
         width={spread}
         height={0.06}
@@ -104,11 +114,11 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
       {/* The bulb. What the shade stops on its way out lands as a shadow of
           whatever stands around the lamp. */}
       <pointLight
-        position={[0, y, 0]}
+        position={at}
         color={[r, g, b]}
         intensity={total * LAMP_KEY_SHARE}
         distance={7}
-        decay={1.6}
+        decay={1.15}
         castShadow
         shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
         shadow-radius={LAMP_SHADOW_BLUR}
@@ -123,11 +133,11 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
           not walls: they glow, so this part reaches past the shade and casts
           nothing. */}
       <pointLight
-        position={[0, y, 0]}
+        position={at}
         color={[r, g, b]}
         intensity={total * LAMP_THROUGH_SHARE}
         distance={6}
-        decay={1.7}
+        decay={1.25}
         userData={{ through: true }}
       />
     </>
@@ -140,14 +150,14 @@ export default function LightModel({ kind, item, state }: Props) {
   const m = (slot: string) => materialValue(kind, slot)
   const size = p('size')
   let body: React.ReactNode
-  let glowY = 1
+  let glowAt: [number, number, number] = [0, 1, 0]
   // How far the light is spread along the item, for a strip.
   let glowSpread = 0
   switch (kind.id) {
     case 'light_ceiling': {
       // A plain round focus in the ceiling, ten centimeters across.
       const r = size / 2
-      glowY = CEILING_HEIGHT_M - r - 0.05
+      glowAt = [0, CEILING_HEIGHT_M - r - 0.05, 0]
       body = (
         <group>
           <mesh position={[0, CEILING_HEIGHT_M - 0.006, 0]}>
@@ -172,7 +182,7 @@ export default function LightModel({ kind, item, state }: Props) {
       const drumH = size * 0.58
       const slats = Math.max(16, Math.round((Math.PI * size) / 0.035))
       const slatW = (Math.PI * size) / slats / 1.7
-      glowY = top - drumH * 0.6
+      glowAt = [0, top - drumH - 0.02, 0]
       body = (
         <>
           <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
@@ -221,7 +231,8 @@ export default function LightModel({ kind, item, state }: Props) {
       const shadeH = size * 0.85
       const post = 0.028
       const shadeY = height - shadeH
-      glowY = shadeY + shadeH * 0.5
+      // In the middle of the shade, which hangs in front of the mast.
+      glowAt = [0, shadeY + shadeH * 0.5, r + post * 0.4]
       body = (
         <>
           {/* The foot: two flat battens crossing under the shaft. */}
@@ -252,7 +263,7 @@ export default function LightModel({ kind, item, state }: Props) {
       const r = size / 2
       const globeR = height * 0.24
       const globeY = height * 0.42
-      glowY = globeY
+      glowAt = [0, globeY, 0]
       body = (
         <group>
           {/* The ring the globe sits in. */}
@@ -287,7 +298,8 @@ export default function LightModel({ kind, item, state }: Props) {
       const r = size / 2
       const shadeH = size * 0.95
       const rail = 0.018
-      glowY = height + shadeH * 0.1
+      // In the middle of the shade, which sits proud of the channel.
+      glowAt = [0, height, rail + r * 0.55]
       body = (
         <group position={[0, height, 0]}>
           {/* The channel: a back board with a rail down each edge. */}
@@ -323,7 +335,7 @@ export default function LightModel({ kind, item, state }: Props) {
       // two take their own height.
       const length = p('length')
       const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.04 : p('height')
-      glowY = height + 0.05
+      glowAt = [0, height + 0.05, 0]
       glowSpread = length
       body = (
         <group>
@@ -346,7 +358,7 @@ export default function LightModel({ kind, item, state }: Props) {
   return (
     <>
       {body}
-      <Glow state={state} y={glowY} spread={glowSpread} />
+      <Glow state={state} at={glowAt} spread={glowSpread} />
     </>
   )
 }

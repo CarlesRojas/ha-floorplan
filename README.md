@@ -94,9 +94,11 @@ The mode switch sits at the top of the sidebar and stays there while the rest sc
 
 ### Decoration mode
 
-The toolbar's daylight button holds the 3D preview at day or at night, or
-lets it follow the sun at the home, for looking at a room both ways without
-waiting for the hour. N cycles it.
+The toolbar's daylight button lights the 3D preview as day or as night, N,
+starting at day: what is being drawn should look the same whatever the hour
+outside. Beside it, the compass button turns the sun around the flat, S,
+which decides which way the shadows fall. That one is saved with the card, so
+the room is lit the same way outside the editor.
 
 The third mode places furniture and fixtures. The sidebar shows the catalog. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per part, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll, and the preview has a handle under it to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
 
@@ -141,6 +143,12 @@ showing the card when the sun integration is not there.
   and a gentle sun on top of them, with shadows blurred wide so nothing gets
   a hard edge cut into it.
 - By night that wash drops to a dim warm glow and the lamps carry the room.
+- The change takes about an hour each way. The sun climbs roughly ten degrees
+  in the hour after it rises and drops the same in the hour before it sets, so
+  the room starts dimming about an hour before sundown, is at night by
+  sundown, and takes the hour after sunrise to come back up.
+- `sun_direction` says where the sun comes from, in degrees clockwise from
+  the top of the plan, which decides which way every shadow falls.
 - Every lamp lights what is around it and throws the things beside it onto
   the floor. A lamp shade is not a wall: its frame and slats cast shadows
   while the parchment or opal in it passes light through and glows.
@@ -174,11 +182,12 @@ A device whose signals the item cannot express can still be bound. Clicking it w
 | `rooms` | `[]` | List of rooms, see below |
 | `radius` | `0.3` | Corner radius in meters for rooms without their own |
 | `gap` | `0.12` | Gap in meters between adjacent rooms |
-
-Defaults for these and other visual values live in `src/theme.ts`.
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
+| `sun_direction` | `145` | Where the sun comes from, in degrees clockwise from the top of the plan |
 | `devices` | `[]` | List of placed entities, see below |
 | `decorations` | `[]` | List of placed decoration items, see below |
+
+Defaults for these and other visual values live in `src/theme.ts`.
 
 Each room:
 

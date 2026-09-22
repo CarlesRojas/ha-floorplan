@@ -8,6 +8,7 @@ import {
   faDrawPolygon,
   faExpand,
   faCube,
+  faLocationArrow,
   faMoon,
   faRuler,
   faSun,
@@ -70,6 +71,8 @@ type Props = {
   onShowPreview: () => void
   sky: SkyMode
   onSky: () => void
+  sunDirection: number
+  onSunDirection: () => void
 }
 
 export default function Toolbar({
@@ -83,6 +86,8 @@ export default function Toolbar({
   onShowPreview,
   sky,
   onSky,
+  sunDirection,
+  onSunDirection,
 }: Props) {
   const color = EDITOR_MODE_COLORS[mode]
   return (
@@ -115,14 +120,30 @@ export default function Toolbar({
         action={{
           id: 'sky',
           icon: sky === 'night' ? faMoon : faSun,
-          title: sky === 'auto' ? 'Daylight: follows the sun' : sky === 'day' ? 'Daylight: day' : 'Daylight: night',
-          description: 'Hold the preview at day or at night, or let it follow the sun at home.',
+          title: sky === 'night' ? 'Night' : 'Day',
+          description: 'Light the preview as day or as night.',
           shortcut: 'N',
         }}
-        active={sky !== 'auto'}
+        active={sky === 'night'}
         color={color}
         toggle
         onClick={onSky}
+      />
+      {/* Which way the sun comes from. It is saved with the card, so the
+          room outside the editor is lit the same way. */}
+      <ToolButton
+        action={{
+          id: 'sun-direction',
+          icon: faLocationArrow,
+          title: `Sun from the ${compass(sunDirection)}`,
+          description: 'Turn the sun around the flat. Saved with the card.',
+          shortcut: 'S',
+        }}
+        color={color}
+        // The arrow points the way the light falls, so it faces away from
+        // the sun: the icon's own arrow already points up and right.
+        spin={sunDirection + 135}
+        onClick={onSunDirection}
       />
       {mode === 'rooms' && (
         <ToolButton
@@ -143,6 +164,14 @@ export default function Toolbar({
   )
 }
 
+const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
+
+// The nearest compass point to a bearing, for naming where the sun is.
+function compass(degrees: number) {
+  const turns = ((degrees % 360) + 360) % 360
+  return POINTS[Math.round(turns / 45) % POINTS.length]
+}
+
 // A toggle shows its state through the icon color alone, a tool through a
 // filled background.
 function ToolButton({
@@ -150,12 +179,15 @@ function ToolButton({
   active,
   color,
   toggle = false,
+  spin,
   onClick,
 }: {
   action: Action
   active?: boolean
   color: string
   toggle?: boolean
+  // Turns the icon, for the one that shows a direction.
+  spin?: number
   onClick: () => void
 }) {
   return (
@@ -170,7 +202,11 @@ function ToolButton({
           active && !toggle && 'text-white',
         )}
       >
-        <FontAwesomeIcon icon={action.icon} className="size-4" />
+        <FontAwesomeIcon
+          icon={action.icon}
+          className="size-4"
+          style={spin === undefined ? undefined : { transform: `rotate(${spin}deg)` }}
+        />
       </button>
       <div className="pointer-events-none absolute top-full left-0 z-10 mt-1 hidden w-52 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg group-hover:block">
         <p className="flex items-center justify-between text-sm font-semibold">

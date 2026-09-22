@@ -1,4 +1,4 @@
-import { DAYLIGHT_EASE_S, SUN_LIGHT_POSITION_M, SUN_SHADOW_MAP_PX } from '#/constants.ts'
+import { DAYLIGHT_EASE_S, SUN_DIRECTION_DEG, SUN_ELEVATION_DEG, SUN_SHADOW_MAP_PX } from '#/constants.ts'
 import { daylight } from '#/scene/daylight.ts'
 import { planBounds } from '#/scene/framing.ts'
 import {
@@ -19,7 +19,7 @@ import {
 import type { HomeAssistant, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { Color, Object3D, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
+import { Color, MathUtils, Object3D, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
 
 // What the room is lit as: whatever the sun at the home says, or one of the
 // two, which is what the editor's day and night button picks.
@@ -33,10 +33,13 @@ export default function Sky({
   hass,
   rooms = [],
   mode = 'auto',
+  direction = SUN_DIRECTION_DEG,
 }: {
   hass: HomeAssistant | null
   rooms?: RoomConfig[]
   mode?: SkyMode
+  // Compass bearing the sun comes from, clockwise from the top of the plan.
+  direction?: number
 }) {
   const target = mode === 'auto' ? daylight(hass) : mode === 'day' ? 1 : 0
   const level = useRef(target)
@@ -49,6 +52,19 @@ export default function Sky({
   const { center, reach } = useMemo(() => planBounds(rooms), [rooms])
   const aim = useMemo(() => new Object3D(), [])
   const extent = Math.max(reach * 1.2 + 1, 3)
+  // The sun stands on its bearing, at the height it keeps all day, far
+  // enough out that its shadow camera clears the flat.
+  const where = useMemo(() => {
+    const bearing = MathUtils.degToRad(direction)
+    const climb = MathUtils.degToRad(SUN_ELEVATION_DEG)
+    const away = Math.max(reach * 2 + 8, 14)
+    const flat = Math.cos(climb) * away
+    return [center[0] + Math.sin(bearing) * flat, Math.sin(climb) * away, center[2] - Math.cos(bearing) * flat] as [
+      number,
+      number,
+      number,
+    ]
+  }, [center, reach, direction])
 
   const colors = useMemo(
     () => ({
@@ -97,7 +113,7 @@ export default function Sky({
       />
       <directionalLight
         ref={sun}
-        position={[center[0] + SUN_LIGHT_POSITION_M[0], SUN_LIGHT_POSITION_M[1], center[2] + SUN_LIGHT_POSITION_M[2]]}
+        position={where}
         intensity={DAY_SUN_INTENSITY}
         color={DAY_SUN_COLOR}
         castShadow

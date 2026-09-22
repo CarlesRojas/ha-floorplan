@@ -40,7 +40,7 @@ export default function Scene({ hass, config, sky = 'auto' }: Props) {
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
     >
-      <Sky hass={hass} rooms={rooms} mode={sky} />
+      <Sky hass={hass} rooms={rooms} mode={sky} direction={config.sun_direction} />
       {/* Everything solid casts and receives, so a lamp throws the things
           around it onto the floor. */}
       <Shadows />

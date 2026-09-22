@@ -35,6 +35,8 @@ import {
   EDITOR_SAVED_FLASH_MS,
   EDITOR_SIDEBAR_MIN_PX,
   EDITOR_SIDEBAR_WIDTH_PX,
+  SUN_DIRECTION_DEG,
+  SUN_DIRECTION_STEP_DEG,
 } from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -70,9 +72,15 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
-  // The preview can follow the sun at home, or be held at day or at night.
-  const [sky, setSky] = useState<SkyMode>('auto')
-  const cycleSky = () => setSky(current => (current === 'auto' ? 'day' : current === 'day' ? 'night' : 'auto'))
+  // The editor shows the room by day, and the toolbar switches it to night.
+  // It never follows the sun here: what is being drawn should look the same
+  // whatever the hour outside.
+  const [sky, setSky] = useState<SkyMode>('day')
+  const cycleSky = () => setSky(current => (current === 'night' ? 'day' : 'night'))
+  // Which way the sun comes from. Unlike day and night, this one is part of
+  // the card: the room is lit the same way outside the editor.
+  const sunDirection = config.sun_direction ?? SUN_DIRECTION_DEG
+  const turnSun = () => onChange({ ...config, sun_direction: (sunDirection + SUN_DIRECTION_STEP_DEG) % 360 })
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
@@ -576,6 +584,10 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'N':
         cycleSky()
         break
+      case 's':
+      case 'S':
+        turnSun()
+        break
       case 'Enter':
         closeDraft()
         break
@@ -669,6 +681,8 @@ export default function Editor({ hass, config, onChange }: Props) {
         onShowPreview={togglePreview}
         sky={sky}
         onSky={cycleSky}
+        sunDirection={sunDirection}
+        onSunDirection={turnSun}
       />
     </div>
   )

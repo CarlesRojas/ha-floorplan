@@ -63,8 +63,10 @@ export const SCREEN_OFF_COLOR = '#16191b'
 export const LIGHT_SHADE_COLOR = '#f4eee3'
 export const LIGHT_BASE_COLOR = '#d8b98e'
 export const LIGHT_CORD_COLOR = '#8f877b'
-// Glow of a light that is on, before level and color are applied.
-export const LIGHT_GLOW_COLOR = '#ffd27a'
+// Glow of a light that is on, before level and color are applied. A lamp
+// with no color temperature to read sits around 3000 K: warm white, not the
+// amber of a candle.
+export const LIGHT_GLOW_COLOR = '#ffe3bd'
 export const LIGHT_POINT_INTENSITY = 5.5
 // How a lamp's light divides: the part that leaves the shade and casts
 // shadows, and the part that comes through the shade itself and casts none.
@@ -81,13 +83,13 @@ export const NIGHT_SKY_COLOR = '#e9ddcd'
 export const NIGHT_GROUND_COLOR = '#b9ad9e'
 export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
-export const DAY_AMBIENT_INTENSITY = 0.14
-export const DAY_HEMISPHERE_INTENSITY = 0.55
+export const DAY_AMBIENT_INTENSITY = 0.1
+export const DAY_HEMISPHERE_INTENSITY = 0.45
 export const NIGHT_AMBIENT_INTENSITY = 0.04
 export const NIGHT_HEMISPHERE_INTENSITY = 0.1
 // The sun itself. It is kept gentle, and its shadows are blurred wide, so
 // daylight models the room without cutting hard edges into it.
-export const DAY_SUN_INTENSITY = 0.85
+export const DAY_SUN_INTENSITY = 0.7
 export const NIGHT_SUN_INTENSITY = 0.03
 export const SUN_SHADOW_BLUR = 9
 
