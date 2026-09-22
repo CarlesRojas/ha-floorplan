@@ -86,8 +86,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
   const m = (slot: string) => materialValue(kind, slot)
-  const body = <Material color={c('body')} material={m('body')} />
-  const trim = () => <Material color={c('trim')} material={m('trim')} />
+  // Every part names itself, so a device's colors read as its parts.
+  const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
   const on = state?.on ?? false
   const level = state?.level ?? 1
   // Everything that moves is eased, so a cover reporting its position once a
@@ -134,12 +134,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
         {frame}
       </Slab>
       {glass === null ? (
-        <Slab
-          size={[Math.max(lw - t, 0.02), Math.max(lh - t * 2, 0.02), t * 0.7]}
-          radius={0.008}
-          position={[0, t, 0]}
-        >
-          {body}
+        <Slab size={[Math.max(lw - t, 0.02), Math.max(lh - t * 2, 0.02), t * 0.7]} radius={0.008} position={[0, t, 0]}>
+          {M('panel')}
         </Slab>
       ) : (
         <mesh position={[0, lh / 2, t / 2]}>
@@ -157,18 +153,14 @@ export default function DeviceModel({ kind, item, state }: Props) {
   const screen = (w: number, h: number, z: number) => (
     <group>
       <Slab size={[w, h, 0.016]} radius={0.008} bevel={0.004} position={[0, 0, z]}>
-        {body}
+        {M('bezel')}
       </Slab>
       <Slab size={[w * 0.55, h * 0.4, 0.032]} radius={0.012} bevel={0.006} position={[0, h * 0.05, z - 0.024]}>
-        {body}
+        {M('bezel')}
       </Slab>
       <mesh position={[0, h / 2, z + 0.0095]}>
         <planeGeometry args={[w - 0.012, h - 0.012]} />
-        {on ? (
-          <ScreenMaterial />
-        ) : (
-          <meshStandardMaterial color={c('screen')} roughness={0.12} metalness={0.25} />
-        )}
+        {on ? <ScreenMaterial /> : <meshStandardMaterial color={c('screen')} roughness={0.12} metalness={0.25} />}
       </mesh>
     </group>
   )
@@ -225,7 +217,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[w, h, d]} radius={h / 2.4} bevel={0.008} position={[0, 0, 0]}>
-            <Material color={c('body')} material={m('body')} repeat={w * 12} />
+            <Material color={c('grille')} material={m('grille')} repeat={w * 12} />
           </Slab>
           {[-1, 1].map(side => (
             <Slab
@@ -235,18 +227,18 @@ export default function DeviceModel({ kind, item, state }: Props) {
               bevel={0.006}
               position={[(side * (w - 0.02)) / 2, 0, 0]}
             >
-              {trim()}
+              {M('caps')}
             </Slab>
           ))}
           {/* Control strip and feet. */}
           <mesh position={[0, h + 0.001, -d * 0.2]}>
             <boxGeometry args={[w * 0.3, 0.004, d * 0.3]} />
-            {trim()}
+            {M('caps')}
           </mesh>
           {[-1, 1].map(side => (
             <mesh key={side} position={[side * w * 0.36, 0.004, 0]}>
               <cylinderGeometry args={[0.012, 0.012, 0.008, 8]} />
-              {trim()}
+              {M('caps')}
             </mesh>
           ))}
           <Led on={on} position={[0, h * 0.4, d / 2 + 0.002]} radius={0.007} />
@@ -262,16 +254,16 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0.008, 0]}>
             <cylinderGeometry args={[r * 0.86, r * 0.9, 0.016, SEG]} />
-            {trim()}
+            {M('base')}
           </mesh>
           <mesh position={[0, h / 2 + 0.016, 0]} castShadow>
             <cylinderGeometry args={[r, r * 0.98, h - 0.03, SEG]} />
-            <Material color={c('body')} material={m('body')} repeat={18} />
+            <Material color={c('grille')} material={m('grille')} repeat={18} />
           </mesh>
           {/* Top plate, slightly dished, where the buttons would be. */}
           <mesh position={[0, h + 0.002, 0]}>
             <cylinderGeometry args={[r * 0.99, r, 0.02, SEG]} />
-            {trim()}
+            {M('base')}
           </mesh>
           <Led on={on} position={[0, h + 0.014, r * 0.45]} radius={0.007} />
         </group>
@@ -287,33 +279,29 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[w * 1.25, 0.022, d * 1.2]} radius={0.02} bevel={0.006} position={[0, 0, 0]}>
-            {trim()}
+            {M('plinth')}
           </Slab>
           {/* Small feet, lifting the cabinet off the plinth. */}
           {[-1, 1].flatMap(sx =>
             [-1, 1].map(sz => (
               <mesh key={`${sx}:${sz}`} position={[sx * w * 0.36, 0.03, sz * d * 0.36]}>
                 <cylinderGeometry args={[0.012, 0.012, 0.016, 8]} />
-                {trim()}
+                {M('plinth')}
               </mesh>
             )),
           )}
           <Slab size={[w, h - 0.06, d]} radius={w * 0.18} bevel={0.012} position={[0, 0.038, 0]}>
-            <Material color={c('trim')} material={m('trim')} />
+            {M('cabinet')}
           </Slab>
           {/* The grille, a fabric panel proud of the front face. */}
           <Slab size={[w - 0.02, h - 0.12, 0.016]} radius={w * 0.14} bevel={0.006} position={[0, 0.068, d / 2]}>
-            <Material color={c('body')} material={m('body')} repeat={h * 14} />
+            <Material color={c('grille')} material={m('grille')} repeat={h * 14} />
           </Slab>
           {/* Driver rings, showing through the grille. */}
           {Array.from({ length: drivers }).map((_, i) => (
-            <mesh
-              key={i}
-              position={[0, h * (0.32 + i * 0.36), d / 2 + 0.005]}
-              rotation={[Math.PI / 2, 0, 0]}
-            >
+            <mesh key={i} position={[0, h * (0.32 + i * 0.36), d / 2 + 0.005]} rotation={[Math.PI / 2, 0, 0]}>
               <torusGeometry args={[w * (i === 0 ? 0.3 : 0.22), 0.006, 6, SEG]} />
-              {trim()}
+              {M('plinth')}
             </mesh>
           ))}
           <Led on={on} position={[0, h - 0.07, d / 2 + 0.012]} radius={0.007} />
@@ -330,25 +318,20 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0.008, 0]} scale={[1, 1, 0.6]}>
             <cylinderGeometry args={[w * 0.34, w * 0.36, 0.016, SEG]} />
-            {trim()}
+            {M('panel')}
           </mesh>
           <Slab size={[h * 1.9, tall, w * 0.52]} radius={h * 0.3} bevel={0.008} position={[0, 0.016, 0]}>
-            {body}
+            {M('body')}
           </Slab>
           {/* Side panel, the two tone front the current consoles have. */}
-          <Slab
-            size={[h * 0.5, tall * 0.92, w * 0.54]}
-            radius={h * 0.2}
-            bevel={0.006}
-            position={[h * 0.75, 0.024, 0]}
-          >
-            {trim()}
+          <Slab size={[h * 0.5, tall * 0.92, w * 0.54]} radius={h * 0.2} bevel={0.006} position={[h * 0.75, 0.024, 0]}>
+            {M('panel')}
           </Slab>
           {/* Vent slots along the top. */}
           {[0, 1, 2].map(i => (
             <mesh key={i} position={[-h * 0.3 + i * h * 0.25, tall + 0.018, 0]}>
               <boxGeometry args={[h * 0.12, 0.004, w * 0.36]} />
-              {trim()}
+              {M('panel')}
             </mesh>
           ))}
           <Led on={on} position={[0, tall * 0.2, w * 0.27]} color="#7fb3e8" radius={0.006} />
@@ -363,34 +346,34 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group position={[0, -0.18, 0]}>
           <mesh position={[0, 0.3, 0]}>
             <cylinderGeometry args={[0.055, 0.06, 0.02, SEG]} />
-            {trim()}
+            {M('mount')}
           </mesh>
           <Bar length={0.16} radius={0.013} position={[0, 0.235, 0]}>
-            {trim()}
+            {M('mount')}
           </Bar>
           {/* The yoke that holds the body. */}
           <mesh position={[0, s * 0.53, 0]}>
             <boxGeometry args={[s * 0.5, 0.012, s * 0.2]} />
-            {trim()}
+            {M('mount')}
           </mesh>
           <Slab size={[s, s * 0.46, s * 0.82]} radius={0.022} bevel={0.01} position={[0, 0, 0]}>
-            {body}
+            {M('body')}
           </Slab>
           {/* Vent grille on one side. */}
           {[0, 1, 2, 3].map(i => (
             <mesh key={i} position={[s / 2 + 0.002, s * 0.12 + i * s * 0.07, -s * 0.1]}>
               <boxGeometry args={[0.004, s * 0.035, s * 0.4]} />
-              {trim()}
+              {M('mount')}
             </mesh>
           ))}
           {/* Lens barrel, stepping out of the front face. */}
           <mesh position={[0, s * 0.24, s * 0.45]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.19, s * 0.21, 0.05, SEG]} />
-            {trim()}
+            {M('mount')}
           </mesh>
           <mesh position={[0, s * 0.24, s * 0.48]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.15, s * 0.15, 0.03, SEG]} />
-            <meshStandardMaterial color="#2f3336" emissive="#cfe4f5" emissiveIntensity={2 * lit} />
+            <meshStandardMaterial color={c('lens')} emissive="#cfe4f5" emissiveIntensity={2 * lit} />
           </mesh>
           <Led on={on} position={[s * 0.3, s * 0.05, s * 0.42]} radius={0.006} />
         </group>
@@ -406,7 +389,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const slots = Math.max(6, Math.round(w / 0.055))
       const warm = 0.45 * level * lit
       const hot = () => (
-        <Material color={c('body')} material={m('body')} emissive={[1, 0.45, 0.25]} emissiveIntensity={warm} />
+        <Material color={c('panel')} material={m('panel')} emissive={[1, 0.45, 0.25]} emissiveIntensity={warm} />
       )
       return (
         <group>
@@ -429,17 +412,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
           {Array.from({ length: slots }).map((_, i) => (
             <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / slots, h - 0.004, 0.046]}>
               <boxGeometry args={[(w / slots) * 0.5, 0.004, 0.05]} />
-              <Material color={c('body')} material={m('body')} />
+              <Material color={c('panel')} material={m('panel')} />
             </mesh>
           ))}
           {/* Valve and tail, at the lower left. */}
           <mesh position={[-w / 2 - 0.02, 0.07, 0.046]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.018, 0.018, 0.05, 10]} />
-            <Material color={c('body')} material="metal" />
+            <Material color={c('valve')} material={m('valve')} />
           </mesh>
           <mesh position={[-w / 2 - 0.05, 0.07, 0.046]} rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.024, 0.021, 0.05, 10]} />
-            <Material color={c('body')} material="metal" />
+            <Material color={c('valve')} material={m('valve')} />
           </mesh>
         </group>
       )
@@ -454,13 +437,13 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group position={[0, -h, 0]}>
           <Slab size={[w, h, d]} radius={0.05} bevel={0.035} position={[0, 0, d / 2]}>
-            {body}
+            {M('body')}
           </Slab>
           {/* Intake slots, raked across the top face. */}
           {Array.from({ length: vents }).map((_, i) => (
             <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / vents, h - 0.004, d * 0.45]}>
               <boxGeometry args={[(w / vents) * 0.55, 0.005, d * 0.5]} />
-              {trim()}
+              {M('grille')}
             </mesh>
           ))}
           {/* The outlet, a recess under the front with the flap in it. */}
@@ -475,12 +458,12 @@ export default function DeviceModel({ kind, item, state }: Props) {
             position={[0, 0.04, d - 0.012]}
             rotation={[-0.7 * swing, 0, 0]}
           >
-            {trim()}
+            {M('grille')}
           </Slab>
           {/* Display strip, dark until it runs. */}
           <mesh position={[w / 2 - 0.1, h * 0.42, d + 0.001]}>
             <planeGeometry args={[0.11, 0.028]} />
-            <meshStandardMaterial color="#20262a" emissive="#7fb3e8" emissiveIntensity={0.8 * lit} />
+            <meshStandardMaterial color={c('display')} emissive="#7fb3e8" emissiveIntensity={0.8 * lit} />
           </mesh>
           <Led on={on} position={[w / 2 - 0.16, h * 0.42, d + 0.004]} color="#7fb3e8" radius={0.008} />
         </group>
@@ -498,17 +481,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
           {/* Ceiling rose and downrod. */}
           <mesh position={[0, drop + 0.04, 0]}>
             <cylinderGeometry args={[0.07, 0.075, 0.03, SEG]} />
-            {body}
+            {M('housing')}
           </mesh>
           <Bar length={drop} radius={0.014} position={[0, drop / 2 + 0.05, 0]}>
-            {body}
+            {M('housing')}
           </Bar>
           <mesh position={[0, 0.015, 0]} castShadow>
             <cylinderGeometry args={[r * 0.19, r * 0.22, 0.07, SEG]} />
-            {body}
+            {M('housing')}
           </mesh>
           <Dome radius={r * 0.22} position={[0, -0.016, 0]} sweep={0.5} rotation={[Math.PI, 0, 0]}>
-            {body}
+            {M('housing')}
           </Dome>
           <Spinner speed={speed}>
             {Array.from({ length: blades }).map((_, i) => {
@@ -518,7 +501,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
                   {/* The arm that carries the blade out of the housing. */}
                   <mesh position={[r * 0.24, 0.005, 0]}>
                     <boxGeometry args={[r * 0.2, 0.014, 0.05]} />
-                    {body}
+                    {M('housing')}
                   </mesh>
                   <Slab
                     size={[r * 0.68, 0.011, r * 0.24]}
@@ -527,7 +510,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
                     position={[r * 0.63, -0.012, 0]}
                     rotation={[0.16, 0, 0]}
                   >
-                    <Material color={c('blade')} material={m('blade')} />
+                    <Material color={c('blades')} material={m('blades')} />
                   </Slab>
                 </group>
               )
@@ -546,21 +529,21 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0.02, 0]} castShadow>
             <cylinderGeometry args={[r * 0.72, r * 0.78, 0.04, SEG * 2]} />
-            {body}
+            {M('stand')}
           </mesh>
           <mesh position={[0, 0.055, 0]}>
             <cylinderGeometry args={[r * 0.3, r * 0.5, 0.05, SEG]} />
-            {body}
+            {M('stand')}
           </mesh>
           <mesh position={[0, (h - r) / 2, 0]}>
             <cylinderGeometry args={[0.018, 0.026, h - r, 12]} />
-            {body}
+            {M('stand')}
           </mesh>
           <group position={[0, h - r * 0.4, 0]}>
             {/* Motor can, behind the blades. */}
             <mesh position={[0, 0, -0.07]} rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[r * 0.26, r * 0.3, 0.12, SEG]} />
-              {body}
+              {M('stand')}
             </mesh>
             {/* The blades spin about the forward axis, so their group is
                 tipped a quarter turn and the guard stays upright. */}
@@ -568,7 +551,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
               <Spinner speed={speed}>
                 <mesh>
                   <cylinderGeometry args={[r * 0.14, r * 0.14, 0.05, SEG]} />
-                  {trim()}
+                  {M('guard')}
                 </mesh>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <mesh
@@ -581,7 +564,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
                     ]}
                   >
                     <boxGeometry args={[r * 0.7, 0.006, r * 0.36]} />
-                    <Material color={c('blade')} material={m('blade')} />
+                    <Material color={c('blades')} material={m('blades')} />
                   </mesh>
                 ))}
               </Spinner>
@@ -591,13 +574,13 @@ export default function DeviceModel({ kind, item, state }: Props) {
               {[0.45, 0.98].map(k => (
                 <mesh key={k}>
                   <torusGeometry args={[r * k, k > 0.9 ? 0.012 : 0.006, 6, SEG * 2]} />
-                  {trim()}
+                  {M('guard')}
                 </mesh>
               ))}
               {Array.from({ length: 6 }).map((_, i) => (
                 <mesh key={i} rotation={[0, 0, (i / 6) * Math.PI]}>
                   <cylinderGeometry args={[0.004, 0.004, r * 1.96, 6]} />
-                  {trim()}
+                  {M('guard')}
                 </mesh>
               ))}
             </group>
@@ -613,22 +596,22 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0.022, 0]} castShadow>
             <cylinderGeometry args={[r * 1.35, r * 1.5, 0.044, SEG * 2]} />
-            {body}
+            {M('body')}
           </mesh>
           <group scale={[1, 1, 0.62]}>
             <mesh position={[0, h / 2 + 0.04, 0]} castShadow>
               <cylinderGeometry args={[r * 0.78, r, h - 0.08, SEG * 2]} />
-              {body}
+              {M('body')}
             </mesh>
             <Dome radius={r * 0.78} position={[0, h - 0.04, 0]} sweep={0.5}>
-              {body}
+              {M('body')}
             </Dome>
             {/* The mesh outlet, a tall recessed band on the front. */}
             <mesh position={[0, h * 0.54, r * 0.72]}>
               <boxGeometry args={[r * 1.1, h * 0.66, r * 0.6]} />
               <Material
-                color={c('trim')}
-                material={m('trim')}
+                color={c('mesh')}
+                material={m('mesh')}
                 repeat={10}
                 emissive={[0.6, 0.8, 1]}
                 emissiveIntensity={0.25 * level * lit}
@@ -638,7 +621,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           {/* Control ring on the top. */}
           <mesh position={[0, h + 0.004, 0]} scale={[1, 1, 0.62]}>
             <cylinderGeometry args={[r * 0.4, r * 0.4, 0.012, SEG]} />
-            {trim()}
+            {M('controls')}
           </mesh>
           <Led on={on} position={[0, h + 0.014, 0]} color="#7fb3e8" radius={0.008} />
         </group>
@@ -654,31 +637,31 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0.018, 0]}>
             <cylinderGeometry args={[r * 0.88, r * 0.92, 0.036, SEG * 2]} />
-            {trim()}
+            {M('filter')}
           </mesh>
           {/* The filter band, the part that reads as fabric. */}
           <mesh position={[0, h * 0.45, 0]} castShadow>
             <cylinderGeometry args={[r, r, h * 0.78, SEG * 2, 1, true]} />
-            <Material color={c('trim')} material={m('trim')} doubleSide repeat={12} />
+            <Material color={c('filter')} material={m('filter')} doubleSide repeat={12} />
           </mesh>
           <mesh position={[0, h * 0.88, 0]}>
             <cylinderGeometry args={[r * 0.98, r, h * 0.1, SEG * 2]} />
-            {body}
+            {M('body')}
           </mesh>
           {/* Outlet grille: a sunken disc crossed by radial bars. */}
           <mesh position={[0, h - 0.012, 0]}>
             <cylinderGeometry args={[r * 0.9, r * 0.95, 0.024, SEG * 2]} />
-            <Material color="#2f3336" material="matte" />
+            <Material color={c('grille')} material={m('grille')} />
           </mesh>
           {Array.from({ length: spokes }).map((_, i) => (
             <mesh key={i} position={[0, h, 0]} rotation={[0, (i / spokes) * Math.PI, 0]}>
               <boxGeometry args={[r * 1.7, 0.008, 0.012]} />
-              {body}
+              {M('body')}
             </mesh>
           ))}
           <mesh position={[0, h + 0.008, 0]}>
             <cylinderGeometry args={[r * 0.3, r * 0.3, 0.012, SEG]} />
-            <meshStandardMaterial color="#20262a" emissive="#7fb3e8" emissiveIntensity={0.9 * level * lit} />
+            <meshStandardMaterial color={c('display')} emissive="#7fb3e8" emissiveIntensity={0.9 * level * lit} />
           </mesh>
         </group>
       )
@@ -691,19 +674,19 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, h * 0.42, 0]} castShadow>
             <cylinderGeometry args={[r, r * 0.86, h * 0.84, SEG * 2]} />
-            {body}
+            {M('body')}
           </mesh>
           <mesh position={[0, h * 0.88, 0]}>
             <cylinderGeometry args={[r * 0.72, r, h * 0.1, SEG * 2]} />
-            {trim()}
+            {M('collar')}
           </mesh>
           <mesh position={[0, h - 0.008, 0]}>
             <cylinderGeometry args={[r * 0.46, r * 0.62, 0.03, SEG * 2]} />
-            {trim()}
+            {M('collar')}
           </mesh>
           <mesh position={[0, h + 0.004, 0]}>
             <cylinderGeometry args={[r * 0.3, r * 0.3, 0.016, SEG]} />
-            <Material color="#2f3336" material="matte" />
+            <Material color={c('nozzle')} material={m('nozzle')} />
           </mesh>
           {on && (
             // A soft plume rising out of the nozzle.
@@ -726,20 +709,15 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.012]}>
             <cylinderGeometry args={[r * 0.72, r * 0.72, 0.024, SEG]} />
-            {trim()}
+            {M('back')}
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.034]}>
             <cylinderGeometry args={[r, r * 0.96, 0.03, SEG]} />
-            <Material color={c('body')} material="metal" />
+            {M('ring')}
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
             <cylinderGeometry args={[r * 0.82, r * 0.82, 0.004, SEG]} />
-            <Material
-              color={c('face')}
-              material={m('face')}
-              emissive={[1, 0.6, 0.35]}
-              emissiveIntensity={0.9 * lit}
-            />
+            <Material color={c('face')} material={m('face')} emissive={[1, 0.6, 0.35]} emissiveIntensity={0.9 * lit} />
           </mesh>
         </group>
       )
@@ -757,6 +735,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
       // what made these move in steps.
       const out = Math.max(1 - coverLevel, 0.001)
       const awning = kind.id === 'awning'
+      // Each of these calls its moving part and its head by its own name.
+      const cloth = awning ? 'canopy' : 'slats'
+      const head = awning ? 'cassette' : 'rail'
       const slats = Math.max(1, Math.round(full / 0.09))
       // A blind's slats turn with its second percentage: flat lets the light
       // through, upright shuts it out.
@@ -764,12 +745,12 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[w + 0.06, 0.07, 0.08]} radius={0.02} position={[0, -0.07, 0.04]}>
-            <Material color={c('rail')} material={m('rail')} />
+            <Material color={c(head)} material={m(head)} />
           </Slab>
           {awning ? (
             <group position={[0, -0.14, 0]} rotation={[0.25, 0, 0]} scale={[1, 1, out]}>
               <Slab size={[w, 0.02, full]} radius={0.01} position={[0, 0, full / 2]}>
-                {body}
+                <Material color={c(cloth)} material={m(cloth)} />
               </Slab>
             </group>
           ) : (
@@ -782,7 +763,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
                   position={[0, -0.02 - i * 0.085, 0.04]}
                   rotation={kind.id === 'blind' ? [slatAngle, 0, 0] : undefined}
                 >
-                  {body}
+                  <Material color={c(cloth)} material={m(cloth)} />
                 </Slab>
               ))}
             </group>
@@ -850,7 +831,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const jamb = 0.05
       // How far the frame runs into the wall.
       const lining = 0.06
-      const metal = <Material color={c('trim')} material={m('trim')} />
+      const metal = <Material color={c('handle')} material={m('handle')} />
       // A lever on a round rose: a 5 cm rose, a 2.2 cm neck out of it and a
       // 13 by 2.5 cm bar with fully rounded ends, running back toward the
       // hinge.
@@ -890,16 +871,21 @@ export default function DeviceModel({ kind, item, state }: Props) {
               bevel={0.004}
               position={[(s2 * (w + jamb)) / 2, 0, leaf / 2]}
             >
-              {body}
+              {M('frame')}
             </Slab>
           ))}
           <Slab size={[w + jamb * 2, jamb, lining]} radius={0.006} bevel={0.004} position={[0, h, leaf / 2]}>
-            {body}
+            {M('frame')}
           </Slab>
           {/* The leaf, hinged on whichever edge the switch picks. */}
           <group position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * 1.1 * coverLevel, 0]}>
-            <Slab size={[w - 0.008, h - 0.006, leaf]} radius={0.004} bevel={0.003} position={[(side * w) / 2, 0, leaf / 2]}>
-              {body}
+            <Slab
+              size={[w - 0.008, h - 0.006, leaf]}
+              radius={0.004}
+              bevel={0.003}
+              position={[(side * w) / 2, 0, leaf / 2]}
+            >
+              {M('panel')}
             </Slab>
             {handle(1)}
             {handle(-1)}
@@ -996,7 +982,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           <group scale={[1, out, 1]}>
             {Array.from({ length: panels }).map((_, i) => (
               <Slab key={i} size={[w, panelH - 0.01, 0.05]} radius={0.012} position={[0, panelH * i, 0.03]}>
-                {body}
+                {M('panels')}
               </Slab>
             ))}
           </group>
@@ -1017,15 +1003,15 @@ export default function DeviceModel({ kind, item, state }: Props) {
           {/* Plate against the wall and the stem out of it. */}
           <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[r * 0.72, r * 0.8, 0.024, SEG]} />
-            {trim()}
+            {M('mount')}
           </mesh>
           <Bar length={0.05} radius={0.011} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.045]}>
-            {trim()}
+            {M('mount')}
           </Bar>
           {/* Body: a rounded drum lying on its side. */}
           <mesh position={[0, 0, 0.1]} rotation={[Math.PI / 2, 0, 0]} castShadow>
             <capsuleGeometry args={[r, r * 0.5, 6, SEG]} />
-            {body}
+            {M('body')}
           </mesh>
           {/* The face: black glass, with the lens sunk into it. */}
           <mesh position={[0, 0, 0.132]} rotation={[Math.PI / 2, 0, 0]}>
@@ -1034,7 +1020,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
           </mesh>
           <mesh position={[0, 0, 0.138]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[r * 0.4, r * 0.44, 0.008, SEG]} />
-            <Material color="#0d1013" material="ceramic" />
+            <Material color={c('lens')} material={m('lens')} />
           </mesh>
           <Led on={on} position={[0, -r * 0.62, 0.135]} color="#e8846a" radius={0.006} />
         </group>
@@ -1047,21 +1033,21 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[s, h, 0.032]} radius={s * 0.38} bevel={0.008} position={[0, -h / 2, 0.016]}>
-            {body}
+            {M('body')}
           </Slab>
           {/* Camera lens, sunk into a dark window. */}
           <mesh position={[0, -h * 0.26, 0.035]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.3, s * 0.3, 0.008, SEG]} />
-            <meshStandardMaterial color="#14171a" roughness={0.15} metalness={0.2} />
+            <meshStandardMaterial color={c('lens')} roughness={0.15} metalness={0.2} />
           </mesh>
           <mesh position={[0, -h * 0.26, 0.038]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.16, s * 0.16, 0.006, SEG]} />
-            <meshStandardMaterial color="#0b0d0f" roughness={0.05} metalness={0.4} />
+            <meshStandardMaterial color={c('lens')} roughness={0.05} metalness={0.4} />
           </mesh>
           {/* Button, a disc inside a ring that lights when it rings. */}
           <mesh position={[0, -h * 0.72, 0.036]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.34, s * 0.34, 0.008, SEG]} />
-            <Material color={c('face')} material={m('face')} />
+            <Material color={c('button')} material={m('button')} />
           </mesh>
           <mesh position={[0, -h * 0.72, 0.042]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[s * 0.27, 0.005, 6, SEG]} />
@@ -1078,16 +1064,16 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[s, h, 0.026]} radius={s / 2} bevel={0.008} position={[0, -h / 2, 0.013]}>
-            {body}
+            {M('body')}
           </Slab>
           <mesh position={[0, -h * 0.55, 0.045]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.44, s * 0.46, 0.038, SEG * 2]} />
-            <Material color={c('body')} material="metal" />
+            {M('turn')}
           </mesh>
           {/* The turn knob, offset so the state reads at a glance. */}
           <mesh position={[0, -h * 0.55, 0.066]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.3, s * 0.34, 0.012, SEG]} />
-            <Material color={c('body')} material="metal" />
+            {M('turn')}
           </mesh>
           <mesh position={[s * 0.12, -h * 0.55 + s * 0.12, 0.072]} rotation={[Math.PI / 2, 0, 0]}>
             <boxGeometry args={[0.005, 0.004, s * 0.3]} />
@@ -1103,22 +1089,22 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[s, s * 1.1, 0.045]} radius={s * 0.3} bevel={0.01} position={[0, -s * 0.55, 0.022]}>
-            {body}
+            {M('body')}
           </Slab>
           <mesh position={[0, -s * 0.55, 0.046]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.36, s * 0.36, 0.006, SEG]} />
-            <Material color={c('body')} material={m('body')} />
+            {M('socket')}
           </mesh>
           {/* Two pin holes, the detail that says socket. */}
           {[-1, 1].map(side => (
             <mesh key={side} position={[side * s * 0.16, -s * 0.55, 0.049]}>
               <cylinderGeometry args={[s * 0.05, s * 0.05, 0.004, 8]} />
-              <meshStandardMaterial color="#14171a" roughness={0.6} />
+              <meshStandardMaterial color={c('pins')} roughness={0.6} />
             </mesh>
           ))}
           <mesh position={[0, -s * 0.12, 0.046]}>
             <boxGeometry args={[s * 0.22, s * 0.1, 0.006]} />
-            <Material color={c('body')} material="metal" />
+            {M('socket')}
           </mesh>
           <Led on={on} position={[s * 0.3, -s * 0.12, 0.046]} radius={0.005} />
         </group>
@@ -1131,16 +1117,21 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[s, h, 0.024]} radius={s * 0.3} bevel={0.006} position={[0, -h / 2, 0.012]}>
-            {body}
+            {M('body')}
           </Slab>
-          <Slab size={[s * 0.42, h * 0.55, 0.022]} radius={s * 0.15} bevel={0.005} position={[s * 0.82, -h * 0.4, 0.011]}>
-            {body}
+          <Slab
+            size={[s * 0.42, h * 0.55, 0.022]}
+            radius={s * 0.15}
+            bevel={0.005}
+            position={[s * 0.82, -h * 0.4, 0.011]}
+          >
+            {M('body')}
           </Slab>
           {/* The alignment notch on both halves. */}
           {[0, s * 0.82].map(x => (
             <mesh key={x} position={[x, -h * 0.2, 0.025]}>
               <boxGeometry args={[x === 0 ? s * 0.6 : s * 0.3, 0.004, 0.004]} />
-              <Material color={c('body')} material="metal" />
+              {M('body')}
             </mesh>
           ))}
           <Led on={on} position={[0, -h * 0.82, 0.026]} radius={0.005} />
@@ -1154,19 +1145,19 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group position={[0, -s * 0.8, 0]}>
           <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[s * 0.45, s * 0.5, 0.024, SEG]} />
-            {body}
+            {M('body')}
           </mesh>
           <mesh position={[0, 0, 0.032]}>
             <sphereGeometry args={[s * 0.28, SEG, SEG]} />
-            <Material color={c('body')} material="metal" />
+            {M('body')}
           </mesh>
           <mesh position={[0, s * 0.1, 0.06]} rotation={[0.35, 0, 0]}>
             <sphereGeometry args={[s * 0.52, SEG, SEG, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-            <Material color={c('body')} material="ceramic" />
+            {M('dome')}
           </mesh>
           <mesh position={[0, s * 0.02, 0.075]} rotation={[0.35, 0, 0]}>
             <sphereGeometry args={[s * 0.5, SEG, SEG, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.2]} />
-            <meshStandardMaterial color="#20262a" roughness={0.4} />
+            <meshStandardMaterial color={c('lens')} roughness={0.4} />
           </mesh>
           <Led on={on} position={[0, -s * 0.3, 0.04]} radius={0.005} />
         </group>
@@ -1180,10 +1171,10 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group position={[0, -0.04, 0]}>
           <mesh position={[0, 0.012, 0]}>
             <cylinderGeometry args={[r, r * 0.96, 0.024, SEG * 2]} />
-            {body}
+            {M('body')}
           </mesh>
           <Dome radius={r * 0.96} position={[0, 0.012, 0]} sweep={0.22}>
-            {body}
+            {M('body')}
           </Dome>
           {/* Vent slots, set in around the edge of the underside. */}
           {Array.from({ length: 12 }).map((_, i) => {
@@ -1191,13 +1182,13 @@ export default function DeviceModel({ kind, item, state }: Props) {
             return (
               <mesh key={i} position={[Math.cos(a) * r * 0.74, -0.002, Math.sin(a) * r * 0.74]} rotation={[0, -a, 0]}>
                 <boxGeometry args={[r * 0.3, 0.006, r * 0.1]} />
-                <meshStandardMaterial color="#3b4145" roughness={0.8} />
+                <meshStandardMaterial color={c('vents')} roughness={0.8} />
               </mesh>
             )
           })}
           <mesh position={[0, -0.004, 0]}>
             <cylinderGeometry args={[r * 0.34, r * 0.36, 0.01, SEG]} />
-            {body}
+            {M('body')}
           </mesh>
           <Led on={on} position={[r * 0.5, -0.006, 0]} color="#e8846a" radius={0.007} />
         </group>
@@ -1211,21 +1202,26 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group position={[0, -h, 0]}>
           <Slab size={[s, h, 0.028]} radius={s * 0.12} bevel={0.008} position={[0, 0, 0.014]}>
-            {body}
+            {M('body')}
           </Slab>
           <mesh position={[0, h / 2, 0.03]}>
             <planeGeometry args={[s * 0.84, h * 0.78]} />
-            <meshStandardMaterial color="#14171a" roughness={0.15} metalness={0.2} />
+            <meshStandardMaterial color={c('glass')} roughness={0.15} metalness={0.2} />
           </mesh>
           <mesh position={[0, h * 0.66, 0.032]}>
             <planeGeometry args={[s * 0.68, h * 0.3]} />
-            <Material color={c('face')} material={m('face')} emissive={[0.55, 0.78, 1]} emissiveIntensity={1 * lit} />
+            <Material
+              color={c('screen')}
+              material={m('screen')}
+              emissive={[0.55, 0.78, 1]}
+              emissiveIntensity={1 * lit}
+            />
           </mesh>
           {/* Three keypad dots, the hint of a number pad. */}
           {[-1, 0, 1].map(i => (
             <mesh key={i} position={[i * s * 0.22, h * 0.3, 0.032]}>
               <cylinderGeometry args={[s * 0.07, s * 0.07, 0.004, 10]} />
-              <meshStandardMaterial color="#2c3237" roughness={0.5} />
+              <meshStandardMaterial color={c('keys')} roughness={0.5} />
             </mesh>
           ))}
         </group>
@@ -1239,20 +1235,31 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[s * 1.2, 0.012, s * 0.9]} radius={s * 0.1} position={[0, 0, 0]}>
-            {body}
+            {M('body')}
           </Slab>
-          <Slab size={[s, h, s * 0.7]} radius={s * 0.16} bevel={0.008} position={[0, 0.012, 0]} rotation={[-0.12, 0, 0]}>
-            {body}
+          <Slab
+            size={[s, h, s * 0.7]}
+            radius={s * 0.16}
+            bevel={0.008}
+            position={[0, 0.012, 0]}
+            rotation={[-0.12, 0, 0]}
+          >
+            {M('body')}
           </Slab>
           <mesh position={[0, h * 0.58, s * 0.38]} rotation={[-0.12, 0, 0]}>
             <planeGeometry args={[s * 0.78, h * 0.5]} />
-            <Material color={c('face')} material={m('face')} emissive={[0.55, 0.78, 1]} emissiveIntensity={1 * lit} />
+            <Material
+              color={c('screen')}
+              material={m('screen')}
+              emissive={[0.55, 0.78, 1]}
+              emissiveIntensity={1 * lit}
+            />
           </mesh>
           {/* Intake slots on the side. */}
           {[0, 1, 2].map(i => (
             <mesh key={i} position={[s / 2 + 0.002, h * (0.2 + i * 0.12), 0]}>
               <boxGeometry args={[0.004, 0.006, s * 0.4]} />
-              <meshStandardMaterial color="#3b4145" roughness={0.8} />
+              <meshStandardMaterial color={c('vents')} roughness={0.8} />
             </mesh>
           ))}
         </group>
@@ -1264,7 +1271,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
       return (
         <group>
           <Slab size={[s, s * 1.6, 0.01]} radius={s * 0.1} bevel={0.004} position={[0, -s * 0.8, 0.005]}>
-            {body}
+            {M('plate')}
           </Slab>
           {[0, 1].map(i => (
             <group key={i}>
@@ -1276,8 +1283,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
                 rotation={[i === 0 ? -0.12 * lit : 0, 0, 0]}
               >
                 <Material
-                  color={c('face')}
-                  material={m('face')}
+                  color={c('rockers')}
+                  material={m('rockers')}
                   emissive={[0.6, 0.85, 0.7]}
                   emissiveIntensity={i === 0 ? 0.6 * lit : 0}
                 />
@@ -1285,7 +1292,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
               {/* The parting line above each rocker. */}
               <mesh position={[0, -s * 0.28 - i * s * 0.62 + s * 0.3, 0.014]}>
                 <boxGeometry args={[s * 0.66, 0.003, 0.014]} />
-                <Material color={c('body')} material={m('body')} />
+                {M('plate')}
               </mesh>
             </group>
           ))}
@@ -1301,36 +1308,36 @@ export default function DeviceModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, h / 2, 0]} castShadow>
             <cylinderGeometry args={[r, r * 0.98, h, SEG]} />
-            {body}
+            {M('body')}
           </mesh>
           {/* Bumper, the front half of the rim only. */}
           <mesh position={[0, h * 0.34, 0]} rotation={[0, Math.PI / 2, 0]}>
             <cylinderGeometry args={[r * 1.02, r * 1.02, h * 0.42, SEG, 1, true, 0, Math.PI]} />
-            <Material color={c('trim')} material={m('trim')} doubleSide />
+            <Material color={c('bumper')} material={m('bumper')} doubleSide />
           </mesh>
           {/* Lidar turret, behind the middle. */}
           <mesh position={[0, h + 0.012, -r * 0.34]}>
             <cylinderGeometry args={[r * 0.3, r * 0.32, 0.024, SEG]} />
-            {trim()}
+            {M('bumper')}
           </mesh>
           <mesh position={[0, h + 0.026, -r * 0.34]}>
             <cylinderGeometry args={[r * 0.26, r * 0.28, 0.006, SEG]} />
-            <Material color={c('body')} material={m('body')} />
+            {M('body')}
           </mesh>
           {/* A round button in front of the turret. */}
           <mesh position={[0, h + 0.002, r * 0.3]}>
             <cylinderGeometry args={[r * 0.16, r * 0.16, 0.006, SEG]} />
-            {trim()}
+            {M('bumper')}
           </mesh>
           <Led on={on} position={[0, h + 0.008, r * 0.62]} radius={0.007} />
           <Spinner speed={9 * lit}>
             <mesh position={[r * 0.72, 0.01, 0]}>
               <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
-              <Material color={c('trim')} material={m('trim')} />
+              {M('brushes')}
             </mesh>
             <mesh position={[-r * 0.72, 0.01, 0]}>
               <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
-              <Material color={c('trim')} material={m('trim')} />
+              {M('brushes')}
             </mesh>
           </Spinner>
         </group>

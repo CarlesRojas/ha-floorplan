@@ -41,7 +41,10 @@ function ShadeMaterial({
   // own color carried the surface. The shade takes the light's color as it
   // comes up, so a green lamp reads green from across the room.
   const [gr, gg, gb] = glow
-  const tint = useMemo(() => new Color(color).lerp(new Color(gr, gg, gb), 0.85 * lit).getStyle(), [color, gr, gg, gb, lit])
+  const tint = useMemo(
+    () => new Color(color).lerp(new Color(gr, gg, gb), 0.85 * lit).getStyle(),
+    [color, gr, gg, gb, lit],
+  )
   return (
     <SurfaceMaterial
       kind={material as SurfaceKind}
@@ -123,12 +126,12 @@ export default function LightModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, CEILING_HEIGHT_M - 0.02, 0]}>
             <cylinderGeometry args={[r, r * 0.98, 0.04, SEG * 2]} />
-            <BaseMaterial color={c('shade')} material={m('shade')} />
+            <BaseMaterial color={c('rim')} material={m('rim')} />
           </mesh>
           {/* The diffuser, a shallow dome hanging below the rim. */}
           <mesh position={[0, CEILING_HEIGHT_M - 0.04, 0]} rotation={[Math.PI, 0, 0]}>
             <sphereGeometry args={[r * 0.98, SEG * 2, SEG, 0, Math.PI * 2, 0, Math.PI * 0.3]} />
-            <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
+            <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
         </group>
       )
@@ -179,16 +182,16 @@ export default function LightModel({ kind, item, state }: Props) {
         <>
           <mesh position={[0, 0.012, 0]}>
             <cylinderGeometry args={[size * 0.42, size * 0.46, 0.024, SEG * 2]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('stand')} material={m('stand')} />
           </mesh>
           <mesh position={[0, 0.04, 0]}>
             <cylinderGeometry args={[0.03, size * 0.16, 0.04, SEG]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('stand')} material={m('stand')} />
           </mesh>
           {/* The stem stops inside the shade, so nothing pokes out the top. */}
           <mesh position={[0, (height - shadeH * 0.5) / 2, 0]}>
             <cylinderGeometry args={[0.014, 0.018, height - shadeH * 0.5, 12]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('stand')} material={m('stand')} />
           </mesh>
           {/* The shade, very slightly tapered, open top and bottom. */}
           <mesh position={[0, height - shadeH * 0.4, 0]} castShadow>
@@ -212,11 +215,11 @@ export default function LightModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, 0.012, 0]}>
             <cylinderGeometry args={[r * 0.5, r * 0.55, 0.024, SEG * 2]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('stand')} material={m('stand')} />
           </mesh>
           <mesh position={[0, height * 0.42, 0]}>
             <cylinderGeometry args={[r * 0.24, r * 0.4, height * 0.8, SEG]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('stand')} material={m('stand')} />
           </mesh>
           <Dome radius={r} position={[0, height * 0.82, 0]}>
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
@@ -239,7 +242,7 @@ export default function LightModel({ kind, item, state }: Props) {
         <group position={[0, height, 0]}>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.008]}>
             <cylinderGeometry args={[r * 0.55, r * 0.55, 0.016, SEG]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('plate')} material={m('plate')} />
           </mesh>
           <mesh position={[0, 0, 0.012]} castShadow>
             <sphereGeometry args={[r, SEG, SEG, 0, Math.PI]} />
@@ -248,7 +251,7 @@ export default function LightModel({ kind, item, state }: Props) {
           {/* The open face of the shell, closed by a soft disc. */}
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.012]}>
             <circleGeometry args={[r, SEG]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('plate')} material={m('plate')} />
           </mesh>
         </group>
       )
@@ -268,11 +271,11 @@ export default function LightModel({ kind, item, state }: Props) {
         <group>
           <mesh position={[0, height + 0.035, 0]}>
             <boxGeometry args={[length, 0.022, 0.03]} />
-            <BaseMaterial color={c('base')} material="metal" />
+            <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
           <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]}>
             <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 4, 10]} />
-            <ShadeMaterial color={c('base')} material={m('base')} state={state} />
+            <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
         </group>
       )
@@ -287,11 +290,11 @@ export default function LightModel({ kind, item, state }: Props) {
         <>
           <mesh position={[0, CEILING_HEIGHT_M - r * 0.3, 0]}>
             <cylinderGeometry args={[r, r * 0.86, r * 0.6, SEG * 2]} />
-            <BaseMaterial color={c('base')} material={m('base')} />
+            <BaseMaterial color={c('trim')} material={m('trim')} />
           </mesh>
           <mesh position={[0, CEILING_HEIGHT_M - r * 0.62, 0]}>
             <cylinderGeometry args={[r * 0.78, r * 0.78, r * 0.2, SEG * 2]} />
-            <ShadeMaterial color="#fff3d6" state={state} />
+            <ShadeMaterial color={c('lens')} state={state} />
           </mesh>
         </>
       )

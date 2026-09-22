@@ -1,5 +1,12 @@
 import type { Signal } from '#/signals.ts'
-import { CEILING_HEIGHT_M, LIGHT_BASE_COLOR, LIGHT_CORD_COLOR, LIGHT_SHADE_COLOR, SCANDI, SCREEN_OFF_COLOR } from '#/theme.ts'
+import {
+  CEILING_HEIGHT_M,
+  LIGHT_BASE_COLOR,
+  LIGHT_CORD_COLOR,
+  LIGHT_SHADE_COLOR,
+  SCANDI,
+  SCREEN_OFF_COLOR,
+} from '#/theme.ts'
 
 export type Mount = 'floor' | 'wall' | 'ceiling'
 
@@ -115,16 +122,6 @@ const TOGGLE_LEVEL: Signal[] = ['toggle', 'level']
 const LIGHT_SIGNALS: Signal[] = ['toggle', 'level', 'color', 'warmth']
 const READOUT: Signal[] = ['value', 'enum', 'toggle']
 
-// Shared palettes, all from the theme's Scandinavian set.
-const woodOnly = { body: SCANDI.oak }
-const woodMat = { body: 'wood' }
-const softBody = { body: SCANDI.linen, frame: SCANDI.oak }
-const softMat = { body: 'fabric', frame: 'wood' }
-const applianceBody = { body: SCANDI.offWhite, trim: SCANDI.slate }
-const applianceMat = { body: 'ceramic', trim: 'metal' }
-const lightColors = { shade: LIGHT_SHADE_COLOR, base: LIGHT_BASE_COLOR }
-const lightMaterials = { shade: 'fabric', base: 'wood' }
-
 const kind = (
   id: string,
   family: string,
@@ -144,8 +141,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Ceiling light',
     'ceiling',
     [size(0.45, 0.2, 1.2)],
-    lightColors,
-    lightMaterials,
+    { diffuser: LIGHT_SHADE_COLOR, rim: LIGHT_SHADE_COLOR },
+    { diffuser: 'fabric', rim: 'fabric' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -154,8 +151,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Pendant',
     'ceiling',
     [size(0.4, 0.15, 1), p('cord', 'Cord length', 0.8, 0.2, 2)],
-    { ...lightColors, cord: LIGHT_CORD_COLOR },
-    { ...lightMaterials, cord: 'fabric' },
+    { shade: LIGHT_SHADE_COLOR, cord: LIGHT_CORD_COLOR },
+    { shade: 'fabric', cord: 'fabric' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -164,8 +161,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Floor lamp',
     'floor',
     [size(0.4, 0.2, 0.8), height(1.5, 0.8, 2.2)],
-    lightColors,
-    lightMaterials,
+    { shade: LIGHT_SHADE_COLOR, stand: LIGHT_BASE_COLOR },
+    { shade: 'fabric', stand: 'wood' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -174,8 +171,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Table lamp',
     'floor',
     [size(0.3, 0.15, 0.6), height(0.45, 0.2, 0.9), lift(0.75)],
-    lightColors,
-    lightMaterials,
+    { shade: LIGHT_SHADE_COLOR, stand: LIGHT_BASE_COLOR },
+    { shade: 'fabric', stand: 'wood' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -184,8 +181,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall light',
     'wall',
     [size(0.25, 0.1, 0.6), height(1.8, 0.5, 2.5)],
-    lightColors,
-    lightMaterials,
+    { shade: LIGHT_SHADE_COLOR, plate: LIGHT_BASE_COLOR },
+    { shade: 'fabric', plate: 'wood' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -194,8 +191,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'LED strip',
     'floor',
     [length(1), height(0.02, 0, 2.6)],
-    { base: LIGHT_BASE_COLOR },
-    { base: 'matte' },
+    { diffuser: LIGHT_SHADE_COLOR, channel: LIGHT_BASE_COLOR },
+    { diffuser: 'matte', channel: 'metal' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -204,8 +201,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Ceiling LED strip',
     'ceiling',
     [length(1.6)],
-    { base: LIGHT_BASE_COLOR },
-    { base: 'matte' },
+    { diffuser: LIGHT_SHADE_COLOR, channel: LIGHT_BASE_COLOR },
+    { diffuser: 'matte', channel: 'metal' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -214,8 +211,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall LED strip',
     'wall',
     [length(1.6), height(1.9, 0.1, 2.5)],
-    { base: LIGHT_BASE_COLOR },
-    { base: 'matte' },
+    { diffuser: LIGHT_SHADE_COLOR, channel: LIGHT_BASE_COLOR },
+    { diffuser: 'matte', channel: 'metal' },
     LIGHT_SIGNALS,
   ),
   kind(
@@ -224,33 +221,65 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Spot',
     'ceiling',
     [size(0.12, 0.06, 0.3)],
-    { base: LIGHT_BASE_COLOR },
-    { base: 'metal' },
+    { trim: LIGHT_BASE_COLOR, lens: '#fff3d6' },
+    { trim: 'metal', lens: 'matte' },
     LIGHT_SIGNALS,
   ),
 
   // Seating
-  kind('sofa', 'seating', 'Sofa', 'floor', [width(2.1, 1.2, 3.4), depth(0.88, 0.7, 1.1)], softBody, softMat),
-  kind('armchair', 'seating', 'Armchair', 'floor', [width(0.78, 0.6, 1.1), depth(0.8, 0.6, 1)], softBody, softMat),
+  kind(
+    'sofa',
+    'seating',
+    'Sofa',
+    'floor',
+    [width(2.1, 1.2, 3.4), depth(0.88, 0.7, 1.1)],
+    { frame: SCANDI.oak, upholstery: SCANDI.linen, cushions: SCANDI.linen },
+    { frame: 'wood', upholstery: 'fabric', cushions: 'fabric' },
+  ),
+  kind(
+    'armchair',
+    'seating',
+    'Armchair',
+    'floor',
+    [width(0.78, 0.6, 1.1), depth(0.8, 0.6, 1)],
+    { frame: SCANDI.oak, upholstery: SCANDI.linen, cushions: SCANDI.linen },
+    { frame: 'wood', upholstery: 'fabric', cushions: 'fabric' },
+  ),
   kind(
     'dining_chair',
     'seating',
     'Dining chair',
     'floor',
     [width(0.46, 0.35, 0.6), depth(0.48, 0.35, 0.6)],
-    { body: SCANDI.oak, seat: SCANDI.linen },
-    { body: 'wood', seat: 'fabric' },
+    { frame: SCANDI.oak, seat: SCANDI.linen },
+    { frame: 'wood', seat: 'fabric' },
   ),
-  kind('stool', 'seating', 'Stool', 'floor', [size(0.34, 0.25, 0.5), height(0.45, 0.3, 0.8)], woodOnly, woodMat),
-  kind('bench', 'seating', 'Bench', 'floor', [width(1.3, 0.8, 2.2), depth(0.4, 0.3, 0.6)], woodOnly, woodMat),
+  kind(
+    'stool',
+    'seating',
+    'Stool',
+    'floor',
+    [size(0.34, 0.25, 0.5), height(0.45, 0.3, 0.8)],
+    { legs: SCANDI.oak, seat: SCANDI.oak },
+    { legs: 'wood', seat: 'wood' },
+  ),
+  kind(
+    'bench',
+    'seating',
+    'Bench',
+    'floor',
+    [width(1.3, 0.8, 2.2), depth(0.4, 0.3, 0.6)],
+    { legs: SCANDI.oak, seat: SCANDI.oak },
+    { legs: 'wood', seat: 'wood' },
+  ),
   kind(
     'pouf',
     'seating',
     'Pouf',
     'floor',
     [size(0.5, 0.3, 0.8), height(0.4, 0.25, 0.55)],
-    { body: SCANDI.clay },
-    { body: 'fabric' },
+    { cover: SCANDI.clay },
+    { cover: 'fabric' },
   ),
 
   // Tables
@@ -260,8 +289,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Dining table',
     'floor',
     [width(1.6, 0.9, 3), depth(0.9, 0.7, 1.2), height(0.75, 0.6, 0.85)],
-    woodOnly,
-    woodMat,
+    { top: SCANDI.oak, legs: SCANDI.oak },
+    { top: 'wood', legs: 'wood' },
   ),
   kind(
     'coffee_table',
@@ -269,18 +298,26 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Coffee table',
     'floor',
     [width(1.1, 0.6, 1.6), depth(0.6, 0.4, 0.9), height(0.4, 0.3, 0.5)],
-    woodOnly,
-    woodMat,
+    { top: SCANDI.oak, legs: SCANDI.oak, shelf: SCANDI.oak },
+    { top: 'wood', legs: 'wood', shelf: 'wood' },
   ),
-  kind('side_table', 'table', 'Side table', 'floor', [size(0.45, 0.3, 0.7), height(0.5, 0.35, 0.7)], woodOnly, woodMat),
+  kind(
+    'side_table',
+    'table',
+    'Side table',
+    'floor',
+    [size(0.45, 0.3, 0.7), height(0.5, 0.35, 0.7)],
+    { top: SCANDI.oak, legs: SCANDI.oak, shelf: SCANDI.oak },
+    { top: 'wood', legs: 'wood', shelf: 'wood' },
+  ),
   kind(
     'desk',
     'table',
     'Desk',
     'floor',
     [width(1.4, 0.9, 2.2), depth(0.68, 0.5, 0.9), height(0.74, 0.65, 0.85)],
-    woodOnly,
-    woodMat,
+    { top: SCANDI.oak, legs: SCANDI.oak, drawer: SCANDI.offWhite, handle: SCANDI.slate },
+    { top: 'wood', legs: 'wood', drawer: 'matte', handle: 'metal' },
   ),
   kind(
     'console_table',
@@ -288,8 +325,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Console table',
     'floor',
     [width(1.1, 0.7, 1.8), depth(0.36, 0.25, 0.5), height(0.8, 0.7, 0.95)],
-    woodOnly,
-    woodMat,
+    { top: SCANDI.oak, legs: SCANDI.oak, shelf: SCANDI.oak },
+    { top: 'wood', legs: 'wood', shelf: 'wood' },
   ),
   kind(
     'nightstand',
@@ -297,8 +334,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Nightstand',
     'floor',
     [width(0.45, 0.3, 0.7), depth(0.4, 0.3, 0.5), height(0.5, 0.35, 0.7)],
-    woodOnly,
-    woodMat,
+    { cabinet: SCANDI.oak, drawers: SCANDI.offWhite, handles: SCANDI.slate },
+    { cabinet: 'wood', drawers: 'matte', handles: 'metal' },
   ),
 
   // Storage
@@ -308,8 +345,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Bookshelf',
     'floor',
     [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4)],
-    { body: SCANDI.oak, books: SCANDI.clay },
-    { body: 'wood', books: 'matte' },
+    { cabinet: SCANDI.oak, shelves: SCANDI.oak, books: SCANDI.clay },
+    { cabinet: 'wood', shelves: 'wood', books: 'matte' },
   ),
   kind(
     'sideboard',
@@ -317,8 +354,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Sideboard',
     'floor',
     [width(1.6, 0.9, 2.6), depth(0.42, 0.3, 0.6), height(0.75, 0.6, 1)],
-    { body: SCANDI.oak, front: SCANDI.offWhite },
-    { body: 'wood', front: 'matte' },
+    { cabinet: SCANDI.oak, fronts: SCANDI.offWhite, handles: SCANDI.slate },
+    { cabinet: 'wood', fronts: 'matte', handles: 'metal' },
   ),
   kind(
     'wardrobe',
@@ -326,8 +363,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wardrobe',
     'floor',
     [width(1.2, 0.6, 2.6), depth(0.6, 0.45, 0.75), height(2.1, 1.6, 2.5)],
-    { body: SCANDI.offWhite, front: SCANDI.oak },
-    { body: 'matte', front: 'wood' },
+    { cabinet: SCANDI.offWhite, fronts: SCANDI.oak, handles: SCANDI.slate },
+    { cabinet: 'matte', fronts: 'wood', handles: 'metal' },
   ),
   kind(
     'dresser',
@@ -335,8 +372,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Dresser',
     'floor',
     [width(1, 0.6, 1.8), depth(0.45, 0.35, 0.6), height(0.9, 0.6, 1.3)],
-    { body: SCANDI.oak, front: SCANDI.offWhite },
-    { body: 'wood', front: 'matte' },
+    { cabinet: SCANDI.oak, fronts: SCANDI.offWhite, handles: SCANDI.slate },
+    { cabinet: 'wood', fronts: 'matte', handles: 'metal' },
   ),
   kind(
     'shoe_rack',
@@ -344,8 +381,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Shoe rack',
     'floor',
     [width(0.8, 0.5, 1.4), depth(0.3, 0.2, 0.4), height(0.5, 0.3, 0.9)],
-    woodOnly,
-    woodMat,
+    { frame: SCANDI.oak, rails: SCANDI.oak },
+    { frame: 'wood', rails: 'wood' },
   ),
   kind(
     'wall_shelf',
@@ -353,8 +390,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall shelf',
     'wall',
     [width(0.9, 0.4, 1.8), depth(0.24, 0.15, 0.4), height(1.5, 0.6, 2.3)],
-    woodOnly,
-    woodMat,
+    { shelf: SCANDI.oak },
+    { shelf: 'wood' },
   ),
 
   // Bedroom
@@ -364,8 +401,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Bed',
     'floor',
     [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05)],
-    { body: SCANDI.oak, bedding: SCANDI.offWhite, pillow: SCANDI.linen },
-    { body: 'wood', bedding: 'fabric', pillow: 'fabric' },
+    { frame: SCANDI.oak, bedding: SCANDI.offWhite, pillows: SCANDI.linen },
+    { frame: 'wood', bedding: 'fabric', pillows: 'fabric' },
   ),
   kind(
     'crib',
@@ -373,8 +410,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Crib',
     'floor',
     [width(0.7, 0.55, 0.9), length(1.25, 1, 1.5, 0.05)],
-    { body: SCANDI.oak, bedding: SCANDI.offWhite },
-    { body: 'wood', bedding: 'fabric' },
+    { frame: SCANDI.oak, bedding: SCANDI.offWhite },
+    { frame: 'wood', bedding: 'fabric' },
   ),
 
   // Kitchen
@@ -384,8 +421,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Counter',
     'floor',
     [width(1.8, 0.6, 4), depth(0.62, 0.5, 0.8), height(0.9, 0.8, 1)],
-    { body: SCANDI.offWhite, top: SCANDI.oak },
-    { body: 'matte', top: 'wood' },
+    { worktop: SCANDI.oak, cabinets: SCANDI.offWhite, fronts: SCANDI.offWhite },
+    { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
   ),
   kind(
     'kitchen_island',
@@ -393,8 +430,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Island',
     'floor',
     [width(1.8, 1, 3), depth(0.9, 0.7, 1.2), height(0.92, 0.8, 1.1)],
-    { body: SCANDI.sage, top: SCANDI.oak },
-    { body: 'matte', top: 'wood' },
+    { worktop: SCANDI.oak, cabinets: SCANDI.sage, fronts: SCANDI.sage },
+    { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
   ),
   kind(
     'upper_cabinets',
@@ -402,8 +439,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Upper cabinets',
     'wall',
     [width(1.6, 0.6, 3.5), depth(0.35, 0.25, 0.45), height(1.5, 1.2, 2)],
-    { body: SCANDI.offWhite },
-    { body: 'matte' },
+    { cabinets: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
+    { cabinets: 'matte', doors: 'matte', handles: 'metal' },
   ),
   kind(
     'fridge',
@@ -411,8 +448,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Fridge',
     'floor',
     [width(0.6, 0.5, 0.95), depth(0.65, 0.5, 0.8), height(1.85, 0.8, 2.1), base()],
-    applianceBody,
-    applianceMat,
+    { body: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
+    { body: 'ceramic', doors: 'ceramic', handles: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -421,8 +458,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Oven',
     'floor',
     [width(0.6, 0.5, 0.9), depth(0.6, 0.5, 0.7), height(0.88, 0.6, 1), base()],
-    applianceBody,
-    applianceMat,
+    { body: SCANDI.offWhite, glass: '#3c4144', handle: SCANDI.slate, knobs: SCANDI.slate },
+    { body: 'ceramic', glass: 'ceramic', handle: 'metal', knobs: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -431,8 +468,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Hob',
     'floor',
     [width(0.6, 0.4, 0.9), depth(0.52, 0.4, 0.7), lift(0.9)],
-    { body: SCANDI.charcoal, trim: SCANDI.slate },
-    { body: 'ceramic', trim: 'metal' },
+    { glass: SCANDI.charcoal, zones: '#6c7175' },
+    { glass: 'ceramic', zones: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -441,8 +478,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Extractor hood',
     'ceiling',
     [width(0.7, 0.5, 1.2), depth(0.45, 0.35, 0.6)],
-    { body: SCANDI.offWhite, trim: SCANDI.slate },
-    { body: 'metal', trim: 'metal' },
+    { canopy: SCANDI.offWhite, chimney: SCANDI.slate, filter: SCANDI.slate, controls: SCANDI.slate },
+    { canopy: 'metal', chimney: 'metal', filter: 'metal', controls: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -451,8 +488,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Dishwasher',
     'floor',
     [width(0.6, 0.45, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 0.95), base()],
-    applianceBody,
-    applianceMat,
+    { body: SCANDI.offWhite, door: SCANDI.offWhite, glass: '#3c4144', handle: SCANDI.slate, knobs: SCANDI.slate },
+    { body: 'ceramic', door: 'ceramic', glass: 'ceramic', handle: 'metal', knobs: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -461,8 +498,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Sink',
     'floor',
     [width(0.55, 0.4, 0.9), depth(0.45, 0.35, 0.6), lift(0.9)],
-    { body: SCANDI.slate, trim: SCANDI.offWhite },
-    { body: 'metal', trim: 'ceramic' },
+    { bowl: SCANDI.slate, tap: SCANDI.slate },
+    { bowl: 'metal', tap: 'metal' },
   ),
   kind(
     'microwave',
@@ -470,8 +507,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Microwave',
     'floor',
     [width(0.5, 0.35, 0.7), depth(0.38, 0.3, 0.5), lift(1.2)],
-    applianceBody,
-    applianceMat,
+    { body: SCANDI.offWhite, glass: '#3c4144', handle: SCANDI.slate, knobs: SCANDI.slate },
+    { body: 'ceramic', glass: 'ceramic', handle: 'metal', knobs: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -480,8 +517,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Coffee machine',
     'floor',
     [size(0.22, 0.15, 0.35), height(0.34, 0.25, 0.5), lift(0.92)],
-    { body: SCANDI.charcoal, trim: SCANDI.oak },
-    { body: 'matte', trim: 'wood' },
+    { body: SCANDI.charcoal, fittings: SCANDI.oak },
+    { body: 'matte', fittings: 'wood' },
     TOGGLE,
   ),
   kind(
@@ -490,8 +527,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Kettle',
     'floor',
     [size(0.16, 0.1, 0.25), lift(0.92)],
-    { body: SCANDI.offWhite, trim: SCANDI.oak },
-    { body: 'ceramic', trim: 'wood' },
+    { body: SCANDI.offWhite, fittings: SCANDI.oak },
+    { body: 'ceramic', fittings: 'wood' },
     TOGGLE,
   ),
 
@@ -502,8 +539,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Washing machine',
     'floor',
     [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), base()],
-    applianceBody,
-    applianceMat,
+    { body: SCANDI.offWhite, door: SCANDI.slate, controls: SCANDI.slate },
+    { body: 'ceramic', door: 'metal', controls: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -512,8 +549,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Dryer',
     'floor',
     [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), base()],
-    applianceBody,
-    applianceMat,
+    { body: SCANDI.offWhite, door: SCANDI.slate, controls: SCANDI.slate },
+    { body: 'ceramic', door: 'metal', controls: 'metal' },
     TOGGLE_LEVEL,
   ),
 
@@ -524,8 +561,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Toilet',
     'floor',
     [width(0.38, 0.3, 0.5), depth(0.68, 0.5, 0.85)],
-    { body: SCANDI.offWhite, trim: SCANDI.oak },
-    { body: 'ceramic', trim: 'wood' },
+    { pan: SCANDI.offWhite, seat: SCANDI.oak, flush: SCANDI.slate },
+    { pan: 'ceramic', seat: 'wood', flush: 'metal' },
   ),
   kind(
     'basin',
@@ -533,8 +570,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Basin',
     'floor',
     [width(0.6, 0.4, 1.2), depth(0.45, 0.35, 0.6), height(0.85, 0.7, 0.95)],
-    { body: SCANDI.offWhite, trim: SCANDI.oak },
-    { body: 'ceramic', trim: 'wood' },
+    { bowl: SCANDI.offWhite, vanity: SCANDI.oak, tap: SCANDI.slate, handle: SCANDI.slate },
+    { bowl: 'ceramic', vanity: 'wood', tap: 'metal', handle: 'metal' },
   ),
   kind(
     'bathtub',
@@ -542,8 +579,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Bathtub',
     'floor',
     [width(0.78, 0.6, 1), length(1.7, 1.3, 2, 0.05)],
-    { body: SCANDI.offWhite, trim: SCANDI.slate },
-    { body: 'ceramic', trim: 'metal' },
+    { tub: SCANDI.offWhite, plinth: SCANDI.slate, tap: SCANDI.slate },
+    { tub: 'ceramic', plinth: 'metal', tap: 'metal' },
   ),
   kind(
     'shower',
@@ -551,8 +588,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Shower',
     'floor',
     [width(0.9, 0.7, 1.4), depth(0.9, 0.7, 1.4), height(2, 1.8, 2.3)],
-    { body: SCANDI.offWhite, trim: SCANDI.slate },
-    { body: 'ceramic', trim: 'metal' },
+    { tray: SCANDI.offWhite, glass: '#dbe6e9', frame: SCANDI.slate, tap: SCANDI.slate },
+    { tray: 'ceramic', glass: 'ceramic', frame: 'metal', tap: 'metal' },
   ),
   kind(
     'towel_rail',
@@ -560,8 +597,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Towel rail',
     'wall',
     [width(0.6, 0.3, 1), height(1.2, 0.6, 1.8)],
-    { body: SCANDI.slate, towel: SCANDI.linen },
-    { body: 'metal', towel: 'fabric' },
+    { rail: SCANDI.slate, towel: SCANDI.linen },
+    { rail: 'metal', towel: 'fabric' },
     TOGGLE,
   ),
 
@@ -572,8 +609,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Rug',
     'floor',
     [width(2, 0.6, 4), depth(1.4, 0.5, 3)],
-    { body: SCANDI.linen, pattern: SCANDI.clay },
-    { body: 'carpet', pattern: 'carpet' },
+    { field: SCANDI.linen, border: SCANDI.clay },
+    { field: 'carpet', border: 'carpet' },
   ),
   kind(
     'plant_large',
@@ -581,8 +618,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Large plant',
     'floor',
     [size(0.6, 0.3, 1.2), height(1.3, 0.6, 2.2)],
-    { pot: SCANDI.clay, leaves: SCANDI.leaf },
-    { pot: 'ceramic', leaves: 'matte' },
+    { pot: SCANDI.clay, soil: '#3c332b', stems: SCANDI.leaf, leaves: SCANDI.leaf },
+    { pot: 'ceramic', soil: 'matte', stems: 'matte', leaves: 'matte' },
   ),
   kind(
     'plant_small',
@@ -590,8 +627,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Small plant',
     'floor',
     [size(0.25, 0.12, 0.5), lift(0.75)],
-    { pot: SCANDI.clay, leaves: SCANDI.leaf },
-    { pot: 'ceramic', leaves: 'matte' },
+    { pot: SCANDI.clay, soil: '#3c332b', leaves: SCANDI.leaf },
+    { pot: 'ceramic', soil: 'matte', leaves: 'matte' },
   ),
   kind(
     'picture',
@@ -599,8 +636,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Picture',
     'wall',
     [width(0.5, 0.2, 1.4), height(1.6, 0.8, 2.3), p('ratio', 'Height ratio', 1.3, 0.5, 2, 0.05)],
-    { frame: SCANDI.oak, art: SCANDI.sage },
-    { frame: 'wood', art: 'matte' },
+    { frame: SCANDI.oak, mount: '#efeae2', art: SCANDI.sage },
+    { frame: 'wood', mount: 'matte', art: 'matte' },
   ),
   kind(
     'wall_mirror',
@@ -608,8 +645,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall mirror',
     'wall',
     [size(0.7, 0.3, 1.3), height(1.6, 0.8, 2.3)],
-    { frame: SCANDI.oak, mirror: SCANDI.mist },
-    { frame: 'wood', mirror: 'metal' },
+    { frame: SCANDI.oak, glass: SCANDI.mist },
+    { frame: 'wood', glass: 'metal' },
   ),
   kind(
     'wall_clock',
@@ -617,8 +654,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall clock',
     'wall',
     [size(0.3, 0.15, 0.6), height(1.9, 1, 2.4)],
-    { frame: SCANDI.oak, face: SCANDI.offWhite },
-    { frame: 'wood', face: 'matte' },
+    { rim: SCANDI.oak, face: SCANDI.offWhite, hands: SCANDI.charcoal },
+    { rim: 'wood', face: 'matte', hands: 'matte' },
   ),
   kind(
     'vase',
@@ -626,8 +663,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Vase',
     'floor',
     [size(0.18, 0.08, 0.4), height(0.3, 0.12, 0.7), lift(0.75)],
-    { body: SCANDI.mist, stems: SCANDI.leaf },
-    { body: 'ceramic', stems: 'matte' },
+    { vase: SCANDI.mist, stems: SCANDI.leaf, flowers: SCANDI.leaf },
+    { vase: 'ceramic', stems: 'matte', flowers: 'matte' },
   ),
   kind(
     'books',
@@ -635,8 +672,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Books',
     'floor',
     [width(0.26, 0.12, 0.5), height(0.14, 0.06, 0.3), lift(0.75)],
-    { body: SCANDI.clay },
-    { body: 'matte' },
+    { covers: SCANDI.clay },
+    { covers: 'matte' },
   ),
   kind(
     'basket',
@@ -644,8 +681,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Basket',
     'floor',
     [size(0.4, 0.2, 0.7), height(0.36, 0.2, 0.6)],
-    { body: SCANDI.straw },
-    { body: 'fabric' },
+    { weave: SCANDI.straw },
+    { weave: 'fabric' },
   ),
   kind(
     'curtain',
@@ -653,8 +690,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Curtain',
     'wall',
     [width(1.4, 0.6, 3), height(2.3, 1.2, 2.6)],
-    { body: SCANDI.linen, rail: SCANDI.slate },
-    { body: 'fabric', rail: 'metal' },
+    { fabric: SCANDI.linen, rail: SCANDI.slate },
+    { fabric: 'fabric', rail: 'metal' },
     TOGGLE_LEVEL,
   ),
 
@@ -665,8 +702,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'TV',
     'floor',
     [inches(60, 24, 110), lift(0)],
-    { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.oak },
-    { body: 'matte', screen: 'ceramic', stand: 'wood' },
+    { bezel: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.oak },
+    { bezel: 'matte', screen: 'ceramic', stand: 'wood' },
     TOGGLE,
   ),
   kind(
@@ -675,8 +712,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall TV',
     'wall',
     [inches(60, 24, 110), height(1.3, 0.8, 2)],
-    { body: SCANDI.ink, screen: SCREEN_OFF_COLOR },
-    { body: 'matte', screen: 'ceramic' },
+    { bezel: SCANDI.ink, screen: SCREEN_OFF_COLOR },
+    { bezel: 'matte', screen: 'ceramic' },
     TOGGLE,
   ),
   kind(
@@ -685,8 +722,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Soundbar',
     'floor',
     [width(0.9, 0.4, 1.6), height(0.08, 0.05, 0.15), lift(0)],
-    { body: SCANDI.linen, trim: SCANDI.charcoal },
-    { body: 'fabric', trim: 'matte' },
+    { grille: SCANDI.linen, caps: SCANDI.charcoal },
+    { grille: 'fabric', caps: 'matte' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -695,8 +732,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Speaker',
     'floor',
     [size(0.16, 0.08, 0.35), height(0.22, 0.1, 0.5), lift(0)],
-    { body: SCANDI.linen, trim: SCANDI.oak },
-    { body: 'fabric', trim: 'wood' },
+    { grille: SCANDI.linen, base: SCANDI.oak },
+    { grille: 'fabric', base: 'wood' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -705,8 +742,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Floor speaker',
     'floor',
     [width(0.22, 0.15, 0.4), height(1, 0.6, 1.3)],
-    { body: SCANDI.linen, trim: SCANDI.oak },
-    { body: 'fabric', trim: 'wood' },
+    { cabinet: SCANDI.oak, grille: SCANDI.linen, plinth: SCANDI.oak },
+    { cabinet: 'wood', grille: 'fabric', plinth: 'wood' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -715,8 +752,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Monitor',
     'floor',
     [width(0.6, 0.4, 1.1), p('ratio', 'Height ratio', 0.6, 0.4, 0.8, 0.02), lift(0)],
-    { body: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.slate },
-    { body: 'matte', screen: 'ceramic', stand: 'metal' },
+    { bezel: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.slate },
+    { bezel: 'matte', screen: 'ceramic', stand: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -725,8 +762,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Game console',
     'floor',
     [width(0.3, 0.15, 0.5), height(0.06, 0.04, 0.12), lift(0)],
-    { body: SCANDI.offWhite, trim: SCANDI.charcoal },
-    { body: 'matte', trim: 'matte' },
+    { body: SCANDI.offWhite, panel: SCANDI.charcoal },
+    { body: 'matte', panel: 'matte' },
     TOGGLE,
   ),
   kind(
@@ -735,8 +772,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Projector',
     'ceiling',
     [size(0.26, 0.15, 0.45)],
-    { body: SCANDI.offWhite, trim: SCANDI.slate },
-    { body: 'matte', trim: 'metal' },
+    { body: SCANDI.offWhite, lens: '#2f3336', mount: SCANDI.slate },
+    { body: 'matte', lens: 'ceramic', mount: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -757,8 +794,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Radiator',
     'wall',
     [width(0.9, 0.4, 2), height(0.6, 0.3, 1.2), p('base', 'Off floor', 0.15, 0, 1)],
-    { body: SCANDI.offWhite },
-    { body: 'metal' },
+    { panel: SCANDI.offWhite, valve: SCANDI.slate },
+    { panel: 'metal', valve: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -767,8 +804,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Air conditioner',
     'wall',
     [width(0.9, 0.6, 1.3), height(2.1, 1.5, 2.5)],
-    { body: SCANDI.offWhite, trim: SCANDI.mist },
-    { body: 'matte', trim: 'ceramic' },
+    { body: SCANDI.offWhite, grille: SCANDI.mist, display: '#20262a' },
+    { body: 'matte', grille: 'ceramic', display: 'matte' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -777,8 +814,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Ceiling fan',
     'ceiling',
     [size(1.1, 0.6, 1.6), p('drop', 'Drop', 0.35, 0.1, 1)],
-    { body: SCANDI.offWhite, blade: SCANDI.oak },
-    { body: 'matte', blade: 'wood' },
+    { housing: SCANDI.offWhite, blades: SCANDI.oak },
+    { housing: 'matte', blades: 'wood' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -787,8 +824,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Standing fan',
     'floor',
     [size(0.4, 0.25, 0.6), height(1.2, 0.7, 1.6)],
-    { body: SCANDI.offWhite, blade: SCANDI.mist },
-    { body: 'matte', blade: 'matte' },
+    { stand: SCANDI.offWhite, blades: SCANDI.mist, guard: SCANDI.slate },
+    { stand: 'matte', blades: 'matte', guard: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -797,8 +834,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Tower fan',
     'floor',
     [size(0.24, 0.15, 0.4), height(1, 0.6, 1.4)],
-    { body: SCANDI.offWhite, trim: SCANDI.slate },
-    { body: 'matte', trim: 'metal' },
+    { body: SCANDI.offWhite, mesh: SCANDI.slate, controls: SCANDI.slate },
+    { body: 'matte', mesh: 'metal', controls: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -807,8 +844,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Air purifier',
     'floor',
     [size(0.28, 0.18, 0.45), height(0.6, 0.35, 0.9)],
-    { body: SCANDI.offWhite, trim: SCANDI.linen },
-    { body: 'matte', trim: 'fabric' },
+    { body: SCANDI.offWhite, filter: SCANDI.linen, grille: '#2f3336', display: '#20262a' },
+    { body: 'matte', filter: 'fabric', grille: 'matte', display: 'matte' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -817,8 +854,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Humidifier',
     'floor',
     [size(0.2, 0.12, 0.35), height(0.32, 0.2, 0.5), lift(0)],
-    { body: SCANDI.offWhite, trim: SCANDI.mist },
-    { body: 'ceramic', trim: 'ceramic' },
+    { body: SCANDI.offWhite, collar: SCANDI.mist, nozzle: '#2f3336' },
+    { body: 'ceramic', collar: 'ceramic', nozzle: 'matte' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -827,8 +864,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Thermostat',
     'wall',
     [size(0.11, 0.07, 0.2), height(1.45, 0.8, 2)],
-    { body: SCANDI.offWhite, face: SCANDI.charcoal },
-    { body: 'matte', face: 'ceramic' },
+    { ring: SCANDI.offWhite, back: SCANDI.offWhite, face: SCANDI.charcoal },
+    { ring: 'metal', back: 'matte', face: 'ceramic' },
     READOUT,
   ),
 
@@ -839,8 +876,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Blind',
     'wall',
     [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2)],
-    { body: SCANDI.linen, rail: SCANDI.slate },
-    { body: 'fabric', rail: 'metal' },
+    { slats: SCANDI.linen, rail: SCANDI.slate },
+    { slats: 'fabric', rail: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -849,8 +886,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Roller shutter',
     'wall',
     [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2)],
-    { body: SCANDI.mist, rail: SCANDI.slate },
-    { body: 'metal', rail: 'metal' },
+    { slats: SCANDI.mist, rail: SCANDI.slate },
+    { slats: 'metal', rail: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -869,8 +906,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Door',
     'wall',
     [width(0.85, 0.6, 1.4), height(2.05, 1.8, 2.4), flag('flip', 'Hinge right')],
-    { body: SCANDI.offWhite, trim: SCANDI.charcoal },
-    { body: 'matte', trim: 'metal' },
+    { frame: SCANDI.offWhite, panel: SCANDI.offWhite, handle: SCANDI.charcoal },
+    { frame: 'matte', panel: 'matte', handle: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -879,8 +916,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Sliding door',
     'wall',
     [width(1.8, 0.9, 5), height(2.1, 1.8, 2.5), panels(), flag('flip', 'Slide left')],
-    { body: SCANDI.offWhite, frame: SCANDI.slate },
-    { body: 'matte', frame: 'metal' },
+    { frame: SCANDI.slate, panel: SCANDI.offWhite },
+    { frame: 'metal', panel: 'matte' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -890,7 +927,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'wall',
     [width(2.4, 1.2, 6), height(2.2, 1.8, 2.6), panels(), flag('flip', 'Slide left')],
     { frame: SCANDI.slate, glass: SCANDI.mist },
-    { frame: 'metal' },
+    { frame: 'metal', glass: 'ceramic' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -899,8 +936,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Garage door',
     'wall',
     [width(2.5, 1.8, 4), height(2.2, 1.8, 2.6)],
-    { body: SCANDI.mist, rail: SCANDI.slate },
-    { body: 'metal', rail: 'metal' },
+    { panels: SCANDI.mist, rail: SCANDI.slate },
+    { panels: 'metal', rail: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -909,8 +946,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Awning',
     'wall',
     [width(2, 1, 4), height(2.3, 1.8, 2.6), p('drop', 'Extension', 1, 0.3, 2)],
-    { body: SCANDI.linen, rail: SCANDI.slate },
-    { body: 'fabric', rail: 'metal' },
+    { canopy: SCANDI.linen, cassette: SCANDI.slate },
+    { canopy: 'fabric', cassette: 'metal' },
     TOGGLE_LEVEL,
   ),
 
@@ -921,8 +958,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Camera',
     'wall',
     [size(0.1, 0.06, 0.2), height(2.2, 1.2, 2.5)],
-    { body: SCANDI.offWhite, lens: SCANDI.charcoal },
-    { body: 'matte', lens: 'ceramic' },
+    { body: SCANDI.offWhite, lens: SCANDI.charcoal, mount: SCANDI.slate },
+    { body: 'matte', lens: 'ceramic', mount: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -931,8 +968,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Doorbell',
     'wall',
     [size(0.07, 0.04, 0.14), height(1.4, 0.9, 1.8)],
-    { body: SCANDI.slate, face: SCANDI.charcoal },
-    { body: 'metal', face: 'ceramic' },
+    { body: SCANDI.slate, lens: SCANDI.charcoal, button: SCANDI.charcoal },
+    { body: 'metal', lens: 'ceramic', button: 'ceramic' },
     TOGGLE,
   ),
   kind(
@@ -941,8 +978,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Motion sensor',
     'wall',
     [size(0.07, 0.04, 0.14), height(2.3, 1.2, 2.5)],
-    { body: SCANDI.offWhite },
-    { body: 'matte' },
+    { body: SCANDI.offWhite, dome: SCANDI.offWhite, lens: SCANDI.charcoal },
+    { body: 'matte', dome: 'ceramic', lens: 'ceramic' },
     TOGGLE,
   ),
   kind(
@@ -961,8 +998,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Smoke detector',
     'ceiling',
     [size(0.14, 0.08, 0.25)],
-    { body: SCANDI.offWhite },
-    { body: 'matte' },
+    { body: SCANDI.offWhite, vents: SCANDI.slate },
+    { body: 'matte', vents: 'matte' },
     TOGGLE,
   ),
   kind(
@@ -971,8 +1008,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Alarm panel',
     'wall',
     [size(0.16, 0.1, 0.3), height(1.5, 0.9, 2)],
-    { body: SCANDI.offWhite, face: SCANDI.charcoal },
-    { body: 'matte', face: 'ceramic' },
+    { body: SCANDI.offWhite, glass: SCANDI.charcoal, screen: SCANDI.mist, keys: SCANDI.slate },
+    { body: 'matte', glass: 'ceramic', screen: 'ceramic', keys: 'matte' },
     READOUT,
   ),
   kind(
@@ -981,8 +1018,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Smart lock',
     'wall',
     [size(0.09, 0.05, 0.16), height(1.05, 0.7, 1.4)],
-    { body: SCANDI.slate },
-    { body: 'metal' },
+    { body: SCANDI.slate, turn: SCANDI.slate },
+    { body: 'metal', turn: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -991,8 +1028,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Air quality sensor',
     'floor',
     [size(0.1, 0.06, 0.2), lift(0)],
-    { body: SCANDI.offWhite, face: SCANDI.mist },
-    { body: 'matte', face: 'ceramic' },
+    { body: SCANDI.offWhite, screen: SCANDI.mist, vents: SCANDI.slate },
+    { body: 'matte', screen: 'ceramic', vents: 'matte' },
     READOUT,
   ),
 
@@ -1003,8 +1040,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Robot vacuum',
     'floor',
     [size(0.35, 0.25, 0.45)],
-    { body: SCANDI.offWhite, trim: SCANDI.charcoal },
-    { body: 'matte', trim: 'matte' },
+    { body: SCANDI.offWhite, bumper: SCANDI.charcoal, brushes: SCANDI.charcoal },
+    { body: 'matte', bumper: 'matte', brushes: 'matte' },
     TOGGLE,
   ),
   kind(
@@ -1013,8 +1050,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Smart plug',
     'wall',
     [size(0.07, 0.04, 0.12), height(0.3, 0.1, 1.4)],
-    { body: SCANDI.offWhite },
-    { body: 'matte' },
+    { body: SCANDI.offWhite, socket: SCANDI.offWhite, pins: SCANDI.charcoal },
+    { body: 'matte', socket: 'matte', pins: 'matte' },
     TOGGLE,
   ),
   kind(
@@ -1023,8 +1060,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Switch panel',
     'wall',
     [size(0.09, 0.06, 0.16), height(1.1, 0.8, 1.5)],
-    { body: SCANDI.offWhite, face: SCANDI.linen },
-    { body: 'matte', face: 'matte' },
+    { plate: SCANDI.offWhite, rockers: SCANDI.linen },
+    { plate: 'matte', rockers: 'matte' },
     TOGGLE,
   ),
 ]
@@ -1136,10 +1173,7 @@ export function surfaceTop(kind: DecorationKind, params: Record<string, number> 
 }
 
 // Usable area of a top, inset so things do not hang over the edge.
-export function surfaceRect(
-  kind: DecorationKind,
-  params: Record<string, number> | undefined,
-): [number, number] {
+export function surfaceRect(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
   const [w, d] = footprint(kind, params)
   return [Math.max(w - 0.1, w * 0.4), Math.max(d - 0.1, d * 0.4)]
 }

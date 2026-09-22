@@ -189,7 +189,7 @@ Each decoration:
 | `rotation` | Degrees, counter clockwise on the plan |
 | `on` | Id of the item this one stands on, for example the table under a lamp |
 | `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height |
-| `colors` | Hex color per part, for example `shade`, `base`, `cord`. The surface of each part, matte, fabric, wood, ceramic or metal, is fixed by the kind and is not configurable |
+| `colors` | Hex color per part. Each kind names its own parts, for example a door has `frame`, `panel` and `handle`, a sofa has `frame`, `upholstery` and `cushions`. The surface of each part, matte, fabric, wood, ceramic or metal, is fixed by the kind and is not configurable |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 
