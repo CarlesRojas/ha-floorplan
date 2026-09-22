@@ -81,14 +81,14 @@ export const NIGHT_SKY_COLOR = '#e9ddcd'
 export const NIGHT_GROUND_COLOR = '#b9ad9e'
 export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
-export const DAY_AMBIENT_INTENSITY = 0.45
-export const DAY_HEMISPHERE_INTENSITY = 1.5
-export const NIGHT_AMBIENT_INTENSITY = 0.12
-export const NIGHT_HEMISPHERE_INTENSITY = 0.3
+export const DAY_AMBIENT_INTENSITY = 0.22
+export const DAY_HEMISPHERE_INTENSITY = 0.9
+export const NIGHT_AMBIENT_INTENSITY = 0.04
+export const NIGHT_HEMISPHERE_INTENSITY = 0.1
 // The sun itself. It is kept gentle, and its shadows are blurred wide, so
 // daylight models the room without cutting hard edges into it.
 export const DAY_SUN_INTENSITY = 1.1
-export const NIGHT_SUN_INTENSITY = 0.12
+export const NIGHT_SUN_INTENSITY = 0.03
 export const SUN_SHADOW_BLUR = 9
 
 // How far from a press the card looks for something to act on, in pixels.

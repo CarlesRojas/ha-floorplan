@@ -74,7 +74,9 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
     RectAreaLightUniformsLib.init()
   }, [])
   if (lit < 0.01) return null
-  const total = LIGHT_POINT_INTENSITY * lit * (0.3 + lit * 0.7)
+  // Close to linear with the level: a lamp at a third still lights the
+  // room around it, and still casts, instead of fading away first.
+  const total = LIGHT_POINT_INTENSITY * (0.25 + 0.75 * lit) * lit
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.
