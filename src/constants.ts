@@ -25,9 +25,16 @@ export const CAMERA_FAR_M = 200
 
 // Lights
 
-export const AMBIENT_LIGHT_INTENSITY = 0.6
-export const SUN_LIGHT_INTENSITY = 1.4
 export const SUN_LIGHT_POSITION_M: [number, number, number] = [6, 12, 8]
+// How wide the sun's shadow camera has to be to cover a whole flat.
+export const SUN_SHADOW_EXTENT_M = 24
+export const SUN_SHADOW_MAP_PX = 2048
+// A lamp lights the room around it and casts shadows from what it stands
+// among. Each one costs six shadow renders, so only the first few get them.
+export const LAMP_SHADOW_MAP_PX = 512
+export const MAX_SHADOW_LAMPS = 4
+// How long the daylight takes to catch up when the sun moves, in seconds.
+export const DAYLIGHT_EASE_S = 1.2
 
 // Editor
 

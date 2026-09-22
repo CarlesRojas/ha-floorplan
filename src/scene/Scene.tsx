@@ -1,5 +1,4 @@
 import {
-  AMBIENT_LIGHT_INTENSITY,
   CAMERA_FAR_M,
   CAMERA_FOV_DEG,
   CAMERA_MAX_DISTANCE_M,
@@ -7,18 +6,18 @@ import {
   CAMERA_MIN_DISTANCE_M,
   CAMERA_MIN_POLAR_DEG,
   CAMERA_NEAR_M,
-  SUN_LIGHT_INTENSITY,
-  SUN_LIGHT_POSITION_M,
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import CameraRig from '#/scene/CameraRig.tsx'
 import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
+import Shadows from '#/scene/shadows.tsx'
+import Sky from '#/scene/Sky.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { MathUtils } from 'three'
+import { MathUtils, PCFShadowMap } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
@@ -32,19 +31,17 @@ export default function Scene({ hass, config }: Props) {
 
   return (
     <Canvas
-      shadows
+      // Percentage closer filtering, which is the one shadow map that takes
+      // a blur radius, so nothing in the room gets a hard edged shadow.
+      shadows={{ type: PCFShadowMap }}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
     >
-      <ambientLight intensity={AMBIENT_LIGHT_INTENSITY} />
-      <directionalLight
-        position={SUN_LIGHT_POSITION_M}
-        intensity={SUN_LIGHT_INTENSITY}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-bias={-0.0005}
-      />
+      <Sky hass={hass} />
+      {/* Everything solid casts and receives, so a lamp throws the things
+          around it onto the floor. */}
+      <Shadows />
       <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
       <Devices hass={hass} config={config} />
       {/* A press that misses everything looks around itself for something

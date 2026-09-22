@@ -126,6 +126,24 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Security and sensors | Camera, doorbell, motion sensor, door sensor, smoke detector, alarm panel, smart lock, air quality sensor |
 | Smart home | Robot vacuum, smart plug, switch panel |
 
+### Light in the room
+
+The room takes its light from the time of day at the home. The card reads
+`sun.sun`, so the hour before sunset arrives as a fade rather than a switch,
+falling back to the entity's state and then to the clock on the device
+showing the card when the sun integration is not there.
+
+- By day the room sits in soft warm light: a sky above, a floor bounce below
+  and a gentle sun on top of them, with shadows blurred wide so nothing gets
+  a hard edge cut into it.
+- By night that wash drops to a dim warm glow and the lamps carry the room.
+- Every lamp lights what is around it and throws the things beside it onto
+  the floor. A lamp shade is not a wall: its frame and slats cast shadows
+  while the parchment or opal in it passes light through and glows.
+- Point light shadows are expensive, so the brightest few lamps cast them and
+  the rest light the room without. LED strips light along their length, which
+  is a kind of source that cannot cast a shadow.
+
 ### How items show device state
 
 A bound device drives what the item does in 3D, when its signals match:

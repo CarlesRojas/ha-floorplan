@@ -17,12 +17,15 @@ export function Material({
   emissive,
   emissiveIntensity = 0,
   doubleSide = false,
+  opacity = 1,
 }: {
   color: string
   material?: string
   emissive?: [number, number, number]
   emissiveIntensity?: number
   doubleSide?: boolean
+  // Under one for a lamp shade, which light comes through.
+  opacity?: number
 }) {
   // Plain paint. Decorations carry no pattern: the surface only decides how
   // matte or how polished the part is, and the color does the rest. Floors
@@ -32,6 +35,8 @@ export function Material({
       color={color}
       roughness={surfaceRoughness(material as SurfaceKind)}
       side={doubleSide ? DoubleSide : undefined}
+      transparent={opacity < 1}
+      opacity={opacity}
       emissive={emissive ?? [0, 0, 0]}
       emissiveIntensity={emissiveIntensity}
     />

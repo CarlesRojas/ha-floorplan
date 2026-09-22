@@ -1,6 +1,6 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Material } from '#/scene/decor/parts.tsx'
-import { CEILING_HEIGHT_M, LIGHT_POINT_INTENSITY } from '#/theme.ts'
+import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
@@ -49,6 +49,10 @@ function ShadeMaterial({
       material={material}
       color={tint}
       doubleSide
+      // Parchment and opal glass are not walls. A lit shade turns slightly
+      // translucent, so the bulb shows through it, and it still stops enough
+      // of the light to throw a shadow.
+      opacity={1 - 0.22 * lit}
       emissive={[glow[0], glow[1], glow[2]]}
       // Kept under one: past that the tone mapping rolls a bright color off
       // toward white, which is what made a colored lamp read as pale.
@@ -86,7 +90,24 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
       />
     )
   }
-  return <pointLight position={[0, y, 0]} color={[r, g, b]} intensity={total} distance={7} decay={1.6} />
+  return (
+    <>
+      {/* The bulb. What the shade stops on its way out lands as a shadow of
+          whatever stands around the lamp. */}
+      <pointLight position={[0, y, 0]} color={[r, g, b]} intensity={total * LAMP_KEY_SHARE} distance={7} decay={1.6} />
+      {/* What comes through the shade itself. Parchment and opal glass are
+          not walls: they glow, so this part reaches past the shade and casts
+          nothing. */}
+      <pointLight
+        position={[0, y, 0]}
+        color={[r, g, b]}
+        intensity={total * LAMP_THROUGH_SHARE}
+        distance={6}
+        decay={1.7}
+        userData={{ through: true }}
+      />
+    </>
+  )
 }
 
 export default function LightModel({ kind, item, state }: Props) {
@@ -109,7 +130,7 @@ export default function LightModel({ kind, item, state }: Props) {
             <cylinderGeometry args={[r, r, 0.012, SEG * 2]} />
             <BaseMaterial color={c('rim')} material={m('rim')} />
           </mesh>
-          <mesh position={[0, CEILING_HEIGHT_M - 0.014, 0]}>
+          <mesh position={[0, CEILING_HEIGHT_M - 0.014, 0]} userData={{ transmits: true }}>
             <cylinderGeometry args={[r * 0.88, r * 0.88, 0.006, SEG * 2]} />
             <ShadeMaterial color={c('focus')} material={m('focus')} state={state} />
           </mesh>
@@ -160,7 +181,7 @@ export default function LightModel({ kind, item, state }: Props) {
             )
           })}
           {/* The diffuser, a translucent disc across the bottom of the drum. */}
-          <mesh position={[0, top - drumH + 0.012, 0]}>
+          <mesh position={[0, top - drumH + 0.012, 0]} userData={{ transmits: true }}>
             <cylinderGeometry args={[r * 0.96, r * 0.96, 0.01, SEG * 2]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
@@ -192,7 +213,7 @@ export default function LightModel({ kind, item, state }: Props) {
           </mesh>
           {/* The shade hangs on the front of the shaft, the way it is
               hooked onto the mast, so the shaft stays outside it. */}
-          <mesh position={[0, shadeY + shadeH / 2, r + post * 0.4]} castShadow>
+          <mesh position={[0, shadeY + shadeH / 2, r + post * 0.4]} castShadow userData={{ transmits: true }}>
             <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
           </mesh>
@@ -227,7 +248,7 @@ export default function LightModel({ kind, item, state }: Props) {
             <torusGeometry args={[0.016, 0.009, 6, SEG * 2]} />
             <BaseMaterial color={c('basket')} material={m('basket')} />
           </mesh>
-          <mesh position={[0, globeY, 0]} castShadow>
+          <mesh position={[0, globeY, 0]} castShadow userData={{ transmits: true }}>
             <sphereGeometry args={[globeR, SEG * 2, SEG * 2]} />
             <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
           </mesh>
@@ -257,7 +278,7 @@ export default function LightModel({ kind, item, state }: Props) {
             </mesh>
           ))}
           {/* The shade sits in the channel, proud of it at the front. */}
-          <mesh position={[0, 0, rail + r * 0.55]} castShadow>
+          <mesh position={[0, 0, rail + r * 0.55]} castShadow userData={{ transmits: true }}>
             <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
           </mesh>
@@ -286,7 +307,7 @@ export default function LightModel({ kind, item, state }: Props) {
             <boxGeometry args={[length, 0.022, 0.03]} />
             <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
-          <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
             <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 4, 10]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
