@@ -7,15 +7,50 @@ import {
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { Bar, Blob, Dome, Glass, Material, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { roundedShape } from '#/geometry/polygon.ts'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
 import { useFrame } from '@react-three/fiber'
-import { useRef, type ReactNode } from 'react'
-import { DoubleSide, type Group } from 'three'
+import { useMemo, useRef, type ReactNode } from 'react'
+import { DoubleSide, ExtrudeGeometry, type Group } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
+
+// A flat shape cut from the front and extruded toward the viewer: the bar
+// of a lever handle, drawn as a rectangle with fully rounded ends.
+function Plate({
+  width,
+  height,
+  depth,
+  position,
+  children,
+}: {
+  width: number
+  height: number
+  depth: number
+  position: [number, number, number]
+  children: ReactNode
+}) {
+  const geometry = useMemo(() => {
+    const shape = roundedShape(
+      [
+        [-width / 2, -height / 2],
+        [width / 2, -height / 2],
+        [width / 2, height / 2],
+        [-width / 2, height / 2],
+      ],
+      height / 2,
+    )
+    return new ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 8 })
+  }, [width, height, depth])
+  return (
+    <mesh geometry={geometry} position={position} castShadow>
+      {children}
+    </mesh>
+  )
+}
 
 // Blades that spin while the device runs, faster at a higher level.
 function Spinner({ speed, children }: { speed: number; children: ReactNode }) {
@@ -761,7 +796,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
       // hinged on the outer edge so a pair opens from the middle.
       const w = p('width')
       const h = p('height')
-      const f = 0.055
+      // 1 hinges the first casement on the left, -1 on the right.
+      const side = p('flip') > 0.5 ? -1 : 1
+      const f = 0.038
       const d = 0.08
       const frame = <Material color={c('frame')} material={m('frame')} />
       const inner = { w: w - f * 2, h: h - f * 2 }
@@ -782,7 +819,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
             {frame}
           </Slab>
           {Array.from({ length: leaves }).map((_, i) => {
-            const left = i < leaves / 2
+            // A pair still opens from the middle. A single casement, and the
+            // odd one in an odd run, takes the side the switch picks.
+            const left = side > 0 ? i < leaves / 2 : i >= (leaves - 1) / 2
             const edge = -inner.w / 2 + i * leafW
             const hinge = left ? edge : edge + leafW
             const open = (left ? 0.85 : -0.85) * coverLevel
@@ -807,44 +846,35 @@ export default function DeviceModel({ kind, item, state }: Props) {
       const h = p('height')
       // 1 hinges on the left, -1 on the right.
       const side = p('flip') > 0.5 ? -1 : 1
-      const leaf = 0.045
-      const jamb = 0.045
+      const leaf = 0.042
+      const jamb = 0.03
       const lining = 0.12
-      const casing = 0.055
+      const casing = 0.035
       const metal = <Material color={c('trim')} material={m('trim')} />
-      // A lever on a round rose, the shape in the reference: a stub out of
-      // the rose, then a bar that runs back toward the hinge and tapers.
+      // A lever on a round rose: a 5 cm rose, a 2.2 cm neck out of it and a
+      // 13 by 2.5 cm bar with fully rounded ends, running back toward the
+      // hinge.
       const handle = (face: number) => {
         const z = face > 0 ? leaf : 0
-        const hx = side * (w - 0.085)
-        const reach = 0.115
+        const out = (d: number) => z + face * d
         return (
-          <group position={[hx, h * 0.47, z]}>
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, face * 0.006]}>
-              <cylinderGeometry args={[0.034, 0.036, 0.012, SEG * 2]} />
+          <group position={[side * (w - 0.085), h * 0.47, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, out(0.0035)]}>
+              <cylinderGeometry args={[0.025, 0.025, 0.007, SEG * 2]} />
               {metal}
             </mesh>
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, face * 0.034]}>
-              <cylinderGeometry args={[0.018, 0.022, 0.05, SEG]} />
+            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, out(0.0295)]}>
+              <cylinderGeometry args={[0.011, 0.011, 0.045, SEG]} />
               {metal}
             </mesh>
-            {/* The elbow, where the lever turns out of the stub. */}
-            <mesh position={[-side * 0.012, -0.006, face * 0.056]}>
-              <sphereGeometry args={[0.019, SEG, SEG]} />
-              {metal}
-            </mesh>
-            {/* The bar, dropping a little and thinning toward the tip. */}
-            <mesh
-              position={[-side * (0.012 + reach / 2), -0.014, face * 0.056]}
-              rotation={[0, 0, Math.PI / 2 + side * 0.07]}
+            <Plate
+              width={0.13}
+              height={0.025}
+              depth={0.01}
+              position={[-side * 0.0525, 0, face > 0 ? out(0.052) : out(0.062)]}
             >
-              <cylinderGeometry args={[0.012, 0.018, reach, SEG]} />
               {metal}
-            </mesh>
-            <mesh position={[-side * (0.012 + reach), -0.021, face * 0.056]}>
-              <sphereGeometry args={[0.012, SEG, SEG]} />
-              {metal}
-            </mesh>
+            </Plate>
           </group>
         )
       }
@@ -907,7 +937,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
       // the rest of the run.
       const w = p('width')
       const h = p('height')
-      const f = 0.05
+      // 1 gathers the panels at the right, -1 at the left.
+      const side = p('flip') > 0.5 ? -1 : 1
+      const f = 0.035
       const track = 0.05
       const frame = <Material color={c('frame')} material={m('frame')} />
       const glazed = kind.id === 'sliding_glass'
@@ -932,8 +964,9 @@ export default function DeviceModel({ kind, item, state }: Props) {
             {frame}
           </Slab>
           {Array.from({ length: count }).map((_, i) => {
-            // The last panel stays put and the others gather in front of it.
-            const slide = openAmount * (count - 1 - i) * panelW
+            // The panel at the far end stays put and the others gather in
+            // front of it, at whichever end the switch picks.
+            const slide = side * openAmount * (side > 0 ? count - 1 - i : i) * panelW
             const cx = -run / 2 + panelW * (i + 0.5) + slide
             const z = (i - (count - 1) / 2) * track
             return (
