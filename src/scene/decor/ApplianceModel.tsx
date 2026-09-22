@@ -43,7 +43,7 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
 export default function ApplianceModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, item.materials, slot)
+  const m = (slot: string) => materialValue(kind, slot)
   const body = <Material color={c('body')} material={m('body')} />
   const trim = () => <Material color={c('trim')} material={m('trim')} />
   const on = state?.on ?? false

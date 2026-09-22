@@ -1039,8 +1039,10 @@ export function colorValue(kind: DecorationKind, colors: Record<string, string> 
   return colors?.[slot] ?? kind.colors[slot] ?? '#ffffff'
 }
 
-export function materialValue(kind: DecorationKind, materials: Record<string, string> | undefined, slot: string) {
-  return materials?.[slot] ?? kind.materials?.[slot] ?? 'matte'
+// The surface of a slot is part of what the piece is, so it comes from the
+// kind. Only the color is the viewer's to pick.
+export function materialValue(kind: DecorationKind, slot: string) {
+  return kind.materials?.[slot] ?? 'matte'
 }
 
 // Footprint on the plan, for the 2D editor.
@@ -1091,10 +1093,6 @@ export function leafCount(width: number, min = 0.5, max = 1) {
   const most = Math.max(1, Math.floor(width / min))
   return Math.min(Math.max(Math.round(width / 0.75), fewest), Math.max(fewest, most))
 }
-
-// Material slots that are what they are: the viewer picks their tint, never
-// their surface.
-export const FIXED_SLOTS = new Set(['glass', 'mirror'])
 
 // Items with a flat top that other things can stand on, and how high that
 // top is: their own height parameter, or a fixed height when they have none.

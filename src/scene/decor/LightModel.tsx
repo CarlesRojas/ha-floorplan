@@ -108,7 +108,7 @@ function Dome({
 export default function LightModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, item.materials, slot)
+  const m = (slot: string) => materialValue(kind, slot)
   const size = p('size')
   let body: React.ReactNode
   let glowY = 1

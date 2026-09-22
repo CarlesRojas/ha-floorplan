@@ -12,7 +12,7 @@ type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | 
 export default function FurnitureModel({ kind, item }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, item.materials, slot)
+  const m = (slot: string) => materialValue(kind, slot)
   const body = <Material color={c('body')} material={m('body')} />
   const frame = () => <Material color={c('frame')} material={m('frame')} />
 

@@ -88,8 +88,6 @@ export type DecorationConfig = {
   params?: Record<string, number>
   // Colors per material slot, as hex strings.
   colors?: Record<string, string>
-  // Surface per material slot: matte, fabric, wood, ceramic, metal.
-  materials?: Record<string, string>
 }
 
 export type CardConfig = {
