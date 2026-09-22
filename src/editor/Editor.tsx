@@ -3,6 +3,7 @@ import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import DevicePanel from '#/editor/DevicePanel.tsx'
 import ModeSwitch from '#/editor/ModeSwitch.tsx'
 import Scene from '#/scene/Scene.tsx'
+import type { SkyMode } from '#/scene/Sky.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import { cn } from '#/lib/utils.ts'
 import RoomInfo from '#/editor/RoomInfo.tsx'
@@ -69,6 +70,9 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
+  // The preview can follow the sun at home, or be held at day or at night.
+  const [sky, setSky] = useState<SkyMode>('auto')
+  const cycleSky = () => setSky(current => (current === 'auto' ? 'day' : current === 'day' ? 'night' : 'auto'))
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
@@ -229,7 +233,10 @@ export default function Editor({ hass, config, onChange }: Props) {
   const duplicateDecoration = (id: string) => {
     const item = decorations.find(d => d.id === id)
     if (!item) return
-    const copy = offsetCopy(item, rooms.find(r => r.id === item.room))
+    const copy = offsetCopy(
+      item,
+      rooms.find(r => r.id === item.room),
+    )
     copy.id = nextDecorationId(item.kind)
     commit(rooms, devices, [...decorations, copy])
     setSelection({ roomId: copy.room, vertex: null })
@@ -565,6 +572,10 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'P':
         togglePreview()
         break
+      case 'n':
+      case 'N':
+        cycleSky()
+        break
       case 'Enter':
         closeDraft()
         break
@@ -656,6 +667,8 @@ export default function Editor({ hass, config, onChange }: Props) {
         onShowLengths={setShowLengths}
         showPreview={showPreview}
         onShowPreview={togglePreview}
+        sky={sky}
+        onSky={cycleSky}
       />
     </div>
   )
@@ -666,19 +679,20 @@ export default function Editor({ hass, config, onChange }: Props) {
   const nothingElseSelected = mode === 'rooms' ? true : mode === 'devices' ? !selectedDevice : !selectedDecoration
   // The cross closes the room's block without letting go of the room, since
   // what is added next still belongs in it.
-  const roomInfo = selectedRoom && showRoom && nothingElseSelected ? (
-    <RoomInfo
-      room={selectedRoom}
-      rooms={rooms}
-      areas={Object.values(hass?.areas ?? {})}
-      mode={mode}
-      onRename={renameRoom}
-      onRenameDone={flushRename}
-      onAssignArea={assignArea}
-      onFloor={setFloor}
-      onDeselect={() => setShowRoom(false)}
-    />
-  ) : null
+  const roomInfo =
+    selectedRoom && showRoom && nothingElseSelected ? (
+      <RoomInfo
+        room={selectedRoom}
+        rooms={rooms}
+        areas={Object.values(hass?.areas ?? {})}
+        mode={mode}
+        onRename={renameRoom}
+        onRenameDone={flushRename}
+        onAssignArea={assignArea}
+        onFloor={setFloor}
+        onDeselect={() => setShowRoom(false)}
+      />
+    ) : null
 
   const panels =
     mode === 'decoration' ? (
@@ -791,7 +805,7 @@ export default function Editor({ hass, config, onChange }: Props) {
                     className="min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
                     style={{ flex: previewShare }}
                   >
-                    <Scene hass={hass} config={{ ...config, rooms, devices, decorations }} />
+                    <Scene hass={hass} config={{ ...config, rooms, devices, decorations }} sky={sky} />
                   </div>
                 </>
               )}

@@ -94,6 +94,10 @@ The mode switch sits at the top of the sidebar and stays there while the rest sc
 
 ### Decoration mode
 
+The toolbar's daylight button holds the 3D preview at day or at night, or
+lets it follow the sun at the home, for looking at a room both ways without
+waiting for the hour. N cycles it.
+
 The third mode places furniture and fixtures. The sidebar shows the catalog. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per part, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll, and the preview has a handle under it to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
 
 - Whatever is selected is drawn last, so it takes the press when two items sit over each other and its rotation handle is never covered. Clicking that spot again steps down to the one underneath, and round again, since something buried cannot be reached any other way. Dragging still moves whatever is selected.
@@ -141,8 +145,12 @@ showing the card when the sun integration is not there.
   the floor. A lamp shade is not a wall: its frame and slats cast shadows
   while the parchment or opal in it passes light through and glows.
 - Point light shadows are expensive, so the brightest few lamps cast them and
-  the rest light the room without. LED strips light along their length, which
-  is a kind of source that cannot cast a shadow.
+  the rest light the room without. A lamp casts from the frame it lights up,
+  and the sweep only takes shadows away from the lamps past that budget. LED
+  strips light along their length, which is a kind of source that cannot cast
+  a shadow.
+- The sun stands over the middle of the flat and its shadow covers exactly
+  it, so the shadow map stays fine grained and a tabletop does not speckle.
 
 ### How items show device state
 

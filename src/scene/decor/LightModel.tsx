@@ -1,6 +1,13 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Material } from '#/scene/decor/parts.tsx'
-import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
+import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
+import {
+  CEILING_HEIGHT_M,
+  LAMP_KEY_SHARE,
+  LAMP_SHADOW_BLUR,
+  LAMP_THROUGH_SHARE,
+  LIGHT_POINT_INTENSITY,
+} from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
@@ -96,7 +103,22 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
     <>
       {/* The bulb. What the shade stops on its way out lands as a shadow of
           whatever stands around the lamp. */}
-      <pointLight position={[0, y, 0]} color={[r, g, b]} intensity={total * LAMP_KEY_SHARE} distance={7} decay={1.6} />
+      <pointLight
+        position={[0, y, 0]}
+        color={[r, g, b]}
+        intensity={total * LAMP_KEY_SHARE}
+        distance={7}
+        decay={1.6}
+        castShadow
+        shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
+        shadow-radius={LAMP_SHADOW_BLUR}
+        // Small offsets: a big one pushes the sample past a thin top or
+        // panel and lets the light through the middle of it.
+        shadow-bias={-0.0012}
+        shadow-normalBias={0.008}
+        shadow-camera-near={0.05}
+        shadow-camera-far={9}
+      />
       {/* What comes through the shade itself. Parchment and opal glass are
           not walls: they glow, so this part reaches past the shade and casts
           nothing. */}

@@ -13,7 +13,7 @@ import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
 import Shadows from '#/scene/shadows.tsx'
-import Sky from '#/scene/Sky.tsx'
+import Sky, { type SkyMode } from '#/scene/Sky.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
@@ -22,9 +22,11 @@ import { MathUtils, PCFShadowMap } from 'three'
 type Props = {
   hass: HomeAssistant | null
   config: CardConfig
+  // The editor can hold the room at day or at night to see how it looks.
+  sky?: SkyMode
 }
 
-export default function Scene({ hass, config }: Props) {
+export default function Scene({ hass, config, sky = 'auto' }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
@@ -38,7 +40,7 @@ export default function Scene({ hass, config }: Props) {
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
     >
-      <Sky hass={hass} />
+      <Sky hass={hass} rooms={rooms} mode={sky} />
       {/* Everything solid casts and receives, so a lamp throws the things
           around it onto the floor. */}
       <Shadows />

@@ -1,4 +1,5 @@
 import type { Mode, Tool } from '#/editor/types.ts'
+import type { SkyMode } from '#/scene/Sky.tsx'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS } from '#/theme.ts'
 import {
@@ -7,7 +8,9 @@ import {
   faDrawPolygon,
   faExpand,
   faCube,
+  faMoon,
   faRuler,
+  faSun,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
@@ -65,6 +68,8 @@ type Props = {
   onShowLengths: (value: boolean) => void
   showPreview: boolean
   onShowPreview: () => void
+  sky: SkyMode
+  onSky: () => void
 }
 
 export default function Toolbar({
@@ -76,6 +81,8 @@ export default function Toolbar({
   onShowLengths,
   showPreview,
   onShowPreview,
+  sky,
+  onSky,
 }: Props) {
   const color = EDITOR_MODE_COLORS[mode]
   return (
@@ -101,6 +108,21 @@ export default function Toolbar({
         color={color}
         toggle
         onClick={onShowPreview}
+      />
+      {/* Day and night, for looking at the room in both without waiting for
+          the sun to come round. */}
+      <ToolButton
+        action={{
+          id: 'sky',
+          icon: sky === 'night' ? faMoon : faSun,
+          title: sky === 'auto' ? 'Daylight: follows the sun' : sky === 'day' ? 'Daylight: day' : 'Daylight: night',
+          description: 'Hold the preview at day or at night, or let it follow the sun at home.',
+          shortcut: 'N',
+        }}
+        active={sky !== 'auto'}
+        color={color}
+        toggle
+        onClick={onSky}
       />
       {mode === 'rooms' && (
         <ToolButton

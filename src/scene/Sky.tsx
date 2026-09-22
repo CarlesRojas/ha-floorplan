@@ -1,5 +1,6 @@
-import { DAYLIGHT_EASE_S, SUN_LIGHT_POSITION_M, SUN_SHADOW_EXTENT_M, SUN_SHADOW_MAP_PX } from '#/constants.ts'
+import { DAYLIGHT_EASE_S, SUN_LIGHT_POSITION_M, SUN_SHADOW_MAP_PX } from '#/constants.ts'
 import { daylight } from '#/scene/daylight.ts'
+import { planBounds } from '#/scene/framing.ts'
 import {
   DAY_AMBIENT_INTENSITY,
   DAY_GROUND_COLOR,
@@ -15,21 +16,39 @@ import {
   NIGHT_SUN_INTENSITY,
   SUN_SHADOW_BLUR,
 } from '#/theme.ts'
-import type { HomeAssistant } from '#/types.ts'
+import type { HomeAssistant, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { Color, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
+import { Color, Object3D, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
+
+// What the room is lit as: whatever the sun at the home says, or one of the
+// two, which is what the editor's day and night button picks.
+export type SkyMode = 'auto' | 'day' | 'night'
 
 // The light the room sits in, which follows the sun at the user's home. It
 // is one soft warm wash: a sky above and a floor bounce below, with a gentle
 // sun on top of them whose shadows are blurred wide rather than cut sharp.
 // At night the wash drops to a dim warm glow and the lamps carry the room.
-export default function Sky({ hass }: { hass: HomeAssistant | null }) {
-  const target = daylight(hass)
+export default function Sky({
+  hass,
+  rooms = [],
+  mode = 'auto',
+}: {
+  hass: HomeAssistant | null
+  rooms?: RoomConfig[]
+  mode?: SkyMode
+}) {
+  const target = mode === 'auto' ? daylight(hass) : mode === 'day' ? 1 : 0
   const level = useRef(target)
   const ambient = useRef<AmbientLight>(null)
   const hemi = useRef<HemisphereLight>(null)
   const sun = useRef<DirectionalLight>(null)
+
+  // The sun stands over the middle of the flat and covers exactly it, so its
+  // shadow map stays fine enough not to speckle a tabletop.
+  const { center, reach } = useMemo(() => planBounds(rooms), [rooms])
+  const aim = useMemo(() => new Object3D(), [])
+  const extent = Math.max(reach * 1.2 + 1, 3)
 
   const colors = useMemo(
     () => ({
@@ -59,10 +78,14 @@ export default function Sky({ hass }: { hass: HomeAssistant | null }) {
     if (sun.current) {
       sun.current.intensity = between(NIGHT_SUN_INTENSITY, DAY_SUN_INTENSITY)
       sun.current.color.copy(colors.mix.lerpColors(colors.sun[0], colors.sun[1], day))
+      // The light is aimed at the middle of the flat rather than at the
+      // scene's origin, which a flat drawn off to one side is not.
+      aim.position.set(center[0], center[1], center[2])
+      aim.updateMatrixWorld()
+      sun.current.target = aim
     }
   })
 
-  const extent = SUN_SHADOW_EXTENT_M
   return (
     <>
       <ambientLight ref={ambient} intensity={DAY_AMBIENT_INTENSITY} color={DAY_SKY_COLOR} />
@@ -74,7 +97,7 @@ export default function Sky({ hass }: { hass: HomeAssistant | null }) {
       />
       <directionalLight
         ref={sun}
-        position={SUN_LIGHT_POSITION_M}
+        position={[center[0] + SUN_LIGHT_POSITION_M[0], SUN_LIGHT_POSITION_M[1], center[2] + SUN_LIGHT_POSITION_M[2]]}
         intensity={DAY_SUN_INTENSITY}
         color={DAY_SUN_COLOR}
         castShadow
@@ -89,7 +112,7 @@ export default function Sky({ hass }: { hass: HomeAssistant | null }) {
         shadow-camera-top={extent}
         shadow-camera-bottom={-extent}
         shadow-camera-near={0.5}
-        shadow-camera-far={extent * 3}
+        shadow-camera-far={extent * 2 + 24}
       />
     </>
   )

@@ -1,5 +1,4 @@
-import { LAMP_SHADOW_MAP_PX, MAX_SHADOW_LAMPS } from '#/constants.ts'
-import { LAMP_SHADOW_BLUR } from '#/theme.ts'
+import { MAX_SHADOW_LAMPS } from '#/constants.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Mesh, PointLight, type Material } from 'three'
@@ -16,7 +15,7 @@ import { Mesh, PointLight, type Material } from 'three'
 // a frame, so only the brightest few lamps cast, and which ones they are
 // follows whatever is switched on.
 const CLEAR_ENOUGH = 0.6
-const SWEEP_S = 0.5
+const SWEEP_S = 0.25
 
 function clear(material: Material | Material[]) {
   const all = Array.isArray(material) ? material : [material]
@@ -44,21 +43,13 @@ export default function Shadows() {
       if (object.castShadow !== solid) object.castShadow = solid
       if (!object.receiveShadow) object.receiveShadow = true
     })
+    // A lamp asks for its shadow itself, so it casts from the frame it
+    // lights up. Six renders each is too much for a room full of them, so
+    // the dimmer ones past the budget give theirs up until they are needed.
     lamps.sort((a, b) => b.intensity - a.intensity)
     lamps.forEach((lamp, i) => {
       const cast = i < MAX_SHADOW_LAMPS
-      if (lamp.castShadow === cast) return
-      lamp.castShadow = cast
-      if (!cast) return
-      lamp.shadow.mapSize.set(LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX)
-      lamp.shadow.radius = LAMP_SHADOW_BLUR
-      lamp.shadow.bias = -0.004
-      lamp.shadow.normalBias = 0.03
-      lamp.shadow.camera.near = 0.05
-      lamp.shadow.camera.far = 8
-      lamp.shadow.map?.dispose()
-      lamp.shadow.map = null
-      lamp.shadow.needsUpdate = true
+      if (lamp.castShadow !== cast) lamp.castShadow = cast
     })
   })
   return null
