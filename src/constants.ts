@@ -25,9 +25,23 @@ export const CAMERA_FAR_M = 200
 
 // Lights
 
-export const AMBIENT_LIGHT_INTENSITY = 0.6
-export const SUN_LIGHT_INTENSITY = 1.4
-export const SUN_LIGHT_POSITION_M: [number, number, number] = [6, 12, 8]
+// Where the sun stands: a compass bearing clockwise from the top of the
+// plan, and how high it sits above the horizon. The bearing is what the
+// editor's compass button turns, and it is saved with the card.
+export const SUN_DIRECTION_DEG = 145
+export const SUN_ELEVATION_DEG = 50
+// What one press of that button turns the sun by.
+export const SUN_DIRECTION_STEP_DEG = 45
+export const SUN_SHADOW_MAP_PX = 1024
+// A lamp lights the room around it and casts shadows from what it stands
+// among. Each one costs six shadow renders, so only the first few get them.
+export const LAMP_SHADOW_MAP_PX = 512
+export const MAX_SHADOW_LAMPS = 4
+// The hour the editor lights its preview at, and the one its N key flips to.
+export const EDITOR_HOUR = 13
+export const EDITOR_NIGHT_HOUR = 23
+// How long the daylight takes to catch up when the sun moves, in seconds.
+export const DAYLIGHT_EASE_S = 1.2
 
 // Editor
 

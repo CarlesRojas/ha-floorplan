@@ -1,5 +1,4 @@
 import {
-  AMBIENT_LIGHT_INTENSITY,
   CAMERA_FAR_M,
   CAMERA_FOV_DEG,
   CAMERA_MAX_DISTANCE_M,
@@ -7,44 +6,47 @@ import {
   CAMERA_MIN_DISTANCE_M,
   CAMERA_MIN_POLAR_DEG,
   CAMERA_NEAR_M,
-  SUN_LIGHT_INTENSITY,
-  SUN_LIGHT_POSITION_M,
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import CameraRig from '#/scene/CameraRig.tsx'
 import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
+import Shadows from '#/scene/shadows.tsx'
+import Sky, { type SkyMode } from '#/scene/Sky.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { MathUtils } from 'three'
+import { MathUtils, PCFSoftShadowMap } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
   config: CardConfig
+  // The editor can hold the room at day or at night to see how it looks.
+  sky?: SkyMode
 }
 
-export default function Scene({ hass, config }: Props) {
+export default function Scene({ hass, config, sky = 'auto' }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
 
   return (
     <Canvas
-      shadows
+      // Soft percentage closer filtering. The plain one takes a blur radius
+      // but spreads only a handful of taps to fill it, which at any width
+      // worth having reads as dots and dashes along the edge of a shadow.
+      // This one filters across the map instead, so the edge comes out soft
+      // and clean, and softness comes from how fine the map is.
+      shadows={{ type: PCFSoftShadowMap }}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
     >
-      <ambientLight intensity={AMBIENT_LIGHT_INTENSITY} />
-      <directionalLight
-        position={SUN_LIGHT_POSITION_M}
-        intensity={SUN_LIGHT_INTENSITY}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-bias={-0.0005}
-      />
+      <Sky hass={hass} rooms={rooms} mode={sky} direction={config.sun_direction} />
+      {/* Everything solid casts and receives, so a lamp throws the things
+          around it onto the floor. */}
+      <Shadows />
       <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
       <Devices hass={hass} config={config} />
       {/* A press that misses everything looks around itself for something

@@ -1,6 +1,7 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Material } from '#/scene/decor/parts.tsx'
-import { CEILING_HEIGHT_M, LIGHT_POINT_INTENSITY } from '#/theme.ts'
+import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
+import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
@@ -49,10 +50,14 @@ function ShadeMaterial({
       material={material}
       color={tint}
       doubleSide
+      // Parchment and opal glass are not walls. A lit shade turns slightly
+      // translucent, so the bulb shows through it, and it still stops enough
+      // of the light to throw a shadow.
+      opacity={1 - 0.22 * lit}
       emissive={[glow[0], glow[1], glow[2]]}
       // Kept under one: past that the tone mapping rolls a bright color off
       // toward white, which is what made a colored lamp read as pale.
-      emissiveIntensity={lit * (0.25 + lit * 0.7)}
+      emissiveIntensity={lit * (0.15 + lit * 0.35)}
     />
   )
 }
@@ -61,7 +66,20 @@ function BaseMaterial({ color, material = 'matte' }: { color: string; material?:
   return <Material material={material} color={color} />
 }
 
-function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; spread?: number }) {
+function Glow({
+  state,
+  at,
+  spread = 0,
+  output = 1,
+}: {
+  state: LightState | null
+  // Where the bulb is, inside the shade rather than on the frame that holds
+  // it: a floor lamp lights from the middle of its shade, not from its mast.
+  at: [number, number, number]
+  spread?: number
+  // What this kind of lamp puts out, against the rest of them.
+  output?: number
+}) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
   // Rect area lights need their uniform tables built once, and they only
@@ -70,14 +88,16 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
     RectAreaLightUniformsLib.init()
   }, [])
   if (lit < 0.01) return null
-  const total = LIGHT_POINT_INTENSITY * lit * (0.3 + lit * 0.7)
+  // Close to linear with the level: a lamp at a third still lights the
+  // room around it, and still casts, instead of fading away first.
+  const total = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.
   if (spread > 0.4) {
     return (
       <rectAreaLight
-        position={[0, y - 0.02, 0]}
+        position={[at[0], at[1] - 0.02, at[2]]}
         rotation={[-Math.PI / 2, 0, 0]}
         width={spread}
         height={0.06}
@@ -86,7 +106,38 @@ function Glow({ state, y, spread = 0 }: { state: LightState | null; y: number; s
       />
     )
   }
-  return <pointLight position={[0, y, 0]} color={[r, g, b]} intensity={total} distance={7} decay={1.6} />
+  return (
+    <>
+      {/* The bulb. What the shade stops on its way out lands as a shadow of
+          whatever stands around the lamp. */}
+      <pointLight
+        position={at}
+        color={[r, g, b]}
+        intensity={total * LAMP_KEY_SHARE}
+        distance={7}
+        decay={1.15}
+        castShadow
+        shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
+        // Small offsets: a big one pushes the sample past a thin top or
+        // panel and lets the light through the middle of it.
+        shadow-bias={-0.0012}
+        shadow-normalBias={0.008}
+        shadow-camera-near={0.05}
+        shadow-camera-far={9}
+      />
+      {/* What comes through the shade itself. Parchment and opal glass are
+          not walls: they glow, so this part reaches past the shade and casts
+          nothing. */}
+      <pointLight
+        position={at}
+        color={[r, g, b]}
+        intensity={total * LAMP_THROUGH_SHARE}
+        distance={6}
+        decay={1.25}
+        userData={{ through: true }}
+      />
+    </>
+  )
 }
 
 export default function LightModel({ kind, item, state }: Props) {
@@ -95,21 +146,21 @@ export default function LightModel({ kind, item, state }: Props) {
   const m = (slot: string) => materialValue(kind, slot)
   const size = p('size')
   let body: React.ReactNode
-  let glowY = 1
+  let glowAt: [number, number, number] = [0, 1, 0]
   // How far the light is spread along the item, for a strip.
   let glowSpread = 0
   switch (kind.id) {
     case 'light_ceiling': {
       // A plain round focus in the ceiling, ten centimeters across.
       const r = size / 2
-      glowY = CEILING_HEIGHT_M - r - 0.05
+      glowAt = [0, CEILING_HEIGHT_M - r - 0.05, 0]
       body = (
         <group>
           <mesh position={[0, CEILING_HEIGHT_M - 0.006, 0]}>
             <cylinderGeometry args={[r, r, 0.012, SEG * 2]} />
             <BaseMaterial color={c('rim')} material={m('rim')} />
           </mesh>
-          <mesh position={[0, CEILING_HEIGHT_M - 0.014, 0]}>
+          <mesh position={[0, CEILING_HEIGHT_M - 0.014, 0]} userData={{ transmits: true }}>
             <cylinderGeometry args={[r * 0.88, r * 0.88, 0.006, SEG * 2]} />
             <ShadeMaterial color={c('focus')} material={m('focus')} state={state} />
           </mesh>
@@ -127,7 +178,7 @@ export default function LightModel({ kind, item, state }: Props) {
       const drumH = size * 0.58
       const slats = Math.max(16, Math.round((Math.PI * size) / 0.035))
       const slatW = (Math.PI * size) / slats / 1.7
-      glowY = top - drumH * 0.6
+      glowAt = [0, top - drumH + drumH * 0.35, 0]
       body = (
         <>
           <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
@@ -160,7 +211,7 @@ export default function LightModel({ kind, item, state }: Props) {
             )
           })}
           {/* The diffuser, a translucent disc across the bottom of the drum. */}
-          <mesh position={[0, top - drumH + 0.012, 0]}>
+          <mesh position={[0, top - drumH + 0.012, 0]} userData={{ transmits: true }}>
             <cylinderGeometry args={[r * 0.96, r * 0.96, 0.01, SEG * 2]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
@@ -176,7 +227,8 @@ export default function LightModel({ kind, item, state }: Props) {
       const shadeH = size * 0.85
       const post = 0.028
       const shadeY = height - shadeH
-      glowY = shadeY + shadeH * 0.5
+      // In the middle of the shade, which hangs in front of the mast.
+      glowAt = [0, shadeY + shadeH * 0.5, r + post * 0.4]
       body = (
         <>
           {/* The foot: two flat battens crossing under the shaft. */}
@@ -192,7 +244,7 @@ export default function LightModel({ kind, item, state }: Props) {
           </mesh>
           {/* The shade hangs on the front of the shaft, the way it is
               hooked onto the mast, so the shaft stays outside it. */}
-          <mesh position={[0, shadeY + shadeH / 2, r + post * 0.4]} castShadow>
+          <mesh position={[0, shadeY + shadeH / 2, r + post * 0.4]} castShadow userData={{ transmits: true }}>
             <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
           </mesh>
@@ -207,7 +259,7 @@ export default function LightModel({ kind, item, state }: Props) {
       const r = size / 2
       const globeR = height * 0.24
       const globeY = height * 0.42
-      glowY = globeY
+      glowAt = [0, globeY, 0]
       body = (
         <group>
           {/* The ring the globe sits in. */}
@@ -227,7 +279,7 @@ export default function LightModel({ kind, item, state }: Props) {
             <torusGeometry args={[0.016, 0.009, 6, SEG * 2]} />
             <BaseMaterial color={c('basket')} material={m('basket')} />
           </mesh>
-          <mesh position={[0, globeY, 0]} castShadow>
+          <mesh position={[0, globeY, 0]} castShadow userData={{ transmits: true }}>
             <sphereGeometry args={[globeR, SEG * 2, SEG * 2]} />
             <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
           </mesh>
@@ -242,7 +294,8 @@ export default function LightModel({ kind, item, state }: Props) {
       const r = size / 2
       const shadeH = size * 0.95
       const rail = 0.018
-      glowY = height + shadeH * 0.1
+      // In the middle of the shade, which sits proud of the channel.
+      glowAt = [0, height, rail + r * 0.55]
       body = (
         <group position={[0, height, 0]}>
           {/* The channel: a back board with a rail down each edge. */}
@@ -257,7 +310,7 @@ export default function LightModel({ kind, item, state }: Props) {
             </mesh>
           ))}
           {/* The shade sits in the channel, proud of it at the front. */}
-          <mesh position={[0, 0, rail + r * 0.55]} castShadow>
+          <mesh position={[0, 0, rail + r * 0.55]} castShadow userData={{ transmits: true }}>
             <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
             <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
           </mesh>
@@ -278,7 +331,7 @@ export default function LightModel({ kind, item, state }: Props) {
       // two take their own height.
       const length = p('length')
       const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.04 : p('height')
-      glowY = height + 0.05
+      glowAt = [0, height + 0.05, 0]
       glowSpread = length
       body = (
         <group>
@@ -286,7 +339,7 @@ export default function LightModel({ kind, item, state }: Props) {
             <boxGeometry args={[length, 0.022, 0.03]} />
             <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
-          <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
             <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 4, 10]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
@@ -301,7 +354,7 @@ export default function LightModel({ kind, item, state }: Props) {
   return (
     <>
       {body}
-      <Glow state={state} y={glowY} spread={glowSpread} />
+      <Glow state={state} at={glowAt} spread={glowSpread} output={LAMP_OUTPUT[kind.id] ?? 1} />
     </>
   )
 }

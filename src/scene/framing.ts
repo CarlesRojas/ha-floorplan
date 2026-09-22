@@ -25,6 +25,28 @@ export function sceneHeight(decorations: DecorationConfig[] = []) {
   return top
 }
 
+// Where the flat sits in the scene and how far it reaches from there. The
+// sun uses it to stand over the flat and to cover exactly it, which keeps
+// its shadow map fine grained however small the home is.
+export function planBounds(rooms: RoomConfig[]) {
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const room of rooms) {
+    for (const [x, y] of room.points) {
+      minX = Math.min(minX, x)
+      minY = Math.min(minY, y)
+      maxX = Math.max(maxX, x)
+      maxY = Math.max(maxY, y)
+    }
+  }
+  if (!Number.isFinite(minX)) return { center: [0, 0, 0] as [number, number, number], reach: 4 }
+  const center: [number, number, number] = [(minX + maxX) / 2, 0, -(minY + maxY) / 2]
+  const reach = Math.max(maxX - minX, maxY - minY) / 2
+  return { center, reach }
+}
+
 export function frameRooms(rooms: RoomConfig[], aspect: number, height = 0.6): Framing {
   let minX = Infinity
   let minY = Infinity

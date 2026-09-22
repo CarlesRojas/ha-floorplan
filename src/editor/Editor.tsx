@@ -33,7 +33,11 @@ import {
   EDITOR_PREVIEW_MIN_PX,
   EDITOR_SAVED_FLASH_MS,
   EDITOR_SIDEBAR_MIN_PX,
+  EDITOR_HOUR,
+  EDITOR_NIGHT_HOUR,
   EDITOR_SIDEBAR_WIDTH_PX,
+  SUN_DIRECTION_DEG,
+  SUN_DIRECTION_STEP_DEG,
 } from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -69,6 +73,19 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
+  // The hour the preview is lit at. The editor never follows the sun: what
+  // is being drawn should look the same whatever the time outside, and the
+  // toolbar's slider moves it through the day.
+  const [hour, setHour] = useState(EDITOR_HOUR)
+  const flipHour = () => setHour(current => (current > 6.5 && current < 21.5 ? EDITOR_NIGHT_HOUR : EDITOR_HOUR))
+  // Which way the sun comes from. Unlike day and night, this one is part of
+  // the card: the room is lit the same way outside the editor. The preview
+  // follows the slider as it is dragged, and the card takes it on release.
+  const [sunDirection, setSunDirection] = useState(config.sun_direction ?? SUN_DIRECTION_DEG)
+  const saveSun = () => {
+    if ((config.sun_direction ?? SUN_DIRECTION_DEG) === sunDirection) return
+    onChange({ ...config, sun_direction: sunDirection })
+  }
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
@@ -229,7 +246,10 @@ export default function Editor({ hass, config, onChange }: Props) {
   const duplicateDecoration = (id: string) => {
     const item = decorations.find(d => d.id === id)
     if (!item) return
-    const copy = offsetCopy(item, rooms.find(r => r.id === item.room))
+    const copy = offsetCopy(
+      item,
+      rooms.find(r => r.id === item.room),
+    )
     copy.id = nextDecorationId(item.kind)
     commit(rooms, devices, [...decorations, copy])
     setSelection({ roomId: copy.room, vertex: null })
@@ -565,6 +585,17 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'P':
         togglePreview()
         break
+      case 'n':
+      case 'N':
+        flipHour()
+        break
+      case 's':
+      case 'S': {
+        const turned = (sunDirection + SUN_DIRECTION_STEP_DEG) % 360
+        setSunDirection(turned)
+        onChange({ ...config, sun_direction: turned })
+        break
+      }
       case 'Enter':
         closeDraft()
         break
@@ -656,6 +687,11 @@ export default function Editor({ hass, config, onChange }: Props) {
         onShowLengths={setShowLengths}
         showPreview={showPreview}
         onShowPreview={togglePreview}
+        hour={hour}
+        onHour={setHour}
+        sunDirection={sunDirection}
+        onSunDirection={setSunDirection}
+        onSunDirectionDone={saveSun}
       />
     </div>
   )
@@ -666,19 +702,20 @@ export default function Editor({ hass, config, onChange }: Props) {
   const nothingElseSelected = mode === 'rooms' ? true : mode === 'devices' ? !selectedDevice : !selectedDecoration
   // The cross closes the room's block without letting go of the room, since
   // what is added next still belongs in it.
-  const roomInfo = selectedRoom && showRoom && nothingElseSelected ? (
-    <RoomInfo
-      room={selectedRoom}
-      rooms={rooms}
-      areas={Object.values(hass?.areas ?? {})}
-      mode={mode}
-      onRename={renameRoom}
-      onRenameDone={flushRename}
-      onAssignArea={assignArea}
-      onFloor={setFloor}
-      onDeselect={() => setShowRoom(false)}
-    />
-  ) : null
+  const roomInfo =
+    selectedRoom && showRoom && nothingElseSelected ? (
+      <RoomInfo
+        room={selectedRoom}
+        rooms={rooms}
+        areas={Object.values(hass?.areas ?? {})}
+        mode={mode}
+        onRename={renameRoom}
+        onRenameDone={flushRename}
+        onAssignArea={assignArea}
+        onFloor={setFloor}
+        onDeselect={() => setShowRoom(false)}
+      />
+    ) : null
 
   const panels =
     mode === 'decoration' ? (
@@ -791,7 +828,11 @@ export default function Editor({ hass, config, onChange }: Props) {
                     className="min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
                     style={{ flex: previewShare }}
                   >
-                    <Scene hass={hass} config={{ ...config, rooms, devices, decorations }} />
+                    <Scene
+                      hass={hass}
+                      config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
+                      sky={hour}
+                    />
                   </div>
                 </>
               )}
