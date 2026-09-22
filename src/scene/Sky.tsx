@@ -1,5 +1,5 @@
 import { DAYLIGHT_EASE_S, SUN_DIRECTION_DEG, SUN_ELEVATION_DEG, SUN_SHADOW_MAP_PX } from '#/constants.ts'
-import { daylight } from '#/scene/daylight.ts'
+import { daylight, sunElevation } from '#/scene/daylight.ts'
 import { planBounds } from '#/scene/framing.ts'
 import {
   DAY_AMBIENT_INTENSITY,
@@ -8,6 +8,9 @@ import {
   DAY_SKY_COLOR,
   DAY_SUN_COLOR,
   DAY_SUN_INTENSITY,
+  HORIZON_GROUND_COLOR,
+  HORIZON_SKY_COLOR,
+  HORIZON_SUN_COLOR,
   NIGHT_AMBIENT_INTENSITY,
   NIGHT_GROUND_COLOR,
   NIGHT_HEMISPHERE_INTENSITY,
@@ -21,9 +24,9 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { Color, MathUtils, Object3D, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
 
-// What the room is lit as: whatever the sun at the home says, or one of the
-// two, which is what the editor's day and night button picks.
-export type SkyMode = 'auto' | 'day' | 'night'
+// What the room is lit as: whatever the sun at the home says, or an hour of
+// a plain day, which is what the editor's time of day slider picks.
+export type SkyMode = 'auto' | number
 
 // The light the room sits in, which follows the sun at the user's home. It
 // is one soft warm wash: a sky above and a floor bounce below, with a gentle
@@ -41,8 +44,9 @@ export default function Sky({
   // Compass bearing the sun comes from, clockwise from the top of the plan.
   direction?: number
 }) {
-  const target = mode === 'auto' ? daylight(hass) : mode === 'day' ? 1 : 0
-  const level = useRef(target)
+  const target = daylight(sunElevation(hass, mode === 'auto' ? undefined : mode))
+  const level = useRef(target.level)
+  const height = useRef(target.height)
   const ambient = useRef<AmbientLight>(null)
   const hemi = useRef<HemisphereLight>(null)
   const sun = useRef<DirectionalLight>(null)
@@ -66,11 +70,14 @@ export default function Sky({
     ]
   }, [center, reach, direction])
 
+  // Night, the horizon and overhead. The light blends along the sun's climb
+  // first, from golden to near white, and then fades from night into that.
   const colors = useMemo(
     () => ({
-      sky: [new Color(NIGHT_SKY_COLOR), new Color(DAY_SKY_COLOR)],
-      ground: [new Color(NIGHT_GROUND_COLOR), new Color(DAY_GROUND_COLOR)],
-      sun: [new Color(NIGHT_SUN_COLOR), new Color(DAY_SUN_COLOR)],
+      sky: [new Color(NIGHT_SKY_COLOR), new Color(HORIZON_SKY_COLOR), new Color(DAY_SKY_COLOR)],
+      ground: [new Color(NIGHT_GROUND_COLOR), new Color(HORIZON_GROUND_COLOR), new Color(DAY_GROUND_COLOR)],
+      sun: [new Color(NIGHT_SUN_COLOR), new Color(HORIZON_SUN_COLOR), new Color(DAY_SUN_COLOR)],
+      lit: new Color(),
       mix: new Color(),
     }),
     [],
@@ -79,21 +86,26 @@ export default function Sky({
   // Eased, so sunset arrives as a fade and not as a switch.
   useFrame((_, delta) => {
     const k = 1 - Math.exp(-delta / DAYLIGHT_EASE_S)
-    level.current += (target - level.current) * k
+    level.current += (target.level - level.current) * k
+    height.current += (target.height - height.current) * k
     const day = level.current
+    const up = height.current
     const between = (night: number, light: number) => night + (light - night) * day
+    // Golden along the horizon, near white overhead, then faded toward the
+    // night wash as the sun goes down.
+    const tint = (set: Color[]) => colors.mix.lerpColors(set[0], colors.lit.lerpColors(set[1], set[2], up), day)
     if (ambient.current) {
       ambient.current.intensity = between(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY)
-      ambient.current.color.copy(colors.mix.lerpColors(colors.sky[0], colors.sky[1], day))
+      ambient.current.color.copy(tint(colors.sky))
     }
     if (hemi.current) {
       hemi.current.intensity = between(NIGHT_HEMISPHERE_INTENSITY, DAY_HEMISPHERE_INTENSITY)
-      hemi.current.color.copy(colors.mix.lerpColors(colors.sky[0], colors.sky[1], day))
-      hemi.current.groundColor.copy(colors.mix.lerpColors(colors.ground[0], colors.ground[1], day))
+      hemi.current.color.copy(tint(colors.sky))
+      hemi.current.groundColor.copy(tint(colors.ground))
     }
     if (sun.current) {
       sun.current.intensity = between(NIGHT_SUN_INTENSITY, DAY_SUN_INTENSITY)
-      sun.current.color.copy(colors.mix.lerpColors(colors.sun[0], colors.sun[1], day))
+      sun.current.color.copy(tint(colors.sun))
       // The light is aimed at the middle of the flat rather than at the
       // scene's origin, which a flat drawn off to one side is not.
       aim.position.set(center[0], center[1], center[2])

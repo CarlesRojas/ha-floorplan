@@ -83,22 +83,27 @@ export const LAMP_OUTPUT: Record<string, number> = {
   light_ceiling: 0.9,
 }
 // Daylight and night. The room is warm at both ends of the day: sunlight
-// comes in soft and golden, and once the sun is down the wash left behind is
-// dim and warm so the lamps carry the room.
-export const DAY_SKY_COLOR = '#fff1dc'
-export const DAY_GROUND_COLOR = '#e8d9c4'
-export const DAY_SUN_COLOR = '#ffe6bd'
+// comes in golden along the horizon and near white overhead, and once the
+// sun is down the wash left behind is dim and warm so the lamps carry the
+// room.
+export const DAY_SKY_COLOR = '#f6f2ec'
+export const DAY_GROUND_COLOR = '#e6dbcb'
+export const DAY_SUN_COLOR = '#fff6ea'
+// The same three at sunrise and sunset, when the light comes in low.
+export const HORIZON_SKY_COLOR = '#ffdcbb'
+export const HORIZON_GROUND_COLOR = '#e3c2a2'
+export const HORIZON_SUN_COLOR = '#ffb877'
 export const NIGHT_SKY_COLOR = '#e9ddcd'
 export const NIGHT_GROUND_COLOR = '#b9ad9e'
 export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
 export const DAY_AMBIENT_INTENSITY = 0.12
-export const DAY_HEMISPHERE_INTENSITY = 0.5
+export const DAY_HEMISPHERE_INTENSITY = 0.6
 export const NIGHT_AMBIENT_INTENSITY = 0.04
 export const NIGHT_HEMISPHERE_INTENSITY = 0.1
 // The sun itself. It is kept gentle, and its shadows are blurred wide, so
 // daylight models the room without cutting hard edges into it.
-export const DAY_SUN_INTENSITY = 1
+export const DAY_SUN_INTENSITY = 1.35
 export const NIGHT_SUN_INTENSITY = 0.03
 export const SUN_SHADOW_BLUR = 9
 

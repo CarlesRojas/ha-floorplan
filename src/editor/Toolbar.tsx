@@ -1,5 +1,4 @@
 import type { Mode, Tool } from '#/editor/types.ts'
-import type { SkyMode } from '#/scene/Sky.tsx'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_MODE_COLORS } from '#/theme.ts'
 import {
@@ -70,8 +69,8 @@ type Props = {
   onShowLengths: (value: boolean) => void
   showPreview: boolean
   onShowPreview: () => void
-  sky: SkyMode
-  onSky: () => void
+  hour: number
+  onHour: (hour: number) => void
   sunDirection: number
   onSunDirection: (degrees: number) => void
   // Called when the slider is let go, to save the new direction.
@@ -87,8 +86,8 @@ export default function Toolbar({
   onShowLengths,
   showPreview,
   onShowPreview,
-  sky,
-  onSky,
+  hour,
+  onHour,
   sunDirection,
   onSunDirection,
   onSunDirectionDone,
@@ -118,24 +117,36 @@ export default function Toolbar({
         toggle
         onClick={onShowPreview}
       />
-      {/* Day and night, for looking at the room in both without waiting for
-          the sun to come round. */}
-      <ToolButton
-        action={{
-          id: 'sky',
-          icon: sky === 'night' ? faMoon : faSun,
-          title: sky === 'night' ? 'Night' : 'Day',
-          description: 'Light the preview as day or as night.',
-          shortcut: 'N',
-        }}
-        active={sky === 'night'}
+      {/* The hour of the day the preview is lit at, so a room can be seen
+          at noon, at dusk or at night without waiting for it. */}
+      <Dial
+        icon={hour > 6.5 && hour < 21.5 ? faSun : faMoon}
+        label="Time of day"
+        shortcut="N"
+        note={`${clock(hour)}. The preview only, never the card.`}
         color={color}
-        toggle
-        onClick={onSky}
+        value={hour}
+        min={0}
+        max={23.5}
+        step={0.5}
+        onChange={onHour}
       />
       {/* Which way the sun comes from. It is saved with the card, so the
           room outside the editor is lit the same way. */}
-      <SunDial degrees={sunDirection} color={color} onChange={onSunDirection} onDone={onSunDirectionDone} />
+      <Dial
+        icon={faLocationArrow}
+        label={`Sun from the ${compass(sunDirection)}`}
+        shortcut="S"
+        note={`${sunDirection}°, saved with the card.`}
+        color={color}
+        value={sunDirection}
+        min={0}
+        max={345}
+        step={15}
+        spin={sunDirection + 135}
+        onChange={onSunDirection}
+        onDone={onSunDirectionDone}
+      />
       {mode === 'rooms' && (
         <ToolButton
           action={{
@@ -157,18 +168,47 @@ export default function Toolbar({
 
 const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
 
-// The sun's bearing, behind a button that opens a slider for it. The arrow
-// points the way the light falls, so it faces away from the sun.
-function SunDial({
-  degrees,
+// The nearest compass point to a bearing, for naming where the sun is.
+function compass(degrees: number) {
+  const turns = ((degrees % 360) + 360) % 360
+  return POINTS[Math.round(turns / 45) % POINTS.length]
+}
+
+// The hour of a day, as a clock.
+function clock(hour: number) {
+  const h = Math.floor(hour) % 24
+  const m = Math.round((hour - Math.floor(hour)) * 60)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+// A button that opens a slider under itself. The sun's bearing turns its
+// arrow to point the way the light falls, so it faces away from the sun.
+function Dial({
+  icon,
+  label,
+  shortcut,
+  note,
   color,
+  value,
+  min,
+  max,
+  step,
+  spin,
   onChange,
   onDone,
 }: {
-  degrees: number
+  icon: IconDefinition
+  label: string
+  shortcut: string
+  note: string
   color: string
-  onChange: (degrees: number) => void
-  onDone: () => void
+  value: number
+  min: number
+  max: number
+  step: number
+  spin?: number
+  onChange: (value: number) => void
+  onDone?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
@@ -176,7 +216,13 @@ function SunDial({
   useEffect(() => {
     if (!open) return
     const away = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) setOpen(false)
+      // The editor lives in a shadow root, where an event's target is
+      // retargeted to the host by the time it reaches the document. The
+      // composed path still holds the real one, so ask that instead: without
+      // it, pressing the slider itself counted as pressing outside and the
+      // panel closed the moment a drag started.
+      const path = e.composedPath()
+      if (box.current && !path.includes(box.current)) setOpen(false)
     }
     document.addEventListener('pointerdown', away, true)
     return () => document.removeEventListener('pointerdown', away, true)
@@ -185,33 +231,33 @@ function SunDial({
     <div className="relative" ref={box}>
       <button
         type="button"
-        aria-label={`Sun from the ${compass(degrees)}`}
+        aria-label={label}
         onClick={() => setOpen(!open)}
         style={open ? { color } : undefined}
         className="flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)"
       >
         <FontAwesomeIcon
-          icon={faLocationArrow}
+          icon={icon}
           className="size-4"
-          style={{ transform: `rotate(${degrees + 135}deg)` }}
+          style={spin === undefined ? undefined : { transform: `rotate(${spin}deg)` }}
         />
       </button>
       {open && (
         <div className="absolute top-full left-0 z-20 mt-1 w-56 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg">
           <p className="flex items-center justify-between text-sm font-semibold">
-            Sun direction
-            <kbd className="rounded border border-(--divider-color) px-1 font-mono text-[11px] font-normal">S</kbd>
+            {label}
+            <kbd className="rounded border border-(--divider-color) px-1 font-mono text-[11px] font-normal">
+              {shortcut}
+            </kbd>
           </p>
-          <p className="mt-0.5 text-sm text-(--secondary-text-color)">
-            From the {compass(degrees)}, {degrees}°. Saved with the card.
-          </p>
+          <p className="mt-0.5 text-sm text-(--secondary-text-color)">{note}</p>
           <input
             type="range"
             className="mt-2 w-full"
-            min={0}
-            max={345}
-            step={15}
-            value={degrees}
+            min={min}
+            max={max}
+            step={step}
+            value={value}
             style={{ accentColor: color }}
             onChange={e => onChange(Number(e.target.value))}
             onPointerUp={onDone}
@@ -221,12 +267,6 @@ function SunDial({
       )}
     </div>
   )
-}
-
-// The nearest compass point to a bearing, for naming where the sun is.
-function compass(degrees: number) {
-  const turns = ((degrees % 360) + 360) % 360
-  return POINTS[Math.round(turns / 45) % POINTS.length]
 }
 
 // A toggle shows its state through the icon color alone, a tool through a

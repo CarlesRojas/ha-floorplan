@@ -94,12 +94,14 @@ The mode switch sits at the top of the sidebar and stays there while the rest sc
 
 ### Decoration mode
 
-The toolbar's daylight button lights the 3D preview as day or as night, N,
-starting at day: what is being drawn should look the same whatever the hour
-outside. Beside it, the compass button opens a slider for the sun's
+The toolbar's sun button opens a time of day slider for the 3D preview, N,
+starting at one in the afternoon: what is being drawn should look the same
+whatever the hour outside, and the slider walks the room through noon, the
+golden hour, dusk and the middle of the night. It moves the preview only,
+never the card. Beside it, the compass button opens a slider for the sun's
 direction, S, which decides which way every shadow falls. The preview follows
-the slider as it is dragged and the card takes the new direction when it is
-let go, so the room is lit the same way outside the editor.
+that one as it is dragged and the card takes the new direction when it is let
+go, so the room is lit the same way outside the editor.
 
 The third mode places furniture and fixtures. The sidebar shows the catalog. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per part, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll, and the preview has a handle under it to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
 
@@ -143,6 +145,8 @@ showing the card when the sun integration is not there.
 - By day the room sits in soft warm light: a sky above, a floor bounce below
   and a gentle sun on top of them, with shadows blurred wide so nothing gets
   a hard edge cut into it.
+- The light takes its color from how high the sun is standing: golden along
+  the horizon at sunrise and sunset, near white overhead at midday.
 - By night that wash drops to a dim warm glow and the lamps carry the room.
 - The change takes about an hour each way. The sun climbs roughly ten degrees
   in the hour after it rises and drops the same in the hour before it sets, so

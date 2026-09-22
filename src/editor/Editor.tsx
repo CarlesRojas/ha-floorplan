@@ -3,7 +3,6 @@ import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import DevicePanel from '#/editor/DevicePanel.tsx'
 import ModeSwitch from '#/editor/ModeSwitch.tsx'
 import Scene from '#/scene/Scene.tsx'
-import type { SkyMode } from '#/scene/Sky.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import { cn } from '#/lib/utils.ts'
 import RoomInfo from '#/editor/RoomInfo.tsx'
@@ -34,6 +33,8 @@ import {
   EDITOR_PREVIEW_MIN_PX,
   EDITOR_SAVED_FLASH_MS,
   EDITOR_SIDEBAR_MIN_PX,
+  EDITOR_HOUR,
+  EDITOR_NIGHT_HOUR,
   EDITOR_SIDEBAR_WIDTH_PX,
   SUN_DIRECTION_DEG,
   SUN_DIRECTION_STEP_DEG,
@@ -72,11 +73,11 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [fullscreen, setFullscreen] = useState(true)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
-  // The editor shows the room by day, and the toolbar switches it to night.
-  // It never follows the sun here: what is being drawn should look the same
-  // whatever the hour outside.
-  const [sky, setSky] = useState<SkyMode>('day')
-  const cycleSky = () => setSky(current => (current === 'night' ? 'day' : 'night'))
+  // The hour the preview is lit at. The editor never follows the sun: what
+  // is being drawn should look the same whatever the time outside, and the
+  // toolbar's slider moves it through the day.
+  const [hour, setHour] = useState(EDITOR_HOUR)
+  const flipHour = () => setHour(current => (current > 6.5 && current < 21.5 ? EDITOR_NIGHT_HOUR : EDITOR_HOUR))
   // Which way the sun comes from. Unlike day and night, this one is part of
   // the card: the room is lit the same way outside the editor. The preview
   // follows the slider as it is dragged, and the card takes it on release.
@@ -586,7 +587,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'n':
       case 'N':
-        cycleSky()
+        flipHour()
         break
       case 's':
       case 'S': {
@@ -686,8 +687,8 @@ export default function Editor({ hass, config, onChange }: Props) {
         onShowLengths={setShowLengths}
         showPreview={showPreview}
         onShowPreview={togglePreview}
-        sky={sky}
-        onSky={cycleSky}
+        hour={hour}
+        onHour={setHour}
         sunDirection={sunDirection}
         onSunDirection={setSunDirection}
         onSunDirectionDone={saveSun}
@@ -830,7 +831,7 @@ export default function Editor({ hass, config, onChange }: Props) {
                     <Scene
                       hass={hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
-                      sky={sky}
+                      sky={hour}
                     />
                   </div>
                 </>

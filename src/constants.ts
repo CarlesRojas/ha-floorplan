@@ -37,6 +37,9 @@ export const SUN_SHADOW_MAP_PX = 2048
 // among. Each one costs six shadow renders, so only the first few get them.
 export const LAMP_SHADOW_MAP_PX = 512
 export const MAX_SHADOW_LAMPS = 4
+// The hour the editor lights its preview at, and the one its N key flips to.
+export const EDITOR_HOUR = 13
+export const EDITOR_NIGHT_HOUR = 23
 // How long the daylight takes to catch up when the sun moves, in seconds.
 export const DAYLIGHT_EASE_S = 1.2
 
