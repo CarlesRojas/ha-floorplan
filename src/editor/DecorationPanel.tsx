@@ -91,6 +91,20 @@ export default function DecorationPanel({
 
         {kind.params.map(p => {
           const value = item.params?.[p.id] ?? p.default
+          // A two state parameter is a switch, not a slider with two stops.
+          if (p.toggle)
+            return (
+              <label key={p.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                {p.label}
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 justify-self-start"
+                  checked={value > 0.5}
+                  style={{ accentColor: accent }}
+                  onChange={e => onUpdate(item.id, { params: { ...item.params, [p.id]: e.target.checked ? 1 : 0 } })}
+                />
+              </label>
+            )
           return (
             <label key={p.id} className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
               {p.label}

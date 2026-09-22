@@ -101,6 +101,7 @@ export function Leg({
   bottom = 0.02,
   position = [0, 0, 0],
   tilt = 0,
+  lean,
   children,
 }: {
   height: number
@@ -108,10 +109,13 @@ export function Leg({
   bottom?: number
   position?: Vec3
   tilt?: number
+  // Tilt about x and z separately, for a leg that splays out at the foot.
+  lean?: [number, number]
   children: ReactNode
 }) {
+  const [rx, rz] = lean ?? [tilt, tilt]
   return (
-    <mesh position={[position[0], position[1] + height / 2, position[2]]} rotation={[tilt, 0, tilt]} castShadow>
+    <mesh position={[position[0], position[1] + height / 2, position[2]]} rotation={[rx, 0, rz]} castShadow>
       <cylinderGeometry args={[top, bottom, height, 8]} />
       {children}
     </mesh>
@@ -126,6 +130,10 @@ export function Legs({
   inset = 0.08,
   top = 0.03,
   bottom = 0.02,
+  // A long piece grows a middle pair rather than sagging between two.
+  columns = 2,
+  // How far the foot swings out from under the frame, in radians.
+  splay = 0,
   children,
 }: {
   width: number
@@ -134,22 +142,30 @@ export function Legs({
   inset?: number
   top?: number
   bottom?: number
+  columns?: number
+  splay?: number
   children: ReactNode
 }) {
   const x = width / 2 - inset
   const z = depth / 2 - inset
+  const cols = Math.max(2, Math.round(columns))
+  const at = Array.from({ length: cols }, (_, i) => -x + ((2 * x) / (cols - 1)) * i)
   return (
     <>
-      {[
-        [-x, 0, -z],
-        [x, 0, -z],
-        [-x, 0, z],
-        [x, 0, z],
-      ].map((p, i) => (
-        <Leg key={i} height={height} top={top} bottom={bottom} position={p as Vec3}>
-          {children}
-        </Leg>
-      ))}
+      {at.flatMap(px =>
+        [-z, z].map(pz => (
+          <Leg
+            key={`${px}:${pz}`}
+            height={height}
+            top={top}
+            bottom={bottom}
+            position={[px, 0, pz]}
+            lean={[-Math.sign(pz) * splay, Math.sign(px) * splay]}
+          >
+            {children}
+          </Leg>
+        )),
+      )}
     </>
   )
 }

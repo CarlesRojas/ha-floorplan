@@ -12,6 +12,8 @@ export type DecorationParam = {
   step: number
   // How the editor writes the value. Meters when it is missing.
   unit?: string
+  // A two state parameter, stored as 0 or 1 and edited as a switch.
+  toggle?: boolean
 }
 
 export type DecorationKind = {
@@ -94,6 +96,17 @@ const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1, '')
 const base = (d = 0) => p('base', 'Off floor', d, 0, 1.6)
 // Screens are sold by the diagonal, and they are all 16:9.
 const inches = (d: number, min = 24, max = 120) => p('inches', 'Screen', d, min, max, 1, '"')
+// A switch: off is 0, on is 1.
+const flag = (id: string, label: string, d = 0): DecorationParam => ({
+  id,
+  label,
+  default: d,
+  min: 0,
+  max: 1,
+  step: 1,
+  unit: '',
+  toggle: true,
+})
 
 // Signal sets.
 const NONE: Signal[] = []
@@ -845,7 +858,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Window',
     'wall',
-    [width(1.2, 0.5, 3), height(1.2, 0.5, 2), p('sill', 'Sill height', 0.9, 0, 1.6)],
+    [width(1.2, 0.5, 3), height(1.2, 0.5, 2), p('sill', 'Sill height', 0.9, 0, 1.6), flag('flip', 'Hinge right')],
     { frame: SCANDI.offWhite, glass: SCANDI.mist },
     { frame: 'matte', glass: 'ceramic' },
     TOGGLE,
@@ -855,9 +868,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Door',
     'wall',
-    [width(0.85, 0.6, 1.4), height(2.05, 1.8, 2.4)],
-    { body: SCANDI.offWhite, trim: SCANDI.oak },
-    { body: 'matte', trim: 'wood' },
+    [width(0.85, 0.6, 1.4), height(2.05, 1.8, 2.4), flag('flip', 'Hinge right')],
+    { body: SCANDI.offWhite, trim: SCANDI.charcoal },
+    { body: 'matte', trim: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -865,7 +878,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Sliding door',
     'wall',
-    [width(1.8, 0.9, 5), height(2.1, 1.8, 2.5), panels()],
+    [width(1.8, 0.9, 5), height(2.1, 1.8, 2.5), panels(), flag('flip', 'Slide left')],
     { body: SCANDI.offWhite, frame: SCANDI.slate },
     { body: 'matte', frame: 'metal' },
     TOGGLE_LEVEL,
@@ -875,7 +888,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Sliding glass door',
     'wall',
-    [width(2.4, 1.2, 6), height(2.2, 1.8, 2.6), panels()],
+    [width(2.4, 1.2, 6), height(2.2, 1.8, 2.6), panels(), flag('flip', 'Slide left')],
     { frame: SCANDI.slate, glass: SCANDI.mist },
     { frame: 'metal' },
     TOGGLE_LEVEL,
