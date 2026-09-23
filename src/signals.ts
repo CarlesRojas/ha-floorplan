@@ -152,7 +152,9 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
 }
 
 // The service call a click on a device performs. Null when there is none.
-export function clickAction(entityId: string): { domain: string; service: string } | null {
+// Most domains toggle, which needs nothing but the entity. A vacuum has no
+// toggle to call, so it is sent out or sent home by what it is doing now.
+export function clickAction(entityId: string, state?: string): { domain: string; service: string } | null {
   const domain = domainOf(entityId)
   switch (domain) {
     case 'light':
@@ -164,7 +166,7 @@ export function clickAction(entityId: string): { domain: string; service: string
     case 'humidifier':
       return { domain, service: 'toggle' }
     case 'vacuum':
-      return { domain, service: 'toggle' }
+      return { domain, service: state === 'cleaning' ? 'return_to_base' : 'start' }
     case 'lock':
       return { domain, service: 'unlock' }
     case 'button':

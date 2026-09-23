@@ -79,7 +79,7 @@ export default function Devices({ hass, config, onPick }: Props) {
   for (const device of devices) for (const id of device.decorations ?? []) boundTo.set(id, device)
 
   const act = (entityId: string) => {
-    const action = clickAction(entityId)
+    const action = clickAction(entityId, hass?.states[entityId]?.state)
     if (hass && action) void hass.callService(action.domain, action.service, { entity_id: entityId })
   }
 
