@@ -83,17 +83,27 @@ export default function Editor({ hass, config, onChange }: Props) {
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
+  // The room the next piece goes in. Picking a room or a piece sets it, and
+  // it outlives both, so a run of pieces added one after another all land in
+  // the room that was picked rather than scattering once the selection moves
+  // to the piece just added.
+  const [addRoom, setAddRoom] = useState<string | null>(null)
   // One thing at a time is selected, a room or a piece, never both. Picking
   // either lets go of the other.
   const pickRoom = (next: Selection) => {
     if (next.roomId) {
       setShowRoom(true)
       setSelectedDecoration(null)
+      setAddRoom(next.roomId)
     }
     setSelection(next)
   }
   const pickDecoration = (id: string | null) => {
-    if (id) setSelection({ roomId: null, vertex: null })
+    if (id) {
+      setSelection({ roomId: null, vertex: null })
+      const item = decorations.find(d => d.id === id)
+      if (item) setAddRoom(item.room)
+    }
     setSelectedDecoration(id)
   }
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
@@ -188,6 +198,7 @@ export default function Editor({ hass, config, onChange }: Props) {
     }
     commit(rooms, devices, [...decorations, item])
     setSelection({ roomId: null, vertex: null })
+    setAddRoom(room.id)
     setSelectedDecoration(item.id)
   }
 
@@ -401,12 +412,14 @@ export default function Editor({ hass, config, onChange }: Props) {
   const selectedRoom = rooms.find(r => r.id === selection.roomId) ?? null
 
   // Where a new piece lands: the selected room, the room the selected piece
-  // stands in, or any room at all.
+  // stands in, the last room either of them was in, or any room at all.
   const targetRoom = () => {
     if (selectedRoom) return selectedRoom
     const item = decorations.find(d => d.id === selectedDecoration)
     const its = item ? rooms.find(r => r.id === item.room) : undefined
     if (its) return its
+    const last = rooms.find(r => r.id === addRoom)
+    if (last) return last
     return rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null
   }
 
@@ -829,7 +842,8 @@ export default function Editor({ hass, config, onChange }: Props) {
               <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
             </div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
-              {roomInfo ?? panels}
+              {roomInfo}
+              {panels}
             </div>
           </div>
         </div>
