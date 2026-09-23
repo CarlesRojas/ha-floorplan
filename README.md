@@ -47,7 +47,7 @@ docker compose exec homeassistant ls /config/www/floorplan-3d
 
 You should see `card.js`. If Home Assistant was started before `/config/www` existed, restart it once so it serves `/local/`.
 
-Register `/local/floorplan-3d/card.js?v=1` as a JavaScript module resource. Bump `?v=` after each new build so browsers pick it up. `pnpm watch` rebuilds `dist/card.js` on change if you want to test the bundle continuously.
+Register `/local/floorplan-3d/card.js?v=1` as a JavaScript module resource. Bump `?v=` after each new build so browsers pick it up. `pnpm watch` rebuilds `dist/card.js` on change if you want to test the bundle continuously. The build writes into a staging folder inside `dist` and renames the file into place, so Home Assistant never serves a half written `card.js`: a browser that fetched one mid write throws on load and then reports that the custom element does not exist until the page is reloaded.
 
 ### Add the card
 
