@@ -63,7 +63,7 @@ function Plate({
 
 // Media, climate, covers, security and the small smart home fittings.
 export default function DeviceModel({ kind, item, state, room, all }: Props) {
-  const p = (id: string) => paramValue(kind, item.params, id)
+  const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a device's colors read as its parts.

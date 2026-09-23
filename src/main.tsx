@@ -13,7 +13,13 @@ const EDITOR_TYPE = `${CARD_TYPE}-editor`
 const RENAMED: Record<string, { kind: string; variant?: string }> = {
   // The Globo Cesta was its own kind for a moment, then became a style of
   // the pendant.
-  light_globe: { kind: 'light_pendant', variant: 'globe' },
+  light_globe: { kind: 'light_pendant', variant: 'globo_cesta' },
+}
+
+// Styles that were renamed, per kind. The pendant's first two were loose
+// takes on the Nagoya and the Globo Cesta, then became those lamps.
+const RESTYLED: Record<string, Record<string, string>> = {
+  light_pendant: { slatted: 'nagoya', globe: 'globo_cesta' },
 }
 
 function migrate(config: CardConfig): CardConfig {
@@ -28,6 +34,10 @@ function migrate(config: CardConfig): CardConfig {
       .map(d => {
         const now = RENAMED[d.kind]
         return now ? { ...d, kind: now.kind, variant: d.variant ?? now.variant } : d
+      })
+      .map(d => {
+        const style = d.variant ? RESTYLED[d.kind]?.[d.variant] : undefined
+        return style ? { ...d, variant: style } : d
       })
   }
   if (Array.isArray(config.devices)) next.devices = config.devices.filter(d => known.has(d.room))

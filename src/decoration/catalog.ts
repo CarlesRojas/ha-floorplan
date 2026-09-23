@@ -2,7 +2,6 @@ import type { Signal } from '#/signals.ts'
 import {
   CEILING_HEIGHT_M,
   LIGHT_BASE_COLOR,
-  LIGHT_CORD_COLOR,
   LIGHT_SHADE_COLOR,
   SCANDI,
   SCREEN_OFF_COLOR,
@@ -32,6 +31,10 @@ export type DecorationVariant = {
   label: string
   colors?: Record<string, string>
   materials?: Record<string, string>
+  // Its own defaults for some of the kind's parameters. A style drawn after
+  // a real piece starts at that piece's real size, and the slider still
+  // takes it anywhere from there.
+  params?: Record<string, number>
 }
 
 export type DecorationKind = {
@@ -164,6 +167,22 @@ const kind = (
   variants?: DecorationVariant[],
 ): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses, variants })
 
+// The pendant's styles are real lamps, so they wear their real finishes:
+// natural wood, opal glass, white ceramic, and black canopies and cords.
+const PENDANT_BLACK_COLOR = '#232426'
+const PENDANT_OPAL_COLOR = '#f6f4ef'
+const PENDANT_CERAMIC_COLOR = '#f8f7f4'
+const PENDANT_STEEL_COLOR = '#b4b8bb'
+
+// The first style, which is also the kind's own slots.
+const PENDANT_NAGOYA: DecorationVariant = {
+  id: 'nagoya',
+  label: 'Nagoya',
+  params: { size: 0.42 },
+  colors: { slats: '#e2c89c', threads: '#f2ede4', diffuser: LIGHT_SHADE_COLOR, cord: PENDANT_BLACK_COLOR },
+  materials: { slats: 'wood', threads: 'fabric', diffuser: 'matte', cord: 'fabric' },
+}
+
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
   kind(
@@ -181,17 +200,51 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'light',
     'Pendant',
     'ceiling',
-    [size(0.4, 0.15, 1), p('cord', 'Cord length', 0.8, 0.2, 2)],
-    { slats: LIGHT_BASE_COLOR, rings: SCANDI.slate, diffuser: LIGHT_SHADE_COLOR, cord: LIGHT_CORD_COLOR },
-    { slats: 'wood', rings: 'metal', diffuser: 'matte', cord: 'fabric' },
+    // Size is the shade's diameter. Each style starts at its lamp's own.
+    [size(0.42, 0.06, 1), p('cord', 'Cord length', 0.8, 0.2, 2)],
+    PENDANT_NAGOYA.colors ?? {},
+    PENDANT_NAGOYA.materials ?? {},
     LIGHT_SIGNALS,
+    // Four Santa & Cole lamps, each drawn from its dimensional drawing.
     [
-      { id: 'slatted', label: 'Slatted drum' },
+      PENDANT_NAGOYA,
       {
-        id: 'globe',
-        label: 'Globe in a cage',
-        colors: { globe: LIGHT_SHADE_COLOR, cage: LIGHT_BASE_COLOR, cord: LIGHT_CORD_COLOR },
-        materials: { globe: 'matte', cage: 'wood', cord: 'fabric' },
+        id: 'globo_cesta',
+        label: 'Globo Cesta',
+        params: { size: 0.27 },
+        colors: {
+          globe: PENDANT_OPAL_COLOR,
+          cap: PENDANT_BLACK_COLOR,
+          canopy: PENDANT_BLACK_COLOR,
+          cord: PENDANT_BLACK_COLOR,
+          wires: PENDANT_STEEL_COLOR,
+        },
+        materials: { globe: 'matte', cap: 'metal', canopy: 'metal', cord: 'fabric', wires: 'metal' },
+      },
+      {
+        id: 'headhat_bowl',
+        label: 'HeadHat Bowl L',
+        params: { size: 0.2 },
+        colors: {
+          shade: PENDANT_CERAMIC_COLOR,
+          inside: PENDANT_CERAMIC_COLOR,
+          capsule: PENDANT_BLACK_COLOR,
+          canopy: PENDANT_BLACK_COLOR,
+          cord: PENDANT_BLACK_COLOR,
+        },
+        materials: { shade: 'ceramic', inside: 'matte', capsule: 'metal', canopy: 'metal', cord: 'fabric' },
+      },
+      {
+        id: 'cirio_simple',
+        label: 'Cirio Simple',
+        params: { size: 0.1 },
+        colors: {
+          shade: PENDANT_CERAMIC_COLOR,
+          capsule: PENDANT_BLACK_COLOR,
+          canopy: PENDANT_BLACK_COLOR,
+          cord: PENDANT_BLACK_COLOR,
+        },
+        materials: { shade: 'ceramic', capsule: 'metal', canopy: 'metal', cord: 'fabric' },
       },
     ],
   ),
@@ -1110,17 +1163,39 @@ export function snapParam(spec: DecorationParam, value: number) {
   return round2(spec.min + stops * spec.step)
 }
 
-export function paramValue(kind: DecorationKind, params: Record<string, number> | undefined, id: string) {
+export function paramValue(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  id: string,
+  variant?: string,
+) {
   const spec = kind.params.find(p => p.id === id)
   const saved = params?.[id]
   if (!spec) return saved ?? 0
-  return saved === undefined ? spec.default : snapParam(spec, saved)
+  if (saved !== undefined) return snapParam(spec, saved)
+  // Nothing saved: the style's own default, then the kind's.
+  const own = decorationVariant(kind, variant)?.params?.[id]
+  return own === undefined ? spec.default : snapParam(spec, own)
 }
 
 // The style an item is drawn in: the one it names, or the kind's first.
 export function decorationVariant(kind: DecorationKind, variant: string | undefined) {
   if (!kind.variants || kind.variants.length === 0) return undefined
   return kind.variants.find(v => v.id === variant) ?? kind.variants[0]
+}
+
+// An item's saved parameters once it changes style. Whatever the new style
+// has a real default for is dropped, so a pendant switched to another lamp
+// takes that lamp's size rather than keeping the last one's.
+export function withoutStyleDefaults(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  variant: string,
+) {
+  const own = decorationVariant(kind, variant)?.params
+  if (!params || !own) return params
+  const kept = Object.fromEntries(Object.entries(params).filter(([id]) => !(id in own)))
+  return Object.keys(kept).length > 0 ? kept : undefined
 }
 
 // The slots a style paints, which stand in for the kind's own when it has
@@ -1156,19 +1231,23 @@ export function screenSize(inches: number): [number, number] {
   return [(diagonal * 16) / Math.hypot(16, 9), (diagonal * 9) / Math.hypot(16, 9)]
 }
 
-export function footprint(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
+export function footprint(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  variant?: string,
+): [number, number] {
   // A strip lies along its length, which is the x of its model, so the plan
   // has to read the same way round or the two disagree by a right angle.
   if (kind.family === 'light' && kind.params.some(x => x.id === 'length')) {
-    return [paramValue(kind, params, 'length'), 0.08]
+    return [paramValue(kind, params, 'length', variant), 0.08]
   }
   const screen = kind.params.some(x => x.id === 'inches')
   const w = screen
-    ? screenSize(paramValue(kind, params, 'inches'))[0]
-    : paramValue(kind, params, 'width') || paramValue(kind, params, 'size') || 0.3
+    ? screenSize(paramValue(kind, params, 'inches', variant))[0]
+    : paramValue(kind, params, 'width', variant) || paramValue(kind, params, 'size', variant) || 0.3
   const d =
-    paramValue(kind, params, 'depth') ||
-    paramValue(kind, params, 'length') ||
+    paramValue(kind, params, 'depth', variant) ||
+    paramValue(kind, params, 'length', variant) ||
     (kind.params.some(p => p.id === 'size') ? w : 0.3)
   return [w, d]
 }

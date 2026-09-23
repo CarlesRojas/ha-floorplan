@@ -33,7 +33,7 @@ function blockedBy(point: Point, item: DecorationConfig, radius: number) {
   // Anything resting on a table is above the floor, so the robot drives
   // under it.
   if (item.on !== undefined) return false
-  const [fw, fd] = footprint(kind, item.params)
+  const [fw, fd] = footprint(kind, item.params, item.variant)
   const a = (-(item.rotation ?? 0) * Math.PI) / 180
   const dx = point[0] - item.position[0]
   const dy = point[1] - item.position[1]

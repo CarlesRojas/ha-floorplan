@@ -1,16 +1,15 @@
-import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
-import { Material } from '#/scene/decor/parts.tsx'
+import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { BaseMaterial, ShadeMaterial, type LightState } from '#/scene/decor/lightMaterials.tsx'
+import Pendant from '#/scene/decor/Pendants.tsx'
+import { PENDANTS } from '#/scene/decor/pendantSpecs.ts'
 import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
 import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import { useEffect, useMemo } from 'react'
-import { Color } from 'three'
+import { useEffect } from 'react'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
-
-export type LightState = ItemState
 
 type Props = {
   kind: DecorationKind
@@ -21,50 +20,6 @@ type Props = {
 // Smooth, chunky shapes: squashed spheres, capsules and domes, matte
 // surfaces. Segment counts stay low so the silhouettes read as simple.
 const SEG = 32
-
-// Materials of the light family. The shade glows when on: an emissive tint
-// scaled by level, plus a point light so the room picks it up.
-function ShadeMaterial({
-  color,
-  material = 'matte',
-  state,
-}: {
-  color: string
-  material?: string
-  state: LightState | null
-}) {
-  const glow = state?.glow ?? [1, 1, 1]
-  // Eased, so a lamp fades up and down and follows a dimmer smoothly
-  // instead of stepping with each update.
-  const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
-  // A colored light on a chalky shade was barely a tint, since the shade's
-  // own color carried the surface. The shade takes the light's color as it
-  // comes up, so a green lamp reads green from across the room.
-  const [gr, gg, gb] = glow
-  const tint = useMemo(
-    () => new Color(color).lerp(new Color(gr, gg, gb), 0.85 * lit).getStyle(),
-    [color, gr, gg, gb, lit],
-  )
-  return (
-    <Material
-      material={material}
-      color={tint}
-      doubleSide
-      // Parchment and opal glass are not walls. A lit shade turns slightly
-      // translucent, so the bulb shows through it, and it still stops enough
-      // of the light to throw a shadow.
-      opacity={1 - 0.22 * lit}
-      emissive={[glow[0], glow[1], glow[2]]}
-      // Kept under one: past that the tone mapping rolls a bright color off
-      // toward white, which is what made a colored lamp read as pale.
-      emissiveIntensity={lit * (0.15 + lit * 0.35)}
-    />
-  )
-}
-
-function BaseMaterial({ color, material = 'matte' }: { color: string; material?: string }) {
-  return <Material material={material} color={color} />
-}
 
 function Glow({
   state,
@@ -141,7 +96,7 @@ function Glow({
 }
 
 export default function LightModel({ kind, item, state }: Props) {
-  const p = (id: string) => paramValue(kind, item.params, id)
+  const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   const size = p('size')
@@ -169,104 +124,12 @@ export default function LightModel({ kind, item, state }: Props) {
       break
     }
     case 'light_pendant': {
-      if (item.variant === 'globe') {
-        // After the Globo Cesta: an opal glass sphere sitting in a cage of
-        // curved wooden ribs that gather into a small ring at the top, where
-        // the cord takes it, and meet again under the globe.
-        const cord = p('cord')
-        const r = size / 2
-        const top = CEILING_HEIGHT_M - cord
-        // The globe hangs with its top just under the ring the ribs meet at.
-        const center = top - r
-        const rib = 0.009
-        // Two rings crossing at the poles, which is four ribs seen from a
-        // chair, each one standing just clear of the glass.
-        const cage = r + rib * 0.8
-        glowAt = [0, center, 0]
-        body = (
-          <>
-            <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
-              <cylinderGeometry args={[0.05, 0.055, 0.03, SEG]} />
-              <BaseMaterial color={c('cord')} material={m('cord')} />
-            </mesh>
-            <mesh position={[0, CEILING_HEIGHT_M - cord / 2, 0]}>
-              <capsuleGeometry args={[0.006, cord, 8, 16]} />
-              <BaseMaterial color={c('cord')} material={m('cord')} />
-            </mesh>
-            {/* The ring the ribs are gathered into, at the top of the cage. */}
-            <mesh position={[0, top, 0]}>
-              <cylinderGeometry args={[r * 0.17, r * 0.17, 0.028, SEG]} />
-              <BaseMaterial color={c('cage')} material={m('cage')} />
-            </mesh>
-            {/* Each rib is a meridian: a half circle hugging the globe, the
-              four of them a quarter turn apart. */}
-            {[0, 1, 2, 3].map(i => (
-              <mesh key={i} position={[0, center, 0]} rotation={[0, (i * Math.PI) / 2, -Math.PI / 2]} castShadow>
-                <torusGeometry args={[cage, rib, 12, SEG * 2, Math.PI]} />
-                <BaseMaterial color={c('cage')} material={m('cage')} />
-              </mesh>
-            ))}
-            {/* The boss the ribs meet at underneath. */}
-            <mesh position={[0, center - cage, 0]}>
-              <sphereGeometry args={[rib * 2.2, SEG, SEG / 2]} />
-              <BaseMaterial color={c('cage')} material={m('cage')} />
-            </mesh>
-            <mesh position={[0, center, 0]} userData={{ transmits: true }}>
-              <sphereGeometry args={[r, SEG * 2, SEG]} />
-              <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
-            </mesh>
-          </>
-        )
-        break
-      }
-      // After the Nagoya: a drum of thin vertical wooden slats held by a ring
-      // top and bottom, open at both ends so it lights the ceiling too, with
-      // a translucent diffuser disc set inside the lower ring.
-      const cord = p('cord')
-      const r = size / 2
-      const top = CEILING_HEIGHT_M - cord
-      const drumH = size * 0.58
-      const slats = Math.max(16, Math.round((Math.PI * size) / 0.035))
-      const slatW = (Math.PI * size) / slats / 1.7
-      glowAt = [0, top - drumH + drumH * 0.35, 0]
-      body = (
-        <>
-          <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
-            <cylinderGeometry args={[0.05, 0.055, 0.03, SEG]} />
-            <BaseMaterial color={c('cord')} material={m('cord')} />
-          </mesh>
-          <mesh position={[0, CEILING_HEIGHT_M - cord / 2, 0]}>
-            <capsuleGeometry args={[0.006, cord, 8, 16]} />
-            <BaseMaterial color={c('cord')} material={m('cord')} />
-          </mesh>
-          {/* The two rings the slats are strung on. */}
-          {[top, top - drumH].map(y => (
-            <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r, 0.006, 12, SEG * 3]} />
-              <BaseMaterial color={c('rings')} material={m('rings')} />
-            </mesh>
-          ))}
-          {Array.from({ length: slats }).map((_, i) => {
-            const a = (i / slats) * Math.PI * 2
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * r, top - drumH / 2, Math.sin(a) * r]}
-                rotation={[0, -a, 0]}
-                castShadow
-              >
-                <boxGeometry args={[0.004, drumH, slatW]} />
-                <BaseMaterial color={c('slats')} material={m('slats')} />
-              </mesh>
-            )
-          })}
-          {/* The diffuser, a translucent disc across the bottom of the drum. */}
-          <mesh position={[0, top - drumH + 0.012, 0]} userData={{ transmits: true }}>
-            <cylinderGeometry args={[r * 0.96, r * 0.96, 0.01, SEG * 2]} />
-            <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
-          </mesh>
-        </>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'nagoya'
+      const spec = PENDANTS[style] ?? PENDANTS.nagoya
+      const k = size / spec.diameter
+      const top = CEILING_HEIGHT_M - p('cord')
+      glowAt = [0, top - spec.glow * k, 0]
+      body = <Pendant style={style} k={k} top={top} c={c} m={m} state={state} />
       break
     }
     case 'light_floor': {

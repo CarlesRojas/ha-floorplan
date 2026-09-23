@@ -10,7 +10,7 @@ type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | 
 // slim oak frames on splayed tapered legs, plump linen cushions, plain
 // fronts with small round pulls.
 export default function FurnitureModel({ kind, item }: Props) {
-  const p = (id: string) => paramValue(kind, item.params, id)
+  const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a piece's colors read as its parts.
