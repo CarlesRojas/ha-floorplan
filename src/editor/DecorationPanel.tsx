@@ -7,6 +7,7 @@ import {
   itemLevels,
   kindColors,
   paramValue,
+  withoutStyleDefaults,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { ridersOf } from '#/decoration/surfaces.ts'
@@ -30,7 +31,7 @@ import { deviceSignals, levelChannels } from '#/signals.ts'
 import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
-import { faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faRotateLeft, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
 
@@ -157,7 +158,7 @@ export default function DecorationPanel({
               aria-label="Style"
               value={decorationVariant(kind, item.variant)?.id ?? ''}
               options={kind.variants.map(v => ({ value: v.id, label: v.label }))}
-              onChange={v => onUpdate(item.id, { variant: v })}
+              onChange={v => onUpdate(item.id, { variant: v, params: withoutStyleDefaults(kind, item.params, v) })}
             />
           </label>
         )}
@@ -165,7 +166,7 @@ export default function DecorationPanel({
         {kind.params.map(p => {
           // Read through the catalog, so a size saved before this slider's
           // steps changed shows on a stop rather than between two of them.
-          const value = paramValue(kind, item.params, p.id)
+          const value = paramValue(kind, item.params, p.id, item.variant)
           // A two state parameter is a switch, not a slider with two stops.
           if (p.toggle)
             return (
@@ -180,8 +181,11 @@ export default function DecorationPanel({
                 />
               </label>
             )
+          // What the slider starts at for this style: a pendant's real size.
+          const initial = paramValue(kind, undefined, p.id, item.variant)
+          const { [p.id]: _, ...rest } = item.params ?? {}
           return (
-            <label key={p.id} className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
+            <label key={p.id} className="grid grid-cols-[96px_1fr_56px_24px] items-center gap-2 text-sm">
               {p.label}
               <input
                 type="range"
@@ -196,10 +200,25 @@ export default function DecorationPanel({
                 {/* The parameter says its unit, and means meters when silent. */}
                 {p.unit === undefined ? `${value.toFixed(2)} m` : `${value}${p.unit}`}
               </span>
+              {/* Back to the default, by forgetting the saved value, so the
+                  item follows its style again. */}
+              <button
+                type="button"
+                aria-label={`Reset ${p.label.toLowerCase()} to default`}
+                title="Reset to default"
+                disabled={value === initial}
+                onClick={e => {
+                  e.preventDefault()
+                  onUpdate(item.id, { params: Object.keys(rest).length > 0 ? rest : undefined })
+                }}
+                className="flex size-6 items-center justify-center rounded-md text-(--secondary-text-color) hover:bg-(--secondary-background-color) disabled:invisible"
+              >
+                <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
+              </button>
             </label>
           )
         })}
-        <label className="grid grid-cols-[96px_1fr_56px] items-center gap-2 text-sm">
+        <label className="grid grid-cols-[96px_1fr_56px_24px] items-center gap-2 text-sm">
           Rotation
           <input
             type="range"
@@ -211,6 +230,8 @@ export default function DecorationPanel({
             onChange={e => onUpdate(item.id, { rotation: Number(e.target.value) })}
           />
           <span className="text-right text-xs text-(--secondary-text-color)">{item.rotation ?? 0}°</span>
+          {/* Keeps the slider as wide as the ones above it. */}
+          <span />
         </label>
 
         {/* The surface of each part is part of what the piece is. Only its

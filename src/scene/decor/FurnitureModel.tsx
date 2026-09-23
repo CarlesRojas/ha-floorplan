@@ -1,6 +1,12 @@
-import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import Bench from '#/scene/decor/Benches.tsx'
+import DiningChair from '#/scene/decor/DiningChairs.tsx'
+import DiningTable from '#/scene/decor/DiningTables.tsx'
+import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
+import Stool from '#/scene/decor/Stools.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
+import type { ReactNode } from 'react'
 
 import type { ItemState } from '#/scene/decor/state.ts'
 
@@ -10,7 +16,7 @@ type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | 
 // slim oak frames on splayed tapered legs, plump linen cushions, plain
 // fronts with small round pulls.
 export default function FurnitureModel({ kind, item }: Props) {
-  const p = (id: string) => paramValue(kind, item.params, id)
+  const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a piece's colors read as its parts.
@@ -130,193 +136,20 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'dining_chair': {
-      // After the New Aix: one upholstered shell, seat and back in a single
-      // curved piece, on four slim lacquered steel legs.
-      const w = p('width')
-      const d = p('depth')
-      const seatH = 0.46
-      const seat = 0.09
-      const backH = 0.42
-      return (
-        <group>
-          {[-1, 1].flatMap(sx =>
-            [-1, 1].map(sz => (
-              <mesh
-                key={`${sx}:${sz}`}
-                position={[(sx * (w - 0.08)) / 2, (seatH - seat) / 2, (sz * (d - 0.08)) / 2]}
-                rotation={[-sz * 0.05, 0, -sx * 0.05]}
-                castShadow
-              >
-                <cylinderGeometry args={[0.011, 0.014, seatH - seat, 20]} />
-                {M('legs')}
-              </mesh>
-            )),
-          )}
-          {/* A rail each side, the way a steel frame carries the shell. */}
-          {[-1, 1].map(sx => (
-            <mesh key={sx} position={[(sx * (w - 0.08)) / 2, seatH - seat - 0.01, 0]}>
-              <boxGeometry args={[0.014, 0.014, d - 0.1]} />
-              {M('legs')}
-            </mesh>
-          ))}
-          {/* The shell: a padded seat and a back that leans away from it. */}
-          <Cushion size={[w, seat, d]} position={[0, seatH - seat, 0]}>
-            {M('shell')}
-          </Cushion>
-          <Cushion size={[w - 0.02, backH, 0.08]} rotation={[-0.14, 0, 0]} position={[0, seatH, -d / 2 + 0.07]}>
-            {M('shell')}
-          </Cushion>
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'molded'
+      return <DiningChair style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'office_chair': {
-      // A task chair: a five star base on castors, a gas lift, a padded seat
-      // and a back on a slim frame, with an armrest each side.
-      const w = p('width')
-      const d = p('depth')
-      const seatH = p('height')
-      const seat = 0.1
-      const backH = 0.5
-      const reach = Math.min(w, d) / 2
-      const lift = seatH - seat - 0.06
-      return (
-        <group>
-          {/* Five arms out from the column, each ending on a castor. */}
-          {Array.from({ length: 5 }).map((_, i) => {
-            const a = (i / 5) * Math.PI * 2
-            return (
-              <group key={i} rotation={[0, -a, 0]}>
-                <mesh position={[0, 0.055, reach / 2]} rotation={[0.06, 0, 0]} castShadow>
-                  <boxGeometry args={[0.035, 0.022, reach]} />
-                  {M('base')}
-                </mesh>
-                {/* The castor, a small wheel lying on its side. */}
-                <mesh position={[0, 0.026, reach - 0.02]} rotation={[0, 0, Math.PI / 2]}>
-                  <cylinderGeometry args={[0.026, 0.026, 0.016, 20]} />
-                  {M('base')}
-                </mesh>
-              </group>
-            )
-          })}
-          {/* The gas lift, in its wider sleeve. */}
-          <mesh position={[0, lift / 2 + 0.05, 0]} castShadow>
-            <cylinderGeometry args={[0.028, 0.032, lift, 24]} />
-            {M('base')}
-          </mesh>
-          <mesh position={[0, seatH - seat - 0.03, 0]}>
-            <cylinderGeometry args={[0.055, 0.055, 0.05, 24]} />
-            {M('frame')}
-          </mesh>
-          {/* Seat and back, the back leaning away on its own frame. */}
-          <Cushion size={[w * 0.82, seat, d * 0.82]} position={[0, seatH - seat, 0]}>
-            {M('seat')}
-          </Cushion>
-          <mesh position={[0, seatH + 0.08, -d * 0.36]} rotation={[0.16, 0, 0]} castShadow>
-            <boxGeometry args={[0.05, 0.22, 0.04]} />
-            {M('frame')}
-          </mesh>
-          <Cushion size={[w * 0.74, backH, 0.07]} rotation={[-0.16, 0, 0]} position={[0, seatH + 0.16, -d * 0.33]}>
-            {M('back')}
-          </Cushion>
-          {/* An armrest each side: a post up from the seat and a pad on top. */}
-          {[-1, 1].map(sx => (
-            <group key={sx} position={[(sx * w * 0.78) / 2, 0, 0]}>
-              <mesh position={[0, seatH + 0.09, -d * 0.04]} castShadow>
-                <boxGeometry args={[0.028, 0.18, 0.032]} />
-                {M('frame')}
-              </mesh>
-              <Slab size={[0.05, 0.028, d * 0.38]} radius={0.014} bevel={0.008} position={[0, seatH + 0.18, -d * 0.04]}>
-                {M('back')}
-              </Slab>
-            </group>
-          ))}
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'teck'
+      return <OfficeChair style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'stool': {
-      // Three splayed legs under a dished oak seat, tied by a stretcher.
-      const r = p('size') / 2
-      const h = p('height')
-      const feet = r * 0.72
-      return (
-        <group>
-          {[0, 1, 2].map(i => {
-            const a = (i / 3) * Math.PI * 2
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * feet * 0.5, h / 2, Math.sin(a) * feet * 0.5]}
-                rotation={[Math.sin(a) * 0.16, 0, -Math.cos(a) * 0.16]}
-                castShadow
-              >
-                <cylinderGeometry args={[0.019, 0.013, h, 16]} />
-                {M('legs')}
-              </mesh>
-            )
-          })}
-          {/* Stretcher ring, low between the legs. */}
-          <mesh position={[0, h * 0.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.52, 0.008, 12, SEG]} />
-            {M('legs')}
-          </mesh>
-          <mesh position={[0, h + 0.018, 0]} castShadow>
-            <cylinderGeometry args={[r, r * 0.94, 0.036, SEG * 2]} />
-            {M('seat')}
-          </mesh>
-          {/* The seat is dished, so the rim stands a little proud of the
-              middle rather than reading as a flat disc. */}
-          <mesh position={[0, h + 0.05, 0]} scale={[r * 0.98, 0.03, r * 0.98]}>
-            <sphereGeometry args={[1, SEG * 2, SEG, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5]} />
-            {M('seat')}
-          </mesh>
-          <mesh position={[0, h + 0.036, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.97, 0.012, 12, SEG * 2]} />
-            {M('seat')}
-          </mesh>
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'lauta'
+      return <Stool style={style} w={p('size')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'bench': {
-      // A slatted oak bench on splayed legs, with a rail tying them.
-      const w = p('width')
-      const d = p('depth')
-      const h = 0.45
-      const slats = Math.max(3, Math.round(d / 0.09))
-      const gap = d / slats
-      return (
-        <group>
-          <Legs
-            width={w}
-            depth={d}
-            height={h}
-            inset={0.1}
-            top={0.024}
-            bottom={0.016}
-            columns={w > 1.6 ? 3 : 2}
-            splay={0.05}
-          >
-            {M('legs')}
-          </Legs>
-          {/* Side rails, under the slats. */}
-          {[-1, 1].map(side => (
-            <mesh key={side} position={[0, h - 0.045, (side * (d - 0.14)) / 2]}>
-              <boxGeometry args={[w - 0.14, 0.03, 0.022]} />
-              {M('legs')}
-            </mesh>
-          ))}
-          {Array.from({ length: slats }).map((_, i) => (
-            <Slab
-              key={i}
-              size={[w, 0.028, gap * 0.78]}
-              radius={0.008}
-              bevel={0.004}
-              position={[0, h, -d / 2 + gap * (i + 0.5)]}
-            >
-              {M('seat')}
-            </Slab>
-          ))}
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'lauta'
+      return <Bench style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'pouf': {
       // A knitted pouf: a barrelled drum with a seam around the middle and
@@ -348,101 +181,16 @@ export default function FurnitureModel({ kind, item }: Props) {
     }
     // Tables
     case 'dining_table': {
-      // After the New Viok: a thin natural oak top on a lacquered steel
-      // understructure, square legs set in from the corners and tied by a
-      // beam right under the top.
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const top = 0.03
-      const leg = 0.04
-      const inset = 0.09
-      const beam = 0.035
-      const frameW = w - inset * 2
-      const frameD = d - inset * 2
-      return (
-        <group>
-          {[-1, 1].flatMap(sx =>
-            [-1, 1].map(sz => (
-              <mesh
-                key={`${sx}:${sz}`}
-                position={[(sx * (frameW - leg)) / 2, (h - top) / 2, (sz * (frameD - leg)) / 2]}
-                castShadow
-              >
-                <boxGeometry args={[leg, h - top, leg]} />
-                {M('frame')}
-              </mesh>
-            )),
-          )}
-          {/* The beam runs right around, just under the top. */}
-          {[-1, 1].map(sz => (
-            <mesh key={`x${sz}`} position={[0, h - top - beam / 2, (sz * (frameD - leg)) / 2]}>
-              <boxGeometry args={[frameW - leg, beam, leg * 0.6]} />
-              {M('frame')}
-            </mesh>
-          ))}
-          {[-1, 1].map(sx => (
-            <mesh key={`z${sx}`} position={[(sx * (frameW - leg)) / 2, h - top - beam / 2, 0]}>
-              <boxGeometry args={[leg * 0.6, beam, frameD - leg]} />
-              {M('frame')}
-            </mesh>
-          ))}
-          <Slab size={[w, top, d]} radius={0.012} bevel={0.006} position={[0, h - top, 0]}>
-            {M('top')}
-          </Slab>
-        </group>
-      )
-    }
-    case 'office_table': {
-      // A work table rather than a writing desk: a plain rectangular top on
-      // two steel T frames tied by a beam, with a cable tray slung under the
-      // back edge. The height goes up far enough to stand at.
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const top = 0.025
-      const post = 0.06
-      const inset = 0.16
-      return (
-        <group>
-          {[-1, 1].map(sx => (
-            <group key={sx} position={[(sx * (w - inset * 2)) / 2, 0, 0]}>
-              {/* The foot, running front to back under the post. */}
-              <Slab size={[0.08, 0.025, d - 0.1]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
-                {M('frame')}
-              </Slab>
-              <mesh position={[0, (h - top) / 2, 0]} castShadow>
-                <boxGeometry args={[post, h - top, post]} />
-                {M('frame')}
-              </mesh>
-              {/* The arm the top sits on. */}
-              <Slab size={[0.09, 0.022, d - 0.16]} radius={0.01} bevel={0.005} position={[0, h - top - 0.022, 0]}>
-                {M('frame')}
-              </Slab>
-            </group>
-          ))}
-          {/* The beam between the two frames, set back under the top. */}
-          <mesh position={[0, h - top - 0.09, -d * 0.16]}>
-            <boxGeometry args={[w - inset * 2 - post, 0.05, 0.05]} />
-            {M('frame')}
-          </mesh>
-          {/* Cable tray along the back, where the leads are gathered. */}
-          <Slab
-            size={[w * 0.45, 0.05, 0.09]}
-            radius={0.012}
-            bevel={0.004}
-            position={[0, h - top - 0.14, -d / 2 + 0.12]}
-          >
-            {M('tray')}
-          </Slab>
-          <Slab size={[w, top, d]} radius={0.01} bevel={0.005} position={[0, h - top, 0]}>
-            {M('top')}
-          </Slab>
-        </group>
-      )
+      // Each style is a real table, laid out again at the size the sliders
+      // give it.
+      const style = decorationVariant(kind, item.variant)?.id ?? 'viok'
+      return <DiningTable style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'desk':
     case 'coffee_table': {
+      if (kind.id === 'desk' && decorationVariant(kind, item.variant)?.id === 'office_table') {
+        return <OfficeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
+      }
       // A plain top on tapered dowel legs, with an apron tying them
       // together. A long table grows a middle pair rather than sagging.
       const w = p('width')
@@ -837,4 +585,45 @@ export default function FurnitureModel({ kind, item }: Props) {
     default:
       return null
   }
+}
+
+// A work table rather than a writing desk: a plain rectangular top on two
+// steel T frames tied by a beam, with a cable tray slung under the back
+// edge. The height goes up far enough to stand at.
+function OfficeTable({ w, d, h, M }: { w: number; d: number; h: number; M: (slot: string) => ReactNode }) {
+  const top = 0.025
+  const post = 0.06
+  const inset = 0.16
+  return (
+    <group>
+      {[-1, 1].map(sx => (
+        <group key={sx} position={[(sx * (w - inset * 2)) / 2, 0, 0]}>
+          {/* The foot, running front to back under the post. */}
+          <Slab size={[0.08, 0.025, d - 0.1]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
+            {M('frame')}
+          </Slab>
+          <mesh position={[0, (h - top) / 2, 0]} castShadow>
+            <boxGeometry args={[post, h - top, post]} />
+            {M('frame')}
+          </mesh>
+          {/* The arm the top sits on. */}
+          <Slab size={[0.09, 0.022, d - 0.16]} radius={0.01} bevel={0.005} position={[0, h - top - 0.022, 0]}>
+            {M('frame')}
+          </Slab>
+        </group>
+      ))}
+      {/* The beam between the two frames, set back under the top. */}
+      <mesh position={[0, h - top - 0.09, -d * 0.16]}>
+        <boxGeometry args={[w - inset * 2 - post, 0.05, 0.05]} />
+        {M('frame')}
+      </mesh>
+      {/* Cable tray along the back, where the leads are gathered. */}
+      <Slab size={[w * 0.45, 0.05, 0.09]} radius={0.012} bevel={0.004} position={[0, h - top - 0.14, -d / 2 + 0.12]}>
+        {M('tray')}
+      </Slab>
+      <Slab size={[w, top, d]} radius={0.01} bevel={0.005} position={[0, h - top, 0]}>
+        {M('top')}
+      </Slab>
+    </group>
+  )
 }

@@ -42,7 +42,7 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
 // Kitchen, laundry and bathroom fittings. References are plain Nordic
 // cabinetry: handleless chalk fronts, oak worktops, matte ceramics.
 export default function ApplianceModel({ kind, item, state }: Props) {
-  const p = (id: string) => paramValue(kind, item.params, id)
+  const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a fitting's colors read as its parts.

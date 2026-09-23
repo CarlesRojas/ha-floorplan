@@ -32,7 +32,7 @@ function Leaf({
 
 // Rugs, plants, art and the soft things that make a room feel lived in.
 export default function DecorModel({ kind, item, state }: Props) {
-  const p = (id: string) => paramValue(kind, item.params, id)
+  const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   // An unbound curtain hangs closed. A device with a position draws it that

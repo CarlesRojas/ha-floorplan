@@ -627,7 +627,7 @@ export default function Canvas({
     const covers = (item: DecorationConfig) => {
       const kind = decorationKind(item.kind)
       if (!kind) return false
-      const [fw, fd] = footprint(kind, item.params)
+      const [fw, fd] = footprint(kind, item.params, item.variant)
       const least = EDITOR_DEVICE_RADIUS_PX / view.scale
       const halfW = Math.max(fw / 2, least)
       const halfD = Math.max(kind.mount === 'wall' ? 0.05 : fd / 2, least)
@@ -1014,7 +1014,7 @@ export default function Canvas({
             // What is selected turns blue, so it reads apart from the rest.
             const color = invalid ? 'var(--error-color)' : isSelected ? EDITOR_SELECTED_COLOR : EDITOR_ACCENT_COLOR
             const angle = -(item.rotation ?? 0)
-            const [fw, fd] = footprint(kind, item.params)
+            const [fw, fd] = footprint(kind, item.params, item.variant)
             const r = EDITOR_DEVICE_RADIUS_PX
             // The footprint at its true size, at every zoom. It used to be
             // kept at least as big as the icon on it, so zoomed out far enough

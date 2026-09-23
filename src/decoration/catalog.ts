@@ -2,7 +2,6 @@ import type { Signal } from '#/signals.ts'
 import {
   CEILING_HEIGHT_M,
   LIGHT_BASE_COLOR,
-  LIGHT_CORD_COLOR,
   LIGHT_SHADE_COLOR,
   SCANDI,
   SCREEN_OFF_COLOR,
@@ -32,6 +31,10 @@ export type DecorationVariant = {
   label: string
   colors?: Record<string, string>
   materials?: Record<string, string>
+  // Its own defaults for some of the kind's parameters. A style drawn after
+  // a real piece starts at that piece's real size, and the slider still
+  // takes it anywhere from there.
+  params?: Record<string, number>
 }
 
 export type DecorationKind = {
@@ -164,6 +167,118 @@ const kind = (
   variants?: DecorationVariant[],
 ): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses, variants })
 
+// The pendant's styles are real lamps, so they wear their real finishes:
+// natural wood, opal glass, white ceramic, and black canopies and cords.
+const PENDANT_BLACK_COLOR = '#232426'
+const PENDANT_OPAL_COLOR = '#f6f4ef'
+const PENDANT_CERAMIC_COLOR = '#f8f7f4'
+const PENDANT_STEEL_COLOR = '#b4b8bb'
+
+// The first style, which is also the kind's own slots.
+const PENDANT_NAGOYA: DecorationVariant = {
+  id: 'nagoya',
+  label: 'Slatted Lantern',
+  params: { size: 0.42 },
+  colors: { slats: '#e2c89c', threads: '#f2ede4', diffuser: LIGHT_SHADE_COLOR, cord: PENDANT_BLACK_COLOR },
+  materials: { slats: 'wood', threads: 'fabric', diffuser: 'matte', cord: 'fabric' },
+}
+
+// The table lamp's first style, which is also the kind's own slots, named as
+// the lamp before it had styles, so a saved globe or basket color still
+// lands on the Cestita.
+const TABLE_CESTITA: DecorationVariant = {
+  id: 'cestita',
+  label: 'Opal Globe Carrier',
+  params: { size: 0.22, height: 0.36 },
+  colors: { globe: PENDANT_OPAL_COLOR, basket: '#b97a4a' },
+  materials: { globe: 'matte', basket: 'wood' },
+}
+
+// The floor lamp's first style, which keeps the kind's old slots, so a saved
+// shade or stand color still lands on the TMM.
+const FLOOR_TMM: DecorationVariant = {
+  id: 'tmm',
+  label: 'Beech Tripod Drum',
+  // 60 by 50 cm across, from the end of a leg to the far side of the shade,
+  // and 166 cm tall.
+  params: { size: 0.6, depth: 0.5, height: 1.66 },
+  colors: { shade: '#ecdfc0', stand: '#dfbb8f', fittings: PENDANT_BLACK_COLOR, cable: PENDANT_BLACK_COLOR },
+  materials: { shade: 'fabric', stand: 'wood', fittings: 'metal', cable: 'fabric' },
+}
+
+// The dining table's first style, which keeps the kind's old slots and the
+// oak on steel it was drawn as before it had styles.
+const DINING_VIOK: DecorationVariant = {
+  id: 'viok',
+  label: 'Oak on Steel Angles',
+  // 160 by 90 cm, 76 cm tall.
+  params: { width: 1.6, depth: 0.9, height: 0.76 },
+  colors: { top: '#dbbf98', frame: '#5a5b5d' },
+  materials: { top: 'wood', frame: 'metal' },
+}
+
+// The dining chair's first style, which keeps the kind's old shell and
+// legs slots, so a saved color still lands on it.
+const CHAIR_MOLDED: DecorationVariant = {
+  id: 'molded',
+  label: 'Molded Shell',
+  // 47 by 55 cm, 83 cm tall.
+  params: { width: 0.47, depth: 0.55, height: 0.83 },
+  colors: { shell: '#eeebe4', legs: '#d9b384', wires: '#c9ccd0' },
+  materials: { shell: 'matte', legs: 'wood', wires: 'metal' },
+}
+
+// The office chair's first style, which keeps the kind's old seat, back,
+// frame and base slots, since the old model was a task chair like it.
+const OFFICE_TECK: DecorationVariant = {
+  id: 'teck',
+  label: 'Mesh Task Chair',
+  // 66 by 66 cm, 99 cm tall, its seat 49 cm up.
+  params: { width: 0.66, depth: 0.66, height: 0.49 },
+  colors: { seat: '#252527', back: '#1c1c1e', frame: '#202022', base: '#c9ccd0', castors: '#1b1b1c' },
+  materials: { seat: 'fabric', back: 'fabric', frame: 'matte', base: 'metal', castors: 'matte' },
+}
+
+// The desk's first style, the kind's old model with its slots.
+const DESK_WRITING: DecorationVariant = {
+  id: 'writing',
+  label: 'Writing desk',
+  params: { width: 1.4, depth: 0.7, height: 0.75 },
+  colors: { top: SCANDI.oak, legs: SCANDI.oak, drawer: SCANDI.offWhite, handle: SCANDI.slate },
+  materials: { top: 'wood', legs: 'wood', drawer: 'matte', handle: 'metal' },
+}
+
+// The bench's first style, which keeps the kind's old legs and seat slots.
+const BENCH_LAUTA: DecorationVariant = {
+  id: 'lauta',
+  label: 'Cord Seat Oak Bench',
+  // 130 by 42 cm, its seat 44 cm up.
+  params: { width: 1.3, depth: 0.42, height: 0.44 },
+  colors: { legs: '#e0b584', seat: '#dcc3a0' },
+  materials: { legs: 'wood', seat: 'fabric' },
+}
+
+// The stool's first style, which keeps the kind's old legs and seat slots.
+const STOOL_LAUTA: DecorationVariant = {
+  id: 'lauta',
+  label: 'Cord Seat Oak',
+  // 45 by 35 cm, its seat 68 cm up.
+  params: { size: 0.45, depth: 0.35, height: 0.68 },
+  colors: { legs: '#e0b584', seat: '#dcc3a0' },
+  materials: { legs: 'wood', seat: 'fabric' },
+}
+
+// The wall lamp's first style, which keeps the kind's old slots, so a saved
+// shade or channel color still lands on the TMM.
+const WALL_TMM: DecorationVariant = {
+  id: 'tmm',
+  label: 'Parchment Wall Drum',
+  // A Ø20 shade 23 cm out from the wall, on a channel 20 cm tall.
+  params: { size: 0.2, depth: 0.23, tall: 0.2 },
+  colors: { shade: '#ecdfc0', channel: '#dfbb8f', fittings: PENDANT_BLACK_COLOR },
+  materials: { shade: 'fabric', channel: 'wood', fittings: 'metal' },
+}
+
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
   kind(
@@ -181,17 +296,51 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'light',
     'Pendant',
     'ceiling',
-    [size(0.4, 0.15, 1), p('cord', 'Cord length', 0.8, 0.2, 2)],
-    { slats: LIGHT_BASE_COLOR, rings: SCANDI.slate, diffuser: LIGHT_SHADE_COLOR, cord: LIGHT_CORD_COLOR },
-    { slats: 'wood', rings: 'metal', diffuser: 'matte', cord: 'fabric' },
+    // Size is the shade's diameter. Each style starts at its lamp's own.
+    [size(0.42, 0.06, 1), p('cord', 'Cord length', 0.8, 0.2, 2)],
+    PENDANT_NAGOYA.colors ?? {},
+    PENDANT_NAGOYA.materials ?? {},
     LIGHT_SIGNALS,
+    // Four Santa & Cole lamps, each drawn from its dimensional drawing.
     [
-      { id: 'slatted', label: 'Slatted drum' },
+      PENDANT_NAGOYA,
       {
-        id: 'globe',
-        label: 'Globe in a cage',
-        colors: { globe: LIGHT_SHADE_COLOR, cage: LIGHT_BASE_COLOR, cord: LIGHT_CORD_COLOR },
-        materials: { globe: 'matte', cage: 'wood', cord: 'fabric' },
+        id: 'globo_cesta',
+        label: 'Wicker Globe',
+        params: { size: 0.27 },
+        colors: {
+          globe: PENDANT_OPAL_COLOR,
+          cap: PENDANT_BLACK_COLOR,
+          canopy: PENDANT_BLACK_COLOR,
+          cord: PENDANT_BLACK_COLOR,
+          wires: PENDANT_STEEL_COLOR,
+        },
+        materials: { globe: 'matte', cap: 'metal', canopy: 'metal', cord: 'fabric', wires: 'metal' },
+      },
+      {
+        id: 'headhat_bowl',
+        label: 'Ceramic Bowl',
+        params: { size: 0.2 },
+        colors: {
+          shade: PENDANT_CERAMIC_COLOR,
+          inside: PENDANT_CERAMIC_COLOR,
+          capsule: PENDANT_BLACK_COLOR,
+          canopy: PENDANT_BLACK_COLOR,
+          cord: PENDANT_BLACK_COLOR,
+        },
+        materials: { shade: 'ceramic', inside: 'matte', capsule: 'metal', canopy: 'metal', cord: 'fabric' },
+      },
+      {
+        id: 'cirio_simple',
+        label: 'Porcelain Candle',
+        params: { size: 0.1 },
+        colors: {
+          shade: PENDANT_CERAMIC_COLOR,
+          capsule: PENDANT_BLACK_COLOR,
+          canopy: PENDANT_BLACK_COLOR,
+          cord: PENDANT_BLACK_COLOR,
+        },
+        materials: { shade: 'ceramic', capsule: 'metal', canopy: 'metal', cord: 'fabric' },
       },
     ],
   ),
@@ -200,30 +349,112 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'light',
     'Floor lamp',
     'floor',
-    [size(0.4, 0.2, 0.8), height(1.5, 0.8, 2.2)],
-    { shade: LIGHT_SHADE_COLOR, stand: LIGHT_BASE_COLOR },
-    { shade: 'fabric', stand: 'wood' },
+    // Size and depth are the lamp's footprint and height its height. Each
+    // style starts at its lamp's own, to the centimeter.
+    [
+      p('size', 'Width', 0.6, 0.15, 1.0, 0.01),
+      p('depth', 'Depth', 0.5, 0.15, 1.0, 0.01),
+      p('height', 'Height', 1.66, 0.8, 2.2, 0.01),
+    ],
+    FLOOR_TMM.colors ?? {},
+    FLOOR_TMM.materials ?? {},
     LIGHT_SIGNALS,
+    // Three Santa & Cole lamps, each drawn from its dimensional drawing.
+    [
+      FLOOR_TMM,
+      {
+        id: 'fad',
+        label: 'Adjustable Tripod',
+        // Ø49 across the foot and 120 cm at its lowest.
+        params: { size: 0.49, depth: 0.49, height: 1.2 },
+        colors: { shade: '#f3efe6', stand: '#c08f5e', rod: PENDANT_STEEL_COLOR },
+        materials: { shade: 'fabric', stand: 'wood', rod: 'metal' },
+      },
+      {
+        id: 'lamina',
+        label: 'Tall Folded Sheet',
+        // Ø21 across the base and 187.5 cm to the top of the rod.
+        params: { size: 0.21, depth: 0.21, height: 1.88 },
+        colors: { shade: '#f5f4f0', back: '#d9dbdc', structure: PENDANT_BLACK_COLOR, diffuser: PENDANT_OPAL_COLOR },
+        materials: { shade: 'matte', back: 'metal', structure: 'metal', diffuser: 'matte' },
+      },
+    ],
   ),
   kind(
     'light_table',
     'light',
     'Table lamp',
     'floor',
-    [size(0.3, 0.15, 0.6), height(0.45, 0.2, 0.9), lift(0.75)],
-    { globe: LIGHT_SHADE_COLOR, basket: LIGHT_BASE_COLOR },
-    { globe: 'ceramic', basket: 'wood' },
+    // Size is the lamp's width and height its height. Each style starts at
+    // its lamp's own.
+    [size(0.22, 0.08, 0.6), height(0.36, 0.15, 0.9), lift(0.75)],
+    TABLE_CESTITA.colors ?? {},
+    TABLE_CESTITA.materials ?? {},
     LIGHT_SIGNALS,
+    // Four Santa & Cole lamps, each drawn from its dimensional drawing.
+    [
+      TABLE_CESTITA,
+      {
+        id: 'sylvestrina',
+        label: 'Black Glass Candlestick',
+        // Ø12.7 by 35.5 cm, to the centimeter.
+        params: { size: 0.13, height: 0.36 },
+        colors: { base: PENDANT_BLACK_COLOR, glass: '#eef3f4', diffuser: PENDANT_OPAL_COLOR },
+        materials: { base: 'ceramic', glass: 'matte', diffuser: 'matte' },
+      },
+      {
+        id: 'maija',
+        label: 'Ringed Tripod',
+        params: { size: 0.21, height: 0.33 },
+        colors: { shade: '#f3f2ee', feet: '#b89a5e', diffuser: PENDANT_OPAL_COLOR },
+        materials: { shade: 'matte', feet: 'metal', diffuser: 'matte' },
+      },
+      {
+        id: 'basica_minima',
+        label: 'Parchment Drum',
+        params: { size: 0.12, height: 0.3 },
+        colors: { shade: '#e6d6b4', column: '#e8d3ad', base: '#4b3a2a', stitching: '#5a3b25' },
+        materials: { shade: 'fabric', column: 'wood', base: 'metal', stitching: 'fabric' },
+      },
+    ],
   ),
   kind(
     'light_wall',
     'light',
     'Wall light',
     'wall',
-    [size(0.25, 0.1, 0.6), height(1.8, 0.5, 2.5)],
-    { shade: LIGHT_SHADE_COLOR, channel: LIGHT_BASE_COLOR },
-    { shade: 'fabric', channel: 'wood' },
+    // Size, depth and lamp height are the lamp's own, out from the wall, and
+    // height is how high its middle hangs. Each style starts at its lamp's
+    // own size, to the centimeter.
+    [
+      p('size', 'Width', 0.2, 0.08, 0.6, 0.01),
+      p('depth', 'Depth', 0.23, 0.08, 0.5, 0.01),
+      p('tall', 'Lamp height', 0.2, 0.08, 0.6, 0.01),
+      height(1.8, 0.5, 2.5),
+    ],
+    WALL_TMM.colors ?? {},
+    WALL_TMM.materials ?? {},
     LIGHT_SIGNALS,
+    // Three Santa & Cole lamps, each drawn from its dimensional drawing.
+    [
+      WALL_TMM,
+      {
+        id: 'singular',
+        label: 'Linen Wall Sconce',
+        // 18 cm wide, 15 cm out and 30 cm tall.
+        params: { size: 0.18, depth: 0.15, tall: 0.3 },
+        colors: { shade: '#f4f1ea', structure: '#c9ccce' },
+        materials: { shade: 'fabric', structure: 'metal' },
+      },
+      {
+        id: 'wally',
+        label: 'Black Arm Opal Globe',
+        // A Ø18 globe 22 cm out, on a plate 24 cm tall.
+        params: { size: 0.18, depth: 0.22, tall: 0.24 },
+        colors: { globe: PENDANT_OPAL_COLOR, structure: PENDANT_BLACK_COLOR },
+        materials: { globe: 'matte', structure: 'matte' },
+      },
+    ],
   ),
   kind(
     'light_strip',
@@ -280,36 +511,130 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Dining chair',
     'floor',
-    [width(0.46, 0.35, 0.6), depth(0.48, 0.35, 0.6)],
-    { shell: SCANDI.slate, legs: SCANDI.charcoal },
-    { shell: 'fabric', legs: 'metal' },
+    // Each style starts at its chair's own size, to the centimeter, and the
+    // sliders scale the chair from there.
+    [
+      p('width', 'Width', 0.47, 0.35, 0.7, 0.01),
+      p('depth', 'Depth', 0.55, 0.35, 0.7, 0.01),
+      p('height', 'Height', 0.83, 0.6, 1.1, 0.01),
+    ],
+    CHAIR_MOLDED.colors ?? {},
+    CHAIR_MOLDED.materials ?? {},
+    undefined,
+    // A molded shell chair after the Eames DSW, and three Pilma chairs, from
+    // their stated sizes and product photos.
+    [
+      CHAIR_MOLDED,
+      {
+        id: 'oia',
+        label: 'Leather Wrapped',
+        // 48 by 51 cm, 85 cm tall.
+        params: { width: 0.48, depth: 0.51, height: 0.85 },
+        colors: { shell: '#45403d', legs: '#45403d' },
+        materials: { shell: 'matte', legs: 'matte' },
+      },
+      {
+        id: 'sura',
+        label: 'Cord Seat Teak',
+        // 46 by 55 cm, 80 cm tall.
+        params: { width: 0.46, depth: 0.55, height: 0.8 },
+        colors: { seat: '#c9a57a', frame: '#b98a5c' },
+        materials: { seat: 'fabric', frame: 'wood' },
+      },
+      {
+        id: 'varma',
+        label: 'Padded Walnut',
+        // 48 by 51 cm, 80 cm tall.
+        params: { width: 0.48, depth: 0.51, height: 0.8 },
+        colors: { seat: '#26272a', frame: '#5b3e30' },
+        materials: { seat: 'matte', frame: 'wood' },
+      },
+    ],
   ),
   kind(
     'office_chair',
     'seating',
     'Office chair',
     'floor',
-    [width(0.64, 0.5, 0.8), depth(0.62, 0.5, 0.8), height(0.48, 0.38, 0.62)],
-    { seat: SCANDI.slate, back: SCANDI.charcoal, frame: SCANDI.charcoal, base: SCANDI.slate },
-    { seat: 'fabric', back: 'fabric', frame: 'metal', base: 'metal' },
+    // Each style starts at its chair's own size, to the centimeter. Width
+    // and depth scale the chair, and the seat height rides the seat up or
+    // down on its column as the gas lift does.
+    [
+      p('width', 'Width', 0.66, 0.4, 0.85, 0.01),
+      p('depth', 'Depth', 0.66, 0.4, 0.85, 0.01),
+      p('height', 'Seat height', 0.49, 0.38, 0.62, 0.01),
+    ],
+    OFFICE_TECK.colors ?? {},
+    OFFICE_TECK.materials ?? {},
+    undefined,
+    // One style, a Pilma desk chair, from its stated size and product
+    // photos. A saved style that is gone falls back to it.
+    [OFFICE_TECK],
   ),
   kind(
     'stool',
     'seating',
     'Stool',
     'floor',
-    [size(0.34, 0.25, 0.5), height(0.45, 0.3, 0.8)],
-    { legs: SCANDI.oak, seat: SCANDI.oak },
-    { legs: 'wood', seat: 'wood' },
+    // Size is the width, so a saved size still sets it, and height is the
+    // seat's, which a back scales with. Each style starts at its stool's
+    // own, to the centimeter.
+    [
+      p('size', 'Width', 0.45, 0.25, 0.7, 0.01),
+      p('depth', 'Depth', 0.35, 0.25, 0.7, 0.01),
+      p('height', 'Seat height', 0.68, 0.3, 0.9, 0.01),
+    ],
+    STOOL_LAUTA.colors ?? {},
+    STOOL_LAUTA.materials ?? {},
+    undefined,
+    // Three Pilma stools, from their stated sizes and product photos.
+    [
+      STOOL_LAUTA,
+      {
+        id: 'dean',
+        label: 'Rattan Back Teak',
+        // 47 by 51 cm, its seat 65 cm up and its back 90.
+        params: { size: 0.47, depth: 0.51, height: 0.65 },
+        colors: { legs: '#8b5a36', seat: '#c4a57c' },
+        materials: { legs: 'wood', seat: 'fabric' },
+      },
+      {
+        id: 'keula',
+        label: 'Horseshoe Back Oak',
+        // 45 by 54 cm, its seat 65 cm up.
+        params: { size: 0.45, depth: 0.54, height: 0.65 },
+        colors: { legs: '#dfb884', seat: '#7d6a62' },
+        materials: { legs: 'wood', seat: 'matte' },
+      },
+    ],
   ),
   kind(
     'bench',
     'seating',
     'Bench',
     'floor',
-    [width(1.3, 0.8, 2.2), depth(0.4, 0.3, 0.6)],
-    { legs: SCANDI.oak, seat: SCANDI.oak },
-    { legs: 'wood', seat: 'wood' },
+    // Height is the seat's, which anything set on the bench stands on. Each
+    // style starts at its bench's own, to the centimeter.
+    [
+      p('width', 'Width', 1.3, 0.6, 2.4, 0.01),
+      p('depth', 'Depth', 0.42, 0.3, 0.7, 0.01),
+      p('height', 'Height', 0.44, 0.35, 0.55, 0.01),
+    ],
+    BENCH_LAUTA.colors ?? {},
+    BENCH_LAUTA.materials ?? {},
+    undefined,
+    // Two Pilma benches, from their stated sizes and product photos.
+    [
+      BENCH_LAUTA,
+      {
+        id: 'angle',
+        label: 'Teak with Drawers',
+        // 170 by 49 cm, 45 cm tall.
+        params: { width: 1.7, depth: 0.49, height: 0.45 },
+        colors: { frame: '#a57a4e', drawers: '#5e5b56' },
+        materials: { frame: 'wood', drawers: 'matte' },
+      },
+    ],
   ),
   kind(
     'pouf',
@@ -327,9 +652,36 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'table',
     'Dining table',
     'floor',
-    [width(1.6, 0.9, 3), depth(0.9, 0.7, 1.2), height(0.75, 0.6, 0.85)],
-    { top: SCANDI.oak, frame: SCANDI.charcoal },
-    { top: 'wood', frame: 'metal' },
+    // Width is the table's length. Each style starts at its table's own
+    // size, to the centimeter.
+    [
+      p('width', 'Width', 1.6, 0.9, 3, 0.01),
+      p('depth', 'Depth', 0.9, 0.7, 1.2, 0.01),
+      p('height', 'Height', 0.76, 0.6, 0.85, 0.01),
+    ],
+    DINING_VIOK.colors ?? {},
+    DINING_VIOK.materials ?? {},
+    undefined,
+    // Three Pilma tables, from their stated sizes and product photos.
+    [
+      DINING_VIOK,
+      {
+        id: 'deva',
+        label: 'Porcelain in Teak',
+        // 180 by 100 cm, 77 cm tall.
+        params: { width: 1.8, depth: 1, height: 0.77 },
+        colors: { top: '#ddd0ba', frame: '#a9713f' },
+        materials: { top: 'ceramic', frame: 'wood' },
+      },
+      {
+        id: 'spider',
+        label: 'Crossed Teak Trestles',
+        // 200 by 100 cm, 75 cm tall.
+        params: { width: 2, depth: 1, height: 0.75 },
+        colors: { top: '#9b7e5f', frame: '#87694b' },
+        materials: { top: 'wood', frame: 'wood' },
+      },
+    ],
   ),
   kind(
     'coffee_table',
@@ -354,18 +706,24 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'table',
     'Desk',
     'floor',
-    [width(1.4, 0.9, 2.2), depth(0.68, 0.5, 0.9), height(0.74, 0.65, 0.85)],
-    { top: SCANDI.oak, legs: SCANDI.oak, drawer: SCANDI.offWhite, handle: SCANDI.slate },
-    { top: 'wood', legs: 'wood', drawer: 'matte', handle: 'metal' },
-  ),
-  kind(
-    'office_table',
-    'table',
-    'Office table',
-    'floor',
-    [width(1.6, 1.1, 2.4), depth(0.8, 0.6, 1), height(0.74, 0.65, 1.2)],
-    { top: SCANDI.oak, frame: SCANDI.charcoal, tray: SCANDI.slate },
-    { top: 'wood', frame: 'metal', tray: 'metal' },
+    // The ranges cover both styles: the office table goes up far enough to
+    // stand at.
+    [width(1.4, 0.9, 2.4), depth(0.7, 0.5, 1), height(0.75, 0.65, 1.2)],
+    DESK_WRITING.colors ?? {},
+    DESK_WRITING.materials ?? {},
+    undefined,
+    // The office table was a kind of its own, and a saved one is read as a
+    // desk in that style.
+    [
+      DESK_WRITING,
+      {
+        id: 'office_table',
+        label: 'Office table',
+        params: { width: 1.6, depth: 0.8, height: 0.75 },
+        colors: { top: SCANDI.oak, frame: SCANDI.charcoal, tray: SCANDI.slate },
+        materials: { top: 'wood', frame: 'metal', tray: 'metal' },
+      },
+    ],
   ),
   kind(
     'nightstand',
@@ -1110,17 +1468,39 @@ export function snapParam(spec: DecorationParam, value: number) {
   return round2(spec.min + stops * spec.step)
 }
 
-export function paramValue(kind: DecorationKind, params: Record<string, number> | undefined, id: string) {
+export function paramValue(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  id: string,
+  variant?: string,
+) {
   const spec = kind.params.find(p => p.id === id)
   const saved = params?.[id]
   if (!spec) return saved ?? 0
-  return saved === undefined ? spec.default : snapParam(spec, saved)
+  if (saved !== undefined) return snapParam(spec, saved)
+  // Nothing saved: the style's own default, then the kind's.
+  const own = decorationVariant(kind, variant)?.params?.[id]
+  return own === undefined ? spec.default : snapParam(spec, own)
 }
 
 // The style an item is drawn in: the one it names, or the kind's first.
 export function decorationVariant(kind: DecorationKind, variant: string | undefined) {
   if (!kind.variants || kind.variants.length === 0) return undefined
   return kind.variants.find(v => v.id === variant) ?? kind.variants[0]
+}
+
+// An item's saved parameters once it changes style. Whatever the new style
+// has a real default for is dropped, so a pendant switched to another lamp
+// takes that lamp's size rather than keeping the last one's.
+export function withoutStyleDefaults(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  variant: string,
+) {
+  const own = decorationVariant(kind, variant)?.params
+  if (!params || !own) return params
+  const kept = Object.fromEntries(Object.entries(params).filter(([id]) => !(id in own)))
+  return Object.keys(kept).length > 0 ? kept : undefined
 }
 
 // The slots a style paints, which stand in for the kind's own when it has
@@ -1156,19 +1536,23 @@ export function screenSize(inches: number): [number, number] {
   return [(diagonal * 16) / Math.hypot(16, 9), (diagonal * 9) / Math.hypot(16, 9)]
 }
 
-export function footprint(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
+export function footprint(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  variant?: string,
+): [number, number] {
   // A strip lies along its length, which is the x of its model, so the plan
   // has to read the same way round or the two disagree by a right angle.
   if (kind.family === 'light' && kind.params.some(x => x.id === 'length')) {
-    return [paramValue(kind, params, 'length'), 0.08]
+    return [paramValue(kind, params, 'length', variant), 0.08]
   }
   const screen = kind.params.some(x => x.id === 'inches')
   const w = screen
-    ? screenSize(paramValue(kind, params, 'inches'))[0]
-    : paramValue(kind, params, 'width') || paramValue(kind, params, 'size') || 0.3
+    ? screenSize(paramValue(kind, params, 'inches', variant))[0]
+    : paramValue(kind, params, 'width', variant) || paramValue(kind, params, 'size', variant) || 0.3
   const d =
-    paramValue(kind, params, 'depth') ||
-    paramValue(kind, params, 'length') ||
+    paramValue(kind, params, 'depth', variant) ||
+    paramValue(kind, params, 'length', variant) ||
     (kind.params.some(p => p.id === 'size') ? w : 0.3)
   return [w, d]
 }
@@ -1204,7 +1588,6 @@ const SURFACE_TOPS: Record<string, string | number> = {
   coffee_table: 'height',
   side_table: 'height',
   desk: 'height',
-  office_table: 'height',
   nightstand: 'height',
   sideboard: 'height',
   dresser: 'height',
@@ -1216,7 +1599,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
   washing_machine: 'height',
   dryer: 'height',
   half_wall: 'height',
-  bench: 0.42,
+  bench: 'height',
   pouf: 'height',
 }
 
@@ -1234,13 +1617,17 @@ export const isBuiltIn = (kind: DecorationKind) => kind.id in BUILT_IN
 export const builtInDepth = (kind: DecorationKind) => BUILT_IN[kind.id] ?? 0
 
 // Height of an item's top surface above its own base.
-export function surfaceTop(kind: DecorationKind, params: Record<string, number> | undefined) {
+export function surfaceTop(kind: DecorationKind, params: Record<string, number> | undefined, variant?: string) {
   const top = SURFACE_TOPS[kind.id]
-  return typeof top === 'number' ? top : paramValue(kind, params, top)
+  return typeof top === 'number' ? top : paramValue(kind, params, top, variant)
 }
 
 // Usable area of a top, inset so things do not hang over the edge.
-export function surfaceRect(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
-  const [w, d] = footprint(kind, params)
+export function surfaceRect(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  variant?: string,
+): [number, number] {
+  const [w, d] = footprint(kind, params, variant)
   return [Math.max(w - 0.1, w * 0.4), Math.max(d - 0.1, d * 0.4)]
 }
