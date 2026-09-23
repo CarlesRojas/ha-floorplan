@@ -991,78 +991,6 @@ export default function Canvas({
           )
         })}
 
-        {selectedRoom && !selectedDecoration && tool === 'select' && (
-          <>
-            {selectedRoom.points.map((p, i) => {
-              const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
-              const [ax, ay] = toScreen(view, p)
-              const [bx, by] = toScreen(view, q)
-              return (
-                <line
-                  key={`e${i}`}
-                  x1={ax}
-                  y1={ay}
-                  x2={bx}
-                  y2={by}
-                  stroke="transparent"
-                  strokeWidth={EDGE_HIT_PX}
-                  style={{ cursor: edgeCursor(p, q) }}
-                  onPointerDown={e => onEdgeDown(e, selectedRoom, i)}
-                  onContextMenu={e =>
-                    openMenu(e, { kind: 'edge', roomId: selectedRoom.id, index: i, point: planPoint(e) })
-                  }
-                />
-              )
-            })}
-            {showLengths &&
-              selectedRoom.points.map((p, i) => {
-                const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
-                const length = Math.hypot(q[0] - p[0], q[1] - p[1])
-                const [mx, my] = toScreen(view, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2])
-                const label = `${length.toFixed(2)} m`
-                const w = label.length * 7 + 12
-                return (
-                  <g key={`l${i}`} className="pointer-events-none">
-                    <rect
-                      x={mx - w / 2}
-                      y={my - 10}
-                      width={w}
-                      height={20}
-                      rx={10}
-                      fill="var(--card-background-color)"
-                      stroke="var(--primary-color)"
-                    />
-                    <text
-                      x={mx}
-                      y={my + 4}
-                      textAnchor="middle"
-                      className="font-montserrat fill-(--primary-text-color) text-[11px] font-semibold"
-                    >
-                      {label}
-                    </text>
-                  </g>
-                )
-              })}
-            {selectedRoom.points.map((p, i) => {
-              const [sx, sy] = toScreen(view, p)
-              return (
-                <circle
-                  key={`v${i}`}
-                  cx={sx}
-                  cy={sy}
-                  r={HANDLE}
-                  fill={selection.vertex === i ? 'var(--primary-color)' : 'var(--card-background-color)'}
-                  stroke="var(--primary-color)"
-                  strokeWidth={2}
-                  className="cursor-move"
-                  onPointerDown={e => onVertexDown(e, selectedRoom, i)}
-                  onContextMenu={e => openMenu(e, { kind: 'vertex', roomId: selectedRoom.id, index: i })}
-                />
-              )
-            })}
-          </>
-        )}
-
         {[...decorations]
           .sort((a, b) => {
             // Whatever is selected goes last: on top, and first to take a
@@ -1200,6 +1128,83 @@ export default function Canvas({
                   stroke="var(--primary-color)"
                   strokeWidth={2}
                   className="pointer-events-none"
+                />
+              )
+            })}
+          </>
+        )}
+
+        {/* The selected room's corners and edges are drawn after the
+            furniture, not before it. SVG hands a press to whatever is painted
+            on top, so a piece standing over a corner used to take it, and a
+            corner under a sofa could not be grabbed at all. With the room
+            selected, reshaping it is what is being done. */}
+        {selectedRoom && !selectedDecoration && tool === 'select' && (
+          <>
+            {selectedRoom.points.map((p, i) => {
+              const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
+              const [ax, ay] = toScreen(view, p)
+              const [bx, by] = toScreen(view, q)
+              return (
+                <line
+                  key={`e${i}`}
+                  x1={ax}
+                  y1={ay}
+                  x2={bx}
+                  y2={by}
+                  stroke="transparent"
+                  strokeWidth={EDGE_HIT_PX}
+                  style={{ cursor: edgeCursor(p, q) }}
+                  onPointerDown={e => onEdgeDown(e, selectedRoom, i)}
+                  onContextMenu={e =>
+                    openMenu(e, { kind: 'edge', roomId: selectedRoom.id, index: i, point: planPoint(e) })
+                  }
+                />
+              )
+            })}
+            {showLengths &&
+              selectedRoom.points.map((p, i) => {
+                const q = selectedRoom.points[(i + 1) % selectedRoom.points.length]
+                const length = Math.hypot(q[0] - p[0], q[1] - p[1])
+                const [mx, my] = toScreen(view, [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2])
+                const label = `${length.toFixed(2)} m`
+                const w = label.length * 7 + 12
+                return (
+                  <g key={`l${i}`} className="pointer-events-none">
+                    <rect
+                      x={mx - w / 2}
+                      y={my - 10}
+                      width={w}
+                      height={20}
+                      rx={10}
+                      fill="var(--card-background-color)"
+                      stroke="var(--primary-color)"
+                    />
+                    <text
+                      x={mx}
+                      y={my + 4}
+                      textAnchor="middle"
+                      className="font-montserrat fill-(--primary-text-color) text-[11px] font-semibold"
+                    >
+                      {label}
+                    </text>
+                  </g>
+                )
+              })}
+            {selectedRoom.points.map((p, i) => {
+              const [sx, sy] = toScreen(view, p)
+              return (
+                <circle
+                  key={`v${i}`}
+                  cx={sx}
+                  cy={sy}
+                  r={HANDLE}
+                  fill={selection.vertex === i ? 'var(--primary-color)' : 'var(--card-background-color)'}
+                  stroke="var(--primary-color)"
+                  strokeWidth={2}
+                  className="cursor-move"
+                  onPointerDown={e => onVertexDown(e, selectedRoom, i)}
+                  onContextMenu={e => openMenu(e, { kind: 'vertex', roomId: selectedRoom.id, index: i })}
                 />
               )
             })}
