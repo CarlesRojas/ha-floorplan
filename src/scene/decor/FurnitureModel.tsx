@@ -136,7 +136,7 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'dining_chair': {
-      const style = decorationVariant(kind, item.variant)?.id ?? 'aix'
+      const style = decorationVariant(kind, item.variant)?.id ?? 'molded'
       return <DiningChair style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'office_chair': {
