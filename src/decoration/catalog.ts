@@ -183,6 +183,17 @@ const PENDANT_NAGOYA: DecorationVariant = {
   materials: { slats: 'wood', threads: 'fabric', diffuser: 'matte', cord: 'fabric' },
 }
 
+// The table lamp's first style, which is also the kind's own slots, named as
+// the lamp before it had styles, so a saved globe or basket color still
+// lands on the Cestita.
+const TABLE_CESTITA: DecorationVariant = {
+  id: 'cestita',
+  label: 'Cestita',
+  params: { size: 0.22, height: 0.36 },
+  colors: { globe: PENDANT_OPAL_COLOR, basket: '#b97a4a' },
+  materials: { globe: 'matte', basket: 'wood' },
+}
+
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
   kind(
@@ -263,10 +274,38 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'light',
     'Table lamp',
     'floor',
-    [size(0.3, 0.15, 0.6), height(0.45, 0.2, 0.9), lift(0.75)],
-    { globe: LIGHT_SHADE_COLOR, basket: LIGHT_BASE_COLOR },
-    { globe: 'ceramic', basket: 'wood' },
+    // Size is the lamp's width and height its height. Each style starts at
+    // its lamp's own.
+    [size(0.22, 0.08, 0.6), height(0.36, 0.15, 0.9), lift(0.75)],
+    TABLE_CESTITA.colors ?? {},
+    TABLE_CESTITA.materials ?? {},
     LIGHT_SIGNALS,
+    // Four Santa & Cole lamps, each drawn from its dimensional drawing.
+    [
+      TABLE_CESTITA,
+      {
+        id: 'sylvestrina',
+        label: 'Sylvestrina',
+        // Ø12.7 by 35.5 cm, to the centimeter.
+        params: { size: 0.13, height: 0.36 },
+        colors: { base: PENDANT_BLACK_COLOR, glass: '#eef3f4', diffuser: PENDANT_OPAL_COLOR },
+        materials: { base: 'ceramic', glass: 'matte', diffuser: 'matte' },
+      },
+      {
+        id: 'maija',
+        label: 'Maija 15',
+        params: { size: 0.21, height: 0.33 },
+        colors: { shade: '#f3f2ee', feet: '#b89a5e', diffuser: PENDANT_OPAL_COLOR },
+        materials: { shade: 'matte', feet: 'metal', diffuser: 'matte' },
+      },
+      {
+        id: 'basica_minima',
+        label: 'Básica Mínima',
+        params: { size: 0.12, height: 0.3 },
+        colors: { shade: '#e6d6b4', column: '#e8d3ad', base: '#4b3a2a', stitching: '#5a3b25' },
+        materials: { shade: 'fabric', column: 'wood', base: 'metal', stitching: 'fabric' },
+      },
+    ],
   ),
   kind(
     'light_wall',

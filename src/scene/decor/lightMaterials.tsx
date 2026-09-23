@@ -12,10 +12,14 @@ export function ShadeMaterial({
   color,
   material = 'matte',
   state,
+  solid = false,
 }: {
   color: string
   material?: string
   state: LightState | null
+  // Painted metal glows with the light it catches but never turns see
+  // through.
+  solid?: boolean
 }) {
   const glow = state?.glow ?? [1, 1, 1]
   // Eased, so a lamp fades up and down and follows a dimmer smoothly
@@ -37,7 +41,7 @@ export function ShadeMaterial({
       // Parchment and opal glass are not walls. A lit shade turns slightly
       // translucent, so the bulb shows through it, and it still stops enough
       // of the light to throw a shadow.
-      opacity={1 - 0.22 * lit}
+      opacity={solid ? 1 : 1 - 0.22 * lit}
       emissive={[glow[0], glow[1], glow[2]]}
       // Kept under one: past that the tone mapping rolls a bright color off
       // toward white, which is what made a colored lamp read as pale.

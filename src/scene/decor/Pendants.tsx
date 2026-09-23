@@ -1,5 +1,5 @@
 import { BaseMaterial, ShadeMaterial, type LightState } from '#/scene/decor/lightMaterials.tsx'
-import { Material, SEG } from '#/scene/decor/parts.tsx'
+import { Material, Rod, SEG } from '#/scene/decor/parts.tsx'
 import {
   CAPSULE_CANOPY,
   CAPSULE_FINS,
@@ -49,25 +49,6 @@ type ModelProps = {
   c: (slot: string) => string
   m: (slot: string) => string
   state: LightState | null
-}
-
-// A straight rod between two points, for cords and wires.
-function Rod({ from, to, r, children }: { from: Vector3; to: Vector3; r: number; children: ReactNode }) {
-  const { mid, length, turn } = useMemo(() => {
-    const dir = to.clone().sub(from)
-    return {
-      mid: from.clone().add(to).multiplyScalar(0.5),
-      length: dir.length(),
-      turn: new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), dir.normalize()),
-    }
-  }, [from, to])
-  if (length < 0.001) return null
-  return (
-    <mesh position={mid} quaternion={turn}>
-      <cylinderGeometry args={[r, r, length, 12]} />
-      {children}
-    </mesh>
-  )
 }
 
 // The cord straight up from the lamp to the canopy.

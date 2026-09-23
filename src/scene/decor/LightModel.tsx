@@ -2,6 +2,8 @@ import { colorValue, decorationVariant, materialValue, paramValue, type Decorati
 import { BaseMaterial, ShadeMaterial, type LightState } from '#/scene/decor/lightMaterials.tsx'
 import Pendant from '#/scene/decor/Pendants.tsx'
 import { PENDANTS } from '#/scene/decor/pendantSpecs.ts'
+import TableLamp from '#/scene/decor/TableLamps.tsx'
+import { TABLE_LAMPS } from '#/scene/decor/tableLampSpecs.ts'
 import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
 import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -166,38 +168,12 @@ export default function LightModel({ kind, item, state }: Props) {
       break
     }
     case 'light_table': {
-      // After the Cestita: an opal glass globe sitting in a little basket of
-      // bent wooden ribs, which cross over the top into a handle.
-      const height = p('height')
-      const r = size / 2
-      const globeR = height * 0.24
-      const globeY = height * 0.42
-      glowAt = [0, globeY, 0]
-      body = (
-        <group>
-          {/* The ring the globe sits in. */}
-          <mesh position={[0, height * 0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[globeR * 0.86, 0.008, 12, SEG * 2]} />
-            <BaseMaterial color={c('basket')} material={m('basket')} />
-          </mesh>
-          {/* Two ribs, each bent right over the globe, crossing at the top. */}
-          {[0, Math.PI / 2].map(a => (
-            <mesh key={a} position={[0, height * 0.5, 0]} rotation={[0, a, 0]} scale={[r, height * 0.5, r]} castShadow>
-              <torusGeometry args={[1, 0.013 / r, 12, 72, Math.PI]} />
-              <BaseMaterial color={c('basket')} material={m('basket')} />
-            </mesh>
-          ))}
-          {/* The collar where they meet, which doubles as the handle. */}
-          <mesh position={[0, height - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.016, 0.009, 12, SEG * 2]} />
-            <BaseMaterial color={c('basket')} material={m('basket')} />
-          </mesh>
-          <mesh position={[0, globeY, 0]} castShadow userData={{ transmits: true }}>
-            <sphereGeometry args={[globeR, SEG * 2, SEG * 2]} />
-            <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
-          </mesh>
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'cestita'
+      const spec = TABLE_LAMPS[style] ?? TABLE_LAMPS.cestita
+      const kx = size / spec.size
+      const ky = p('height') / spec.height
+      glowAt = [0, spec.glow * ky, 0]
+      body = <TableLamp style={style} kx={kx} ky={ky} c={c} m={m} state={state} />
       break
     }
     case 'light_wall': {
