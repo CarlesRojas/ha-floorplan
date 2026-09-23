@@ -44,7 +44,6 @@ const BY_KIND: Record<string, IconDefinition> = {
   pouf: faChair,
   light_globe: faLightbulb,
   ceiling_extractor: faWind,
-  office_table: faTable,
   bookshelf: faBoxArchive,
   wardrobe: faShirt,
   fridge: faSnowflake,

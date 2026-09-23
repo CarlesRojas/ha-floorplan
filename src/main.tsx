@@ -14,6 +14,8 @@ const RENAMED: Record<string, { kind: string; variant?: string }> = {
   // The Globo Cesta was its own kind for a moment, then became a style of
   // the pendant.
   light_globe: { kind: 'light_pendant', variant: 'globo_cesta' },
+  // The office table became a style of the desk.
+  office_table: { kind: 'desk', variant: 'office_table' },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose

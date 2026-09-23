@@ -6,6 +6,7 @@ import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
 import Stool from '#/scene/decor/Stools.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
+import type { ReactNode } from 'react'
 
 import type { ItemState } from '#/scene/decor/state.ts'
 
@@ -185,56 +186,11 @@ export default function FurnitureModel({ kind, item }: Props) {
       const style = decorationVariant(kind, item.variant)?.id ?? 'viok'
       return <DiningTable style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
-    case 'office_table': {
-      // A work table rather than a writing desk: a plain rectangular top on
-      // two steel T frames tied by a beam, with a cable tray slung under the
-      // back edge. The height goes up far enough to stand at.
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const top = 0.025
-      const post = 0.06
-      const inset = 0.16
-      return (
-        <group>
-          {[-1, 1].map(sx => (
-            <group key={sx} position={[(sx * (w - inset * 2)) / 2, 0, 0]}>
-              {/* The foot, running front to back under the post. */}
-              <Slab size={[0.08, 0.025, d - 0.1]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
-                {M('frame')}
-              </Slab>
-              <mesh position={[0, (h - top) / 2, 0]} castShadow>
-                <boxGeometry args={[post, h - top, post]} />
-                {M('frame')}
-              </mesh>
-              {/* The arm the top sits on. */}
-              <Slab size={[0.09, 0.022, d - 0.16]} radius={0.01} bevel={0.005} position={[0, h - top - 0.022, 0]}>
-                {M('frame')}
-              </Slab>
-            </group>
-          ))}
-          {/* The beam between the two frames, set back under the top. */}
-          <mesh position={[0, h - top - 0.09, -d * 0.16]}>
-            <boxGeometry args={[w - inset * 2 - post, 0.05, 0.05]} />
-            {M('frame')}
-          </mesh>
-          {/* Cable tray along the back, where the leads are gathered. */}
-          <Slab
-            size={[w * 0.45, 0.05, 0.09]}
-            radius={0.012}
-            bevel={0.004}
-            position={[0, h - top - 0.14, -d / 2 + 0.12]}
-          >
-            {M('tray')}
-          </Slab>
-          <Slab size={[w, top, d]} radius={0.01} bevel={0.005} position={[0, h - top, 0]}>
-            {M('top')}
-          </Slab>
-        </group>
-      )
-    }
     case 'desk':
     case 'coffee_table': {
+      if (kind.id === 'desk' && decorationVariant(kind, item.variant)?.id === 'office_table') {
+        return <OfficeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
+      }
       // A plain top on tapered dowel legs, with an apron tying them
       // together. A long table grows a middle pair rather than sagging.
       const w = p('width')
@@ -629,4 +585,45 @@ export default function FurnitureModel({ kind, item }: Props) {
     default:
       return null
   }
+}
+
+// A work table rather than a writing desk: a plain rectangular top on two
+// steel T frames tied by a beam, with a cable tray slung under the back
+// edge. The height goes up far enough to stand at.
+function OfficeTable({ w, d, h, M }: { w: number; d: number; h: number; M: (slot: string) => ReactNode }) {
+  const top = 0.025
+  const post = 0.06
+  const inset = 0.16
+  return (
+    <group>
+      {[-1, 1].map(sx => (
+        <group key={sx} position={[(sx * (w - inset * 2)) / 2, 0, 0]}>
+          {/* The foot, running front to back under the post. */}
+          <Slab size={[0.08, 0.025, d - 0.1]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
+            {M('frame')}
+          </Slab>
+          <mesh position={[0, (h - top) / 2, 0]} castShadow>
+            <boxGeometry args={[post, h - top, post]} />
+            {M('frame')}
+          </mesh>
+          {/* The arm the top sits on. */}
+          <Slab size={[0.09, 0.022, d - 0.16]} radius={0.01} bevel={0.005} position={[0, h - top - 0.022, 0]}>
+            {M('frame')}
+          </Slab>
+        </group>
+      ))}
+      {/* The beam between the two frames, set back under the top. */}
+      <mesh position={[0, h - top - 0.09, -d * 0.16]}>
+        <boxGeometry args={[w - inset * 2 - post, 0.05, 0.05]} />
+        {M('frame')}
+      </mesh>
+      {/* Cable tray along the back, where the leads are gathered. */}
+      <Slab size={[w * 0.45, 0.05, 0.09]} radius={0.012} bevel={0.004} position={[0, h - top - 0.14, -d / 2 + 0.12]}>
+        {M('tray')}
+      </Slab>
+      <Slab size={[w, top, d]} radius={0.01} bevel={0.005} position={[0, h - top, 0]}>
+        {M('top')}
+      </Slab>
+    </group>
+  )
 }

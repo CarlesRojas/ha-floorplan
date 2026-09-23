@@ -239,6 +239,15 @@ const OFFICE_TECK: DecorationVariant = {
   materials: { seat: 'fabric', back: 'fabric', frame: 'matte', base: 'metal', castors: 'matte' },
 }
 
+// The desk's first style, the kind's old model with its slots.
+const DESK_WRITING: DecorationVariant = {
+  id: 'writing',
+  label: 'Writing desk',
+  params: { width: 1.4, depth: 0.7, height: 0.75 },
+  colors: { top: SCANDI.oak, legs: SCANDI.oak, drawer: SCANDI.offWhite, handle: SCANDI.slate },
+  materials: { top: 'wood', legs: 'wood', drawer: 'matte', handle: 'metal' },
+}
+
 // The bench's first style, which keeps the kind's old legs and seat slots.
 const BENCH_LAUTA: DecorationVariant = {
   id: 'lauta',
@@ -713,18 +722,24 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'table',
     'Desk',
     'floor',
-    [width(1.4, 0.9, 2.2), depth(0.68, 0.5, 0.9), height(0.74, 0.65, 0.85)],
-    { top: SCANDI.oak, legs: SCANDI.oak, drawer: SCANDI.offWhite, handle: SCANDI.slate },
-    { top: 'wood', legs: 'wood', drawer: 'matte', handle: 'metal' },
-  ),
-  kind(
-    'office_table',
-    'table',
-    'Office table',
-    'floor',
-    [width(1.6, 1.1, 2.4), depth(0.8, 0.6, 1), height(0.74, 0.65, 1.2)],
-    { top: SCANDI.oak, frame: SCANDI.charcoal, tray: SCANDI.slate },
-    { top: 'wood', frame: 'metal', tray: 'metal' },
+    // The ranges cover both styles: the office table goes up far enough to
+    // stand at.
+    [width(1.4, 0.9, 2.4), depth(0.7, 0.5, 1), height(0.75, 0.65, 1.2)],
+    DESK_WRITING.colors ?? {},
+    DESK_WRITING.materials ?? {},
+    undefined,
+    // The office table was a kind of its own, and a saved one is read as a
+    // desk in that style.
+    [
+      DESK_WRITING,
+      {
+        id: 'office_table',
+        label: 'Office table',
+        params: { width: 1.6, depth: 0.8, height: 0.75 },
+        colors: { top: SCANDI.oak, frame: SCANDI.charcoal, tray: SCANDI.slate },
+        materials: { top: 'wood', frame: 'metal', tray: 'metal' },
+      },
+    ],
   ),
   kind(
     'nightstand',
@@ -1589,7 +1604,6 @@ const SURFACE_TOPS: Record<string, string | number> = {
   coffee_table: 'height',
   side_table: 'height',
   desk: 'height',
-  office_table: 'height',
   nightstand: 'height',
   sideboard: 'height',
   dresser: 'height',
