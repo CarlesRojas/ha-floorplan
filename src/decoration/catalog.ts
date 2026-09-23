@@ -82,11 +82,20 @@ const round2 = (value: number) => Math.round(value * 100) / 100
 // both directions, so nothing is capped just short of a real piece of
 // furniture: a wardrobe three meters wide, a coffee table at ankle height.
 // Counts, which take whole steps, are left exactly as they are given.
+
+// A slider counts its stops from its own start, so a start that is not a
+// whole number of steps puts every stop at an odd value: a bookshelf that
+// starts at 23 cm and steps by 5 offers 78, 83, 88. Both ends are pulled
+// out to the nearest whole step, which puts the stops on 80, 85, 90.
+const down = (value: number, step: number) => round2(Math.floor(value / step + 1e-9) * step)
+const up = (value: number, step: number) => round2(Math.ceil(value / step - 1e-9) * step)
+
 const range = (id: string, d: number, min: number, max: number, step: number) => {
   if (step >= 1) return { min, max }
-  const low = round2(Math.max(Math.min(min, d * 0.25), VERTICAL.has(id) ? 0 : 0.05))
-  const high = round2(Math.max(max, d * 3))
-  return { min: low, max: VERTICAL.has(id) ? Math.min(high, CEILING_LIMIT_M) : high }
+  const low = Math.max(Math.min(min, d * 0.25), VERTICAL.has(id) ? 0 : 0.05)
+  const high = Math.max(max, d * 3)
+  const top = VERTICAL.has(id) ? Math.min(high, CEILING_LIMIT_M) : high
+  return { min: down(low, step), max: up(top, step) }
 }
 
 const p = (
@@ -95,16 +104,23 @@ const p = (
   d: number,
   min: number,
   max: number,
-  step = 0.05,
+  step?: number,
   unit?: string,
-): DecorationParam => ({
-  id,
-  label,
-  default: d,
-  ...range(id, d, min, max, step),
-  step,
-  unit,
-})
+): DecorationParam => {
+  // A small thing wants a finer step than a wardrobe does: a seven
+  // centimeter sensor on a five centimeter step has four places to be.
+  const grid = step ?? (d < 0.5 ? 0.01 : 0.05)
+  return {
+    id,
+    label,
+    // On a stop of its own slider, so the first drag nudges it by one step
+    // rather than jumping it to the nearest round value.
+    default: round2(Math.round(d / grid) * grid),
+    ...range(id, d, min, max, grid),
+    step: grid,
+    unit,
+  }
+}
 const width = (d: number, min = 0.3, max = 4) => p('width', 'Width', d, min, max)
 const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max)
 const height = (d: number, min = 0.2, max = 2.6) => p('height', 'Height', d, min, max)

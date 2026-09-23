@@ -220,7 +220,7 @@ Each decoration:
 | `position` | `[x, y]` in meters, required |
 | `rotation` | Degrees, counter clockwise on the plan |
 | `on` | Id of the item this one stands on, for example the table under a lamp |
-| `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height |
+| `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height. Both ends of a slider, and its starting value, sit on a whole number of steps, so a bookshelf steps through 80, 85, 90 rather than 78, 83, 88. Anything under half a meter steps by a centimeter instead of five, since a seven centimeter sensor on a five centimeter step has nowhere to go |
 | `variant` | Which of the kind's styles it is drawn in, for a kind that comes in more than one. The first when absent |
 | `colors` | Hex color per part. Each kind names its own parts, for example a door has `frame`, `panel` and `handle`, a sofa has `frame`, `upholstery` and `cushions`. Parts are painted plain: the kind decides how matte or polished each one is, and nothing but the floor carries a pattern |
 
