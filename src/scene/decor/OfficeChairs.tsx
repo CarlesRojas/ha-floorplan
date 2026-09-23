@@ -24,8 +24,9 @@ type Props = {
   M: (slot: string) => ReactNode
 }
 
-// How far the seat rides above or below its height in the photos.
-type Part = { lift: number; M: Props['M'] }
+// How far the seat rides above or below its height in the photos, and how
+// much wider and deeper than in them the chair is.
+type Part = { lift: number; kx: number; kz: number; M: Props['M'] }
 
 // A twin wheeled castor standing at the origin, rolling along z.
 function Castor({ wheel, M }: { wheel: number; M: Props['M'] }) {
@@ -116,10 +117,18 @@ const TECK_ARCH: Vec3[] = [
   [0.1, 0.395, -0.245],
 ]
 
-function Teck({ lift, M }: Part) {
+function Teck({ lift, kx, kz, M }: Part) {
   const { height, seat } = OFFICE_CHAIRS.teck
-  const [sw, st, sd] = TECK_SEAT
-  const { foot, head, y, z, lean, thick, bar } = TECK_BACK
+  const [sw, st, sd] = [TECK_SEAT[0] * kx, TECK_SEAT[1], TECK_SEAT[2] * kz]
+  const { lean, thick, bar } = TECK_BACK
+  const [foot, head, y, z] = [TECK_BACK.foot * kx, TECK_BACK.head * kx, TECK_BACK.y, TECK_BACK.z * kz]
+  // The base is round, so it grows with the chair's mean size.
+  const star = { ...TECK_STAR, reach: (TECK_STAR.reach * (kx + kz)) / 2 }
+  const { loop, arch } = useMemo(() => {
+    const across = (points: Vec3[]) => points.map(([x, py, pz]): Vec3 => [x * kx, py, pz * kz])
+    return { loop: across(TECK_LOOP), arch: across(TECK_ARCH) }
+  }, [kx, kz])
+  const armX = TECK_ARM.x * kx
   const under = seat - st
   const mech = 0.06
   const column = under - mech + lift
@@ -147,7 +156,7 @@ function Teck({ lift, M }: Part) {
   }, [foot, head, backH, bar, thick])
   return (
     <group>
-      <FiveStar star={TECK_STAR} blades M={M} />
+      <FiveStar star={star} blades M={M} />
       <mesh position={[0, TECK_STAR.hub - 0.02, 0]} castShadow>
         <cylinderGeometry args={[0.045, 0.05, 0.06, 48]} />
         {M('base')}
@@ -164,18 +173,18 @@ function Teck({ lift, M }: Part) {
         </Slab>
         {[-1, 1].map(sx => (
           <group key={sx}>
-            <Dowel from={[sx * 0.1, under - 0.03, 0.06]} to={[sx * 0.22, under - 0.03, 0.06]} r={[0.007, 0.007]}>
+            <Dowel from={[sx * 0.1, under - 0.03, 0.06]} to={[sx * 0.22 * kx, under - 0.03, 0.06]} r={[0.007, 0.007]}>
               {M('frame')}
             </Dowel>
-            <mesh position={[sx * 0.235, under - 0.03, 0.06]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <mesh position={[sx * 0.235 * kx, under - 0.03, 0.06]} rotation={[0, 0, Math.PI / 2]} castShadow>
               <cylinderGeometry args={[0.014, 0.014, 0.04, 32]} />
               {M('frame')}
             </mesh>
-            <mesh position={[sx * TECK_ARM.x, (TECK_ARM.y + 0.43) / 2, 0.01]} castShadow>
+            <mesh position={[sx * armX, (TECK_ARM.y + 0.43) / 2, 0.01]} castShadow>
               <boxGeometry args={[0.03, TECK_ARM.y - 0.43, 0.05]} />
               {M('frame')}
             </mesh>
-            <Slab size={TECK_ARM.pad} radius={0.035} bevel={0.008} position={[sx * TECK_ARM.x, TECK_ARM.y, 0.01]}>
+            <Slab size={TECK_ARM.pad} radius={0.035} bevel={0.008} position={[sx * armX, TECK_ARM.y, 0.01]}>
               {M('frame')}
             </Slab>
           </group>
@@ -183,10 +192,10 @@ function Teck({ lift, M }: Part) {
         <Cushion size={[sw, st, sd]} position={[0, under, 0.02]}>
           {M('seat')}
         </Cushion>
-        <Tube points={TECK_LOOP} r={0.011}>
+        <Tube points={loop} r={0.011}>
           {M('base')}
         </Tube>
-        <Tube points={TECK_ARCH} r={0.01}>
+        <Tube points={arch} r={0.01}>
           {M('base')}
         </Tube>
         <group position={[0, y, z]} rotation={[-lean, 0, 0]}>
@@ -205,15 +214,10 @@ function Teck({ lift, M }: Part) {
   )
 }
 
-// Each chair is drawn at its real size, its width and depth scaled to the
-// sliders and its seat raised or lowered on the column.
+// Each chair is laid out again at the width and depth the sliders give it,
+// every part keeping its thickness, and its seat raised or lowered on the
+// column.
 export default function OfficeChair({ style, w, d, h, M }: Props) {
-  const id = OFFICE_CHAIRS[style] ? style : 'teck'
-  const spec = OFFICE_CHAIRS[id]
-  const lift = h - spec.seat
-  return (
-    <group scale={[w / spec.width, 1, d / spec.depth]}>
-      <Teck lift={lift} M={M} />
-    </group>
-  )
+  const spec = OFFICE_CHAIRS[style] ?? OFFICE_CHAIRS.teck
+  return <Teck lift={h - spec.seat} kx={w / spec.width} kz={d / spec.depth} M={M} />
 }

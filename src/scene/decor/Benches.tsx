@@ -23,13 +23,14 @@ type Props = {
   M: (slot: string) => ReactNode
 }
 
-// Each bench is drawn at its real depth and height and at the length it is
-// given.
-type Part = { w: number; M: Props['M'] }
+// A bench's size as the sliders give it, and its materials.
+type Part = Omit<Props, 'style'>
 
-function Lauta({ w, M }: Part) {
-  const { depth: d, height: h } = BENCHES.lauta
-  const [railY, endY, railH, railT] = LAUTA_BENCH_RAIL
+function Lauta({ w, d, h, M }: Part) {
+  // The rails stay where they are on the legs.
+  const ky = h / BENCHES.lauta.height
+  const [railH, railT] = [LAUTA_BENCH_RAIL[2], LAUTA_BENCH_RAIL[3]]
+  const [railY, endY] = [LAUTA_BENCH_RAIL[0] * ky, LAUTA_BENCH_RAIL[1] * ky]
   const [r0, r1] = LAUTA_BENCH_LEG_R
   const legs = [-1, 1].flatMap(sx =>
     [-1, 1].map(sz => ({
@@ -81,8 +82,7 @@ function Lauta({ w, M }: Part) {
   )
 }
 
-function Angle({ w, M }: Part) {
-  const { depth: d, height: h } = BENCHES.angle
+function Angle({ w, d, h, M }: Part) {
   const b = ANGLE_BOARD
   const { height: ch, front, back, gap, thick, count } = ANGLE_DRAWERS
   // The case fills the width between the sides, and its fronts share it.
@@ -120,13 +120,8 @@ function Angle({ w, M }: Part) {
   )
 }
 
-// Each bench is laid out at its length and scaled to its depth and height.
-export default function Bench({ style, w, d, h, M }: Props) {
-  const id = BENCHES[style] ? style : 'lauta'
-  const spec = BENCHES[id]
-  return (
-    <group scale={[1, h / spec.height, d / spec.depth]}>
-      {id === 'angle' ? <Angle w={w} M={M} /> : <Lauta w={w} M={M} />}
-    </group>
-  )
+// Each bench is laid out again at the size the sliders give it, so its
+// legs, boards and drawers keep their thickness.
+export default function Bench({ style, ...size }: Props) {
+  return style === 'angle' ? <Angle {...size} /> : <Lauta {...size} />
 }

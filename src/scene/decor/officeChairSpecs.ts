@@ -1,11 +1,11 @@
 // The measurements of the office chair styles, in meters. Pilma gives each
 // chair's width, depth and height and nothing else, so the parts below and
 // the seat heights are off the product photos, scaled by those. Each chair
-// is drawn at its real size, facing +z, with its seat at the height in the
-// photos. The width and depth sliders scale it, and the seat height slider
-// works as the gas lift does: the seat and everything on it ride up or down
-// on the column while the base stays on the floor. The models are in
-// OfficeChairs.tsx.
+// faces +z, with its seat at the height in the photos. The width and depth
+// sliders lay it out again wider or deeper, every part keeping its
+// thickness, and the seat height slider works as the gas lift does: the
+// seat and everything on it ride up or down on the column while the base
+// stays on the floor. The models are in OfficeChairs.tsx.
 
 export type OfficeChairSpec = {
   // The chair's real width, depth and height, and its seat's height in the

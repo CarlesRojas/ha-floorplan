@@ -1,9 +1,8 @@
 // The measurements of the bench styles, in meters. Pilma gives each bench's
 // length, depth and height and nothing else, so the parts below are off the
 // product photos, scaled by those. Each bench faces +z and is laid out again
-// at the length the slider gives it, so its legs and boards keep their
-// thickness on a longer bench. The depth and height sliders scale it. The
-// models are in Benches.tsx.
+// at the length, depth and height the sliders give it, so its legs and
+// boards keep their thickness. The models are in Benches.tsx.
 
 export type BenchSpec = {
   // The bench's real length, depth and seat height, which the sliders start
