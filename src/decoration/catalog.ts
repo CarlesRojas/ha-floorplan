@@ -1088,9 +1088,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Robot vacuum',
     'floor',
     [size(0.35, 0.25, 0.45)],
-    // Dark grey, the way most of them are sold now, with a near black
-    // bumper and brushes so the bumper still reads against the body.
-    { body: SCANDI.charcoal, bumper: SCANDI.ink, brushes: SCANDI.ink },
+    // Dark grey, the way most of them are sold now, with a lighter grey
+    // bumper and dock so the bumper reads against the body.
+    { body: '#575a5c', bumper: '#818283', brushes: SCANDI.ink },
     { body: 'matte', bumper: 'matte', brushes: 'matte' },
     TOGGLE,
   ),

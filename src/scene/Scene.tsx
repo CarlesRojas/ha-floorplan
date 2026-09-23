@@ -15,6 +15,7 @@ import Room from '#/scene/Room.tsx'
 import Shadows from '#/scene/shadows.tsx'
 import SelectionOutline from '#/scene/SelectionOutline.tsx'
 import Sky, { type SkyMode } from '#/scene/Sky.tsx'
+import type { TryStates } from '#/editor/tryState.ts'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
@@ -36,6 +37,9 @@ type Props = {
   // What the editor has picked, as `decoration:<id>` or `room:<id>`, drawn
   // with a blue outline. The card never passes one.
   selected?: string | null
+  // States the editor tries on pieces with no device. The card passes none.
+  tries?: TryStates
+  onTry?: (id: string) => void
 }
 
 export default function Scene({
@@ -46,6 +50,8 @@ export default function Scene({
   onPickRoom,
   onPickNothing,
   selected,
+  tries,
+  onTry,
 }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
@@ -86,7 +92,7 @@ export default function Scene({
           around it onto the floor. */}
       <Shadows />
       <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
-      <Devices hass={hass} config={config} onPick={onPickDecoration} />
+      <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
       {/* A press that misses everything looks around itself for something
           to act on, so small things are still easy to hit. */}
       <PickFallback onHandled={markFallback} />

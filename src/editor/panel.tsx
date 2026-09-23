@@ -106,3 +106,35 @@ export function PreviewHandle({ onDrag }: { onDrag: (deltaY: number) => void }) 
     </div>
   )
 }
+
+// An on and off switch, for the states a piece can be tried in.
+export function Switch({
+  checked,
+  onChange,
+  accent,
+  label,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  accent: string
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className="relative h-5 w-9 shrink-0 justify-self-start rounded-full transition-colors"
+      style={{ backgroundColor: checked ? accent : 'var(--divider-color)' }}
+    >
+      <span
+        className={cn(
+          'absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform',
+          checked && 'translate-x-4',
+        )}
+      />
+    </button>
+  )
+}

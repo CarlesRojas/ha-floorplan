@@ -1,3 +1,5 @@
+import { decorationKind } from '#/decoration/catalog.ts'
+import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import { clickAction, deviceSignals, kelvinToRgb, levelChannels, levelValues, signalValues } from '#/signals.ts'
@@ -11,6 +13,10 @@ type Props = {
   config: CardConfig
   // In the editor, a press also picks the piece it landed on.
   onPick?: (id: string) => void
+  // In the editor, the states tried on pieces with no device, and a click on
+  // one of those steps its state the way a device's click would.
+  tries?: TryStates
+  onTry?: (id: string) => void
 }
 
 // The last color each light was seen with. Home Assistant drops rgb_color
@@ -71,7 +77,7 @@ function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null 
   }
 }
 
-export default function Devices({ hass, config, onPick }: Props) {
+export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
   const rooms = config.rooms ?? []
@@ -97,14 +103,20 @@ export default function Devices({ hass, config, onPick }: Props) {
     <>
       {decorations.map(item => {
         const device = boundTo.get(item.id)
-        const state = device && hass ? itemState(hass, device) : null
+        const kind = decorationKind(item.kind)
+        // With nothing behind it, a piece the editor can try states on
+        // shows the one tried last, and a click steps it.
+        const tried = !device && onTry && kind && canTry(kind)
+        const tryState = tried ? tries?.[item.id] : undefined
+        const state = device && hass ? itemState(hass, device) : kind && tryState ? tryItemState(kind, tryState) : null
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.
         const onClick =
-          device || onPick
+          device || onPick || tried
             ? () => {
                 onPick?.(item.id)
                 if (device) act(device.entity_id)
+                else if (tried) onTry(item.id)
               }
             : undefined
         return (

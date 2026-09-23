@@ -9,6 +9,7 @@ import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
 import { DEFAULT_FLOOR_MATERIAL } from '#/theme.ts'
 import {
   AlertDialog,
@@ -100,6 +101,20 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       setAddRoom(next.roomId)
     }
     setSelection(next)
+  }
+  // States tried on pieces with no device, to see every look they have.
+  // Held here only: never saved, and gone when the editor closes.
+  const [tries, setTries] = useState<TryStates>({})
+  const setTry = (id: string, state: TryState | null) =>
+    setTries(all => {
+      const next = { ...all }
+      if (state) next[id] = state
+      else delete next[id]
+      return next
+    })
+  const stepTry = (id: string) => {
+    const kind = decorationKind(decorations.find(d => d.id === id)?.kind ?? '')
+    if (kind) setTries(all => ({ ...all, [id]: toggleTry(kind, all[id] ?? initialTry(kind)) }))
   }
   const pickDecoration = (id: string | null) => {
     if (id) {
@@ -753,6 +768,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       onDeviceLevels={setDeviceLevels}
       onStandOn={standOn}
       onSelect={pickDecoration}
+      tries={tries}
+      onTry={setTry}
     />
   )
 
@@ -833,6 +850,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
                       onPickDecoration={pickDecoration}
+                      tries={tries}
+                      onTry={stepTry}
                       onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
                       selected={
                         selectedDecoration
