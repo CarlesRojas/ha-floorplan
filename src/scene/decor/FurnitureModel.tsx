@@ -1,6 +1,7 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
+import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
 import Stool from '#/scene/decor/Stools.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
@@ -137,68 +138,8 @@ export default function FurnitureModel({ kind, item }: Props) {
       return <DiningChair style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'office_chair': {
-      // A task chair: a five star base on castors, a gas lift, a padded seat
-      // and a back on a slim frame, with an armrest each side.
-      const w = p('width')
-      const d = p('depth')
-      const seatH = p('height')
-      const seat = 0.1
-      const backH = 0.5
-      const reach = Math.min(w, d) / 2
-      const lift = seatH - seat - 0.06
-      return (
-        <group>
-          {/* Five arms out from the column, each ending on a castor. */}
-          {Array.from({ length: 5 }).map((_, i) => {
-            const a = (i / 5) * Math.PI * 2
-            return (
-              <group key={i} rotation={[0, -a, 0]}>
-                <mesh position={[0, 0.055, reach / 2]} rotation={[0.06, 0, 0]} castShadow>
-                  <boxGeometry args={[0.035, 0.022, reach]} />
-                  {M('base')}
-                </mesh>
-                {/* The castor, a small wheel lying on its side. */}
-                <mesh position={[0, 0.026, reach - 0.02]} rotation={[0, 0, Math.PI / 2]}>
-                  <cylinderGeometry args={[0.026, 0.026, 0.016, 20]} />
-                  {M('base')}
-                </mesh>
-              </group>
-            )
-          })}
-          {/* The gas lift, in its wider sleeve. */}
-          <mesh position={[0, lift / 2 + 0.05, 0]} castShadow>
-            <cylinderGeometry args={[0.028, 0.032, lift, 24]} />
-            {M('base')}
-          </mesh>
-          <mesh position={[0, seatH - seat - 0.03, 0]}>
-            <cylinderGeometry args={[0.055, 0.055, 0.05, 24]} />
-            {M('frame')}
-          </mesh>
-          {/* Seat and back, the back leaning away on its own frame. */}
-          <Cushion size={[w * 0.82, seat, d * 0.82]} position={[0, seatH - seat, 0]}>
-            {M('seat')}
-          </Cushion>
-          <mesh position={[0, seatH + 0.08, -d * 0.36]} rotation={[0.16, 0, 0]} castShadow>
-            <boxGeometry args={[0.05, 0.22, 0.04]} />
-            {M('frame')}
-          </mesh>
-          <Cushion size={[w * 0.74, backH, 0.07]} rotation={[-0.16, 0, 0]} position={[0, seatH + 0.16, -d * 0.33]}>
-            {M('back')}
-          </Cushion>
-          {/* An armrest each side: a post up from the seat and a pad on top. */}
-          {[-1, 1].map(sx => (
-            <group key={sx} position={[(sx * w * 0.78) / 2, 0, 0]}>
-              <mesh position={[0, seatH + 0.09, -d * 0.04]} castShadow>
-                <boxGeometry args={[0.028, 0.18, 0.032]} />
-                {M('frame')}
-              </mesh>
-              <Slab size={[0.05, 0.028, d * 0.38]} radius={0.014} bevel={0.008} position={[0, seatH + 0.18, -d * 0.04]}>
-                {M('back')}
-              </Slab>
-            </group>
-          ))}
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'teck'
+      return <OfficeChair style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'stool': {
       const style = decorationVariant(kind, item.variant)?.id ?? 'lauta'

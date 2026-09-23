@@ -228,6 +228,17 @@ const CHAIR_AIX: DecorationVariant = {
   materials: { shell: 'fabric', legs: 'wood' },
 }
 
+// The office chair's first style, which keeps the kind's old seat, back,
+// frame and base slots, since the old model was a task chair like it.
+const OFFICE_TECK: DecorationVariant = {
+  id: 'teck',
+  label: 'Teck',
+  // 66 by 66 cm, 99 cm tall, its seat 49 cm up.
+  params: { width: 0.66, depth: 0.66, height: 0.49 },
+  colors: { seat: '#252527', back: '#1c1c1e', frame: '#202022', base: '#c9ccd0', castors: '#1b1b1c' },
+  materials: { seat: 'fabric', back: 'fabric', frame: 'matte', base: 'metal', castors: 'matte' },
+}
+
 // The stool's first style, which keeps the kind's old legs and seat slots.
 const STOOL_LAUTA: DecorationVariant = {
   id: 'lauta',
@@ -525,9 +536,37 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Office chair',
     'floor',
-    [width(0.64, 0.5, 0.8), depth(0.62, 0.5, 0.8), height(0.48, 0.38, 0.62)],
-    { seat: SCANDI.slate, back: SCANDI.charcoal, frame: SCANDI.charcoal, base: SCANDI.slate },
-    { seat: 'fabric', back: 'fabric', frame: 'metal', base: 'metal' },
+    // Each style starts at its chair's own size, to the centimeter. Width
+    // and depth scale the chair, and the seat height rides the seat up or
+    // down on its column as the gas lift does.
+    [
+      p('width', 'Width', 0.66, 0.4, 0.85, 0.01),
+      p('depth', 'Depth', 0.66, 0.4, 0.85, 0.01),
+      p('height', 'Seat height', 0.49, 0.38, 0.62, 0.01),
+    ],
+    OFFICE_TECK.colors ?? {},
+    OFFICE_TECK.materials ?? {},
+    undefined,
+    // Three Pilma desk chairs, from their stated sizes and product photos.
+    [
+      OFFICE_TECK,
+      {
+        id: 'lola',
+        label: 'Lola',
+        // 51 by 47 cm, 85 cm tall, its seat 47 cm up.
+        params: { width: 0.51, depth: 0.47, height: 0.47 },
+        colors: { shell: '#232224', base: '#1e1e20', castors: '#1b1b1c' },
+        materials: { shell: 'matte', base: 'matte', castors: 'matte' },
+      },
+      {
+        id: 'air',
+        label: 'Air high back',
+        // 64 by 72 cm, 127 cm tall, its seat 49 cm up.
+        params: { width: 0.64, depth: 0.72, height: 0.49 },
+        colors: { shell: '#a18b76', frame: '#232325', base: '#c9ccd0', castors: '#1b1b1c' },
+        materials: { shell: 'fabric', frame: 'matte', base: 'metal', castors: 'matte' },
+      },
+    ],
   ),
   kind(
     'stool',

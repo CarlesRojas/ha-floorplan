@@ -20,9 +20,13 @@ const query = new URLSearchParams(location.search)
 const on = query.get('on') === '1'
 const kind = decorationKind(query.get('kind') ?? 'light_pendant')
 const params: Record<string, number> = {}
+// A value starting with # colors the slot it names, which helps to read a
+// dark model.
+const colors: Record<string, string> = {}
 for (const [key, value] of query) {
   if (['kind', 'variant', 'on', 'yaw'].includes(key)) continue
-  if (Number.isFinite(Number(value))) params[key] = Number(value)
+  if (value.startsWith('#')) colors[key] = value
+  else if (Number.isFinite(Number(value))) params[key] = Number(value)
 }
 const item: DecorationConfig = {
   id: 'preview',
@@ -31,6 +35,7 @@ const item: DecorationConfig = {
   room: 'preview',
   position: [0, 0],
   params,
+  colors,
 }
 const yaw = (Number(query.get('yaw')) || 0) * (Math.PI / 180)
 const glow = new Color(LIGHT_GLOW_COLOR)
