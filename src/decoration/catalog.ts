@@ -210,7 +210,7 @@ const FLOOR_TMM: DecorationVariant = {
 // oak on steel it was drawn as before it had styles.
 const DINING_VIOK: DecorationVariant = {
   id: 'viok',
-  label: 'New Viok',
+  label: 'Oak on Steel Angles',
   // 160 by 90 cm, 76 cm tall.
   params: { width: 1.6, depth: 0.9, height: 0.76 },
   colors: { top: '#dbbf98', frame: '#5a5b5d' },
@@ -232,7 +232,7 @@ const CHAIR_MOLDED: DecorationVariant = {
 // frame and base slots, since the old model was a task chair like it.
 const OFFICE_TECK: DecorationVariant = {
   id: 'teck',
-  label: 'Teck',
+  label: 'Mesh Task Chair',
   // 66 by 66 cm, 99 cm tall, its seat 49 cm up.
   params: { width: 0.66, depth: 0.66, height: 0.49 },
   colors: { seat: '#252527', back: '#1c1c1e', frame: '#202022', base: '#c9ccd0', castors: '#1b1b1c' },
@@ -251,7 +251,7 @@ const DESK_WRITING: DecorationVariant = {
 // The bench's first style, which keeps the kind's old legs and seat slots.
 const BENCH_LAUTA: DecorationVariant = {
   id: 'lauta',
-  label: 'Lauta 130',
+  label: 'Cord Seat Oak Bench',
   // 130 by 42 cm, its seat 44 cm up.
   params: { width: 1.3, depth: 0.42, height: 0.44 },
   colors: { legs: '#e0b584', seat: '#dcc3a0' },
@@ -261,7 +261,7 @@ const BENCH_LAUTA: DecorationVariant = {
 // The stool's first style, which keeps the kind's old legs and seat slots.
 const STOOL_LAUTA: DecorationVariant = {
   id: 'lauta',
-  label: 'Lauta',
+  label: 'Cord Seat Oak',
   // 45 by 35 cm, its seat 68 cm up.
   params: { size: 0.45, depth: 0.35, height: 0.68 },
   colors: { legs: '#e0b584', seat: '#dcc3a0' },
@@ -527,7 +527,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       CHAIR_MOLDED,
       {
         id: 'oia',
-        label: 'Oia',
+        label: 'Leather Wrapped',
         // 48 by 51 cm, 85 cm tall.
         params: { width: 0.48, depth: 0.51, height: 0.85 },
         colors: { shell: '#45403d', legs: '#45403d' },
@@ -535,7 +535,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'sura',
-        label: 'Sura',
+        label: 'Cord Seat Teak',
         // 46 by 55 cm, 80 cm tall.
         params: { width: 0.46, depth: 0.55, height: 0.8 },
         colors: { seat: '#c9a57a', frame: '#b98a5c' },
@@ -543,7 +543,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'varma',
-        label: 'Varma',
+        label: 'Padded Walnut',
         // 48 by 51 cm, 80 cm tall.
         params: { width: 0.48, depth: 0.51, height: 0.8 },
         colors: { seat: '#26272a', frame: '#5b3e30' },
@@ -592,7 +592,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       STOOL_LAUTA,
       {
         id: 'dean',
-        label: 'Dean 90',
+        label: 'Rattan Back Teak',
         // 47 by 51 cm, its seat 65 cm up and its back 90.
         params: { size: 0.47, depth: 0.51, height: 0.65 },
         colors: { legs: '#8b5a36', seat: '#c4a57c' },
@@ -600,7 +600,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'keula',
-        label: 'Keula',
+        label: 'Horseshoe Back Oak',
         // 45 by 54 cm, its seat 65 cm up.
         params: { size: 0.45, depth: 0.54, height: 0.65 },
         colors: { legs: '#dfb884', seat: '#7d6a62' },
@@ -628,7 +628,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       BENCH_LAUTA,
       {
         id: 'angle',
-        label: 'Angle 170',
+        label: 'Teak with Drawers',
         // 170 by 49 cm, 45 cm tall.
         params: { width: 1.7, depth: 0.49, height: 0.45 },
         colors: { frame: '#a57a4e', drawers: '#5e5b56' },
@@ -667,7 +667,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       DINING_VIOK,
       {
         id: 'deva',
-        label: 'Deva',
+        label: 'Porcelain in Teak',
         // 180 by 100 cm, 77 cm tall.
         params: { width: 1.8, depth: 1, height: 0.77 },
         colors: { top: '#ddd0ba', frame: '#a9713f' },
@@ -675,7 +675,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'spider',
-        label: 'Spider',
+        label: 'Crossed Teak Trestles',
         // 200 by 100 cm, 75 cm tall.
         params: { width: 2, depth: 1, height: 0.75 },
         colors: { top: '#9b7e5f', frame: '#87694b' },
