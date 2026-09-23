@@ -1,4 +1,5 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
@@ -131,44 +132,8 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'dining_chair': {
-      // After the New Aix: one upholstered shell, seat and back in a single
-      // curved piece, on four slim lacquered steel legs.
-      const w = p('width')
-      const d = p('depth')
-      const seatH = 0.46
-      const seat = 0.09
-      const backH = 0.42
-      return (
-        <group>
-          {[-1, 1].flatMap(sx =>
-            [-1, 1].map(sz => (
-              <mesh
-                key={`${sx}:${sz}`}
-                position={[(sx * (w - 0.08)) / 2, (seatH - seat) / 2, (sz * (d - 0.08)) / 2]}
-                rotation={[-sz * 0.05, 0, -sx * 0.05]}
-                castShadow
-              >
-                <cylinderGeometry args={[0.011, 0.014, seatH - seat, 20]} />
-                {M('legs')}
-              </mesh>
-            )),
-          )}
-          {/* A rail each side, the way a steel frame carries the shell. */}
-          {[-1, 1].map(sx => (
-            <mesh key={sx} position={[(sx * (w - 0.08)) / 2, seatH - seat - 0.01, 0]}>
-              <boxGeometry args={[0.014, 0.014, d - 0.1]} />
-              {M('legs')}
-            </mesh>
-          ))}
-          {/* The shell: a padded seat and a back that leans away from it. */}
-          <Cushion size={[w, seat, d]} position={[0, seatH - seat, 0]}>
-            {M('shell')}
-          </Cushion>
-          <Cushion size={[w - 0.02, backH, 0.08]} rotation={[-0.14, 0, 0]} position={[0, seatH, -d / 2 + 0.07]}>
-            {M('shell')}
-          </Cushion>
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'aix'
+      return <DiningChair style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'office_chair': {
       // A task chair: a five star base on castors, a gas lift, a padded seat

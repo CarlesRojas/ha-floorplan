@@ -217,6 +217,17 @@ const DINING_VIOK: DecorationVariant = {
   materials: { top: 'wood', frame: 'metal' },
 }
 
+// The dining chair's first style, which keeps the kind's old slots, so a
+// saved shell or legs color still lands on the New Aix.
+const CHAIR_AIX: DecorationVariant = {
+  id: 'aix',
+  label: 'New Aix',
+  // 53 by 50 cm, 84 cm tall.
+  params: { width: 0.53, depth: 0.5, height: 0.84 },
+  colors: { shell: '#8f8b87', legs: '#e0bf8a' },
+  materials: { shell: 'fabric', legs: 'wood' },
+}
+
 // The wall lamp's first style, which keeps the kind's old slots, so a saved
 // shade or channel color still lands on the TMM.
 const WALL_TMM: DecorationVariant = {
@@ -460,9 +471,44 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Dining chair',
     'floor',
-    [width(0.46, 0.35, 0.6), depth(0.48, 0.35, 0.6)],
-    { shell: SCANDI.slate, legs: SCANDI.charcoal },
-    { shell: 'fabric', legs: 'metal' },
+    // Each style starts at its chair's own size, to the centimeter, and the
+    // sliders scale the chair from there.
+    [
+      p('width', 'Width', 0.53, 0.35, 0.7, 0.01),
+      p('depth', 'Depth', 0.5, 0.35, 0.7, 0.01),
+      p('height', 'Height', 0.84, 0.6, 1.1, 0.01),
+    ],
+    CHAIR_AIX.colors ?? {},
+    CHAIR_AIX.materials ?? {},
+    undefined,
+    // Four Pilma chairs, from their stated sizes and product photos.
+    [
+      CHAIR_AIX,
+      {
+        id: 'oia',
+        label: 'Oia',
+        // 48 by 51 cm, 85 cm tall.
+        params: { width: 0.48, depth: 0.51, height: 0.85 },
+        colors: { shell: '#45403d', legs: '#45403d' },
+        materials: { shell: 'matte', legs: 'matte' },
+      },
+      {
+        id: 'sura',
+        label: 'Sura',
+        // 46 by 55 cm, 80 cm tall.
+        params: { width: 0.46, depth: 0.55, height: 0.8 },
+        colors: { seat: '#c9a57a', frame: '#b98a5c' },
+        materials: { seat: 'fabric', frame: 'wood' },
+      },
+      {
+        id: 'varma',
+        label: 'Varma',
+        // 48 by 51 cm, 80 cm tall.
+        params: { width: 0.48, depth: 0.51, height: 0.8 },
+        colors: { seat: '#26272a', frame: '#5b3e30' },
+        materials: { seat: 'matte', frame: 'wood' },
+      },
+    ],
   ),
   kind(
     'office_chair',
