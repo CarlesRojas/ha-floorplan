@@ -23,6 +23,17 @@ export type DecorationParam = {
   toggle?: boolean
 }
 
+// One style of a kind. A pendant is a pendant whichever one it is, so the
+// catalog lists it once and the style is picked in the item's own panel,
+// above its sizes. A style that paints different parts brings its own
+// slots, which then stand in for the kind's.
+export type DecorationVariant = {
+  id: string
+  label: string
+  colors?: Record<string, string>
+  materials?: Record<string, string>
+}
+
 export type DecorationKind = {
   id: string
   family: string
@@ -33,6 +44,9 @@ export type DecorationKind = {
   colors: Record<string, string>
   // Default surface per slot, matte when missing.
   materials?: Record<string, string>
+  // The styles this kind comes in, the first one the default. Absent when
+  // there is only one way to draw it.
+  variants?: DecorationVariant[]
   // Signals the model can express visually. Anything else can still be
   // bound, the model just does not change.
   expresses: Signal[]
@@ -131,7 +145,8 @@ const kind = (
   colors: Record<string, string>,
   materials: Record<string, string>,
   expresses: Signal[] = NONE,
-): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses })
+  variants?: DecorationVariant[],
+): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses, variants })
 
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
@@ -154,6 +169,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { slats: LIGHT_BASE_COLOR, rings: SCANDI.slate, diffuser: LIGHT_SHADE_COLOR, cord: LIGHT_CORD_COLOR },
     { slats: 'wood', rings: 'metal', diffuser: 'matte', cord: 'fabric' },
     LIGHT_SIGNALS,
+    [
+      { id: 'slatted', label: 'Slatted drum' },
+      {
+        id: 'globe',
+        label: 'Globe in a cage',
+        colors: { globe: LIGHT_SHADE_COLOR, cage: LIGHT_BASE_COLOR, cord: LIGHT_CORD_COLOR },
+        materials: { globe: 'matte', cage: 'wood', cord: 'fabric' },
+      },
+    ],
   ),
   kind(
     'light_floor',
@@ -479,6 +503,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.7, 0.5, 1.2), depth(0.45, 0.35, 0.6)],
     { canopy: SCANDI.offWhite, chimney: SCANDI.slate, filter: SCANDI.slate, controls: SCANDI.slate },
     { canopy: 'metal', chimney: 'metal', filter: 'metal', controls: 'metal' },
+    TOGGLE_LEVEL,
+  ),
+  kind(
+    'ceiling_extractor',
+    'kitchen',
+    'Ceiling extractor',
+    'ceiling',
+    [width(0.9, 0.6, 1.4), depth(0.5, 0.35, 0.9)],
+    { panel: SCANDI.offWhite, grille: SCANDI.slate },
+    { panel: 'matte', grille: 'metal' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -1071,14 +1105,35 @@ export function paramValue(kind: DecorationKind, params: Record<string, number> 
   return params?.[id] ?? kind.params.find(p => p.id === id)?.default ?? 0
 }
 
-export function colorValue(kind: DecorationKind, colors: Record<string, string> | undefined, slot: string) {
-  return colors?.[slot] ?? kind.colors[slot] ?? '#ffffff'
+// The style an item is drawn in: the one it names, or the kind's first.
+export function decorationVariant(kind: DecorationKind, variant: string | undefined) {
+  if (!kind.variants || kind.variants.length === 0) return undefined
+  return kind.variants.find(v => v.id === variant) ?? kind.variants[0]
+}
+
+// The slots a style paints, which stand in for the kind's own when it has
+// any. A style that paints the same parts brings none and uses the kind's.
+export function kindColors(kind: DecorationKind, variant?: string) {
+  return decorationVariant(kind, variant)?.colors ?? kind.colors
+}
+
+export function kindMaterials(kind: DecorationKind, variant?: string) {
+  return decorationVariant(kind, variant)?.materials ?? kind.materials
+}
+
+export function colorValue(
+  kind: DecorationKind,
+  colors: Record<string, string> | undefined,
+  slot: string,
+  variant?: string,
+) {
+  return colors?.[slot] ?? kindColors(kind, variant)[slot] ?? '#ffffff'
 }
 
 // The surface of a slot is part of what the piece is, so it comes from the
 // kind. Only the color is the viewer's to pick.
-export function materialValue(kind: DecorationKind, slot: string) {
-  return kind.materials?.[slot] ?? 'matte'
+export function materialValue(kind: DecorationKind, slot: string, variant?: string) {
+  return kindMaterials(kind, variant)?.[slot] ?? 'matte'
 }
 
 // Footprint on the plan, for the 2D editor.

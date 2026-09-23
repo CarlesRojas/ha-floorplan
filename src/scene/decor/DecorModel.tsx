@@ -33,8 +33,8 @@ function Leaf({
 // Rugs, plants, art and the soft things that make a room feel lived in.
 export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // An unbound curtain hangs closed. Eased, so it draws rather than jumps
   // as Home Assistant reports its position on the way.
   const level = useTravel(state?.level ?? 0)

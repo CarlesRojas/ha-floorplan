@@ -2,8 +2,10 @@ import {
   canRide,
   DECORATION_KINDS,
   decorationKind,
+  decorationVariant,
   isSupport,
   itemLevels,
+  kindColors,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { ridersOf } from '#/decoration/surfaces.ts'
@@ -25,7 +27,7 @@ import { deviceSignals, levelChannels } from '#/signals.ts'
 import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
-import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
 
@@ -138,6 +140,20 @@ export default function DecorationPanel({
           <Signals signals={kind.expresses} accent={accent} />
         </Sticky>
 
+        {/* Which style of the kind this one is. A pendant is listed once in
+            the catalog and says here which of them it is. */}
+        {kind.variants && kind.variants.length > 1 && (
+          <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+            Style
+            <Select
+              aria-label="Style"
+              value={decorationVariant(kind, item.variant)?.id ?? ''}
+              options={kind.variants.map(v => ({ value: v.id, label: v.label }))}
+              onChange={v => onUpdate(item.id, { variant: v })}
+            />
+          </label>
+        )}
+
         {kind.params.map(p => {
           const value = item.params?.[p.id] ?? p.default
           // A two state parameter is a switch, not a slider with two stops.
@@ -191,7 +207,7 @@ export default function DecorationPanel({
             color is the viewer's to pick. */}
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
           <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
-          {Object.entries(kind.colors).map(([slot, fallback]) => (
+          {Object.entries(kindColors(kind, item.variant)).map(([slot, fallback]) => (
             <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
               {slot}
               <input
@@ -400,7 +416,24 @@ export default function DecorationPanel({
           )}
         </div>
         <PreviewHandle onDrag={resize} />
-        <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />
+        <div className="relative flex min-w-0 items-center">
+          <input
+            className={cn(input, 'w-full pr-8')}
+            placeholder="Search items"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear the search"
+              onClick={() => setQuery('')}
+              className="absolute right-1 flex size-6 items-center justify-center rounded text-(--secondary-text-color) hover:bg-(--secondary-background-color) hover:text-(--primary-text-color)"
+            >
+              <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+            </button>
+          )}
+        </div>
       </Sticky>
 
       {families.map(family => {

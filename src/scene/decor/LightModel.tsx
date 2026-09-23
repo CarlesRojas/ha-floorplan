@@ -142,8 +142,8 @@ function Glow({
 
 export default function LightModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   const size = p('size')
   let body: React.ReactNode
   let glowAt: [number, number, number] = [0, 1, 0]
@@ -169,6 +169,56 @@ export default function LightModel({ kind, item, state }: Props) {
       break
     }
     case 'light_pendant': {
+      if (item.variant === 'globe') {
+        // After the Globo Cesta: an opal glass sphere sitting in a cage of
+        // curved wooden ribs that gather into a small ring at the top, where
+        // the cord takes it, and meet again under the globe.
+        const cord = p('cord')
+        const r = size / 2
+        const top = CEILING_HEIGHT_M - cord
+        // The globe hangs with its top just under the ring the ribs meet at.
+        const center = top - r
+        const rib = 0.009
+        // Two rings crossing at the poles, which is four ribs seen from a
+        // chair, each one standing just clear of the glass.
+        const cage = r + rib * 0.8
+        glowAt = [0, center, 0]
+        body = (
+          <>
+            <mesh position={[0, CEILING_HEIGHT_M - 0.015, 0]}>
+              <cylinderGeometry args={[0.05, 0.055, 0.03, SEG]} />
+              <BaseMaterial color={c('cord')} material={m('cord')} />
+            </mesh>
+            <mesh position={[0, CEILING_HEIGHT_M - cord / 2, 0]}>
+              <capsuleGeometry args={[0.006, cord, 4, 8]} />
+              <BaseMaterial color={c('cord')} material={m('cord')} />
+            </mesh>
+            {/* The ring the ribs are gathered into, at the top of the cage. */}
+            <mesh position={[0, top, 0]}>
+              <cylinderGeometry args={[r * 0.17, r * 0.17, 0.028, SEG]} />
+              <BaseMaterial color={c('cage')} material={m('cage')} />
+            </mesh>
+            {/* Each rib is a meridian: a half circle hugging the globe, the
+              four of them a quarter turn apart. */}
+            {[0, 1, 2, 3].map(i => (
+              <mesh key={i} position={[0, center, 0]} rotation={[0, (i * Math.PI) / 2, -Math.PI / 2]} castShadow>
+                <torusGeometry args={[cage, rib, 6, SEG * 2, Math.PI]} />
+                <BaseMaterial color={c('cage')} material={m('cage')} />
+              </mesh>
+            ))}
+            {/* The boss the ribs meet at underneath. */}
+            <mesh position={[0, center - cage, 0]}>
+              <sphereGeometry args={[rib * 2.2, SEG, SEG / 2]} />
+              <BaseMaterial color={c('cage')} material={m('cage')} />
+            </mesh>
+            <mesh position={[0, center, 0]} userData={{ transmits: true }}>
+              <sphereGeometry args={[r, SEG * 2, SEG]} />
+              <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
+            </mesh>
+          </>
+        )
+        break
+      }
       // After the Nagoya: a drum of thin vertical wooden slats held by a ring
       // top and bottom, open at both ends so it lights the ceiling too, with
       // a translucent diffuser disc set inside the lower ring.

@@ -1,5 +1,5 @@
 import { cn } from '#/lib/utils.ts'
-import { faCheck, faChevronDown, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronDown, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
@@ -181,6 +181,20 @@ export function Select({
                 onKeyDown={onSearchKey}
                 className="min-w-0 flex-1 bg-transparent py-2 text-sm text-(--primary-text-color) outline-none"
               />
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Clear the search"
+                  onClick={() => {
+                    setQuery('')
+                    setActive(0)
+                    search.current?.focus()
+                  }}
+                  className="flex size-6 shrink-0 items-center justify-center rounded text-(--secondary-text-color) hover:bg-(--secondary-background-color) hover:text-(--primary-text-color)"
+                >
+                  <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+                </button>
+              )}
             </div>
           )}
           <div role="listbox" className="min-h-0 flex-1 overflow-y-auto p-1">

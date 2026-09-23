@@ -83,6 +83,8 @@ export type DecorationConfig = {
   params?: Record<string, number>
   // Colors per material slot, as hex strings.
   colors?: Record<string, string>
+  // Which of the kind's styles it is drawn in. The kind's first when absent.
+  variant?: string
 }
 
 export type CardConfig = {

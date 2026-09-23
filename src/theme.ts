@@ -76,6 +76,7 @@ export const LAMP_THROUGH_SHARE = 0.4
 // diffuser, so it gives less than a floor lamp standing in the open.
 export const LAMP_OUTPUT: Record<string, number> = {
   light_pendant: 0.5,
+  light_globe: 0.6,
   light_table: 0.75,
   light_wall: 0.8,
   light_ceiling: 0.9,

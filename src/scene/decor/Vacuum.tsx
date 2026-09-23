@@ -29,8 +29,8 @@ const TURN_RATE = 3.5
 // itself leaves it to sweep the room and comes back when it is turned off.
 export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
   const on = state?.on ?? false
   const r = p('size') / 2

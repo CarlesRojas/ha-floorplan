@@ -11,8 +11,8 @@ type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | 
 // fronts with small round pulls.
 export default function FurnitureModel({ kind, item }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a piece's colors read as its parts.
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
 

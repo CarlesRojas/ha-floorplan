@@ -1,6 +1,7 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
@@ -42,8 +43,8 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
 // cabinetry: handleless chalk fronts, oak worktops, matte ceramics.
 export default function ApplianceModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a fitting's colors read as its parts.
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
   const on = state?.on ?? false
@@ -246,6 +247,38 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               <meshStandardMaterial color={c('zones')} emissive="#ff6a2a" emissiveIntensity={1.2 * lit} />
             </mesh>
           ))}
+        </group>
+      )
+    }
+    case 'ceiling_extractor': {
+      // A flush ceiling extractor: a shallow panel let into the ceiling
+      // rather than a canopy hanging over the hob, with a perimeter grille
+      // it draws through and a lit face that comes up with the fan.
+      const w = p('width')
+      const d = p('depth')
+      const panel = 0.03
+      const y = CEILING_HEIGHT_M - panel
+      const edge = 0.05
+      return (
+        <group>
+          <Slab size={[w, panel, d]} radius={0.012} bevel={0.005} position={[0, y, 0]}>
+            {M('panel')}
+          </Slab>
+          {/* The slot it draws through, all the way round the panel. */}
+          <Slab size={[w - edge, 0.006, d - edge]} radius={0.01} bevel={0.002} position={[0, y - 0.006, 0]}>
+            {M('grille')}
+          </Slab>
+          {/* The lit face, inset from the slot, which is all that shows from
+              below when it is off. */}
+          <mesh position={[0, y - 0.008, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[w - edge * 2.4, d - edge * 2.4]} />
+            <meshStandardMaterial
+              color={c('panel')}
+              emissive={'#ffd9a0'}
+              emissiveIntensity={1.1 * level * lit}
+              roughness={0.5}
+            />
+          </mesh>
         </group>
       )
     }
