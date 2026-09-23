@@ -194,6 +194,18 @@ const TABLE_CESTITA: DecorationVariant = {
   materials: { globe: 'matte', basket: 'wood' },
 }
 
+// The floor lamp's first style, which keeps the kind's old slots, so a saved
+// shade or stand color still lands on the TMM.
+const FLOOR_TMM: DecorationVariant = {
+  id: 'tmm',
+  label: 'TMM',
+  // 60 by 50 cm across, from the end of a leg to the far side of the shade,
+  // and 166 cm tall.
+  params: { size: 0.6, depth: 0.5, height: 1.66 },
+  colors: { shade: '#ecdfc0', stand: '#dfbb8f', fittings: PENDANT_BLACK_COLOR, cable: PENDANT_BLACK_COLOR },
+  materials: { shade: 'fabric', stand: 'wood', fittings: 'metal', cable: 'fabric' },
+}
+
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
   kind(
@@ -264,10 +276,36 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'light',
     'Floor lamp',
     'floor',
-    [size(0.4, 0.2, 0.8), height(1.5, 0.8, 2.2)],
-    { shade: LIGHT_SHADE_COLOR, stand: LIGHT_BASE_COLOR },
-    { shade: 'fabric', stand: 'wood' },
+    // Size and depth are the lamp's footprint and height its height. Each
+    // style starts at its lamp's own, to the centimeter.
+    [
+      p('size', 'Width', 0.6, 0.15, 1.0, 0.01),
+      p('depth', 'Depth', 0.5, 0.15, 1.0, 0.01),
+      p('height', 'Height', 1.66, 0.8, 2.2, 0.01),
+    ],
+    FLOOR_TMM.colors ?? {},
+    FLOOR_TMM.materials ?? {},
     LIGHT_SIGNALS,
+    // Three Santa & Cole lamps, each drawn from its dimensional drawing.
+    [
+      FLOOR_TMM,
+      {
+        id: 'fad',
+        label: 'FAD',
+        // Ø49 across the foot and 120 cm at its lowest.
+        params: { size: 0.49, depth: 0.49, height: 1.2 },
+        colors: { shade: '#f3efe6', stand: '#c08f5e', rod: PENDANT_STEEL_COLOR },
+        materials: { shade: 'fabric', stand: 'wood', rod: 'metal' },
+      },
+      {
+        id: 'lamina',
+        label: 'Lámina 165',
+        // Ø21 across the base and 187.5 cm to the top of the rod.
+        params: { size: 0.21, depth: 0.21, height: 1.88 },
+        colors: { shade: '#f5f4f0', back: '#d9dbdc', structure: PENDANT_BLACK_COLOR, diffuser: PENDANT_OPAL_COLOR },
+        materials: { shade: 'matte', back: 'metal', structure: 'metal', diffuser: 'matte' },
+      },
+    ],
   ),
   kind(
     'light_table',

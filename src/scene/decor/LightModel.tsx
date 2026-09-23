@@ -1,4 +1,6 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import FloorLamp from '#/scene/decor/FloorLamps.tsx'
+import { FLOOR_LAMPS } from '#/scene/decor/floorLampSpecs.ts'
 import { BaseMaterial, ShadeMaterial, type LightState } from '#/scene/decor/lightMaterials.tsx'
 import Pendant from '#/scene/decor/Pendants.tsx'
 import { PENDANTS } from '#/scene/decor/pendantSpecs.ts'
@@ -135,36 +137,13 @@ export default function LightModel({ kind, item, state }: Props) {
       break
     }
     case 'light_floor': {
-      // After the TMM: a square beech shaft on a cross foot, with a
-      // cylindrical parchment shade sitting near the top of it.
-      const height = p('height')
-      const r = size / 2
-      const shadeH = size * 0.85
-      const post = 0.028
-      const shadeY = height - shadeH
-      // In the middle of the shade, which hangs in front of the mast.
-      glowAt = [0, shadeY + shadeH * 0.5, r + post * 0.4]
-      body = (
-        <>
-          {/* The foot: two flat battens crossing under the shaft. */}
-          {[0, Math.PI / 2].map(a => (
-            <mesh key={a} position={[0, 0.012, 0]} rotation={[0, a, 0]}>
-              <boxGeometry args={[size * 1.5, 0.024, post * 1.6]} />
-              <BaseMaterial color={c('stand')} material={m('stand')} />
-            </mesh>
-          ))}
-          <mesh position={[0, height / 2, 0]} castShadow>
-            <boxGeometry args={[post, height, post]} />
-            <BaseMaterial color={c('stand')} material={m('stand')} />
-          </mesh>
-          {/* The shade hangs on the front of the shaft, the way it is
-              hooked onto the mast, so the shaft stays outside it. */}
-          <mesh position={[0, shadeY + shadeH / 2, r + post * 0.4]} castShadow userData={{ transmits: true }}>
-            <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
-            <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
-          </mesh>
-        </>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'tmm'
+      const spec = FLOOR_LAMPS[style] ?? FLOOR_LAMPS.tmm
+      const kx = size / spec.size
+      const kz = p('depth') / spec.depth
+      const ky = p('height') / spec.height
+      glowAt = [(spec.glow[0] - spec.offset) * kx, spec.glow[1] * ky, spec.glow[2] * kz]
+      body = <FloorLamp style={style} kx={kx} ky={ky} kz={kz} c={c} m={m} state={state} />
       break
     }
     case 'light_table': {
