@@ -748,12 +748,15 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
     }
     case 'window': {
       // A frame with as many casements as the width takes, each between half
-      // a meter and a meter wide. They swing inward when the cover opens,
-      // hinged on the outer edge so a pair opens from the middle.
+      // a meter and a meter wide. They swing inward when the cover opens.
+      // Left alone, a run of them opens from the middle the way a pair of
+      // French casements does. Hinge right swings every one of them from its
+      // right edge instead, which is the other way a run of casements is
+      // actually hung. Mirroring the run was the old meaning, and on the
+      // pair most windows are it changed nothing at all.
       const w = p('width')
       const h = p('height')
-      // 1 hinges the first casement on the left, -1 on the right.
-      const side = p('flip') > 0.5 ? -1 : 1
+      const hingeRight = p('flip') > 0.5
       const f = 0.05
       const d = 0.05
       const frame = <Material color={c('frame')} material={m('frame')} />
@@ -775,9 +778,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             {frame}
           </Slab>
           {Array.from({ length: leaves }).map((_, i) => {
-            // A pair still opens from the middle. A single casement, and the
-            // odd one in an odd run, takes the side the switch picks.
-            const left = side > 0 ? i < leaves / 2 : i >= (leaves - 1) / 2
+            const left = !hingeRight && i < leaves / 2
             const edge = -inner.w / 2 + i * leafW
             const hinge = left ? edge : edge + leafW
             const open = (left ? 0.85 : -0.85) * coverLevel

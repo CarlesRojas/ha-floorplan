@@ -101,7 +101,7 @@ The sidebar shows the catalog of furniture and fixtures. Floor patterns are draw
 Things are small seen from across a room, so a press that lands on nothing is tried again in rings around itself, growing outward to `PICK_RADIUS_PX` in `src/theme.ts`. The first thing it finds takes the press, which means a lamp does not have to be hit exactly. Past that it is taken as a press on the room.
 
 Everything that moves is eased rather than switched. Home Assistant reports a cover's position every second or so while it travels, and a switch flips in one step, so without this a sliding door would stutter along in jumps and a window would snap open. Doors and casements swing, panels travel, curtains draw, screens roll, fans come up to speed and lamps fade up and down. A travelling cover only ever heads for the position Home Assistant last reported, never past it: what the reports give is the pace, since how far it moved between one and the next divided by how long that took is how fast the cover travels. Driving at that pace means arriving just as the next report lands, so a set of steps reads as one movement.
-- A window is divided into casements by how wide it is, each leaf between half a meter and a meter. A sliding door takes its number of panels as a setting, and the panels split the width between them and gather one in front of another as it opens.
+- A window is divided into casements by how wide it is, each leaf between half a meter and a meter. Left alone they open from the middle, the way a pair of French casements does. Hinge right swings every one of them from its right edge instead. A sliding door takes its number of panels as a setting, and the panels split the width between them and gather one in front of another as it opens.
 - Items are grouped by family in the sidebar, with a search box. Every model is built from primitives in code, in a Scandinavian vocabulary: pale oak, chalky whites, muted greens and clays, rounded frames on tapered legs, plump linen upholstery.
 
 ### Catalog
@@ -109,8 +109,8 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Family | Items |
 | --- | --- |
 | Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip |
-| Seating | Sofa, armchair, dining chair, stool, bench, pouf |
-| Tables | Dining table, coffee table, side table, desk, console table, nightstand |
+| Seating | Sofa, armchair, dining chair, office chair, stool, bench, pouf |
+| Tables | Dining table, coffee table, side table, desk, office table, nightstand |
 | Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |
 | Beds | Bed, crib |
 | Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, dishwasher, sink, microwave, coffee machine, kettle |
