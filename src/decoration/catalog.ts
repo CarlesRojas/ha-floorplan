@@ -228,6 +228,16 @@ const CHAIR_AIX: DecorationVariant = {
   materials: { shell: 'fabric', legs: 'wood' },
 }
 
+// The stool's first style, which keeps the kind's old legs and seat slots.
+const STOOL_LAUTA: DecorationVariant = {
+  id: 'lauta',
+  label: 'Lauta',
+  // 45 by 35 cm, its seat 68 cm up.
+  params: { size: 0.45, depth: 0.35, height: 0.68 },
+  colors: { legs: '#e0b584', seat: '#dcc3a0' },
+  materials: { legs: 'wood', seat: 'fabric' },
+}
+
 // The wall lamp's first style, which keeps the kind's old slots, so a saved
 // shade or channel color still lands on the TMM.
 const WALL_TMM: DecorationVariant = {
@@ -524,9 +534,37 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Stool',
     'floor',
-    [size(0.34, 0.25, 0.5), height(0.45, 0.3, 0.8)],
-    { legs: SCANDI.oak, seat: SCANDI.oak },
-    { legs: 'wood', seat: 'wood' },
+    // Size is the width, so a saved size still sets it, and height is the
+    // seat's, which a back scales with. Each style starts at its stool's
+    // own, to the centimeter.
+    [
+      p('size', 'Width', 0.45, 0.25, 0.7, 0.01),
+      p('depth', 'Depth', 0.35, 0.25, 0.7, 0.01),
+      p('height', 'Seat height', 0.68, 0.3, 0.9, 0.01),
+    ],
+    STOOL_LAUTA.colors ?? {},
+    STOOL_LAUTA.materials ?? {},
+    undefined,
+    // Three Pilma stools, from their stated sizes and product photos.
+    [
+      STOOL_LAUTA,
+      {
+        id: 'dean',
+        label: 'Dean 90',
+        // 47 by 51 cm, its seat 65 cm up and its back 90.
+        params: { size: 0.47, depth: 0.51, height: 0.65 },
+        colors: { legs: '#8b5a36', seat: '#c4a57c' },
+        materials: { legs: 'wood', seat: 'fabric' },
+      },
+      {
+        id: 'keula',
+        label: 'Keula',
+        // 45 by 54 cm, its seat 65 cm up.
+        params: { size: 0.45, depth: 0.54, height: 0.65 },
+        colors: { legs: '#dfb884', seat: '#7d6a62' },
+        materials: { legs: 'wood', seat: 'matte' },
+      },
+    ],
   ),
   kind(
     'bench',

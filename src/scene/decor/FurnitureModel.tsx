@@ -1,6 +1,7 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
+import Stool from '#/scene/decor/Stools.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
 
@@ -200,47 +201,8 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'stool': {
-      // Three splayed legs under a dished oak seat, tied by a stretcher.
-      const r = p('size') / 2
-      const h = p('height')
-      const feet = r * 0.72
-      return (
-        <group>
-          {[0, 1, 2].map(i => {
-            const a = (i / 3) * Math.PI * 2
-            return (
-              <mesh
-                key={i}
-                position={[Math.cos(a) * feet * 0.5, h / 2, Math.sin(a) * feet * 0.5]}
-                rotation={[Math.sin(a) * 0.16, 0, -Math.cos(a) * 0.16]}
-                castShadow
-              >
-                <cylinderGeometry args={[0.019, 0.013, h, 16]} />
-                {M('legs')}
-              </mesh>
-            )
-          })}
-          {/* Stretcher ring, low between the legs. */}
-          <mesh position={[0, h * 0.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.52, 0.008, 12, SEG]} />
-            {M('legs')}
-          </mesh>
-          <mesh position={[0, h + 0.018, 0]} castShadow>
-            <cylinderGeometry args={[r, r * 0.94, 0.036, SEG * 2]} />
-            {M('seat')}
-          </mesh>
-          {/* The seat is dished, so the rim stands a little proud of the
-              middle rather than reading as a flat disc. */}
-          <mesh position={[0, h + 0.05, 0]} scale={[r * 0.98, 0.03, r * 0.98]}>
-            <sphereGeometry args={[1, SEG * 2, SEG, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5]} />
-            {M('seat')}
-          </mesh>
-          <mesh position={[0, h + 0.036, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.97, 0.012, 12, SEG * 2]} />
-            {M('seat')}
-          </mesh>
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'lauta'
+      return <Stool style={style} w={p('size')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'bench': {
       // A slatted oak bench on splayed legs, with a rail tying them.
