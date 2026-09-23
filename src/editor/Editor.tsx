@@ -2,7 +2,6 @@ import Canvas from '#/editor/Canvas.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import Scene from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
-import { cn } from '#/lib/utils.ts'
 import RoomInfo from '#/editor/RoomInfo.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
@@ -10,6 +9,7 @@ import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
 import { DEFAULT_FLOOR_MATERIAL } from '#/theme.ts'
 import {
   AlertDialog,
@@ -27,7 +27,6 @@ import {
   EDITOR_GRID_M,
   EDITOR_PREVIEW_FRACTION,
   EDITOR_PREVIEW_MIN_PX,
-  EDITOR_SAVED_FLASH_MS,
   EDITOR_SIDEBAR_MIN_PX,
   EDITOR_HOUR,
   EDITOR_NIGHT_HOUR,
@@ -44,6 +43,9 @@ type Props = {
   hass: HomeAssistant | null
   config: CardConfig
   onChange: (config: CardConfig) => void
+  // Saves the card to the dashboard, not only to the dialog holding it.
+  // Throws when the save failed, so the editor stays open with the edits.
+  onSave?: () => Promise<unknown>
 }
 
 function nextRoomId(rooms: RoomConfig[]) {
@@ -52,7 +54,7 @@ function nextRoomId(rooms: RoomConfig[]) {
   return n
 }
 
-export default function Editor({ hass, config, onChange }: Props) {
+export default function Editor({ hass, config, onChange, onSave }: Props) {
   const [rooms, setRooms] = useState<RoomConfig[]>(config.rooms ?? [])
   const [devices, setDevices] = useState<DeviceConfig[]>(config.devices ?? [])
   const [decorations, setDecorations] = useState<DecorationConfig[]>(config.decorations ?? [])
@@ -64,7 +66,9 @@ export default function Editor({ hass, config, onChange }: Props) {
   const [selection, setSelection] = useState<Selection>({ roomId: null, vertex: null })
   const [draft, setDraft] = useState<Point[]>([])
   const [view, setView] = useState<View | null>(null)
-  const [fullscreen, setFullscreen] = useState(true)
+  // Closed until Open editor is pressed, so editing the card lands on Home
+  // Assistant's own dialog first, with its visibility and layout tabs.
+  const [fullscreen, setFullscreen] = useState(false)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
   // The hour the preview is lit at. The editor never follows the sun: what
@@ -97,6 +101,20 @@ export default function Editor({ hass, config, onChange }: Props) {
       setAddRoom(next.roomId)
     }
     setSelection(next)
+  }
+  // States tried on pieces with no device, to see every look they have.
+  // Held here only: never saved, and gone when the editor closes.
+  const [tries, setTries] = useState<TryStates>({})
+  const setTry = (id: string, state: TryState | null) =>
+    setTries(all => {
+      const next = { ...all }
+      if (state) next[id] = state
+      else delete next[id]
+      return next
+    })
+  const stepTry = (id: string) => {
+    const kind = decorationKind(decorations.find(d => d.id === id)?.kind ?? '')
+    if (kind) setTries(all => ({ ...all, [id]: toggleTry(kind, all[id] ?? initialTry(kind)) }))
   }
   const pickDecoration = (id: string | null) => {
     if (id) {
@@ -476,21 +494,38 @@ export default function Editor({ hass, config, onChange }: Props) {
     setFullscreen(true)
   }
 
-  // Sends the edits on without leaving the editor, and makes this the state
-  // that Discard would go back to. The button says so for a moment, since
-  // nothing else on screen changes.
-  const [saved, setSaved] = useState(false)
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const save = () => {
+  // Saves the card to the dashboard and leaves, with Home Assistant's own
+  // dialog still open behind for visibility and layout. A rename still
+  // waiting on its pause is sent first, so the save carries it. If the save
+  // fails the editor stays open, so nothing is lost.
+  const [saving, setSaving] = useState<'save' | 'close' | null>(null)
+  // Saves the card to the dashboard. A rename still waiting on its pause is
+  // sent first, so the save carries it, and what was saved becomes what
+  // Discard goes back to. True when it went through; a failed save says why
+  // and leaves everything where it is.
+  const persist = async (how: 'save' | 'close') => {
+    if (saving) return false
     flushRename()
+    setSaving(how)
+    try {
+      await onSave?.()
+    } catch {
+      setSaving(null)
+      return false
+    }
+    setSaving(null)
     setOpened({ rooms, devices, decorations })
-    setSaved(true)
-    if (savedTimer.current) clearTimeout(savedTimer.current)
-    savedTimer.current = setTimeout(() => setSaved(false), EDITOR_SAVED_FLASH_MS)
+    return true
   }
 
-  const saveAndClose = () => {
-    flushRename()
+  // Saves and stays, for a checkpoint in the middle of a long edit.
+  const save = () => void persist('save')
+
+  // Saves and leaves, with Home Assistant's own dialog still open behind for
+  // visibility and layout. If the save fails the editor stays open, so
+  // nothing is lost.
+  const saveAndClose = async () => {
+    if (!(await persist('close'))) return
     setDraft([])
     setFullscreen(false)
   }
@@ -733,6 +768,8 @@ export default function Editor({ hass, config, onChange }: Props) {
       onDeviceLevels={setDeviceLevels}
       onStandOn={standOn}
       onSelect={pickDecoration}
+      tries={tries}
+      onTry={setTry}
     />
   )
 
@@ -754,21 +791,20 @@ export default function Editor({ hass, config, onChange }: Props) {
               <button
                 type="button"
                 onClick={save}
-                className={cn(
-                  'flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors hover:opacity-90',
-                  saved ? 'border-emerald-600 text-emerald-500' : 'border-(--divider-color)',
-                )}
+                disabled={saving !== null}
+                className="flex h-10 items-center gap-2 rounded-xl border border-(--divider-color) px-4 text-sm font-semibold hover:opacity-90 disabled:opacity-60"
               >
-                <FontAwesomeIcon icon={saved ? faCheck : faFloppyDisk} className="size-3.5" />
-                {saved ? 'Saved' : 'Save'}
+                <FontAwesomeIcon icon={faFloppyDisk} className="size-3.5" />
+                {saving === 'save' ? 'Saving' : 'Save'}
               </button>
               <button
                 type="button"
                 onClick={saveAndClose}
-                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90"
+                disabled={saving !== null}
+                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
                 <FontAwesomeIcon icon={faCheck} className="size-3.5" />
-                Save & Close
+                {saving === 'close' ? 'Saving' : 'Save & Close'}
               </button>
             </div>
           </div>
@@ -814,7 +850,20 @@ export default function Editor({ hass, config, onChange }: Props) {
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
                       onPickDecoration={pickDecoration}
+                      tries={tries}
+                      onTry={stepTry}
                       onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
+                      selected={
+                        selectedDecoration
+                          ? `decoration:${selectedDecoration}`
+                          : selection.roomId
+                            ? `room:${selection.roomId}`
+                            : null
+                      }
+                      onPickNothing={() => {
+                        setSelection({ roomId: null, vertex: null })
+                        setSelectedDecoration(null)
+                      }}
                     />
                   </div>
                 </>
@@ -866,9 +915,11 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   return (
-    <div className="font-montserrat flex items-center justify-between gap-3 py-2 text-(--primary-text-color)">
-      <p className="text-sm text-(--secondary-text-color)">
-        {rooms.length === 0 ? 'No rooms yet.' : `${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}.`}
+    // What the card's tab in Home Assistant's dialog shows: a word on what
+    // the editor is for, and the way into it, in the middle of the space.
+    <div className="font-montserrat flex min-h-56 flex-col items-center justify-center gap-4 px-6 py-8 text-center text-(--primary-text-color)">
+      <p className="max-w-sm text-sm text-(--secondary-text-color)">
+        Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for.
       </p>
       <button
         type="button"

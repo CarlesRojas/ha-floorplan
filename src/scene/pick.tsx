@@ -27,7 +27,7 @@ function pickOf(object: Object3D | null): Pick | null {
   return null
 }
 
-export default function PickFallback() {
+export default function PickFallback({ onHandled }: { onHandled?: () => void } = {}) {
   const gl = useThree(state => state.gl)
   const camera = useThree(state => state.camera)
   const scene = useThree(state => state.scene)
@@ -83,6 +83,7 @@ export default function PickFallback() {
         // own. This only speaks for presses that landed on nothing.
         if (found && !found.direct) {
           opened = true
+          onHandled?.()
           found.pick.open()
         }
       }, LONG_PRESS_MS)
@@ -104,13 +105,17 @@ export default function PickFallback() {
       if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) return
       if (performance.now() - start.at > LONG_PRESS_MS) return
       const found = near(e.clientX, e.clientY)
-      if (found && !found.direct) found.pick.click()
+      if (found && !found.direct) {
+        onHandled?.()
+        found.pick.click()
+      }
     }
 
     const onContext = (e: MouseEvent) => {
       const found = near(e.clientX, e.clientY)
       if (found && !found.direct) {
         e.preventDefault()
+        onHandled?.()
         found.pick.open()
       }
     }
@@ -128,7 +133,7 @@ export default function PickFallback() {
       el.removeEventListener('pointercancel', onUp)
       el.removeEventListener('contextmenu', onContext)
     }
-  }, [gl, camera, scene, raycaster])
+  }, [gl, camera, scene, raycaster, onHandled])
 
   return null
 }

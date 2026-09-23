@@ -52,7 +52,7 @@ function Plate({
       ],
       height / 2,
     )
-    return new ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 8 })
+    return new ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 16 })
   }, [width, height, depth])
   return (
     <mesh geometry={geometry} position={position} castShadow>
@@ -213,7 +213,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </mesh>
           {[-1, 1].map(side => (
             <mesh key={side} position={[side * w * 0.36, 0.004, 0]}>
-              <cylinderGeometry args={[0.012, 0.012, 0.008, 8]} />
+              <cylinderGeometry args={[0.012, 0.012, 0.008, 16]} />
               {M('caps')}
             </mesh>
           ))}
@@ -261,7 +261,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           {[-1, 1].flatMap(sx =>
             [-1, 1].map(sz => (
               <mesh key={`${sx}:${sz}`} position={[sx * w * 0.36, 0.03, sz * d * 0.36]}>
-                <cylinderGeometry args={[0.012, 0.012, 0.016, 8]} />
+                <cylinderGeometry args={[0.012, 0.012, 0.016, 16]} />
                 {M('plinth')}
               </mesh>
             )),
@@ -276,7 +276,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           {/* Driver rings, showing through the grille. */}
           {Array.from({ length: drivers }).map((_, i) => (
             <mesh key={i} position={[0, h * (0.32 + i * 0.36), d / 2 + 0.005]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[w * (i === 0 ? 0.3 : 0.22), 0.006, 6, SEG]} />
+              <torusGeometry args={[w * (i === 0 ? 0.3 : 0.22), 0.006, 12, SEG]} />
               {M('plinth')}
             </mesh>
           ))}
@@ -393,11 +393,11 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           ))}
           {/* Valve and tail, at the lower left. */}
           <mesh position={[-w / 2 - 0.02, 0.07, 0.046]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.018, 0.018, 0.05, 10]} />
+            <cylinderGeometry args={[0.018, 0.018, 0.05, 20]} />
             <Material color={c('valve')} material={m('valve')} />
           </mesh>
           <mesh position={[-w / 2 - 0.05, 0.07, 0.046]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.024, 0.021, 0.05, 10]} />
+            <cylinderGeometry args={[0.024, 0.021, 0.05, 20]} />
             <Material color={c('valve')} material={m('valve')} />
           </mesh>
         </group>
@@ -512,7 +512,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             {M('stand')}
           </mesh>
           <mesh position={[0, (h - r) / 2, 0]}>
-            <cylinderGeometry args={[0.018, 0.026, h - r, 12]} />
+            <cylinderGeometry args={[0.018, 0.026, h - r, 24]} />
             {M('stand')}
           </mesh>
           <group position={[0, h - r * 0.4, 0]}>
@@ -549,13 +549,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <group position={[0, 0, 0.055]}>
               {[0.45, 0.98].map(k => (
                 <mesh key={k}>
-                  <torusGeometry args={[r * k, k > 0.9 ? 0.012 : 0.006, 6, SEG * 2]} />
+                  <torusGeometry args={[r * k, k > 0.9 ? 0.012 : 0.006, 12, SEG * 2]} />
                   {M('guard')}
                 </mesh>
               ))}
               {Array.from({ length: 6 }).map((_, i) => (
                 <mesh key={i} rotation={[0, 0, (i / 6) * Math.PI]}>
-                  <cylinderGeometry args={[0.004, 0.004, r * 1.96, 6]} />
+                  <cylinderGeometry args={[0.004, 0.004, r * 1.96, 12]} />
                   {M('guard')}
                 </mesh>
               ))}
@@ -986,7 +986,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </Bar>
           {/* Body: a rounded drum lying on its side. */}
           <mesh position={[0, 0, 0.1]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <capsuleGeometry args={[r, r * 0.5, 6, SEG]} />
+            <capsuleGeometry args={[r, r * 0.5, 12, SEG]} />
             {M('body')}
           </mesh>
           {/* The face: black glass, with the lens sunk into it. */}
@@ -1026,7 +1026,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <Material color={c('button')} material={m('button')} />
           </mesh>
           <mesh position={[0, -h * 0.72, 0.042]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[s * 0.27, 0.005, 6, SEG]} />
+            <torusGeometry args={[s * 0.27, 0.005, 12, SEG]} />
             <meshStandardMaterial color="#7fb3e8" emissive="#7fb3e8" emissiveIntensity={2 * lit} />
           </mesh>
         </group>
@@ -1056,61 +1056,6 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <meshStandardMaterial color="#8fd6a0" emissive="#8fd6a0" emissiveIntensity={1.6 * lit} />
           </mesh>
           <Led on={on} position={[0, -h * 0.16, 0.03]} radius={0.005} />
-        </group>
-      )
-    }
-    case 'smart_plug': {
-      // A compact plug: a rounded block with a socket face and a button.
-      const s = p('size')
-      return (
-        <group>
-          <Slab size={[s, s * 1.1, 0.045]} radius={s * 0.3} bevel={0.01} position={[0, -s * 0.55, 0.022]}>
-            {M('body')}
-          </Slab>
-          <mesh position={[0, -s * 0.55, 0.046]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[s * 0.36, s * 0.36, 0.006, SEG]} />
-            {M('socket')}
-          </mesh>
-          {/* Two pin holes, the detail that says socket. */}
-          {[-1, 1].map(side => (
-            <mesh key={side} position={[side * s * 0.16, -s * 0.55, 0.049]}>
-              <cylinderGeometry args={[s * 0.05, s * 0.05, 0.004, 8]} />
-              <meshStandardMaterial color={c('pins')} roughness={0.6} />
-            </mesh>
-          ))}
-          <mesh position={[0, -s * 0.12, 0.046]}>
-            <boxGeometry args={[s * 0.22, s * 0.1, 0.006]} />
-            {M('socket')}
-          </mesh>
-          <Led on={on} position={[s * 0.3, -s * 0.12, 0.046]} radius={0.005} />
-        </group>
-      )
-    }
-    case 'contact_sensor': {
-      // Two slim blocks: the sensor on the frame, the magnet on the leaf.
-      const s = p('size')
-      const h = s * 2
-      return (
-        <group>
-          <Slab size={[s, h, 0.024]} radius={s * 0.3} bevel={0.006} position={[0, -h / 2, 0.012]}>
-            {M('body')}
-          </Slab>
-          <Slab
-            size={[s * 0.42, h * 0.55, 0.022]}
-            radius={s * 0.15}
-            bevel={0.005}
-            position={[s * 0.82, -h * 0.4, 0.011]}
-          >
-            {M('body')}
-          </Slab>
-          {/* The alignment notch on both halves. */}
-          {[0, s * 0.82].map(x => (
-            <mesh key={x} position={[x, -h * 0.2, 0.025]}>
-              <boxGeometry args={[x === 0 ? s * 0.6 : s * 0.3, 0.004, 0.004]} />
-              {M('body')}
-            </mesh>
-          ))}
-          <Led on={on} position={[0, -h * 0.82, 0.026]} radius={0.005} />
         </group>
       )
     }
@@ -1196,7 +1141,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           {/* Three keypad dots, the hint of a number pad. */}
           {[-1, 0, 1].map(i => (
             <mesh key={i} position={[i * s * 0.22, h * 0.3, 0.032]}>
-              <cylinderGeometry args={[s * 0.07, s * 0.07, 0.004, 10]} />
+              <cylinderGeometry args={[s * 0.07, s * 0.07, 0.004, 20]} />
               <meshStandardMaterial color={c('keys')} roughness={0.5} />
             </mesh>
           ))}
@@ -1204,74 +1149,42 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       )
     }
     case 'air_quality': {
-      // A small desk monitor: a wedge body with the readout tipped up and a
-      // vent slot down one side.
+      // A small desk monitor: a wedge body leaning back on a foot, with the
+      // readout on its face and a vent slot down one side. The screen and
+      // the slots lean with the body, from the same pivot at its base, so
+      // they sit on its faces. Tilted about their own centres instead, the
+      // screen stood proud of the face it belongs on.
       const s = p('size')
       const h = s * 1.8
+      const d = s * 0.7
+      const lean = -0.12
       return (
         <group>
           <Slab size={[s * 1.2, 0.012, s * 0.9]} radius={s * 0.1} position={[0, 0, 0]}>
             {M('body')}
           </Slab>
-          <Slab
-            size={[s, h, s * 0.7]}
-            radius={s * 0.16}
-            bevel={0.008}
-            position={[0, 0.012, 0]}
-            rotation={[-0.12, 0, 0]}
-          >
-            {M('body')}
-          </Slab>
-          <mesh position={[0, h * 0.58, s * 0.38]} rotation={[-0.12, 0, 0]}>
-            <planeGeometry args={[s * 0.78, h * 0.5]} />
-            <Material
-              color={c('screen')}
-              material={m('screen')}
-              emissive={[0.55, 0.78, 1]}
-              emissiveIntensity={1 * lit}
-            />
-          </mesh>
-          {/* Intake slots on the side. */}
-          {[0, 1, 2].map(i => (
-            <mesh key={i} position={[s / 2 + 0.002, h * (0.2 + i * 0.12), 0]}>
-              <boxGeometry args={[0.004, 0.006, s * 0.4]} />
-              <meshStandardMaterial color={c('vents')} roughness={0.8} />
+          <group position={[0, 0.012, 0]} rotation={[lean, 0, 0]}>
+            <Slab size={[s, h, d]} radius={s * 0.16} bevel={0.008} position={[0, 0, 0]}>
+              {M('body')}
+            </Slab>
+            {/* On the front face, a hair proud of it so the two never fight. */}
+            <mesh position={[0, h * 0.58, d / 2 + 0.0015]}>
+              <planeGeometry args={[s * 0.78, h * 0.5]} />
+              <Material
+                color={c('screen')}
+                material={m('screen')}
+                emissive={[0.55, 0.78, 1]}
+                emissiveIntensity={1 * lit}
+              />
             </mesh>
-          ))}
-        </group>
-      )
-    }
-    case 'switch_panel': {
-      // A flush plate with two rockers, the top one pressed in slightly.
-      const s = p('size')
-      return (
-        <group>
-          <Slab size={[s, s * 1.6, 0.01]} radius={s * 0.1} bevel={0.004} position={[0, -s * 0.8, 0.005]}>
-            {M('plate')}
-          </Slab>
-          {[0, 1].map(i => (
-            <group key={i}>
-              <Slab
-                size={[s * 0.66, s * 0.56, 0.012]}
-                radius={s * 0.06}
-                bevel={0.004}
-                position={[0, -s * 0.28 - i * s * 0.62, 0.014]}
-                rotation={[i === 0 ? -0.12 * lit : 0, 0, 0]}
-              >
-                <Material
-                  color={c('rockers')}
-                  material={m('rockers')}
-                  emissive={[0.6, 0.85, 0.7]}
-                  emissiveIntensity={i === 0 ? 0.6 * lit : 0}
-                />
-              </Slab>
-              {/* The parting line above each rocker. */}
-              <mesh position={[0, -s * 0.28 - i * s * 0.62 + s * 0.3, 0.014]}>
-                <boxGeometry args={[s * 0.66, 0.003, 0.014]} />
-                {M('plate')}
+            {/* Intake slots on the side. */}
+            {[0, 1, 2].map(i => (
+              <mesh key={i} position={[s / 2 + 0.002, h * (0.2 + i * 0.12), 0]}>
+                <boxGeometry args={[0.004, 0.006, d * 0.57]} />
+                <meshStandardMaterial color={c('vents')} roughness={0.8} />
               </mesh>
-            </group>
-          ))}
+            ))}
+          </group>
         </group>
       )
     }

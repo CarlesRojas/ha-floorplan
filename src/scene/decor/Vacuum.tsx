@@ -184,8 +184,12 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
           <cylinderGeometry args={[r, r * 0.98, h, SEG]} />
           {M('body')}
         </mesh>
-        {/* Bumper, the front half of the rim only. */}
-        <mesh position={[0, h * 0.34, 0]} rotation={[0, Math.PI / 2, 0]}>
+        {/* Bumper, the front half of the rim only. The half cylinder runs
+            round from the front to the back through one side, so a quarter
+            turn centres it on the front. It was turned the other way, which
+            put it on the back, against the dock while parked and trailing
+            behind while running. */}
+        <mesh position={[0, h * 0.34, 0]} rotation={[0, -Math.PI / 2, 0]}>
           <cylinderGeometry args={[r * 1.02, r * 1.02, h * 0.42, SEG, 1, true, 0, Math.PI]} />
           <Material color={c('bumper')} material={m('bumper')} doubleSide />
         </mesh>

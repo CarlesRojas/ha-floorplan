@@ -1,5 +1,6 @@
 import Card from '#/Card.tsx'
 import Editor from '#/editor/Editor.tsx'
+import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
 import type { CardConfig } from '#/types.ts'
 
@@ -95,7 +96,7 @@ class Floorplan3DEditor extends ReactHost<CardConfig> {
   }
 
   protected view() {
-    return <Editor hass={this._hass} config={this._config!} onChange={this.emit} />
+    return <Editor hass={this._hass} config={this._config!} onChange={this.emit} onSave={() => persistCard(this)} />
   }
 }
 

@@ -147,7 +147,7 @@ export default function FurnitureModel({ kind, item }: Props) {
                 rotation={[-sz * 0.05, 0, -sx * 0.05]}
                 castShadow
               >
-                <cylinderGeometry args={[0.011, 0.014, seatH - seat, 10]} />
+                <cylinderGeometry args={[0.011, 0.014, seatH - seat, 20]} />
                 {M('legs')}
               </mesh>
             )),
@@ -192,7 +192,7 @@ export default function FurnitureModel({ kind, item }: Props) {
                 </mesh>
                 {/* The castor, a small wheel lying on its side. */}
                 <mesh position={[0, 0.026, reach - 0.02]} rotation={[0, 0, Math.PI / 2]}>
-                  <cylinderGeometry args={[0.026, 0.026, 0.016, 10]} />
+                  <cylinderGeometry args={[0.026, 0.026, 0.016, 20]} />
                   {M('base')}
                 </mesh>
               </group>
@@ -200,11 +200,11 @@ export default function FurnitureModel({ kind, item }: Props) {
           })}
           {/* The gas lift, in its wider sleeve. */}
           <mesh position={[0, lift / 2 + 0.05, 0]} castShadow>
-            <cylinderGeometry args={[0.028, 0.032, lift, 12]} />
+            <cylinderGeometry args={[0.028, 0.032, lift, 24]} />
             {M('base')}
           </mesh>
           <mesh position={[0, seatH - seat - 0.03, 0]}>
-            <cylinderGeometry args={[0.055, 0.055, 0.05, 12]} />
+            <cylinderGeometry args={[0.055, 0.055, 0.05, 24]} />
             {M('frame')}
           </mesh>
           {/* Seat and back, the back leaning away on its own frame. */}
@@ -249,14 +249,14 @@ export default function FurnitureModel({ kind, item }: Props) {
                 rotation={[Math.sin(a) * 0.16, 0, -Math.cos(a) * 0.16]}
                 castShadow
               >
-                <cylinderGeometry args={[0.019, 0.013, h, 8]} />
+                <cylinderGeometry args={[0.019, 0.013, h, 16]} />
                 {M('legs')}
               </mesh>
             )
           })}
           {/* Stretcher ring, low between the legs. */}
           <mesh position={[0, h * 0.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.52, 0.008, 6, SEG]} />
+            <torusGeometry args={[r * 0.52, 0.008, 12, SEG]} />
             {M('legs')}
           </mesh>
           <mesh position={[0, h + 0.018, 0]} castShadow>
@@ -270,7 +270,7 @@ export default function FurnitureModel({ kind, item }: Props) {
             {M('seat')}
           </mesh>
           <mesh position={[0, h + 0.036, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.97, 0.012, 6, SEG * 2]} />
+            <torusGeometry args={[r * 0.97, 0.012, 12, SEG * 2]} />
             {M('seat')}
           </mesh>
         </group>
@@ -335,7 +335,7 @@ export default function FurnitureModel({ kind, item }: Props) {
           </mesh>
           {/* The seam, a soft cord right around the widest point. */}
           <mesh position={[0, h * 0.52, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.99, r * 0.045, 6, SEG * 2]} />
+            <torusGeometry args={[r * 0.99, r * 0.045, 12, SEG * 2]} />
             <Material color={c('cover')} material={m('cover')} />
           </mesh>
           {/* Top dimple. */}

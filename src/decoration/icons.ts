@@ -25,7 +25,6 @@ import {
   faSnowflake,
   faTable,
   faTemperatureHalf,
-  faToggleOn,
   faTv,
   faVolumeHigh,
   faWarehouse,
@@ -100,14 +99,11 @@ const BY_KIND: Record<string, IconDefinition> = {
   camera: faCamera,
   doorbell: faBell,
   motion_sensor: faBell,
-  contact_sensor: faDoorOpen,
   smoke_detector: faBell,
   alarm_panel: faBell,
   smart_lock: faLock,
   air_quality: faWind,
   vacuum_robot: faRobot,
-  smart_plug: faPlug,
-  switch_panel: faToggleOn,
 }
 
 const BY_FAMILY: Record<string, IconDefinition> = {

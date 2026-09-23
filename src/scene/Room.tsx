@@ -62,6 +62,8 @@ export default function Room({ room, index, radius, gap, onPick }: Props) {
 
   return (
     <mesh
+      // Named so the editor's outline can find the room that is picked.
+      name={`room:${room.id}`}
       geometry={geometry}
       castShadow
       receiveShadow

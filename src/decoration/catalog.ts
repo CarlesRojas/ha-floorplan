@@ -1041,16 +1041,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     TOGGLE,
   ),
   kind(
-    'contact_sensor',
-    'security',
-    'Door sensor',
-    'wall',
-    [size(0.06, 0.03, 0.12), height(2, 0.5, 2.4)],
-    { body: SCANDI.offWhite },
-    { body: 'matte' },
-    TOGGLE,
-  ),
-  kind(
     'smoke_detector',
     'security',
     'Smoke detector',
@@ -1098,28 +1088,10 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Robot vacuum',
     'floor',
     [size(0.35, 0.25, 0.45)],
-    { body: SCANDI.offWhite, bumper: SCANDI.charcoal, brushes: SCANDI.charcoal },
+    // Dark grey, the way most of them are sold now, with a lighter grey
+    // bumper and dock so the bumper reads against the body.
+    { body: '#575a5c', bumper: '#818283', brushes: SCANDI.ink },
     { body: 'matte', bumper: 'matte', brushes: 'matte' },
-    TOGGLE,
-  ),
-  kind(
-    'smart_plug',
-    'utility',
-    'Smart plug',
-    'wall',
-    [size(0.07, 0.04, 0.12), height(0.3, 0.1, 1.4)],
-    { body: SCANDI.offWhite, socket: SCANDI.offWhite, pins: SCANDI.charcoal },
-    { body: 'matte', socket: 'matte', pins: 'matte' },
-    TOGGLE,
-  ),
-  kind(
-    'switch_panel',
-    'utility',
-    'Switch panel',
-    'wall',
-    [size(0.09, 0.06, 0.16), height(1.1, 0.8, 1.5)],
-    { plate: SCANDI.offWhite, rockers: SCANDI.linen },
-    { plate: 'matte', rockers: 'matte' },
     TOGGLE,
   ),
 ]

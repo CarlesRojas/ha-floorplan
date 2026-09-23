@@ -12,6 +12,8 @@ import {
 import { ridersOf } from '#/decoration/surfaces.ts'
 import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
+import TrySection from '#/editor/TrySection.tsx'
+import { canTry, type TryState, type TryStates } from '#/editor/tryState.ts'
 import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
 import { Select } from '#/components/ui/select.tsx'
 import {
@@ -45,6 +47,9 @@ type Props = {
   onDeviceLevels: (entityId: string, levels: Record<string, string>) => void
   onStandOn: (id: string, supportId: string | null) => void
   onSelect: (id: string | null) => void
+  // States tried on pieces with no device, only while editing.
+  tries: TryStates
+  onTry: (id: string, state: TryState | null) => void
 }
 
 const input =
@@ -64,6 +69,8 @@ export default function DecorationPanel({
   onDeviceLevels,
   onStandOn,
   onSelect,
+  tries,
+  onTry,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
   const [query, setQuery] = useState('')
@@ -237,6 +244,12 @@ export default function DecorationPanel({
               onChange={v => onStandOn(item.id, v || null)}
             />
           </div>
+        )}
+
+        {/* Every look the piece has, tried without a device. A bound one
+            shows its device instead, so there is nothing to try there. */}
+        {canTry(kind) && !boundDevice && (
+          <TrySection kind={kind} state={tries[item.id]} accent={accent} onChange={s => onTry(item.id, s)} />
         )}
 
         {/* What in Home Assistant this piece stands for. Only entities that

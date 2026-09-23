@@ -24,7 +24,7 @@ function Leaf({
 }) {
   return (
     <mesh position={position} rotation={rotation} scale={[width, length * 0.06, length]} castShadow>
-      <sphereGeometry args={[0.5, 10, 6]} />
+      <sphereGeometry args={[0.5, 20, 12]} />
       {children}
     </mesh>
   )
@@ -35,9 +35,11 @@ export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
-  // An unbound curtain hangs closed. Eased, so it draws rather than jumps
-  // as Home Assistant reports its position on the way.
-  const level = useTravel(state?.level ?? 0)
+  // An unbound curtain hangs closed. A device with a position draws it that
+  // far, one that only switches draws it all the way open or shut. Eased,
+  // so it draws rather than jumps as Home Assistant reports its position on
+  // the way.
+  const level = useTravel(state ? (state.levels.open ?? (state.on ? 1 : 0)) : 0)
 
   // A turned stoneware vase, narrow foot, full belly, drawn in neck.
   const isVase = kind.id === 'vase'
@@ -111,7 +113,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                 position={[-w / 2 + ((i + 0.5) * w) / tufts, 0.006, s * (d / 2 + 0.028)]}
                 rotation={[Math.PI / 2, 0, ((i % 3) - 1) * 0.08]}
               >
-                <capsuleGeometry args={[0.004, 0.05, 2, 5]} />
+                <capsuleGeometry args={[0.004, 0.05, 4, 10]} />
                 <Material color={c('field')} material={m('field')} />
               </mesh>
             )),
@@ -265,7 +267,7 @@ export default function DecorModel({ kind, item, state }: Props) {
       return (
         <group>
           <mesh position={[0, 0, 0.022]}>
-            <torusGeometry args={[r - ring, ring, 10, SEG * 2]} />
+            <torusGeometry args={[r - ring, ring, 20, SEG * 2]} />
             <Material color={c('frame')} material={m('frame')} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.018]}>
@@ -281,7 +283,7 @@ export default function DecorModel({ kind, item, state }: Props) {
       return (
         <group>
           <mesh position={[0, 0, 0.02]}>
-            <torusGeometry args={[r - ring, ring, 8, SEG * 2]} />
+            <torusGeometry args={[r - ring, ring, 16, SEG * 2]} />
             <Material color={c('rim')} material={m('rim')} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.016]}>
@@ -311,7 +313,7 @@ export default function DecorModel({ kind, item, state }: Props) {
             <Material color={c('hands')} material={m('hands')} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.034]}>
-            <cylinderGeometry args={[r * 0.05, r * 0.05, 0.008, 10]} />
+            <cylinderGeometry args={[r * 0.05, r * 0.05, 0.008, 20]} />
             <Material color={c('hands')} material={m('hands')} />
           </mesh>
         </group>
@@ -395,7 +397,7 @@ export default function DecorModel({ kind, item, state }: Props) {
             <Material color={c('weave')} material={m('weave')} />
           </mesh>
           <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.022, 8, SEG * 2]} />
+            <torusGeometry args={[r, 0.022, 16, SEG * 2]} />
             <Material color={c('weave')} material={m('weave')} />
           </mesh>
           {/* Handles, arching out of the rim on opposite sides. */}
@@ -405,7 +407,7 @@ export default function DecorModel({ kind, item, state }: Props) {
               position={[s * r * 0.98, h - 0.02, 0]}
               rotation={[Math.PI / 2, 0, s > 0 ? -Math.PI / 2 : Math.PI / 2]}
             >
-              <torusGeometry args={[Math.min(0.07, h * 0.28), 0.014, 6, 14, Math.PI]} />
+              <torusGeometry args={[Math.min(0.07, h * 0.28), 0.014, 12, 28, Math.PI]} />
               <Material color={c('weave')} material={m('weave')} />
             </mesh>
           ))}
@@ -435,7 +437,7 @@ export default function DecorModel({ kind, item, state }: Props) {
                 const fold = i % 2 === 0 ? 0.055 : 0.02
                 return (
                   <mesh key={i} position={[x, h / 2, 0.06 + fold]} scale={[full / pleats / 0.09, 1, 1]} castShadow>
-                    <cylinderGeometry args={[0.045, 0.05, h, 8, 1, false, 0, Math.PI * 2]} />
+                    <cylinderGeometry args={[0.045, 0.05, h, 16, 1, false, 0, Math.PI * 2]} />
                     <Material color={c('fabric')} material={m('fabric')} />
                   </mesh>
                 )

@@ -20,7 +20,7 @@ type Props = {
 
 // Smooth, chunky shapes: squashed spheres, capsules and domes, matte
 // surfaces. Segment counts stay low so the silhouettes read as simple.
-const SEG = 16
+const SEG = 32
 
 // Materials of the light family. The shade glows when on: an emissive tint
 // scaled by level, plus a point light so the room picks it up.
@@ -190,7 +190,7 @@ export default function LightModel({ kind, item, state }: Props) {
               <BaseMaterial color={c('cord')} material={m('cord')} />
             </mesh>
             <mesh position={[0, CEILING_HEIGHT_M - cord / 2, 0]}>
-              <capsuleGeometry args={[0.006, cord, 4, 8]} />
+              <capsuleGeometry args={[0.006, cord, 8, 16]} />
               <BaseMaterial color={c('cord')} material={m('cord')} />
             </mesh>
             {/* The ring the ribs are gathered into, at the top of the cage. */}
@@ -202,7 +202,7 @@ export default function LightModel({ kind, item, state }: Props) {
               four of them a quarter turn apart. */}
             {[0, 1, 2, 3].map(i => (
               <mesh key={i} position={[0, center, 0]} rotation={[0, (i * Math.PI) / 2, -Math.PI / 2]} castShadow>
-                <torusGeometry args={[cage, rib, 6, SEG * 2, Math.PI]} />
+                <torusGeometry args={[cage, rib, 12, SEG * 2, Math.PI]} />
                 <BaseMaterial color={c('cage')} material={m('cage')} />
               </mesh>
             ))}
@@ -236,13 +236,13 @@ export default function LightModel({ kind, item, state }: Props) {
             <BaseMaterial color={c('cord')} material={m('cord')} />
           </mesh>
           <mesh position={[0, CEILING_HEIGHT_M - cord / 2, 0]}>
-            <capsuleGeometry args={[0.006, cord, 4, 8]} />
+            <capsuleGeometry args={[0.006, cord, 8, 16]} />
             <BaseMaterial color={c('cord')} material={m('cord')} />
           </mesh>
           {/* The two rings the slats are strung on. */}
           {[top, top - drumH].map(y => (
             <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r, 0.006, 6, SEG * 3]} />
+              <torusGeometry args={[r, 0.006, 12, SEG * 3]} />
               <BaseMaterial color={c('rings')} material={m('rings')} />
             </mesh>
           ))}
@@ -314,19 +314,19 @@ export default function LightModel({ kind, item, state }: Props) {
         <group>
           {/* The ring the globe sits in. */}
           <mesh position={[0, height * 0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[globeR * 0.86, 0.008, 6, SEG * 2]} />
+            <torusGeometry args={[globeR * 0.86, 0.008, 12, SEG * 2]} />
             <BaseMaterial color={c('basket')} material={m('basket')} />
           </mesh>
           {/* Two ribs, each bent right over the globe, crossing at the top. */}
           {[0, Math.PI / 2].map(a => (
             <mesh key={a} position={[0, height * 0.5, 0]} rotation={[0, a, 0]} scale={[r, height * 0.5, r]} castShadow>
-              <torusGeometry args={[1, 0.013 / r, 6, 36, Math.PI]} />
+              <torusGeometry args={[1, 0.013 / r, 12, 72, Math.PI]} />
               <BaseMaterial color={c('basket')} material={m('basket')} />
             </mesh>
           ))}
           {/* The collar where they meet, which doubles as the handle. */}
           <mesh position={[0, height - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.016, 0.009, 6, SEG * 2]} />
+            <torusGeometry args={[0.016, 0.009, 12, SEG * 2]} />
             <BaseMaterial color={c('basket')} material={m('basket')} />
           </mesh>
           <mesh position={[0, globeY, 0]} castShadow userData={{ transmits: true }}>
@@ -366,7 +366,7 @@ export default function LightModel({ kind, item, state }: Props) {
           </mesh>
           {/* The pull cord that switches it. */}
           <mesh position={[0, -shadeH * 0.85, rail + r * 0.55]}>
-            <capsuleGeometry args={[0.003, shadeH * 0.5, 3, 6]} />
+            <capsuleGeometry args={[0.003, shadeH * 0.5, 6, 12]} />
             <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
         </group>
@@ -390,7 +390,7 @@ export default function LightModel({ kind, item, state }: Props) {
             <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
           <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
-            <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 4, 10]} />
+            <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 8, 20]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>
         </group>
