@@ -32,19 +32,22 @@ type Props = {
   M: (slot: string) => ReactNode
 }
 
-type Part = { M: Props['M'] }
+// A stool's size as the sliders give it, and its materials.
+type Part = Omit<Props, 'style'>
 
 // Mirrors a point across the stool's middle, left to right.
 const flip = (v: Vec3, sx: number): Vec3 => [sx * v[0], v[1], v[2]]
 
-function Lauta({ M }: Part) {
-  const { width: w, depth: d, seat } = STOOLS.lauta
-  const [railY, railH, railT] = LAUTA_RAIL
+function Lauta({ w, d, h: seat, M }: Part) {
+  const spec = STOOLS.lauta
+  const [kx, ky, kz] = [w / spec.width, seat / spec.seat, d / spec.depth]
+  const [railH, railT] = [LAUTA_RAIL[1], LAUTA_RAIL[2]]
+  const railY = LAUTA_RAIL[0] * ky
   const legs = [-1, 1].flatMap(sx =>
     [-1, 1].map(sz => ({
       key: `${sx}${sz}`,
-      foot: [sx * LAUTA_LEG_FOOT[0], 0, sz * LAUTA_LEG_FOOT[1]] as Vec3,
-      top: [sx * LAUTA_LEG_TOP[0], seat - 0.005, sz * LAUTA_LEG_TOP[1]] as Vec3,
+      foot: [sx * LAUTA_LEG_FOOT[0] * kx, 0, sz * LAUTA_LEG_FOOT[1] * kz] as Vec3,
+      top: [sx * LAUTA_LEG_TOP[0] * kx, seat - 0.005, sz * LAUTA_LEG_TOP[1] * kz] as Vec3,
     })),
   )
   // The low rails run across the front and the back, the side rails along
@@ -85,16 +88,21 @@ function Lauta({ M }: Part) {
   )
 }
 
-function Dean({ M }: Part) {
-  const { width: w, depth: d, seat } = STOOLS.dean
+function Dean({ w, d, h: seat, M }: Part) {
+  const spec = STOOLS.dean
+  // The back stands as high over the seat at any seat height, and the
+  // stretchers stay where they are on the legs.
+  const lift = seat - spec.seat
+  const ky = seat / spec.seat
   const [thin, thick] = DEAN_LEG_R
   const x = w / 2 - thick - 0.005
   const fFoot: Vec3 = [x, 0, d / 2 - 0.02]
   const fTop: Vec3 = [x - 0.005, seat + 0.01, d / 2 - 0.03]
   const rFoot: Vec3 = [x, 0, -d / 2 + 0.02]
   const knee: Vec3 = [x - 0.005, seat - DEAN_SEAT, -d / 2 + 0.08]
-  const head: Vec3 = [x - 0.005, DEAN_TOP - 0.01, -d / 2 + 0.055]
-  const [topY, bottomY, topH, bottomH] = DEAN_BAND
+  const head: Vec3 = [x - 0.005, DEAN_TOP + lift - 0.01, -d / 2 + 0.055]
+  const [topH, bottomH] = [DEAN_BAND[2], DEAN_BAND[3]]
+  const [topY, bottomY] = [DEAN_BAND[0] + lift, DEAN_BAND[1] + lift]
   const back = atHeight(knee, head, (topY + bottomY) / 2)
   const span = back[0] * 2
   // The open weave between the bands, cord on a square grid.
@@ -114,7 +122,7 @@ function Dean({ M }: Part) {
     }
     return out
   })()
-  const [lowY, sideY] = DEAN_STRETCHER
+  const [lowY, sideY] = DEAN_STRETCHER.map(y => y * ky)
   return (
     <group>
       {[-1, 1].map(sx => (
@@ -179,9 +187,9 @@ function Dean({ M }: Part) {
 
 // Keula's back: a horseshoe of oak seen from the front, the posts running up
 // into a broad crest, bowed back in plan toward its middle. Its foot is the
-// origin and it rises along +y.
-function keulaArch(height: number) {
-  const { half: W, post: t, thick, crest, corner: R, bow } = KEULA_BACK
+// origin and it rises along +y, `W` out to either side.
+function keulaArch(height: number, W: number) {
+  const { post: t, thick, crest, corner: R, bow } = KEULA_BACK
   const r = R - t * 0.7
   const b = 0.008
   const s = new Shape()
@@ -217,19 +225,21 @@ function keulaArch(height: number) {
   return geo
 }
 
-function Keula({ M }: Part) {
-  const { width: w, depth: d, seat } = STOOLS.keula
+function Keula({ w, d, h: seat, M }: Part) {
+  const spec = STOOLS.keula
+  const lift = seat - spec.seat
+  const half = KEULA_BACK.half * (w / spec.width)
   const [thin, thick] = KEULA_LEG_R
   const under = seat - KEULA_PAD
   const railH = 0.035
   const fFoot: Vec3 = [w / 2 - 0.03, 0, d / 2 - 0.025]
   const fTop: Vec3 = [w / 2 - 0.045, under, d / 2 - 0.07]
   const rFoot: Vec3 = [w / 2 - 0.03, 0, -d / 2 + 0.015]
-  const post = KEULA_BACK.half - KEULA_BACK.post / 2
+  const post = half - KEULA_BACK.post / 2
   const rTop: Vec3 = [post, under - 0.02, -d / 2 + 0.07]
-  const archH = KEULA_TOP - rTop[1]
-  const arch = useMemo(() => keulaArch(archH / Math.cos(KEULA_BACK.lean)), [archH])
-  const lowY = 0.2
+  const archH = KEULA_TOP + lift - rTop[1]
+  const arch = useMemo(() => keulaArch(archH / Math.cos(KEULA_BACK.lean), half), [archH, half])
+  const lowY = 0.2 * (seat / spec.seat)
   return (
     <group>
       {[-1, 1].map(sx => (
@@ -274,14 +284,12 @@ function Keula({ M }: Part) {
   )
 }
 
-// Each stool is drawn at its real size and scaled to the sliders, its back
-// with its seat.
-export default function Stool({ style, w, d, h, M }: Props) {
-  const id = STOOLS[style] ? style : 'lauta'
-  const spec = STOOLS[id]
-  return (
-    <group scale={[w / spec.width, h / spec.seat, d / spec.depth]}>
-      {id === 'dean' ? <Dean M={M} /> : id === 'keula' ? <Keula M={M} /> : <Lauta M={M} />}
-    </group>
-  )
+const STYLES: Record<string, (props: Part) => ReactNode> = { lauta: Lauta, dean: Dean, keula: Keula }
+
+// Each stool is laid out again at the size the sliders give it: its legs
+// grow longer and its seat wider, while its back stands as high over the
+// seat and every part keeps its thickness.
+export default function Stool({ style, ...size }: Props) {
+  const Model = STYLES[style] ?? Lauta
+  return <Model {...size} />
 }

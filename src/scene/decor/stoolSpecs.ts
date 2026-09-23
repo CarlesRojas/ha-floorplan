@@ -1,9 +1,10 @@
 // The measurements of the stool styles, in meters. Pilma gives each stool's
 // width, depth and height and nothing else, so the parts below are off the
-// product photos, scaled by those. Each stool is drawn at its real size,
-// facing +z. Its height slider is the seat's height, which is what matters
-// at a counter and what anything set on the stool stands on, and a back
-// scales with it. The models are in Stools.tsx.
+// product photos, scaled by those. Each stool faces +z and is laid out
+// again at the size the sliders give it. Its height slider is the seat's
+// height, which is what matters at a counter and what anything set on the
+// stool stands on, and a back stands as high over the seat at any height.
+// The models are in Stools.tsx.
 
 export type StoolSpec = {
   // The stool's real width, depth and seat height, which the sliders start
