@@ -7,15 +7,14 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 // fullscreen editor stops pointer and key events at its boundary, so a
 // library that dismisses through plain document listeners never hears them.
 // A native select is no good here either, since an option can hold only
-// text, and a device has to show the controls it offers beside its name.
+// text, and a device has to show the controls it offers under its name.
 
 export type SelectOption = {
   value: string
   label: string
-  // Shown under the label, for example the entity id.
-  note?: string
-  // Shown at the end of the row, for example the controls a device offers.
-  badge?: ReactNode
+  // Shown under the label, for example the controls a device offers, each
+  // written out rather than left as an icon.
+  detail?: ReactNode
 }
 
 type Props = {
@@ -88,7 +87,6 @@ export function Select({ value, options, placeholder = 'None', onChange, classNa
         <span className={cn('min-w-0 flex-1 truncate', !current && 'text-(--secondary-text-color)')}>
           {current?.label ?? placeholder}
         </span>
-        {current?.badge}
         <FontAwesomeIcon icon={faChevronDown} className="size-3 shrink-0 text-(--secondary-text-color)" />
       </button>
       {open && (
@@ -111,17 +109,16 @@ export function Select({ value, options, placeholder = 'None', onChange, classNa
                 onChange(o.value)
                 setOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-(--secondary-background-color)"
+              className="flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-(--secondary-background-color)"
             >
               <FontAwesomeIcon
                 icon={faCheck}
-                className={cn('size-3 shrink-0', o.value === value ? 'opacity-100' : 'opacity-0')}
+                className={cn('mt-1 size-3 shrink-0', o.value === value ? 'opacity-100' : 'opacity-0')}
               />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{o.label}</span>
-                {o.note && <span className="block truncate text-xs text-(--secondary-text-color)">{o.note}</span>}
-              </span>
-              {o.badge}
+              <div className="min-w-0 flex-1">
+                <div className="truncate">{o.label}</div>
+                {o.detail && <div className="mt-1">{o.detail}</div>}
+              </div>
             </button>
           ))}
         </div>

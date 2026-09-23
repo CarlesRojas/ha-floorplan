@@ -231,11 +231,14 @@ export default function DecorationPanel({
                 style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
                 options={[
                   { value: '', label: 'None' },
+                  // Each entity says what it brings in words, since an icon
+                  // alone does not tell you what a device can drive.
                   ...fits.map(e => ({
                     value: e.entity_id,
                     label: e.name,
-                    note: e.entity_id,
-                    badge: hass ? <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" /> : undefined,
+                    detail: hass ? (
+                      <Signals signals={deviceSignals(hass, e.entity_id)} accent={EDITOR_BOUND_COLOR} />
+                    ) : undefined,
                   })),
                 ]}
                 onChange={v => onBind(item.id, v || null)}
@@ -276,9 +279,7 @@ export default function DecorationPanel({
                       that piece, the bin lets go of it. */}
                   {siblings.length > 0 && (
                     <div className="flex flex-col gap-1">
-                      <p className="text-xs font-semibold text-(--secondary-text-color)">
-                        Also driving
-                      </p>
+                      <p className="text-xs font-semibold text-(--secondary-text-color)">Also driving</p>
                       {siblings.map(other => {
                         const k = decorationKind(other.kind)
                         const room = rooms.find(r => r.id === other.room)
@@ -314,8 +315,8 @@ export default function DecorationPanel({
                     </div>
                   )}
                   <p className="text-xs text-(--secondary-text-color)">
-                    Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for
-                    the device's own dialog in Home Assistant, where brightness, color and the rest live.
+                    Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for the
+                    device's own dialog in Home Assistant, where brightness, color and the rest live.
                   </p>
                 </>
               )}
@@ -336,8 +337,8 @@ export default function DecorationPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Let go of this piece?</AlertDialogTitle>
             <AlertDialogDescription>
-              {decorationKind(unbinding?.kind ?? '')?.label ?? 'The item'} stops standing in for this device. The
-              piece itself stays on the plan.
+              {decorationKind(unbinding?.kind ?? '')?.label ?? 'The item'} stops standing in for this device. The piece
+              itself stays on the plan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
