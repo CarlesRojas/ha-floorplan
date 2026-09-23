@@ -256,21 +256,22 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       // it draws through and a lit face that comes up with the fan.
       const w = p('width')
       const d = p('depth')
+      // A ceiling item is already lifted to the ceiling, so the model hangs
+      // down from nothing.
       const panel = 0.03
-      const y = CEILING_HEIGHT_M - panel
       const edge = 0.05
       return (
         <group>
-          <Slab size={[w, panel, d]} radius={0.012} bevel={0.005} position={[0, y, 0]}>
+          <Slab size={[w, panel, d]} radius={0.012} bevel={0.005} position={[0, -panel, 0]}>
             {M('panel')}
           </Slab>
           {/* The slot it draws through, all the way round the panel. */}
-          <Slab size={[w - edge, 0.006, d - edge]} radius={0.01} bevel={0.002} position={[0, y - 0.006, 0]}>
+          <Slab size={[w - edge, 0.006, d - edge]} radius={0.01} bevel={0.002} position={[0, -panel - 0.006, 0]}>
             {M('grille')}
           </Slab>
           {/* The lit face, inset from the slot, which is all that shows from
               below when it is off. */}
-          <mesh position={[0, y - 0.008, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh position={[0, -panel - 0.008, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <planeGeometry args={[w - edge * 2.4, d - edge * 2.4]} />
             <meshStandardMaterial
               color={c('panel')}
@@ -287,8 +288,10 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       // and two task lights in it.
       const w = p('width')
       const d = p('depth')
-      const hoodY = 1.55
+      // A ceiling item hangs from nothing, so the canopy is placed by how
+      // far below the ceiling it sits rather than how high off the floor.
       const canopy = 0.14
+      const hoodY = -(CEILING_HEIGHT_M - 1.55)
       return (
         <group>
           <Slab size={[w, canopy, d]} radius={0.015} bevel={0.01} position={[0, hoodY, 0]}>
@@ -296,7 +299,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           </Slab>
           {/* The chimney, narrower than the canopy, up to the ceiling. */}
           <Slab
-            size={[w * 0.36, 2.6 - hoodY - canopy, d * 0.36]}
+            size={[w * 0.36, -hoodY - canopy, d * 0.36]}
             radius={0.012}
             bevel={0.006}
             position={[0, hoodY + canopy, -d * 0.08]}
