@@ -177,7 +177,7 @@ const PENDANT_STEEL_COLOR = '#b4b8bb'
 // The first style, which is also the kind's own slots.
 const PENDANT_NAGOYA: DecorationVariant = {
   id: 'nagoya',
-  label: 'Nagoya',
+  label: 'Slatted Lantern',
   params: { size: 0.42 },
   colors: { slats: '#e2c89c', threads: '#f2ede4', diffuser: LIGHT_SHADE_COLOR, cord: PENDANT_BLACK_COLOR },
   materials: { slats: 'wood', threads: 'fabric', diffuser: 'matte', cord: 'fabric' },
@@ -188,7 +188,7 @@ const PENDANT_NAGOYA: DecorationVariant = {
 // lands on the Cestita.
 const TABLE_CESTITA: DecorationVariant = {
   id: 'cestita',
-  label: 'Cestita',
+  label: 'Opal Globe Carrier',
   params: { size: 0.22, height: 0.36 },
   colors: { globe: PENDANT_OPAL_COLOR, basket: '#b97a4a' },
   materials: { globe: 'matte', basket: 'wood' },
@@ -198,7 +198,7 @@ const TABLE_CESTITA: DecorationVariant = {
 // shade or stand color still lands on the TMM.
 const FLOOR_TMM: DecorationVariant = {
   id: 'tmm',
-  label: 'TMM',
+  label: 'Beech Tripod Drum',
   // 60 by 50 cm across, from the end of a leg to the far side of the shade,
   // and 166 cm tall.
   params: { size: 0.6, depth: 0.5, height: 1.66 },
@@ -272,11 +272,11 @@ const STOOL_LAUTA: DecorationVariant = {
 // shade or channel color still lands on the TMM.
 const WALL_TMM: DecorationVariant = {
   id: 'tmm',
-  label: 'TMM corto',
+  label: 'Parchment Wall Drum',
   // A Ø20 shade 23 cm out from the wall, on a channel 20 cm tall.
   params: { size: 0.2, depth: 0.23, tall: 0.2 },
-  colors: { shade: '#ecdfc0', channel: '#dfbb8f', cable: PENDANT_BLACK_COLOR },
-  materials: { shade: 'fabric', channel: 'wood', cable: 'fabric' },
+  colors: { shade: '#ecdfc0', channel: '#dfbb8f', fittings: PENDANT_BLACK_COLOR },
+  materials: { shade: 'fabric', channel: 'wood', fittings: 'metal' },
 }
 
 export const DECORATION_KINDS: DecorationKind[] = [
@@ -306,7 +306,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       PENDANT_NAGOYA,
       {
         id: 'globo_cesta',
-        label: 'Globo Cesta',
+        label: 'Wicker Globe',
         params: { size: 0.27 },
         colors: {
           globe: PENDANT_OPAL_COLOR,
@@ -319,7 +319,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'headhat_bowl',
-        label: 'HeadHat Bowl L',
+        label: 'Ceramic Bowl',
         params: { size: 0.2 },
         colors: {
           shade: PENDANT_CERAMIC_COLOR,
@@ -332,7 +332,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'cirio_simple',
-        label: 'Cirio Simple',
+        label: 'Porcelain Candle',
         params: { size: 0.1 },
         colors: {
           shade: PENDANT_CERAMIC_COLOR,
@@ -364,7 +364,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       FLOOR_TMM,
       {
         id: 'fad',
-        label: 'FAD',
+        label: 'Adjustable Tripod',
         // Ø49 across the foot and 120 cm at its lowest.
         params: { size: 0.49, depth: 0.49, height: 1.2 },
         colors: { shade: '#f3efe6', stand: '#c08f5e', rod: PENDANT_STEEL_COLOR },
@@ -372,7 +372,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'lamina',
-        label: 'Lámina 165',
+        label: 'Tall Folded Sheet',
         // Ø21 across the base and 187.5 cm to the top of the rod.
         params: { size: 0.21, depth: 0.21, height: 1.88 },
         colors: { shade: '#f5f4f0', back: '#d9dbdc', structure: PENDANT_BLACK_COLOR, diffuser: PENDANT_OPAL_COLOR },
@@ -396,7 +396,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       TABLE_CESTITA,
       {
         id: 'sylvestrina',
-        label: 'Sylvestrina',
+        label: 'Black Glass Candlestick',
         // Ø12.7 by 35.5 cm, to the centimeter.
         params: { size: 0.13, height: 0.36 },
         colors: { base: PENDANT_BLACK_COLOR, glass: '#eef3f4', diffuser: PENDANT_OPAL_COLOR },
@@ -404,14 +404,14 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'maija',
-        label: 'Maija 15',
+        label: 'Ringed Tripod',
         params: { size: 0.21, height: 0.33 },
         colors: { shade: '#f3f2ee', feet: '#b89a5e', diffuser: PENDANT_OPAL_COLOR },
         materials: { shade: 'matte', feet: 'metal', diffuser: 'matte' },
       },
       {
         id: 'basica_minima',
-        label: 'Básica Mínima',
+        label: 'Parchment Drum',
         params: { size: 0.12, height: 0.3 },
         colors: { shade: '#e6d6b4', column: '#e8d3ad', base: '#4b3a2a', stitching: '#5a3b25' },
         materials: { shade: 'fabric', column: 'wood', base: 'metal', stitching: 'fabric' },
@@ -440,7 +440,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       WALL_TMM,
       {
         id: 'singular',
-        label: 'Singular',
+        label: 'Linen Wall Sconce',
         // 18 cm wide, 15 cm out and 30 cm tall.
         params: { size: 0.18, depth: 0.15, tall: 0.3 },
         colors: { shade: '#f4f1ea', structure: '#c9ccce' },
@@ -448,7 +448,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
       {
         id: 'wally',
-        label: 'Wally Cestita',
+        label: 'Black Arm Opal Globe',
         // A Ø18 globe 22 cm out, on a plate 24 cm tall.
         params: { size: 0.18, depth: 0.22, tall: 0.24 },
         colors: { globe: PENDANT_OPAL_COLOR, structure: PENDANT_BLACK_COLOR },

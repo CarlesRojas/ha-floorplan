@@ -168,7 +168,7 @@ export default function LightModel({ kind, item, state }: Props) {
       glowAt = [spec.glow[0] * kx, height + spec.glow[1] * ky, spec.glow[2] * kz]
       body = (
         <group position={[0, height, 0]}>
-          <WallLamp style={style} kx={kx} ky={ky} kz={kz} drop={height} c={c} m={m} state={state} />
+          <WallLamp style={style} kx={kx} ky={ky} kz={kz} c={c} m={m} state={state} />
         </group>
       )
       break

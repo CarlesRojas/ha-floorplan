@@ -13,8 +13,6 @@ import {
   SINGULAR_STEM_W,
   SINGULAR_STRUT_R,
   TMM_BLOCK,
-  TMM_CABLE_R,
-  TMM_CABLE_Z,
   TMM_PLATE,
   TMM_RAIL,
   TMM_SHADE_H,
@@ -31,7 +29,7 @@ import {
   WALLY_PLATE,
 } from '#/scene/decor/wallLampSpecs.ts'
 import { useMemo, type ReactNode } from 'react'
-import { CatmullRomCurve3, ExtrudeGeometry, Shape, TubeGeometry, Vector2, Vector3 } from 'three'
+import { ExtrudeGeometry, Shape, Vector2, Vector3 } from 'three'
 
 // The wall lamp styles, each one a Santa & Cole lamp drawn from its
 // technical drawing. Every part is in real meters, out from the wall along z
@@ -81,11 +79,11 @@ function Tube({
 }
 
 // TMM corto: a beech channel on the wall, a Ø20 parchment shade held in
-// front of it by two blocks, and a black cable dropping from under it.
+// front of it by two blocks, with a black arm and lamp holder.
 function Tmm({ c, m, state }: ModelProps) {
   const [w, h, d] = TMM_PLATE
   const wood = <BaseMaterial color={c('channel')} material={m('channel')} />
-  const black = <BaseMaterial color={c('cable')} material={m('cable')} />
+  const black = <BaseMaterial color={c('fittings')} material={m('fittings')} />
   const shadeZ = d + TMM_SHADE_R
   return (
     <group>
@@ -123,32 +121,6 @@ function Tmm({ c, m, state }: ModelProps) {
         {black}
       </mesh>
     </group>
-  )
-}
-
-// The cable from under the TMM's shade down the wall to the floor, drawn
-// outside the lamp's scale so it always reaches the floor.
-function TmmCable({ from, drop, c, m }: { from: [number, number]; drop: number; c: ModelProps['c']; m: ModelProps['m'] }) {
-  const [y, z] = from
-  const geometry = useMemo(() => {
-    const floor = -drop + TMM_CABLE_R
-    const points =
-      y - floor > 0.15
-        ? [
-            new Vector3(0, y, z),
-            new Vector3(0, y - 0.06, z + 0.004),
-            new Vector3(0, (y + floor) / 2, z + 0.012),
-            new Vector3(0, floor + 0.06, z + 0.02),
-            new Vector3(0.02, floor, z + 0.08),
-            new Vector3(0.12, floor, z + 0.12),
-          ]
-        : [new Vector3(0, y, z), new Vector3(0, floor, z)]
-    return new TubeGeometry(new CatmullRomCurve3(points), SEG * 4, TMM_CABLE_R, 12, false)
-  }, [y, z, drop])
-  return (
-    <mesh geometry={geometry}>
-      <BaseMaterial color={c('cable')} material={m('cable')} />
-    </mesh>
   )
 }
 
@@ -286,18 +258,12 @@ export default function WallLamp({
   kx,
   ky,
   kz,
-  drop,
   ...props
-}: ModelProps & { style: string; kx: number; ky: number; kz: number; drop: number }) {
+}: ModelProps & { style: string; kx: number; ky: number; kz: number }) {
   const Model = MODELS[style] ?? Tmm
   return (
-    <>
-      <group scale={[kx, ky, kz]}>
-        <Model {...props} />
-      </group>
-      {style === 'tmm' && (
-        <TmmCable from={[(-TMM_SHADE_H / 2) * ky, TMM_CABLE_Z * kz]} drop={drop} c={props.c} m={props.m} />
-      )}
-    </>
+    <group scale={[kx, ky, kz]}>
+      <Model {...props} />
+    </group>
   )
 }

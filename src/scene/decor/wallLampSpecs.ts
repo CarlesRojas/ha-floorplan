@@ -26,10 +26,6 @@ export const TMM_BLOCK = 0.01
 export const TMM_SHADE_R = 0.1
 export const TMM_SHADE_H = 0.16
 export const TMM_SHADE_T = 0.0015
-// The cable leaves the bottom of the shade 4.2 cm in front of the channel
-// and hangs down to the plug.
-export const TMM_CABLE_Z = 0.072
-export const TMM_CABLE_R = 0.0028
 
 // Singular: a white linen shade 30 cm tall, 18 cm wide and 15 cm out, a U of
 // straight sides 6 cm long and a half circle, open at the top and bottom. It
