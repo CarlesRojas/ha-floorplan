@@ -123,8 +123,8 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, projector screen |
 | Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
 | Windows and doors | Blind, roller shutter, window, door, sliding door, sliding glass door, garage door, awning |
-| Security and sensors | Camera, doorbell, motion sensor, door sensor, smoke detector, alarm panel, smart lock, air quality sensor |
-| Smart home | Robot vacuum, smart plug, switch panel |
+| Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor |
+| Smart home | Robot vacuum |
 
 ### Light in the room
 

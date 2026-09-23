@@ -17,7 +17,7 @@ function Led({ on, position, color = LED_ON }: { on: boolean; position: [number,
   const lit = useEased(on ? 1 : 0, 11)
   return (
     <mesh position={position}>
-      <sphereGeometry args={[0.012, 8, 6]} />
+      <sphereGeometry args={[0.012, 16, 12]} />
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * lit} />
     </mesh>
   )
@@ -32,7 +32,7 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
   return (
     <group ref={ref} position={position}>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[radius * 0.62, radius * 0.1, 8, SEG]} />
+        <torusGeometry args={[radius * 0.62, radius * 0.1, 16, SEG]} />
         <meshStandardMaterial color="#b9c2c6" roughness={0.5} />
       </mesh>
     </group>
@@ -195,7 +195,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
                 position={[side * (w / 2 - 0.07), h - 0.035, d / 2 + 0.012]}
                 rotation={[Math.PI / 2, 0, 0]}
               >
-                <cylinderGeometry args={[0.018, 0.02, 0.022, 12]} />
+                <cylinderGeometry args={[0.018, 0.02, 0.022, 24]} />
                 {M('knobs')}
               </mesh>
             ))}
@@ -231,7 +231,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               </mesh>
               {/* A short cross mark in the middle of each zone. */}
               <mesh position={[fx * w, 0.021, fz * d]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[w * 0.012, w * 0.02, 10]} />
+                <ringGeometry args={[w * 0.012, w * 0.02, 20]} />
                 <meshStandardMaterial color={c('zones')} />
               </mesh>
             </group>
@@ -243,7 +243,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           </mesh>
           {[-1, 1].map(side => (
             <mesh key={side} position={[side * (slider / 2 + 0.035), 0.021, d * 0.41]} rotation={[-Math.PI / 2, 0, 0]}>
-              <circleGeometry args={[0.008, 10]} />
+              <circleGeometry args={[0.008, 20]} />
               <meshStandardMaterial color={c('zones')} emissive="#ff6a2a" emissiveIntensity={1.2 * lit} />
             </mesh>
           ))}
@@ -319,7 +319,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           {/* Control buttons on the front lip. */}
           {[-1, 0, 1].map(i => (
             <mesh key={i} position={[w * 0.3 + i * 0.035, hoodY + canopy * 0.4, d / 2 + 0.002]}>
-              <cylinderGeometry args={[0.008, 0.008, 0.004, 10]} />
+              <cylinderGeometry args={[0.008, 0.008, 0.004, 20]} />
               {M('controls')}
             </mesh>
           ))}
@@ -345,20 +345,20 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             {M('bowl')}
           </Slab>
           <mesh position={[0, -0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.026, 0.026, 0.008, 12]} />
+            <cylinderGeometry args={[0.026, 0.026, 0.008, 24]} />
             {M('tap')}
           </mesh>
           {/* A tall tap: a straight riser, a curved neck and a lever. */}
           <mesh position={[0, 0.14, -d / 2 + 0.05]}>
-            <cylinderGeometry args={[0.016, 0.02, 0.28, 12]} />
+            <cylinderGeometry args={[0.016, 0.02, 0.28, 24]} />
             {M('tap')}
           </mesh>
           <mesh position={[0, 0.28, -d / 2 + 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.06, 0.015, 8, 16, Math.PI]} />
+            <torusGeometry args={[0.06, 0.015, 16, 32, Math.PI]} />
             {M('tap')}
           </mesh>
           <mesh position={[0, 0.255, -d / 2 + 0.17]}>
-            <cylinderGeometry args={[0.014, 0.014, 0.04, 10]} />
+            <cylinderGeometry args={[0.014, 0.014, 0.04, 20]} />
             {M('tap')}
           </mesh>
           <Bar length={0.07} radius={0.008} rotation={[0.5, 0, Math.PI / 2]} position={[0.035, 0.27, -d / 2 + 0.02]}>
@@ -396,7 +396,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           </Bar>
           {/* Steam wand on the side. */}
           <mesh position={[s * 0.42, h * 0.5, s * 0.3]} rotation={[0.5, 0, 0.2]}>
-            <cylinderGeometry args={[0.007, 0.009, s * 0.5, 8]} />
+            <cylinderGeometry args={[0.007, 0.009, s * 0.5, 16]} />
             {M('fittings')}
           </mesh>
           {/* Warming shelf and water tank behind it. */}
@@ -432,21 +432,21 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             {M('fittings')}
           </mesh>
           <mesh position={[0, h + 0.05, 0]}>
-            <sphereGeometry args={[r * 0.16, 10, 8]} />
+            <sphereGeometry args={[r * 0.16, 20, 16]} />
             {M('fittings')}
           </mesh>
           {/* Gooseneck spout, rising and curling forward. */}
           <mesh position={[r * 0.72, h * 0.55, 0]} rotation={[0, 0, -0.25]}>
-            <cylinderGeometry args={[r * 0.1, r * 0.13, h * 0.75, 10]} />
+            <cylinderGeometry args={[r * 0.1, r * 0.13, h * 0.75, 20]} />
             <Material color={c('body')} material={m('body')} />
           </mesh>
           <mesh position={[r * 0.98, h * 0.95, 0]} rotation={[Math.PI / 2, 0, 0.6]}>
-            <torusGeometry args={[r * 0.28, r * 0.09, 6, 12, Math.PI * 0.8]} />
+            <torusGeometry args={[r * 0.28, r * 0.09, 12, 24, Math.PI * 0.8]} />
             <Material color={c('body')} material={m('body')} />
           </mesh>
           {/* Handle, a loop off the back. */}
           <mesh position={[-r * 0.95, h * 0.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.5, r * 0.09, 6, 14, Math.PI]} />
+            <torusGeometry args={[r * 0.5, r * 0.09, 12, 28, Math.PI]} />
             {M('fittings')}
           </mesh>
         </group>
@@ -465,7 +465,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           </Slab>
           {/* Round porthole with a rim, and the drum behind it. */}
           <mesh position={[0, h * 0.48, d / 2 + 0.005]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[w * 0.28, 0.022, 8, SEG]} />
+            <torusGeometry args={[w * 0.28, 0.022, 16, SEG]} />
             {M('door')}
           </mesh>
           <mesh position={[0, h * 0.48, d / 2 - 0.01]}>
@@ -494,7 +494,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             {M('controls')}
           </Slab>
           <mesh position={[w / 2 - 0.09, h - 0.082, d / 2 + 0.018]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.026, 0.028, 0.02, 12]} />
+            <cylinderGeometry args={[0.026, 0.028, 0.02, 24]} />
             {M('controls')}
           </mesh>
           {kind.id === 'washing_machine' && (
@@ -534,7 +534,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
               {M('pan')}
             </mesh>
             <mesh position={[0, panH + 0.012, (d * 0.02) / ((d * 0.6) / (seatR * 2))]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[seatR * 0.78, seatR * 0.2, 8, SEG * 2]} />
+              <torusGeometry args={[seatR * 0.78, seatR * 0.2, 16, SEG * 2]} />
               {M('seat')}
             </mesh>
           </group>
@@ -589,16 +589,16 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             <Material color="#e9f1f3" material="ceramic" doubleSide />
           </mesh>
           <mesh position={[0, h + 0.038, 0.02]}>
-            <cylinderGeometry args={[0.016, 0.016, 0.008, 10]} />
+            <cylinderGeometry args={[0.016, 0.016, 0.008, 20]} />
             {M('tap')}
           </mesh>
           {/* A slim pillar tap with a forward spout and a lever. */}
           <mesh position={[0, h + 0.12, -d / 2 + 0.09]}>
-            <cylinderGeometry args={[0.018, 0.022, 0.24, 10]} />
+            <cylinderGeometry args={[0.018, 0.022, 0.24, 20]} />
             {M('tap')}
           </mesh>
           <mesh position={[0, h + 0.235, -d / 2 + 0.115]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.09, 10]} />
+            <cylinderGeometry args={[0.012, 0.012, 0.09, 20]} />
             {M('tap')}
           </mesh>
           <Bar length={0.09} radius={0.008} position={[0.03, h + 0.26, -d / 2 + 0.06]} rotation={[0, 0.5, Math.PI / 2]}>
@@ -630,15 +630,15 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           </Slab>
           {/* Waste and overflow at the tap end. */}
           <mesh position={[0, h - 0.015, -l / 2 + 0.13]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.028, 0.028, 0.01, 12]} />
+            <cylinderGeometry args={[0.028, 0.028, 0.01, 24]} />
             {M('tap')}
           </mesh>
           <mesh position={[0, h + 0.11, -l / 2 + 0.1]}>
-            <cylinderGeometry args={[0.016, 0.02, 0.22, 10]} />
+            <cylinderGeometry args={[0.016, 0.02, 0.22, 20]} />
             {M('tap')}
           </mesh>
           <mesh position={[0, h + 0.215, -l / 2 + 0.145]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.013, 0.013, 0.1, 10]} />
+            <cylinderGeometry args={[0.013, 0.013, 0.1, 20]} />
             {M('tap')}
           </mesh>
         </group>
@@ -688,12 +688,12 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             {M('tap')}
           </mesh>
           <mesh position={[-w * 0.3, h * 0.6, -d / 2 + 0.09]} rotation={[0.5, 0, 0]}>
-            <cylinderGeometry args={[0.018, 0.022, 0.12, 10]} />
+            <cylinderGeometry args={[0.018, 0.022, 0.12, 20]} />
             {M('tap')}
           </mesh>
           {/* The arm and the square rain head. */}
           <mesh position={[0, h - 0.12, -d / 2 + 0.16]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.014, 0.014, 0.26, 10]} />
+            <cylinderGeometry args={[0.014, 0.014, 0.26, 20]} />
             {M('tap')}
           </mesh>
           <Slab size={[0.24, 0.018, 0.24]} radius={0.02} bevel={0.006} position={[0, h - 0.15, -d / 2 + 0.28]}>
@@ -723,7 +723,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
         <group position={[0, -h, 0]}>
           {[-1, 1].map(s => (
             <mesh key={s} position={[(s * (w - 0.03)) / 2, h / 2, 0.055]}>
-              <cylinderGeometry args={[0.014, 0.014, h, 10]} />
+              <cylinderGeometry args={[0.014, 0.014, h, 20]} />
               {glow}
             </mesh>
           ))}
@@ -731,7 +731,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           {[-1, 1].flatMap(s =>
             [0.12, h - 0.12].map(y => (
               <mesh key={`${s}:${y}`} position={[(s * (w - 0.03)) / 2, y, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.012, 0.012, 0.07, 8]} />
+                <cylinderGeometry args={[0.012, 0.012, 0.07, 16]} />
                 {M('rail')}
               </mesh>
             )),

@@ -9,7 +9,7 @@ import { DoubleSide, ExtrudeGeometry, type Group } from 'three'
 // Scandinavian: softly rounded boxes, tapered legs, plump cushions and thin
 // panels, in pale wood and warm off whites.
 
-export const SEG = 16
+export const SEG = 32
 
 type Vec3 = [number, number, number]
 
@@ -80,8 +80,8 @@ export function Slab({
       bevelEnabled: b > 0.002,
       bevelThickness: b,
       bevelSize: b,
-      bevelSegments: 2,
-      curveSegments: 6,
+      bevelSegments: 4,
+      curveSegments: 12,
     })
     // The shape is drawn on XY and extruded along +z. Rotating -90 about x
     // turns that into +y spanning [-b, h - b], so lift it by b to sit on the
@@ -119,7 +119,7 @@ export function Leg({
   const [rx, rz] = lean ?? [tilt, tilt]
   return (
     <mesh position={[position[0], position[1] + height / 2, position[2]]} rotation={[rx, 0, rz]} castShadow>
-      <cylinderGeometry args={[top, bottom, height, 8]} />
+      <cylinderGeometry args={[top, bottom, height, 16]} />
       {children}
     </mesh>
   )
@@ -258,7 +258,7 @@ export function Bar({
 }) {
   return (
     <mesh position={position} rotation={rotation} castShadow>
-      <capsuleGeometry args={[radius, Math.max(length - radius * 2, 0.001), 4, 10]} />
+      <capsuleGeometry args={[radius, Math.max(length - radius * 2, 0.001), 8, 20]} />
       {children}
     </mesh>
   )
@@ -297,7 +297,7 @@ export function Knob({
 }) {
   return (
     <mesh position={position} rotation={[Math.PI / 2, 0, 0]}>
-      <cylinderGeometry args={[radius, radius * 0.8, radius * 1.2, 10]} />
+      <cylinderGeometry args={[radius, radius * 0.8, radius * 1.2, 20]} />
       {children}
     </mesh>
   )
@@ -342,7 +342,7 @@ export function Led({
   const lit = useEased(on ? 1 : 0, 11)
   return (
     <mesh position={position}>
-      <sphereGeometry args={[radius, 8, 6]} />
+      <sphereGeometry args={[radius, 16, 12]} />
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * lit} />
     </mesh>
   )
