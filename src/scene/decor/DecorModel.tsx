@@ -66,6 +66,18 @@ export default function DecorModel({ kind, item, state }: Props) {
   }, [isVase, vaseR, vaseH])
 
   switch (kind.id) {
+    case 'half_wall': {
+      // A low dividing wall: one plain block, long in one direction and
+      // thin in the other, with a top other things stand on.
+      const w = p('width')
+      const d = p('depth')
+      const h = p('height')
+      return (
+        <Slab size={[w, h, d]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
+          <Material color={c('wall')} material={m('wall')} />
+        </Slab>
+      )
+    }
     case 'rug': {
       // A flat woven rug: one low pile, a narrow border stripe and fringed
       // short ends, the way a Nordic wool rug is finished.

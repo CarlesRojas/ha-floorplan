@@ -637,6 +637,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
 
   // Decor
   kind(
+    'half_wall',
+    'decor',
+    'Half wall',
+    'floor',
+    [width(2, 0.4, 8), depth(0.2, 0.1, 0.4), height(1, 0.4, 1.6)],
+    { wall: SCANDI.offWhite },
+    { wall: 'matte' },
+  ),
+  kind(
     'rug',
     'decor',
     'Rug',
@@ -1203,6 +1212,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
   kitchen_island: 'height',
   washing_machine: 'height',
   dryer: 'height',
+  half_wall: 'height',
   bench: 0.42,
   pouf: 'height',
 }
