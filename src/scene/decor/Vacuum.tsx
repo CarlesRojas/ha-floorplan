@@ -1,8 +1,8 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Led, Material, SEG, Slab, Spinner } from '#/scene/decor/parts.tsx'
-import { alongPath, legLengths, roamKey, roamPath } from '#/scene/decor/roam.ts'
+import { alongPath, legLengths, roamKey, roamRound } from '#/scene/decor/roam.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import type { DecorationConfig, RoomConfig } from '#/types.ts'
+import type { DecorationConfig, Point, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import { MathUtils, type Group } from 'three'
@@ -41,52 +41,111 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
   // standing in it or the robot's own place actually changes. Every other
   // render, of which there are many, leaves it alone.
   const key = roamKey(room, all, item, r)
-  const path = useMemo(
-    () => (room ? roamPath(room, all, item, r) : [item.position]),
+  const round = useMemo(
+    () => (room ? roamRound(room, all, item, r) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [key],
   )
-  const legs = useMemo(() => legLengths(path), [path])
-  const total = useMemo(() => legs.reduce((a, b) => a + b, 0), [legs])
+  const sweep = useMemo(() => {
+    const path = round?.sweep ?? [item.position]
+    return { path, legs: legLengths(path) }
+  }, [round, item.position])
 
   const rig = useRef<Group>(null)
+  // What it is driving now: the sweep while it runs, the way back to the
+  // dock once it stops, and nothing at all while it sits there.
+  const trip = useRef<{ path: Point[]; legs: number[]; total: number } | null>(null)
+  const going = useRef<'sweep' | 'home' | 'parked'>('parked')
   const travelled = useRef(0)
   const forward = useRef(true)
+  const spot = useRef<Point>(item.position)
   const facing = useRef(0)
   const rotation = MathUtils.degToRad(item.rotation ?? 0)
+
+  // The point of the sweep nearest to where it is now, so turning it back on
+  // partway home picks the round up where it is rather than teleporting it
+  // to the start.
+  const joinSweep = (from: Point) => {
+    let best = 0
+    let bestGap = Infinity
+    let along = 0
+    for (let i = 0; i < sweep.legs.length; i++) {
+      const a = sweep.path[i]
+      const b = sweep.path[i + 1]
+      const len = sweep.legs[i]
+      const t =
+        len > 0
+          ? Math.min(
+              Math.max(((from[0] - a[0]) * (b[0] - a[0]) + (from[1] - a[1]) * (b[1] - a[1])) / (len * len), 0),
+              1,
+            )
+          : 0
+      const gap = Math.hypot(a[0] + (b[0] - a[0]) * t - from[0], a[1] + (b[1] - a[1]) * t - from[1])
+      if (gap < bestGap) {
+        bestGap = gap
+        best = along + t * len
+      }
+      along += len
+    }
+    return best
+  }
+
+  const take = (path: Point[]) => {
+    const legs = legLengths(path)
+    trip.current = { path, legs, total: legs.reduce((a, b) => a + b, 0) }
+    travelled.current = 0
+  }
 
   useFrame((_, delta) => {
     const g = rig.current
     if (!g) return
     const dt = Math.min(delta, 0.1)
-    if (total <= 0) return
-    if (on) {
-      // Out to the far end of the round and back again, for as long as it
-      // is running.
-      travelled.current += (forward.current ? 1 : -1) * SPEED * dt
-      if (travelled.current >= total) {
-        travelled.current = total
-        forward.current = false
-      } else if (travelled.current <= 0) {
-        travelled.current = 0
-        forward.current = true
-      }
-    } else {
-      // Off means home. It retraces the way it came rather than driving
-      // through the sofa.
-      travelled.current = Math.max(travelled.current - SPEED * dt, 0)
+
+    if (on && going.current !== 'sweep') {
+      // Back to sweeping, from wherever it had got to.
+      going.current = 'sweep'
+      trip.current = { ...sweep, total: sweep.legs.reduce((a, b) => a + b, 0) }
+      travelled.current = joinSweep(spot.current)
       forward.current = true
+    } else if (!on && going.current === 'sweep') {
+      // Switched off: straight back to the dock by the shortest way across
+      // the free floor, not back along everything it just swept.
+      going.current = 'home'
+      take(round ? round.home(spot.current) : [spot.current, item.position])
     }
-    const { at, heading } = alongPath(path, legs, travelled.current)
+
+    const run = trip.current
+    if (run && run.total > 0) {
+      if (going.current === 'sweep') {
+        // Out to the far end of the round and back again, for as long as it
+        // is running.
+        travelled.current += (forward.current ? 1 : -1) * SPEED * dt
+        if (travelled.current >= run.total) {
+          travelled.current = run.total
+          forward.current = false
+        } else if (travelled.current <= 0) {
+          travelled.current = 0
+          forward.current = true
+        }
+      } else {
+        travelled.current = Math.min(travelled.current + SPEED * dt, run.total)
+        if (travelled.current >= run.total) going.current = 'parked'
+      }
+    } else if (going.current === 'home') going.current = 'parked'
+
+    const here =
+      run && run.total > 0 ? alongPath(run.path, run.legs, travelled.current) : { at: item.position, heading: 0 }
+    spot.current = here.at
     // The whole piece is already turned to the item's own rotation, so the
     // robot's place inside it is the plan offset turned back the other way.
-    const dx = at[0] - item.position[0]
-    const dz = -(at[1] - item.position[1])
+    const dx = here.at[0] - item.position[0]
+    const dz = -(here.at[1] - item.position[1])
     g.position.x = dx * Math.cos(rotation) - dz * Math.sin(rotation)
     g.position.z = dx * Math.sin(rotation) + dz * Math.cos(rotation)
     // Facing the way it drives, and turning into it rather than snapping.
-    // Standing still it keeps the heading it had.
-    const want = (on || travelled.current > 0 ? heading : 0) - rotation
+    // Parked, it faces straight out of the dock, which is the piece's own
+    // front, so its brushes point into the room and not at the wall.
+    const want = going.current === 'parked' ? 0 : here.heading - rotation
     const turn = ((want - facing.current + Math.PI) % (Math.PI * 2)) - Math.PI
     facing.current += turn * Math.min(TURN_RATE * dt, 1)
     g.rotation.y = facing.current

@@ -162,7 +162,14 @@ export function roamKey(room: RoomConfig | undefined, all: DecorationConfig[], s
   return `${room.points}|${self.position}|${radius}|${pieces.join('|')}`
 }
 
-export function roamPath(room: RoomConfig, all: DecorationConfig[], self: DecorationConfig, radius: number): Point[] {
+// A robot's round: the sweep it drives while it is running, and the way
+// back to the dock from wherever it has got to when it stops.
+export type Round = {
+  sweep: Point[]
+  home: (from: Point) => Point[]
+}
+
+export function roamRound(room: RoomConfig, all: DecorationConfig[], self: DecorationConfig, radius: number): Round {
   const others = all.filter(d => d.id !== self.id && d.room === room.id)
   const step = Math.max(radius * SAMPLE, 0.02)
   const floor = freeFloor(room, others, radius, step)
@@ -196,24 +203,30 @@ export function roamPath(room: RoomConfig, all: DecorationConfig[], self: Decora
   // The dock stands against a wall, where the robot itself does not fit, so
   // the round starts at the dock's own spot and joins the floor at the free
   // cell nearest to it.
-  const path: Point[] = [self.position]
   const origin = at(0, 0)
-  const home = nearestFree(floor, [
-    Math.round((self.position[0] - origin[0]) / step),
-    Math.round((self.position[1] - origin[1]) / step),
-  ])
-  if (!home || stops.length === 0) return path
-  let cursor = home
-  for (const stop of [home, ...stops]) {
-    // Every move is routed across the free floor, so the leg from one pass
-    // to the next goes around the furniture between them rather than
-    // through it.
-    const trail = sightLine(floor, cursor, stop) ? [stop] : straighten(floor, route(floor, cursor, stop), cursor)
+  const cellOf = (q: Point): Cell => [Math.round((q[0] - origin[0]) / step), Math.round((q[1] - origin[1]) / step)]
+  // Every move is routed across the free floor, so no leg goes through the
+  // furniture between its ends.
+  const leg = (from: Cell, to: Cell) =>
+    sightLine(floor, from, to) ? [to] : straighten(floor, route(floor, from, to), from)
+  const dock = nearestFree(floor, cellOf(self.position))
+  // The shortest way back to the dock from anywhere on the floor, which is
+  // what it drives when it is switched off partway through a round.
+  const home = (from: Point): Point[] => {
+    const at0 = nearestFree(floor, cellOf(from))
+    if (!at0 || !dock) return [from, self.position]
+    return [from, ...leg(at0, dock).map(cell => at(cell[0], cell[1])), self.position]
+  }
+  const path: Point[] = [self.position]
+  if (!dock || stops.length === 0) return { sweep: path, home }
+  let cursor = dock
+  for (const stop of [dock, ...stops]) {
+    const trail = leg(cursor, stop)
     if (trail.length === 0) continue
     for (const cell of trail) path.push(at(cell[0], cell[1]))
     cursor = trail[trail.length - 1]
   }
-  return path
+  return { sweep: path, home }
 }
 
 // The free cell closest to one that is not, for joining the floor from the
