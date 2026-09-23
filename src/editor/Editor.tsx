@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faFloppyDisk, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
@@ -65,7 +65,9 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   const [selection, setSelection] = useState<Selection>({ roomId: null, vertex: null })
   const [draft, setDraft] = useState<Point[]>([])
   const [view, setView] = useState<View | null>(null)
-  const [fullscreen, setFullscreen] = useState(true)
+  // Closed until Open editor is pressed, so editing the card lands on Home
+  // Assistant's own dialog first, with its visibility and layout tabs.
+  const [fullscreen, setFullscreen] = useState(false)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
   // The hour the preview is lit at. The editor never follows the sun: what
@@ -481,18 +483,34 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // dialog still open behind for visibility and layout. A rename still
   // waiting on its pause is sent first, so the save carries it. If the save
   // fails the editor stays open, so nothing is lost.
-  const [saving, setSaving] = useState(false)
-  const saveAndClose = async () => {
-    if (saving) return
+  const [saving, setSaving] = useState<'save' | 'close' | null>(null)
+  // Saves the card to the dashboard. A rename still waiting on its pause is
+  // sent first, so the save carries it, and what was saved becomes what
+  // Discard goes back to. True when it went through; a failed save says why
+  // and leaves everything where it is.
+  const persist = async (how: 'save' | 'close') => {
+    if (saving) return false
     flushRename()
-    setSaving(true)
+    setSaving(how)
     try {
       await onSave?.()
     } catch {
-      setSaving(false)
-      return
+      setSaving(null)
+      return false
     }
-    setSaving(false)
+    setSaving(null)
+    setOpened({ rooms, devices, decorations })
+    return true
+  }
+
+  // Saves and stays, for a checkpoint in the middle of a long edit.
+  const save = () => void persist('save')
+
+  // Saves and leaves, with Home Assistant's own dialog still open behind for
+  // visibility and layout. If the save fails the editor stays open, so
+  // nothing is lost.
+  const saveAndClose = async () => {
+    if (!(await persist('close'))) return
     setDraft([])
     setFullscreen(false)
   }
@@ -755,12 +773,21 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
               </button>
               <button
                 type="button"
+                onClick={save}
+                disabled={saving !== null}
+                className="flex h-10 items-center gap-2 rounded-xl border border-(--divider-color) px-4 text-sm font-semibold hover:opacity-90 disabled:opacity-60"
+              >
+                <FontAwesomeIcon icon={faFloppyDisk} className="size-3.5" />
+                {saving === 'save' ? 'Saving' : 'Save'}
+              </button>
+              <button
+                type="button"
                 onClick={saveAndClose}
-                disabled={saving}
+                disabled={saving !== null}
                 className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
                 <FontAwesomeIcon icon={faCheck} className="size-3.5" />
-                {saving ? 'Saving' : 'Save & Close'}
+                {saving === 'close' ? 'Saving' : 'Save & Close'}
               </button>
             </div>
           </div>
@@ -858,9 +885,11 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   }
 
   return (
-    <div className="font-montserrat flex items-center justify-between gap-3 py-2 text-(--primary-text-color)">
-      <p className="text-sm text-(--secondary-text-color)">
-        {rooms.length === 0 ? 'No rooms yet.' : `${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}.`}
+    // What the card's tab in Home Assistant's dialog shows: a word on what
+    // the editor is for, and the way into it, in the middle of the space.
+    <div className="font-montserrat flex min-h-56 flex-col items-center justify-center gap-4 px-6 py-8 text-center text-(--primary-text-color)">
+      <p className="max-w-sm text-sm text-(--secondary-text-color)">
+        Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for.
       </p>
       <button
         type="button"
