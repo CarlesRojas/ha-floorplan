@@ -1,4 +1,5 @@
-import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import DiningTable from '#/scene/decor/DiningTables.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
 
@@ -348,50 +349,10 @@ export default function FurnitureModel({ kind, item }: Props) {
     }
     // Tables
     case 'dining_table': {
-      // After the New Viok: a thin natural oak top on a lacquered steel
-      // understructure, square legs set in from the corners and tied by a
-      // beam right under the top.
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const top = 0.03
-      const leg = 0.04
-      const inset = 0.09
-      const beam = 0.035
-      const frameW = w - inset * 2
-      const frameD = d - inset * 2
-      return (
-        <group>
-          {[-1, 1].flatMap(sx =>
-            [-1, 1].map(sz => (
-              <mesh
-                key={`${sx}:${sz}`}
-                position={[(sx * (frameW - leg)) / 2, (h - top) / 2, (sz * (frameD - leg)) / 2]}
-                castShadow
-              >
-                <boxGeometry args={[leg, h - top, leg]} />
-                {M('frame')}
-              </mesh>
-            )),
-          )}
-          {/* The beam runs right around, just under the top. */}
-          {[-1, 1].map(sz => (
-            <mesh key={`x${sz}`} position={[0, h - top - beam / 2, (sz * (frameD - leg)) / 2]}>
-              <boxGeometry args={[frameW - leg, beam, leg * 0.6]} />
-              {M('frame')}
-            </mesh>
-          ))}
-          {[-1, 1].map(sx => (
-            <mesh key={`z${sx}`} position={[(sx * (frameW - leg)) / 2, h - top - beam / 2, 0]}>
-              <boxGeometry args={[leg * 0.6, beam, frameD - leg]} />
-              {M('frame')}
-            </mesh>
-          ))}
-          <Slab size={[w, top, d]} radius={0.012} bevel={0.006} position={[0, h - top, 0]}>
-            {M('top')}
-          </Slab>
-        </group>
-      )
+      // Each style is a real table, laid out again at the size the sliders
+      // give it.
+      const style = decorationVariant(kind, item.variant)?.id ?? 'viok'
+      return <DiningTable style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'office_table': {
       // A work table rather than a writing desk: a plain rectangular top on

@@ -206,6 +206,17 @@ const FLOOR_TMM: DecorationVariant = {
   materials: { shade: 'fabric', stand: 'wood', fittings: 'metal', cable: 'fabric' },
 }
 
+// The dining table's first style, which keeps the kind's old slots and the
+// oak on steel it was drawn as before it had styles.
+const DINING_VIOK: DecorationVariant = {
+  id: 'viok',
+  label: 'New Viok',
+  // 160 by 90 cm, 76 cm tall.
+  params: { width: 1.6, depth: 0.9, height: 0.76 },
+  colors: { top: '#dbbf98', frame: '#5a5b5d' },
+  materials: { top: 'wood', frame: 'metal' },
+}
+
 // The wall lamp's first style, which keeps the kind's old slots, so a saved
 // shade or channel color still lands on the TMM.
 const WALL_TMM: DecorationVariant = {
@@ -496,9 +507,36 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'table',
     'Dining table',
     'floor',
-    [width(1.6, 0.9, 3), depth(0.9, 0.7, 1.2), height(0.75, 0.6, 0.85)],
-    { top: SCANDI.oak, frame: SCANDI.charcoal },
-    { top: 'wood', frame: 'metal' },
+    // Width is the table's length. Each style starts at its table's own
+    // size, to the centimeter.
+    [
+      p('width', 'Width', 1.6, 0.9, 3, 0.01),
+      p('depth', 'Depth', 0.9, 0.7, 1.2, 0.01),
+      p('height', 'Height', 0.76, 0.6, 0.85, 0.01),
+    ],
+    DINING_VIOK.colors ?? {},
+    DINING_VIOK.materials ?? {},
+    undefined,
+    // Three Pilma tables, from their stated sizes and product photos.
+    [
+      DINING_VIOK,
+      {
+        id: 'deva',
+        label: 'Deva',
+        // 180 by 100 cm, 77 cm tall.
+        params: { width: 1.8, depth: 1, height: 0.77 },
+        colors: { top: '#ddd0ba', frame: '#a9713f' },
+        materials: { top: 'ceramic', frame: 'wood' },
+      },
+      {
+        id: 'spider',
+        label: 'Spider',
+        // 200 by 100 cm, 75 cm tall.
+        params: { width: 2, depth: 1, height: 0.75 },
+        colors: { top: '#9b7e5f', frame: '#87694b' },
+        materials: { top: 'wood', frame: 'wood' },
+      },
+    ],
   ),
   kind(
     'coffee_table',
