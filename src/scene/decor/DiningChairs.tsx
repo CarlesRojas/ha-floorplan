@@ -124,9 +124,12 @@ function Sura({ M }: { M: Props['M'] }) {
   const foot: Vec3 = [rx, 0, -d / 2 + footR]
   const head: Vec3 = [rx, h, -d / 2 + postR]
   const lean = Math.atan2(knee[2] - head[2], head[1] - knee[1])
-  // The board sits in front of the posts, its top at the chair's top.
+  // The board sits in front of the posts, its top at the chair's top. It
+  // curves round the sitter, so its ends stand forward of its middle, and it
+  // is set back by that much for them to rest on the posts.
   const boardY = h - bh - 0.008
   const postZ = knee[2] + ((head[2] - knee[2]) * (boardY - knee[1])) / (head[1] - knee[1])
+  const sag = br - Math.sqrt(br * br - rx * rx)
   return (
     <group>
       {[-1, 1].map(sx => {
@@ -156,7 +159,7 @@ function Sura({ M }: { M: Props['M'] }) {
       <Slab size={[w - 0.02, top - bottom, deep]} radius={0.012} bevel={0.006} position={[0, bottom, front - deep / 2]}>
         {M('seat')}
       </Slab>
-      <group position={[0, boardY, postZ + postR * 0.6]} rotation={[-lean, 0, 0]}>
+      <group position={[0, boardY, postZ + postR - sag]} rotation={[-lean, 0, 0]}>
         <ArcBack size={[bw, bh, bt]} radius={br}>
           {M('frame')}
         </ArcBack>
@@ -182,6 +185,10 @@ function Varma({ M }: { M: Props['M'] }) {
   const lean = Math.atan2(rSeat[2] - head[2], head[1] - rSeat[1])
   const backY = h - bh
   const postZ = rSeat[2] + ((head[2] - rSeat[2]) * (backY - rSeat[1])) / (head[1] - rSeat[1])
+  // The backrest's ends stand forward of its middle by its curve, so it is
+  // set back by that much for them to rest on the posts.
+  const postX = rSeat[0] + ((head[0] - rSeat[0]) * (backY - rSeat[1])) / (head[1] - rSeat[1])
+  const sag = br - Math.sqrt(br * br - postX * postX)
   const [sy] = VARMA_STRETCHER
   const railX = (fSeat[0] + rSeat[0]) / 2
   return (
@@ -225,7 +232,7 @@ function Varma({ M }: { M: Props['M'] }) {
       <Cushion size={[w - 0.02, pad, d - 0.07]} position={[0, seat, 0.02]}>
         {M('seat')}
       </Cushion>
-      <group position={[0, backY, postZ + thin]} rotation={[-lean, 0, 0]}>
+      <group position={[0, backY, postZ + thin - sag]} rotation={[-lean, 0, 0]}>
         <ArcBack size={[bw, bh, bt]} radius={br}>
           {M('frame')}
         </ArcBack>
