@@ -252,7 +252,7 @@ function Keula({ M }: Part) {
           {M('legs')}
         </mesh>
       ))}
-      <mesh geometry={arch} position={rTop} rotation={[-KEULA_BACK.lean, 0, 0]} castShadow>
+      <mesh geometry={arch} position={[0, rTop[1], rTop[2]]} rotation={[-KEULA_BACK.lean, 0, 0]} castShadow>
         {M('legs')}
       </mesh>
       {[atHeight(fFoot, fTop, lowY), atHeight(rFoot, rTop, lowY)].map(at => (
