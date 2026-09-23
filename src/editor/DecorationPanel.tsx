@@ -6,6 +6,7 @@ import {
   isSupport,
   itemLevels,
   kindColors,
+  paramValue,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { ridersOf } from '#/decoration/surfaces.ts'
@@ -155,7 +156,9 @@ export default function DecorationPanel({
         )}
 
         {kind.params.map(p => {
-          const value = item.params?.[p.id] ?? p.default
+          // Read through the catalog, so a size saved before this slider's
+          // steps changed shows on a stop rather than between two of them.
+          const value = paramValue(kind, item.params, p.id)
           // A two state parameter is a switch, not a slider with two stops.
           if (p.toggle)
             return (

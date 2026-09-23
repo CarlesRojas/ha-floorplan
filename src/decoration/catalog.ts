@@ -1126,8 +1126,23 @@ export const DECORATION_KINDS: DecorationKind[] = [
 
 export const decorationKind = (id: string) => DECORATION_KINDS.find(k => k.id === id)
 
+// A saved size onto the stops its slider actually offers. A plan written
+// before a slider's steps changed can hold a value between two of them, or
+// outside the range altogether, and a slider cannot show either: the thumb
+// lands somewhere the number is not. Everything reads its sizes through
+// here, so the plan is drawn at the size the editor would show.
+export function snapParam(spec: DecorationParam, value: number) {
+  if (!Number.isFinite(value)) return spec.default
+  const inside = Math.min(Math.max(value, spec.min), spec.max)
+  const stops = Math.round((inside - spec.min) / spec.step)
+  return round2(spec.min + stops * spec.step)
+}
+
 export function paramValue(kind: DecorationKind, params: Record<string, number> | undefined, id: string) {
-  return params?.[id] ?? kind.params.find(p => p.id === id)?.default ?? 0
+  const spec = kind.params.find(p => p.id === id)
+  const saved = params?.[id]
+  if (!spec) return saved ?? 0
+  return saved === undefined ? spec.default : snapParam(spec, saved)
 }
 
 // The style an item is drawn in: the one it names, or the kind's first.
