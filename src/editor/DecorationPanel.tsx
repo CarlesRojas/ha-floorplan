@@ -102,8 +102,8 @@ export default function DecorationPanel({
     const driving = (entityId: string) =>
       (devices.find(d => d.entity_id === entityId)?.decorations ?? [])
         .map(id => decorations.find(x => x.id === id))
-        .map(d => (d ? (decorationKind(d.kind)?.label ?? d.kind) : null))
-        .filter((label): label is string => label !== null)
+        .filter((d): d is DecorationConfig => !!d)
+        .map(d => ({ id: d.id, label: decorationKind(d.kind)?.label ?? d.kind }))
     // Entities that drive at least one of the things this item can show,
     // the ones that fit best first. A device can stand behind several
     // pieces at once, so one already in use is still on offer.
@@ -237,24 +237,28 @@ export default function DecorationPanel({
                 style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
                 options={[
                   { value: '', label: 'None' },
-                  // Each entity says what it brings under its name, as the
-                  // same icons used everywhere else, and what it already
-                  // drives, since an entity can stand behind several pieces
-                  // and that is worth knowing before adding one more.
+                  // Each entity says what it brings, as the icons used
+                  // everywhere else, and lists the pieces it already drives
+                  // under its name: one to a line, since a device can stand
+                  // behind several and that is worth seeing before adding
+                  // one more.
                   ...fits.map(e => ({
                     value: e.entity_id,
                     label: e.name,
                     keywords: e.entity_id,
-                    detail: (
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        {hass && <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" accent={accent} />}
-                        {driving(e.entity_id).length > 0 && (
-                          <span className="min-w-0 truncate text-xs text-(--secondary-text-color)">
-                            {driving(e.entity_id).join(', ')}
-                          </span>
-                        )}
-                      </span>
-                    ),
+                    badge: hass ? (
+                      <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" accent={accent} />
+                    ) : undefined,
+                    detail:
+                      driving(e.entity_id).length > 0 ? (
+                        <span className="block text-xs text-(--secondary-text-color)">
+                          {driving(e.entity_id).map(d => (
+                            <span key={d.id} className="block truncate">
+                              {d.label}
+                            </span>
+                          ))}
+                        </span>
+                      ) : undefined,
                   })),
                 ]}
                 onChange={v => onBind(item.id, v || null)}

@@ -7,7 +7,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 // fullscreen editor stops pointer and key events at its boundary, so a
 // library that dismisses through plain document listeners never hears them.
 // A native select is no good here either, since an option can hold only
-// text, and a device has to show the controls it offers under its name.
+// text, and a device has to show the controls it offers and the pieces it
+// already drives alongside its name.
 //
 // A long list searches itself, the way shadcn's combobox does: a box at the
 // top of the panel filters as you type, the arrow keys walk what is left and
@@ -19,7 +20,11 @@ const SEARCH_FROM = 7
 export type SelectOption = {
   value: string
   label: string
-  // Shown under the label, for example the controls a device offers.
+  // Shown at the end of the row the label is on, for example the controls a
+  // device offers.
+  badge?: ReactNode
+  // Shown under the label, indented beneath it, for example the pieces a
+  // device already drives.
   detail?: ReactNode
   // Matched by the search as well as the label, for example an entity id.
   keywords?: string
@@ -200,8 +205,11 @@ export function Select({
                   className={cn('mt-1 size-3 shrink-0', o.value === value ? 'opacity-100' : 'opacity-0')}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate">{o.label}</div>
-                  {o.detail && <div className="mt-1">{o.detail}</div>}
+                  <div className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                    {o.badge}
+                  </div>
+                  {o.detail && <div className="mt-0.5 pl-3">{o.detail}</div>}
                 </div>
               </button>
             ))}
