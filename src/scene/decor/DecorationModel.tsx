@@ -67,6 +67,8 @@ export default function DecorationModel({ item, all, room, state, onClick, onOpe
 
   return (
     <group
+      // Named so the editor's outline can find the piece that is picked.
+      name={`decoration:${item.id}`}
       position={[item.position[0], lift, -item.position[1]]}
       rotation={[0, rotation, 0]}
       // A press that lands near this item rather than on it finds these.

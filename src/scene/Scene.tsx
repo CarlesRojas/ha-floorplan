@@ -13,6 +13,7 @@ import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
 import Shadows from '#/scene/shadows.tsx'
+import SelectionOutline from '#/scene/SelectionOutline.tsx'
 import Sky, { type SkyMode } from '#/scene/Sky.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
@@ -32,9 +33,20 @@ type Props = {
   // A click that lands on nothing at all, which lets go of whatever was
   // picked, the way a click on the plan's empty background does.
   onPickNothing?: () => void
+  // What the editor has picked, as `decoration:<id>` or `room:<id>`, drawn
+  // with a blue outline. The card never passes one.
+  selected?: string | null
 }
 
-export default function Scene({ hass, config, sky = 'auto', onPickDecoration, onPickRoom, onPickNothing }: Props) {
+export default function Scene({
+  hass,
+  config,
+  sky = 'auto',
+  onPickDecoration,
+  onPickRoom,
+  onPickNothing,
+  selected,
+}: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
@@ -78,6 +90,7 @@ export default function Scene({ hass, config, sky = 'auto', onPickDecoration, on
       {/* A press that misses everything looks around itself for something
           to act on, so small things are still easy to hit. */}
       <PickFallback onHandled={markFallback} />
+      {selected && <SelectionOutline target={selected} />}
       {rooms.map((room, i) => (
         <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom} />
       ))}
