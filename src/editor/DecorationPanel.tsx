@@ -28,7 +28,6 @@ import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
-import { useResizeObserver } from 'usehooks-ts'
 
 type Props = {
   hass: HomeAssistant | null
@@ -66,16 +65,23 @@ export default function DecorationPanel({
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
   const [query, setQuery] = useState('')
   // Null until the handle is dragged: the preview is square by default, so
-  // it takes the shape of the sidebar it sits in.
+  // it takes the shape of the sidebar it sits in, whatever that is.
   const [previewHeight, setPreviewHeight] = useState<number | null>(null)
   const previewBox = useRef<HTMLDivElement>(null)
-  const { width: previewWidth = 0 } = useResizeObserver({
-    ref: previewBox as unknown as React.RefObject<HTMLElement>,
-    box: 'border-box',
-  })
-  const square = Math.max(previewWidth, 120)
-  const height = previewHeight ?? square
-  const resize = (dy: number) => setPreviewHeight(h => Math.min(Math.max((h ?? square) + dy, 120), 520))
+  // Dragging starts from whatever the square came out as, which only the
+  // laid out element knows.
+  const resize = (dy: number) =>
+    setPreviewHeight(h => {
+      const from = h ?? previewBox.current?.getBoundingClientRect().height ?? 240
+      return Math.min(Math.max(from + dy, 120), 520)
+    })
+  const previewShape = {
+    className: cn(
+      'w-full overflow-hidden rounded-xl bg-(--secondary-background-color)',
+      !previewHeight && 'aspect-square',
+    ),
+    style: previewHeight ? { height: previewHeight } : undefined,
+  }
   // The item a trash icon in the device's list was clicked on, waiting for
   // the yes.
   const [unbinding, setUnbinding] = useState<DecorationConfig | null>(null)
@@ -92,6 +98,12 @@ export default function DecorationPanel({
       .filter(id => id !== item.id)
       .map(id => decorations.find(d => d.id === id))
       .filter((d): d is DecorationConfig => !!d)
+    // What a device already stands behind, named by the pieces themselves.
+    const driving = (entityId: string) =>
+      (devices.find(d => d.entity_id === entityId)?.decorations ?? [])
+        .map(id => decorations.find(x => x.id === id))
+        .map(d => (d ? (decorationKind(d.kind)?.label ?? d.kind) : null))
+        .filter((label): label is string => label !== null)
     // Entities that drive at least one of the things this item can show,
     // the ones that fit best first. A device can stand behind several
     // pieces at once, so one already in use is still on offer.
@@ -121,13 +133,7 @@ export default function DecorationPanel({
       <div className="flex flex-col gap-3">
         <Sticky>
           <SelectedHeader title={kind.label} tag={roomTag} accent={accent} onBack={() => onSelect(null)} />
-          <div ref={previewBox}>
-            <ModelPreview
-              item={item}
-              className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-              style={{ height }}
-            />
-          </div>
+          <ModelPreview item={item} boxRef={previewBox} {...previewShape} />
           <PreviewHandle onDrag={resize} />
           <Signals signals={kind.expresses} accent={accent} />
         </Sticky>
@@ -231,14 +237,24 @@ export default function DecorationPanel({
                 style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
                 options={[
                   { value: '', label: 'None' },
-                  // Each entity says what it brings in words, since an icon
-                  // alone does not tell you what a device can drive.
+                  // Each entity says what it brings under its name, as the
+                  // same icons used everywhere else, and what it already
+                  // drives, since an entity can stand behind several pieces
+                  // and that is worth knowing before adding one more.
                   ...fits.map(e => ({
                     value: e.entity_id,
                     label: e.name,
-                    detail: hass ? (
-                      <Signals signals={deviceSignals(hass, e.entity_id)} accent={EDITOR_BOUND_COLOR} />
-                    ) : undefined,
+                    keywords: e.entity_id,
+                    detail: (
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {hass && <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" accent={accent} />}
+                        {driving(e.entity_id).length > 0 && (
+                          <span className="min-w-0 truncate text-xs text-(--secondary-text-color)">
+                            {driving(e.entity_id).join(', ')}
+                          </span>
+                        )}
+                      </span>
+                    ),
                   })),
                 ]}
                 onChange={v => onBind(item.id, v || null)}
@@ -250,7 +266,7 @@ export default function DecorationPanel({
               )}
               {boundDevice && (
                 <>
-                  <Signals signals={boundSignals} accent={EDITOR_BOUND_COLOR} />
+                  <Signals signals={boundSignals} accent={accent} />
                   {/* Which of the device's percentages drives each of the
                       item's: how far it opens, how far it tilts. Only worth
                       asking when there is a choice to make. */}
@@ -370,11 +386,7 @@ export default function DecorationPanel({
       )}
 
       <Sticky>
-        <div
-          ref={previewBox}
-          className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-          style={{ height }}
-        >
+        <div ref={previewBox} {...previewShape}>
           {previewItem ? (
             <ModelPreview item={previewItem} className="h-full w-full" />
           ) : (

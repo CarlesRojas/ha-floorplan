@@ -1,6 +1,6 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { Led, Material, SEG, Slab, Spinner } from '#/scene/decor/parts.tsx'
-import { alongPath, legLengths, roamPath } from '#/scene/decor/roam.ts'
+import { alongPath, legLengths, roamKey, roamPath } from '#/scene/decor/roam.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
@@ -36,9 +36,16 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
   const r = p('size') / 2
   const h = 0.085
 
-  // The round it drives, in plan meters. It only changes when the room or
-  // the furniture in it does.
-  const path = useMemo(() => (room ? roamPath(room, all, item, r) : [item.position]), [room, all, item, r])
+  // The round it drives, in plan meters. Working it out means sampling the
+  // whole floor, so it is kept until the shape of the room, the furniture
+  // standing in it or the robot's own place actually changes. Every other
+  // render, of which there are many, leaves it alone.
+  const key = roamKey(room, all, item, r)
+  const path = useMemo(
+    () => (room ? roamPath(room, all, item, r) : [item.position]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key],
+  )
   const legs = useMemo(() => legLengths(path), [path])
   const total = useMemo(() => legs.reduce((a, b) => a + b, 0), [legs])
 

@@ -11,10 +11,7 @@ import { useRef, type ReactNode } from 'react'
 export function Sticky({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={cn(
-        'sticky top-0 z-10 -mx-1 flex flex-col gap-2 bg-(--card-background-color) px-1 pb-2',
-        className,
-      )}
+      className={cn('sticky top-0 z-10 -mx-1 flex flex-col gap-2 bg-(--card-background-color) px-1 pb-2', className)}
     >
       {children}
     </div>
@@ -53,15 +50,18 @@ export function SelectedHeader({
 // The controls a device has, or the ones an item can express.
 export function Signals({ signals, accent, size = 'md' }: { signals: Signal[]; accent?: string; size?: 'sm' | 'md' }) {
   if (signals.length === 0) return null
+  // Small is the icons alone, each naming itself on hover, for the places
+  // where the words would crowd the row out.
   if (size === 'sm') {
     return (
-      <span className="flex shrink-0 items-center gap-1">
+      <span className="flex shrink-0 items-center gap-1.5">
         {signals.map(s => (
           <FontAwesomeIcon
             key={s}
             icon={SIGNAL_ICONS[s]}
-            title={SIGNAL_HINTS[s]}
-            className="size-3 text-(--secondary-text-color)"
+            title={`${SIGNAL_LABELS[s]}. ${SIGNAL_HINTS[s]}`}
+            className={cn('size-3', !accent && 'text-(--secondary-text-color)')}
+            style={accent ? { color: accent } : undefined}
           />
         ))}
       </span>
