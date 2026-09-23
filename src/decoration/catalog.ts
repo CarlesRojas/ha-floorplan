@@ -239,6 +239,16 @@ const OFFICE_TECK: DecorationVariant = {
   materials: { seat: 'fabric', back: 'fabric', frame: 'matte', base: 'metal', castors: 'matte' },
 }
 
+// The bench's first style, which keeps the kind's old legs and seat slots.
+const BENCH_LAUTA: DecorationVariant = {
+  id: 'lauta',
+  label: 'Lauta 130',
+  // 130 by 42 cm, its seat 44 cm up.
+  params: { width: 1.3, depth: 0.42, height: 0.44 },
+  colors: { legs: '#e0b584', seat: '#dcc3a0' },
+  materials: { legs: 'wood', seat: 'fabric' },
+}
+
 // The stool's first style, which keeps the kind's old legs and seat slots.
 const STOOL_LAUTA: DecorationVariant = {
   id: 'lauta',
@@ -610,9 +620,28 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Bench',
     'floor',
-    [width(1.3, 0.8, 2.2), depth(0.4, 0.3, 0.6)],
-    { legs: SCANDI.oak, seat: SCANDI.oak },
-    { legs: 'wood', seat: 'wood' },
+    // Height is the seat's, which anything set on the bench stands on. Each
+    // style starts at its bench's own, to the centimeter.
+    [
+      p('width', 'Width', 1.3, 0.6, 2.4, 0.01),
+      p('depth', 'Depth', 0.42, 0.3, 0.7, 0.01),
+      p('height', 'Height', 0.44, 0.35, 0.55, 0.01),
+    ],
+    BENCH_LAUTA.colors ?? {},
+    BENCH_LAUTA.materials ?? {},
+    undefined,
+    // Two Pilma benches, from their stated sizes and product photos.
+    [
+      BENCH_LAUTA,
+      {
+        id: 'angle',
+        label: 'Angle 170',
+        // 170 by 49 cm, 45 cm tall.
+        params: { width: 1.7, depth: 0.49, height: 0.45 },
+        colors: { frame: '#a57a4e', drawers: '#5e5b56' },
+        materials: { frame: 'wood', drawers: 'matte' },
+      },
+    ],
   ),
   kind(
     'pouf',
@@ -1572,7 +1601,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
   washing_machine: 'height',
   dryer: 'height',
   half_wall: 'height',
-  bench: 0.42,
+  bench: 'height',
   pouf: 'height',
 }
 
@@ -1590,13 +1619,17 @@ export const isBuiltIn = (kind: DecorationKind) => kind.id in BUILT_IN
 export const builtInDepth = (kind: DecorationKind) => BUILT_IN[kind.id] ?? 0
 
 // Height of an item's top surface above its own base.
-export function surfaceTop(kind: DecorationKind, params: Record<string, number> | undefined) {
+export function surfaceTop(kind: DecorationKind, params: Record<string, number> | undefined, variant?: string) {
   const top = SURFACE_TOPS[kind.id]
-  return typeof top === 'number' ? top : paramValue(kind, params, top)
+  return typeof top === 'number' ? top : paramValue(kind, params, top, variant)
 }
 
 // Usable area of a top, inset so things do not hang over the edge.
-export function surfaceRect(kind: DecorationKind, params: Record<string, number> | undefined): [number, number] {
-  const [w, d] = footprint(kind, params)
+export function surfaceRect(
+  kind: DecorationKind,
+  params: Record<string, number> | undefined,
+  variant?: string,
+): [number, number] {
+  const [w, d] = footprint(kind, params, variant)
   return [Math.max(w - 0.1, w * 0.4), Math.max(d - 0.1, d * 0.4)]
 }

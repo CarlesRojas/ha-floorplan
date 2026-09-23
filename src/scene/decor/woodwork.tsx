@@ -96,3 +96,13 @@ export function ArcBack({ size, radius, children }: { size: Vec3; radius: number
     </mesh>
   )
 }
+
+// A round end on a leg that stops at or above the seat.
+export function Cap({ at, r, children }: { at: Vec3; r: number; children: ReactNode }) {
+  return (
+    <mesh position={at} scale={[1, 0.45, 1]}>
+      <sphereGeometry args={[r, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      {children}
+    </mesh>
+  )
+}

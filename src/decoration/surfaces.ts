@@ -31,7 +31,7 @@ export function standHeight(item: DecorationConfig, all: DecorationConfig[], dep
   if (!support || !supportKind || !isSupport(supportKind) || depth >= MAX_DEPTH) {
     return base + (canRide(kind) ? paramValue(kind, item.params, 'lift') : 0)
   }
-  const top = standHeight(support, all, depth + 1) + surfaceTop(supportKind, support.params)
+  const top = standHeight(support, all, depth + 1) + surfaceTop(supportKind, support.params, support.variant)
   return top + base - builtInDepth(kind)
 }
 
@@ -39,7 +39,7 @@ export function standHeight(item: DecorationConfig, all: DecorationConfig[], dep
 export function onSurface(point: Point, support: DecorationConfig): boolean {
   const kind = decorationKind(support.kind)
   if (!kind || !isSupport(kind)) return false
-  const [w, d] = surfaceRect(kind, support.params)
+  const [w, d] = surfaceRect(kind, support.params, support.variant)
   // Into the support's own frame, where the rect is axis aligned.
   const a = (-(support.rotation ?? 0) * Math.PI) / 180
   const dx = point[0] - support.position[0]
@@ -81,7 +81,7 @@ export function supportUnder(
     if (!onSurface(point, other)) continue
     const otherKind = decorationKind(other.kind)
     if (!otherKind || !isSupport(otherKind)) continue
-    const top = standHeight(other, all) + surfaceTop(otherKind, other.params)
+    const top = standHeight(other, all) + surfaceTop(otherKind, other.params, other.variant)
     if (top > bestTop) {
       best = other
       bestTop = top

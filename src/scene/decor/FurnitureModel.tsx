@@ -1,4 +1,5 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import Bench from '#/scene/decor/Benches.tsx'
 import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
 import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
@@ -146,46 +147,8 @@ export default function FurnitureModel({ kind, item }: Props) {
       return <Stool style={style} w={p('size')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'bench': {
-      // A slatted oak bench on splayed legs, with a rail tying them.
-      const w = p('width')
-      const d = p('depth')
-      const h = 0.45
-      const slats = Math.max(3, Math.round(d / 0.09))
-      const gap = d / slats
-      return (
-        <group>
-          <Legs
-            width={w}
-            depth={d}
-            height={h}
-            inset={0.1}
-            top={0.024}
-            bottom={0.016}
-            columns={w > 1.6 ? 3 : 2}
-            splay={0.05}
-          >
-            {M('legs')}
-          </Legs>
-          {/* Side rails, under the slats. */}
-          {[-1, 1].map(side => (
-            <mesh key={side} position={[0, h - 0.045, (side * (d - 0.14)) / 2]}>
-              <boxGeometry args={[w - 0.14, 0.03, 0.022]} />
-              {M('legs')}
-            </mesh>
-          ))}
-          {Array.from({ length: slats }).map((_, i) => (
-            <Slab
-              key={i}
-              size={[w, 0.028, gap * 0.78]}
-              radius={0.008}
-              bevel={0.004}
-              position={[0, h, -d / 2 + gap * (i + 0.5)]}
-            >
-              {M('seat')}
-            </Slab>
-          ))}
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'lauta'
+      return <Bench style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'pouf': {
       // A knitted pouf: a barrelled drum with a seam around the middle and

@@ -17,7 +17,7 @@ import {
   STOOLS,
 } from '#/scene/decor/stoolSpecs.ts'
 import { Cushion, Slab } from '#/scene/decor/parts.tsx'
-import { Dowel } from '#/scene/decor/woodwork.tsx'
+import { Cap, Dowel } from '#/scene/decor/woodwork.tsx'
 import { atHeight, type Vec3 } from '#/scene/decor/points.ts'
 import { useMemo, type ReactNode } from 'react'
 import { ExtrudeGeometry, Shape } from 'three'
@@ -36,16 +36,6 @@ type Part = { M: Props['M'] }
 
 // Mirrors a point across the stool's middle, left to right.
 const flip = (v: Vec3, sx: number): Vec3 => [sx * v[0], v[1], v[2]]
-
-// A round end on a leg that stops at or above the seat.
-function Cap({ at, r, children }: { at: Vec3; r: number; children: ReactNode }) {
-  return (
-    <mesh position={at} scale={[1, 0.45, 1]}>
-      <sphereGeometry args={[r, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-      {children}
-    </mesh>
-  )
-}
 
 function Lauta({ M }: Part) {
   const { width: w, depth: d, seat } = STOOLS.lauta
