@@ -566,26 +566,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     OFFICE_TECK.colors ?? {},
     OFFICE_TECK.materials ?? {},
     undefined,
-    // Three Pilma desk chairs, from their stated sizes and product photos.
-    [
-      OFFICE_TECK,
-      {
-        id: 'lola',
-        label: 'Lola',
-        // 51 by 47 cm, 85 cm tall, its seat 47 cm up.
-        params: { width: 0.51, depth: 0.47, height: 0.47 },
-        colors: { shell: '#232224', base: '#1e1e20', castors: '#1b1b1c' },
-        materials: { shell: 'matte', base: 'matte', castors: 'matte' },
-      },
-      {
-        id: 'air',
-        label: 'Air high back',
-        // 64 by 72 cm, 127 cm tall, its seat 49 cm up.
-        params: { width: 0.64, depth: 0.72, height: 0.49 },
-        colors: { shell: '#a18b76', frame: '#232325', base: '#c9ccd0', castors: '#1b1b1c' },
-        materials: { shell: 'fabric', frame: 'matte', base: 'metal', castors: 'matte' },
-      },
-    ],
+    // One style, a Pilma desk chair, from its stated size and product
+    // photos. A saved style that is gone falls back to it.
+    [OFFICE_TECK],
   ),
   kind(
     'stool',

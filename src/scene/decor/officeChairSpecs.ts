@@ -33,26 +33,6 @@ export const TECK_BACK = { foot: 0.4, head: 0.46, y: 0.515, z: -0.25, lean: 0.12
 // The arm pads' height, how far out they stand, and their size.
 export const TECK_ARM = { y: 0.63, x: 0.265, pad: [0.08, 0.025, 0.25] as [number, number, number] }
 
-// Lola: one molded shell covered in black polyurethane, stitched in
-// channels across the seat and the back, on five spindly legs of black
-// lacquered aluminum rising steeply to a hub high under the seat.
-export const LOLA_STAR: Star = { reach: 0.235, wheel: 0.024, hub: 0.28, tip: 0.075 }
-// The shell's width, how deep the seat is and where it ends at the back,
-// and the channels on the seat and the back.
-export const LOLA_SHELL = { width: 0.46, seat: 0.44, rear: -0.2, thick: 0.035, lean: 0.2, seatChannels: 5, backChannels: 6 }
-
-// Air high back: an upholstered shell with a tall back that narrows toward
-// its rounded head and flares into wings at the arms, a loose seat cushion
-// and a pad for the head, on a slim polished aluminum star.
-export const AIR_STAR: Star = { reach: 0.29, wheel: 0.025, hub: 0.26, tip: 0.07 }
-// The back's foot and head widths, where its foot stands and its lean.
-export const AIR_BACK = { foot: 0.44, head: 0.3, y: 0.52, z: -0.3, lean: 0.09, thick: 0.06 }
-// The wings: half their span, their thickness, where their rear and tips
-// are, their top and bottom at the back.
-export const AIR_WINGS = { half: 0.3, thick: 0.045, rear: -0.31, tip: 0.13, top: 0.67, bottom: 0.44 }
-
 export const OFFICE_CHAIRS: Record<string, OfficeChairSpec> = {
   teck: { width: 0.66, depth: 0.66, height: 0.99, seat: 0.49 },
-  lola: { width: 0.51, depth: 0.47, height: 0.85, seat: 0.47 },
-  air: { width: 0.64, depth: 0.72, height: 1.27, seat: 0.49 },
 }

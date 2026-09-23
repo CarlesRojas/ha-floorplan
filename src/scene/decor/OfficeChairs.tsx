@@ -1,9 +1,4 @@
 import {
-  AIR_BACK,
-  AIR_STAR,
-  AIR_WINGS,
-  LOLA_SHELL,
-  LOLA_STAR,
   OFFICE_CHAIRS,
   TECK_ARM,
   TECK_BACK,
@@ -16,7 +11,7 @@ import { bendAround, plate, taperedOutline } from '#/scene/decor/plates.ts'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
 import { useMemo, type ReactNode } from 'react'
-import { BoxGeometry, CatmullRomCurve3, ExtrudeGeometry, Shape, TubeGeometry, Vector3 } from 'three'
+import { BoxGeometry, CatmullRomCurve3, TubeGeometry, Vector3 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 type Props = {
@@ -210,166 +205,6 @@ function Teck({ lift, M }: Part) {
   )
 }
 
-function Lola({ lift, M }: Part) {
-  const { height, seat } = OFFICE_CHAIRS.lola
-  const { width, seat: deep, rear, thick, lean, seatChannels, backChannels } = LOLA_SHELL
-  const under = seat - thick
-  const bell = 0.05
-  const column = under - bell + lift
-  const backH = (height - under) / Math.cos(lean)
-  // The shell is sewn in channels, each its own plate, so the seams show
-  // between them. The seat's run from its rounded front edge back, and the
-  // back's from its foot up to its rounded head, widening a little.
-  const { seatStrips, backStrips } = useMemo(() => {
-    const s = deep / seatChannels
-    const b = backH / backChannels
-    const seatStrips = Array.from({ length: seatChannels }).map((_, k) => {
-      const geo = plate(i => taperedOutline(width, width, s, k === 0 ? 0.06 : 0.006, 0.006, i), thick, 1.4)
-      return geo.rotateX(-Math.PI / 2)
-    })
-    const widen = (k: number) => width - 0.03 + (0.03 * k) / backChannels
-    const backStrips = Array.from({ length: backChannels }).map((_, k) =>
-      plate(i => taperedOutline(widen(k), widen(k + 1), b, 0.006, k === backChannels - 1 ? 0.06 : 0.006, i), thick, 0.45),
-    )
-    return { seatStrips, backStrips }
-  }, [width, deep, backH, thick, seatChannels, backChannels])
-  return (
-    <group>
-      <FiveStar star={LOLA_STAR} M={M} />
-      <mesh position={[0, LOLA_STAR.hub, 0]} castShadow>
-        <cylinderGeometry args={[0.028, 0.028, 0.06, 48]} />
-        {M('base')}
-      </mesh>
-      <Dowel from={[0, LOLA_STAR.hub, 0]} to={[0, column, 0]} r={[0.018, 0.018]}>
-        {M('base')}
-      </Dowel>
-      <group position={[0, lift, 0]}>
-        <mesh position={[0, under - bell / 2, 0]} castShadow>
-          <cylinderGeometry args={[0.075, 0.03, bell, 48]} />
-          {M('base')}
-        </mesh>
-        <Dowel from={[-0.05, under - 0.025, 0.04]} to={[-0.19, under - 0.03, 0.1]} r={[0.005, 0.005]}>
-          {M('base')}
-        </Dowel>
-        {seatStrips.map((geo, k) => (
-          <mesh key={k} geometry={geo} position={[0, under, rear + deep - (k * deep) / seatChannels]} castShadow>
-            {M('shell')}
-          </mesh>
-        ))}
-        <group position={[0, under, rear]} rotation={[-lean, 0, 0]}>
-          {backStrips.map((geo, k) => (
-            <mesh key={k} geometry={geo} position={[0, (k * backH) / backChannels, 0]} castShadow>
-              {M('shell')}
-            </mesh>
-          ))}
-        </group>
-      </group>
-    </group>
-  )
-}
-
-// The Air's wings: a band round the back and sides of the seat, seen from
-// above a U whose arms end in round tips. Its foot rises toward the tips and
-// draws forward at the back, where the shell curves in under the seat.
-function airWings() {
-  const { half: W, thick: t, rear, tip, top, bottom } = AIR_WINGS
-  const R = 0.18
-  // Drawn in plan, x across and y the distance back, so -z.
-  const s = new Shape()
-  s.moveTo(W, -tip)
-  s.lineTo(W, -(rear + R))
-  s.absarc(W - R, -(rear + R), R, 0, Math.PI / 2, false)
-  s.lineTo(-W + R, -rear)
-  s.absarc(-W + R, -(rear + R), R, Math.PI / 2, Math.PI, false)
-  s.lineTo(-W, -tip)
-  s.absarc(-W + t / 2, -tip, t / 2, Math.PI, Math.PI * 2, false)
-  s.lineTo(-W + t, -(rear + R))
-  s.absarc(-W + R, -(rear + R), R - t, Math.PI, Math.PI / 2, true)
-  s.lineTo(W - R, -rear - t)
-  s.absarc(W - R, -(rear + R), R - t, Math.PI / 2, 0, true)
-  s.lineTo(W - t, -tip)
-  s.absarc(W - t / 2, -tip, t / 2, Math.PI, Math.PI * 2, false)
-  const b = 0.008
-  const h = top - bottom
-  const geo = new ExtrudeGeometry(s, {
-    depth: h - b * 2,
-    bevelEnabled: true,
-    bevelThickness: b,
-    bevelSize: b,
-    bevelSegments: 4,
-    curveSegments: 48,
-  })
-  geo.rotateX(-Math.PI / 2)
-  geo.translate(0, b, 0)
-  const pos = geo.attributes.position
-  for (let i = 0; i < pos.count; i++) {
-    const low = 1 - pos.getY(i) / h
-    const z = pos.getZ(i)
-    const f = Math.min(Math.max((z + 0.05) / (tip + 0.05), 0), 1)
-    pos.setY(i, pos.getY(i) + low * f * f * 0.13)
-    pos.setZ(i, z + low * 0.08)
-  }
-  return geo
-}
-
-function Air({ lift, M }: Part) {
-  const { height, seat } = OFFICE_CHAIRS.air
-  const { foot, head, y, z, lean, thick } = AIR_BACK
-  const pad = 0.075
-  const under = seat - pad
-  const pan = 0.03
-  const bell = 0.04
-  const column = under - pan - bell + lift
-  const backH = (height - y) / Math.cos(lean)
-  const { wings, back } = useMemo(
-    () => ({
-      wings: airWings(),
-      back: plate(i => taperedOutline(foot, head, backH, 0.03, 0.1, i), thick, 0.5, 0.012),
-    }),
-    [foot, head, backH, thick],
-  )
-  return (
-    <group>
-      <FiveStar star={AIR_STAR} M={M} />
-      <mesh position={[0, AIR_STAR.hub, 0]} castShadow>
-        <cylinderGeometry args={[0.032, 0.038, 0.06, 48]} />
-        {M('base')}
-      </mesh>
-      <Dowel from={[0, AIR_STAR.hub, 0]} to={[0, column, 0]} r={[0.02, 0.02]}>
-        {M('base')}
-      </Dowel>
-      <group position={[0, lift, 0]}>
-        <mesh position={[0, under - pan - bell / 2, 0]} castShadow>
-          <cylinderGeometry args={[0.07, 0.03, bell, 48]} />
-          {M('frame')}
-        </mesh>
-        <Dowel from={[0.05, under - pan - 0.02, 0.04]} to={[0.2, under - pan - 0.03, 0.1]} r={[0.006, 0.006]}>
-          {M('frame')}
-        </Dowel>
-        <Slab size={[0.46, pan, 0.46]} radius={0.12} bevel={0.01} position={[0, under - pan, -0.01]}>
-          {M('shell')}
-        </Slab>
-        <Cushion size={[0.5, pad, 0.5]} position={[0, under, 0]}>
-          {M('shell')}
-        </Cushion>
-        <mesh geometry={wings} position={[0, AIR_WINGS.bottom, 0]} castShadow receiveShadow>
-          {M('shell')}
-        </mesh>
-        <group position={[0, y, z]} rotation={[-lean, 0, 0]}>
-          <mesh geometry={back} castShadow receiveShadow>
-            {M('shell')}
-          </mesh>
-          {/* The head pad, a pillow on the back's face. */}
-          <mesh position={[0, backH - 0.13, thick + 0.012]} scale={[0.11, 0.075, 0.035]} castShadow>
-            <sphereGeometry args={[1, 48, 24]} />
-            {M('shell')}
-          </mesh>
-        </group>
-      </group>
-    </group>
-  )
-}
-
 // Each chair is drawn at its real size, its width and depth scaled to the
 // sliders and its seat raised or lowered on the column.
 export default function OfficeChair({ style, w, d, h, M }: Props) {
@@ -378,7 +213,7 @@ export default function OfficeChair({ style, w, d, h, M }: Props) {
   const lift = h - spec.seat
   return (
     <group scale={[w / spec.width, 1, d / spec.depth]}>
-      {id === 'lola' ? <Lola lift={lift} M={M} /> : id === 'air' ? <Air lift={lift} M={M} /> : <Teck lift={lift} M={M} />}
+      <Teck lift={lift} M={M} />
     </group>
   )
 }
