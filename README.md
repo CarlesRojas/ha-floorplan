@@ -22,6 +22,8 @@ In Home Assistant go to Settings > Dashboards > three-dot menu (top right) > Res
 
 Every save rebuilds and reloads the dashboard. No cache busting needed. Keep only one of the two resources (dev server or `/local`) enabled at a time, otherwise the element gets registered twice.
 
+The dashboard fetches that URL on every load, so the dev server has to be running whenever the card is on screen. When it is not, Home Assistant says **Custom element doesn't exist: floorplan-3d**: nothing answered, so the module never ran and never registered the element. A reload will not help while the server is down. Start `pnpm dev` again, or switch the resource to the `/local` build below.
+
 ### Production build into Home Assistant
 
 This is what the mini PC will use. It also works locally to test the real bundle.
