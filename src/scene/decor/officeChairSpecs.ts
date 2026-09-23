@@ -34,7 +34,7 @@ export const TECK_BACK = { foot: 0.4, head: 0.46, y: 0.515, z: -0.25, lean: 0.12
 export const TECK_ARM = { y: 0.63, x: 0.265, pad: [0.08, 0.025, 0.25] as [number, number, number] }
 
 // Lola: one molded shell covered in black polyurethane, stitched in
-// channels across the seat and the back, on four spindly legs of black
+// channels across the seat and the back, on five spindly legs of black
 // lacquered aluminum rising steeply to a hub high under the seat.
 export const LOLA_STAR: Star = { reach: 0.235, wheel: 0.024, hub: 0.28, tip: 0.075 }
 // The shell's width, how deep the seat is and where it ends at the back,
