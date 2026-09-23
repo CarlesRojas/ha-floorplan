@@ -40,18 +40,24 @@ import {
   TMM_SQUARE_TOP,
   TMM_TOP,
 } from '#/scene/decor/floorLampSpecs.ts'
-import { type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { CatmullRomCurve3, ExtrudeGeometry, Shape, TubeGeometry, Vector2, Vector3 } from 'three'
 
 // The floor lamp styles, each one a Santa & Cole lamp drawn from its
 // technical drawing. Every part is in real meters, up from the floor, so the
-// numbers can be checked against the drawings. The width, depth and height
-// sliders scale the lamp along each of them.
+// numbers can be checked against the drawings. The width slider scales the
+// whole lamp, so its shade keeps its shape. The height slider lengthens the
+// mast, the rod or the column, and the depth slider the legs that run front
+// to back.
 
 type ModelProps = {
   c: (slot: string) => string
   m: (slot: string) => string
   state: LightState | null
+  // How much taller and deeper the lamp is than in the drawing, before it is
+  // scaled.
+  up: number
+  out: number
 }
 
 // A leg board on edge, running along x from one end to the other, with a
@@ -82,39 +88,38 @@ function cableGeometry(points: [number, number, number][], r: number) {
 
 // TMM
 
-const TMM_LEG_GEOMETRY = legGeometry(
-  TMM_MAST / 2,
-  TMM_LEG[0],
-  TMM_LEG[1],
-  TMM_LEG[2],
-  TMM_FOOT,
-  TMM_MAST / 2 + 0.02,
-)
+const tmmLeg = (length: number) =>
+  legGeometry(TMM_MAST / 2, length, TMM_LEG[1], TMM_LEG[2], TMM_FOOT, TMM_MAST / 2 + 0.02)
 
 // Off the bulb, down the mast side of the shade to the floor, round the
 // mast and away behind the foot, as the drawing draws it.
-const TMM_CABLE = cableGeometry(
-  [
-    [TMM_BULB_X, TMM_SHADE[0], 0],
-    [TMM_BULB_X, 0.6, 0],
-    [TMM_BULB_X - 0.002, 0.2, 0],
-    [0.07, 0.09, 0.03],
-    [0, 0.064, 0.045],
-    [-0.12, 0.012, 0.05],
-    [-0.24, 0.003, 0.05],
-  ],
-  0.0025,
-)
+const tmmCable = (shadeBottom: number) =>
+  cableGeometry(
+    [
+      [TMM_BULB_X, shadeBottom, 0],
+      [TMM_BULB_X, 0.6, 0],
+      [TMM_BULB_X - 0.002, 0.2, 0],
+      [0.07, 0.09, 0.03],
+      [0, 0.064, 0.045],
+      [-0.12, 0.012, 0.05],
+      [-0.24, 0.003, 0.05],
+    ],
+    0.0025,
+  )
 
-function Tmm({ c, m, state }: ModelProps) {
+function Tmm({ c, m, state, up, out }: ModelProps) {
   const wood = <BaseMaterial color={c('stand')} material={m('stand')} />
   const fitting = <Material color={c('fittings')} material={m('fittings')} />
-  const [shadeBottom, shadeTop] = TMM_SHADE
+  // A taller TMM has a longer round mast with the shade as far down from its
+  // top, and a deeper one longer legs front and back.
+  const [shadeBottom, shadeTop] = [TMM_SHADE[0] + up, TMM_SHADE[1] + up]
+  const legs = useMemo(() => [tmmLeg(TMM_LEG[0]), tmmLeg(TMM_LEG[0] + out / 2)], [out])
+  const cable = useMemo(() => tmmCable(shadeBottom), [shadeBottom])
   const r = TMM_MAST / 2
   return (
     <group>
       {[0, 1, 2, 3].map(i => (
-        <mesh key={i} geometry={TMM_LEG_GEOMETRY} rotation={[0, (i * Math.PI) / 2, 0]}>
+        <mesh key={i} geometry={legs[i % 2]} rotation={[0, (i * Math.PI) / 2, 0]}>
           {wood}
         </mesh>
       ))}
@@ -122,8 +127,8 @@ function Tmm({ c, m, state }: ModelProps) {
         <boxGeometry args={[TMM_MAST, TMM_SQUARE_TOP, TMM_MAST]} />
         {wood}
       </mesh>
-      <mesh position={[0, (TMM_SQUARE_TOP + TMM_TOP) / 2, 0]}>
-        <cylinderGeometry args={[r, r, TMM_TOP - TMM_SQUARE_TOP, SEG * 2]} />
+      <mesh position={[0, (TMM_SQUARE_TOP + TMM_TOP + up) / 2, 0]}>
+        <cylinderGeometry args={[r, r, TMM_TOP + up - TMM_SQUARE_TOP, SEG * 2]} />
         {wood}
       </mesh>
       {/* The two rings on the mast and the straps from them to the shade. */}
@@ -149,7 +154,7 @@ function Tmm({ c, m, state }: ModelProps) {
         <cylinderGeometry args={[0.018, 0.018, 0.06, SEG]} />
         {fitting}
       </mesh>
-      <mesh position={[TMM_BULB_X, 1.32, 0]} userData={{ transmits: true }}>
+      <mesh position={[TMM_BULB_X, 1.32 + up, 0]} userData={{ transmits: true }}>
         <sphereGeometry args={[0.03, SEG, SEG / 2]} />
         <ShadeMaterial color="#f4f2ee" material="matte" state={state} />
       </mesh>
@@ -157,7 +162,7 @@ function Tmm({ c, m, state }: ModelProps) {
         <cylinderGeometry args={[TMM_SHADE_R, TMM_SHADE_R, shadeTop - shadeBottom, SEG * 4, 1, true]} />
         <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
       </mesh>
-      <mesh geometry={TMM_CABLE} userData={{ transmits: true }}>
+      <mesh geometry={cable} userData={{ transmits: true }}>
         <Material color={c('cable')} material={m('cable')} />
       </mesh>
     </group>
@@ -168,7 +173,7 @@ function Tmm({ c, m, state }: ModelProps) {
 
 // One of the four staves of the column: a quarter of its round, less half
 // of each slot, standing from the floor to the top.
-function fadStaveGeometry() {
+function fadStaveGeometry(top: number) {
   const R = FAD_COLUMN_R
   const s = FAD_SLOT / 2
   const far = Math.sqrt(R * R - s * s)
@@ -178,55 +183,66 @@ function fadStaveGeometry() {
   shape.lineTo(far, s)
   shape.absarc(0, 0, R, from, Math.PI / 2 - from, false)
   shape.lineTo(s, s)
-  const geometry = new ExtrudeGeometry(shape, { depth: FAD_COLUMN_TOP, bevelEnabled: false, curveSegments: SEG })
+  const geometry = new ExtrudeGeometry(shape, { depth: top, bevelEnabled: false, curveSegments: SEG })
   // Stood up: the shape lies across the floor and the depth runs up.
   geometry.rotateX(-Math.PI / 2)
   return geometry
 }
-const FAD_STAVE = fadStaveGeometry()
 
 // A leg runs right through the column, so its two feet are the same.
-function fadLeg() {
+function fadLeg(half: number) {
   const shape = new Shape([
-    new Vector2(-FAD_LEG[0], 0),
-    new Vector2(-FAD_LEG[0] + FAD_FOOT[0], 0),
-    new Vector2(-FAD_LEG[0] + FAD_FOOT[0], FAD_FOOT[1]),
-    new Vector2(FAD_LEG[0] - FAD_FOOT[0], FAD_FOOT[1]),
-    new Vector2(FAD_LEG[0] - FAD_FOOT[0], 0),
-    new Vector2(FAD_LEG[0], 0),
-    new Vector2(FAD_LEG[0], FAD_LEG[1]),
-    new Vector2(-FAD_LEG[0], FAD_LEG[1]),
+    new Vector2(-half, 0),
+    new Vector2(-half + FAD_FOOT[0], 0),
+    new Vector2(-half + FAD_FOOT[0], FAD_FOOT[1]),
+    new Vector2(half - FAD_FOOT[0], FAD_FOOT[1]),
+    new Vector2(half - FAD_FOOT[0], 0),
+    new Vector2(half, 0),
+    new Vector2(half, FAD_LEG[1]),
+    new Vector2(-half, FAD_LEG[1]),
   ])
   const geometry = new ExtrudeGeometry(shape, { depth: FAD_LEG[2], bevelEnabled: false })
   geometry.translate(0, 0, -FAD_LEG[2] / 2)
   return geometry
 }
-const FAD_LEG_THROUGH = fadLeg()
 
-function Fad({ c, m, state }: ModelProps) {
+// How far the rod slides out of the column, as the real one does. Past that
+// the column itself is taller.
+const FAD_SLIDE = 0.3
+
+function Fad({ c, m, state, up, out }: ModelProps) {
   const wood = <BaseMaterial color={c('stand')} material={m('stand')} />
   const rod = <Material color={c('rod')} material={m('rod')} />
-  const [shadeBottom, shadeTop] = FAD_SHADE
+  const grow = Math.max(up - FAD_SLIDE, 0)
+  const columnTop = FAD_COLUMN_TOP + grow
+  const stave = useMemo(() => fadStaveGeometry(columnTop), [columnTop])
+  // A deeper FAD has a longer leg front to back.
+  const legs = useMemo(() => [fadLeg(FAD_LEG[0]), fadLeg(FAD_LEG[0] + out / 2)], [out])
+  // The column's middle and top blocks stay at its middle and top.
+  const blocks = FAD_BLOCKS.map(([from, to], i) => [from + (grow * i) / 2, to + (grow * i) / 2])
+  const [shadeBottom, shadeTop] = [FAD_SHADE[0] + up, FAD_SHADE[1] + up]
+  const holder = [FAD_HOLDER[0] + up, FAD_HOLDER[1] + up]
   const [rTop, rBottom] = FAD_SHADE_R
   const across = 2 * Math.sqrt(FAD_COLUMN_R ** 2 - (FAD_SLOT / 2) ** 2)
-  const rodTop = FAD_HOLDER[0]
+  const rodFoot = FAD_ROD_FOOT + grow
+  const rodTop = holder[0]
   // The spider that holds the shade, level with the holder.
-  const spiderY = (FAD_HOLDER[0] + FAD_HOLDER[1]) / 2
+  const spiderY = (holder[0] + holder[1]) / 2
   const spiderR = rBottom + ((rTop - rBottom) * (spiderY - shadeBottom)) / (shadeTop - shadeBottom)
   return (
     <group>
       {[0, 1].map(i => (
-        <mesh key={i} geometry={FAD_LEG_THROUGH} rotation={[0, (i * Math.PI) / 2, 0]}>
+        <mesh key={i} geometry={legs[i]} rotation={[0, (i * Math.PI) / 2, 0]}>
           {wood}
         </mesh>
       ))}
       {[0, 1, 2, 3].map(i => (
-        <mesh key={i} geometry={FAD_STAVE} rotation={[0, (i * Math.PI) / 2, 0]}>
+        <mesh key={i} geometry={stave} rotation={[0, (i * Math.PI) / 2, 0]}>
           {wood}
         </mesh>
       ))}
       {/* The solid blocks that close the slots. */}
-      {FAD_BLOCKS.map(([from, to]) =>
+      {blocks.map(([from, to]) =>
         [0, 1].map(i => (
           <mesh key={`${from}-${i}`} position={[0, (from + to) / 2, 0]} rotation={[0, (i * Math.PI) / 2, 0]}>
             <boxGeometry args={[across, to - from, FAD_SLOT]} />
@@ -236,16 +252,16 @@ function Fad({ c, m, state }: ModelProps) {
       )}
       {/* The rod, seen down the slots below the top, and the rubber ring
           that stops it on the column. */}
-      <mesh position={[0, (FAD_ROD_FOOT + rodTop) / 2, 0]}>
-        <cylinderGeometry args={[FAD_ROD_R, FAD_ROD_R, rodTop - FAD_ROD_FOOT, SEG]} />
+      <mesh position={[0, (rodFoot + rodTop) / 2, 0]}>
+        <cylinderGeometry args={[FAD_ROD_R, FAD_ROD_R, rodTop - rodFoot, SEG]} />
         {rod}
       </mesh>
-      <mesh position={[0, FAD_COLUMN_TOP + 0.003, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, columnTop + 0.003, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.009, 0.003, SEG / 2, SEG]} />
         <Material color="#2b2b2b" material="matte" />
       </mesh>
       <mesh position={[0, spiderY, 0]} userData={{ transmits: true }}>
-        <cylinderGeometry args={[0.02, 0.02, FAD_HOLDER[1] - FAD_HOLDER[0], SEG]} />
+        <cylinderGeometry args={[0.02, 0.02, holder[1] - holder[0], SEG]} />
         {rod}
       </mesh>
       {[1, 3, 5, 7].map(i => (
@@ -259,7 +275,7 @@ function Fad({ c, m, state }: ModelProps) {
           {rod}
         </mesh>
       ))}
-      <mesh position={[0, FAD_HOLDER[1] + 0.03, 0]} userData={{ transmits: true }}>
+      <mesh position={[0, holder[1] + 0.03, 0]} userData={{ transmits: true }}>
         <sphereGeometry args={[0.03, SEG, SEG / 2]} />
         <ShadeMaterial color="#f4f2ee" material="matte" state={state} />
       </mesh>
@@ -283,15 +299,18 @@ const LAMINA_BASE = [
   [0, LAMINA_BASE_H],
 ].map(([x, y]) => new Vector2(x, y))
 
-function Lamina({ c, m, state }: ModelProps) {
+// Its round base has no depth of its own to take, so only its height
+// changes: a taller Lámina has a longer rod and sheet.
+function Lamina({ c, m, state, up }: ModelProps) {
   const black = <Material color={c('structure')} material={m('structure')} />
-  const [bottom, top] = LAMINA_SHEET
+  const [bottom, top] = [LAMINA_SHEET[0], LAMINA_SHEET[1] + up]
+  const arms = [LAMINA_ARMS[0], LAMINA_ARMS[1] + up]
   const h = top - bottom
   // The arc is centered a little in front of the rod, so its deepest
   // point is where the plan draws it.
   const center = LAMINA_SHEET_R - LAMINA_SHEET_BACK
   const half = Math.asin(LAMINA_SHEET_W / 2 / LAMINA_SHEET_R)
-  const rodH = LAMINA_TOP - LAMINA_BASE_H
+  const rodH = LAMINA_TOP + up - LAMINA_BASE_H
   return (
     <group>
       <mesh>
@@ -315,12 +334,8 @@ function Lamina({ c, m, state }: ModelProps) {
         <boxGeometry args={[LAMINA_LED_W, h - 0.01, 0.002]} />
         <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} solid />
       </mesh>
-      {LAMINA_ARMS.map(y => (
-        <mesh
-          key={y}
-          position={[0, y, -(LAMINA_ROD_R + LAMINA_SHEET_BACK) / 2]}
-          userData={{ transmits: true }}
-        >
+      {arms.map(y => (
+        <mesh key={y} position={[0, y, -(LAMINA_ROD_R + LAMINA_SHEET_BACK) / 2]} userData={{ transmits: true }}>
           <boxGeometry args={[LAMINA_ARM_W, 0.004, LAMINA_SHEET_BACK - LAMINA_ROD_R]} />
           {black}
         </mesh>
@@ -349,17 +364,11 @@ const MODELS: Record<string, (props: ModelProps) => ReactNode> = {
   lamina: Lamina,
 }
 
-export default function FloorLamp({
-  style,
-  kx,
-  ky,
-  kz,
-  ...props
-}: ModelProps & { style: string; kx: number; ky: number; kz: number }) {
+export default function FloorLamp({ style, k, ...props }: ModelProps & { style: string; k: number }) {
   const Model = MODELS[style] ?? Tmm
   const offset = (FLOOR_LAMPS[style] ?? FLOOR_LAMPS.tmm).offset
   return (
-    <group scale={[kx, ky, kz]}>
+    <group scale={k}>
       <group position={[-offset, 0, 0]}>
         <Model {...props} />
       </group>

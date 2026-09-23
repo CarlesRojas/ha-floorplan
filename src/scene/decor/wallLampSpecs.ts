@@ -12,6 +12,12 @@ export type WallLampSpec = {
   height: number
   // Where the light comes from.
   glow: [number, number, number]
+  // How much shorter and shallower the lamp can get, and how much of its
+  // added height and depth the light moves by.
+  shrink: number
+  thin: number
+  rise: number
+  reach: number
 }
 
 // TMM corto with plug: a beech channel 20 cm tall and 5 cm wide on the wall,
@@ -62,7 +68,25 @@ export const WALLY_DISC: [number, number] = [0.045, 0.0072]
 export const WALLY_ARM: [number, number, number] = [0.03, 0.0146, 0.17]
 
 export const WALL_LAMPS: Record<string, WallLampSpec> = {
-  tmm: { size: 0.2, depth: 0.23, height: 0.2, glow: [0, 0, 0.13] },
-  singular: { size: 0.18, depth: 0.15, height: 0.3, glow: [0, -0.023, SINGULAR_RING_Z] },
-  wally: { size: 0.18, depth: 0.22, height: 0.24, glow: [0, 0.025, WALLY_GLOBE_Z] },
+  tmm: { size: 0.2, depth: 0.23, height: 0.2, glow: [0, 0, 0.13], shrink: 0.08, thin: 0.018, rise: 0, reach: 1 },
+  singular: {
+    size: 0.18,
+    depth: 0.15,
+    height: 0.3,
+    glow: [0, -0.023, SINGULAR_RING_Z],
+    shrink: 0.1,
+    thin: 0.05,
+    rise: -0.5,
+    reach: 0,
+  },
+  wally: {
+    size: 0.18,
+    depth: 0.22,
+    height: 0.24,
+    glow: [0, 0.025, WALLY_GLOBE_Z],
+    shrink: 0.06,
+    thin: 0.02,
+    rise: 0,
+    reach: 1,
+  },
 }

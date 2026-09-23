@@ -64,12 +64,17 @@ import {
 // The table lamp styles, each one a Santa & Cole lamp drawn from its
 // technical drawing. Every part is in real meters, up from the table, so the
 // numbers can be checked against the drawings. The size slider scales the
-// lamp across and the height slider scales it up.
+// whole lamp, so its shade or globe keeps its shape, and the height slider
+// lengthens the one part that would be longer on a taller lamp: the handle,
+// the glass tube, the legs or the column.
 
 type ModelProps = {
   c: (slot: string) => string
   m: (slot: string) => string
   state: LightState | null
+  // How much longer that part is than in the drawing, before the lamp is
+  // scaled.
+  up: number
 }
 
 // A lathe profile as three wants it.
@@ -103,7 +108,11 @@ function stripGeometry(line: [number, number][], width: number, thick: number) {
   })
   const w = width / 2
   const t = thick / 2
-  const corner = (i: number, s: number, z: number) => [line[i][0] + across[i][0] * t * s, line[i][1] + across[i][1] * t * s, z]
+  const corner = (i: number, s: number, z: number) => [
+    line[i][0] + across[i][0] * t * s,
+    line[i][1] + across[i][1] * t * s,
+    z,
+  ]
   // A face along the whole strip between two of its long edges, each given
   // as the side of the line and the z it runs at.
   const face = (a: [number, number], b: [number, number], normal: (i: number) => number[]) => {
@@ -182,9 +191,9 @@ const CESTITA_GLOBE_PROFILE = lathe(cestitaGlobeProfile())
 
 // The handle: straight legs down inside the tall posts and a half circle
 // over the top, drawn along its middle.
-function cestitaHandle(): [number, number][] {
+function cestitaHandle(top: number): [number, number][] {
   const r = CESTITA_RING_R - CESTITA_HANDLE_T / 2
-  const cy = CESTITA_HANDLE_TOP - CESTITA_RING_R
+  const cy = top - CESTITA_RING_R
   return [[r, CESTITA_HANDLE_FOOT], ...arc(0, cy, r, r, 0, Math.PI, SEG * 4), [-r, CESTITA_HANDLE_FOOT]]
 }
 
@@ -204,8 +213,12 @@ function cestitaArch(top: number): [number, number][] {
   return [...right.map(([x, h]): [number, number] => [-x, h]), ...right.reverse()]
 }
 
-function Cestita({ c, m, state }: ModelProps) {
-  const handle = useMemo(() => stripGeometry(cestitaHandle(), CESTITA_STRIP_W, CESTITA_HANDLE_T), [])
+function Cestita({ c, m, state, up }: ModelProps) {
+  // A taller Cestita has longer handle legs.
+  const handle = useMemo(
+    () => stripGeometry(cestitaHandle(CESTITA_HANDLE_TOP + up), CESTITA_STRIP_W, CESTITA_HANDLE_T),
+    [up],
+  )
   // The second arch crosses a hair over the first, as the wood does.
   const arches = useMemo(
     () => [0, 0.0012].map(lift => stripGeometry(cestitaArch(CESTITA_ARCH_TOP + lift), CESTITA_STRIP_W, CESTITA_ARCH_T)),
@@ -281,20 +294,22 @@ function sylvestrinaDiscProfile(): [number, number][] {
   ]
 }
 
-function sylvestrinaTubeProfile(): [number, number][] {
+function sylvestrinaTubeProfile(top: number): [number, number][] {
   // Open at the bottom, with the top edge just softened.
   const r = SYLVESTRINA_TUBE_R
   const e = 0.002
-  return [[r, SYLVESTRINA_SLEEVE_TOP], ...arc(r - e, SYLVESTRINA_TOP - e, e, e, 0, Math.PI / 2), [0, SYLVESTRINA_TOP]]
+  return [[r, SYLVESTRINA_SLEEVE_TOP], ...arc(r - e, top - e, e, e, 0, Math.PI / 2), [0, top]]
 }
 
 const SYLVESTRINA_DISC_PROFILE = lathe(sylvestrinaDiscProfile())
-const SYLVESTRINA_TUBE_PROFILE = lathe(sylvestrinaTubeProfile())
 
-function Sylvestrina({ c, m, state }: ModelProps) {
+function Sylvestrina({ c, m, state, up }: ModelProps) {
   const [footR, footH] = SYLVESTRINA_FOOT
   const discTop = SYLVESTRINA_DISC[1]
-  const [diffuserR, diffuserTop] = SYLVESTRINA_DIFFUSER
+  // A taller Sylvestrina has a longer tube and diffuser.
+  const tube = useMemo(() => lathe(sylvestrinaTubeProfile(SYLVESTRINA_TOP + up)), [up])
+  const diffuserR = SYLVESTRINA_DIFFUSER[0]
+  const diffuserTop = SYLVESTRINA_DIFFUSER[1] + up
   const base = <BaseMaterial color={c('base')} material={m('base')} />
   return (
     <group>
@@ -307,22 +322,17 @@ function Sylvestrina({ c, m, state }: ModelProps) {
         {base}
       </mesh>
       <mesh position={[0, (discTop + SYLVESTRINA_SLEEVE_TOP) / 2, 0]}>
-        <cylinderGeometry
-          args={[SYLVESTRINA_TUBE_R, SYLVESTRINA_TUBE_R, SYLVESTRINA_SLEEVE_TOP - discTop, SEG * 2]}
-        />
+        <cylinderGeometry args={[SYLVESTRINA_TUBE_R, SYLVESTRINA_TUBE_R, SYLVESTRINA_SLEEVE_TOP - discTop, SEG * 2]} />
         {base}
       </mesh>
-      <mesh
-        position={[0, (SYLVESTRINA_SLEEVE_TOP + diffuserTop) / 2, 0]}
-        userData={{ transmits: true }}
-      >
+      <mesh position={[0, (SYLVESTRINA_SLEEVE_TOP + diffuserTop) / 2, 0]} userData={{ transmits: true }}>
         <cylinderGeometry args={[diffuserR, diffuserR, diffuserTop - SYLVESTRINA_SLEEVE_TOP, SEG * 2]} />
         <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
       </mesh>
       {/* Drawn last, so the lit diffuser, which turns see through as well,
           still shows behind the glass. */}
       <mesh userData={{ transmits: true }} renderOrder={1}>
-        <latheGeometry args={[SYLVESTRINA_TUBE_PROFILE, SEG * 2]} />
+        <latheGeometry args={[tube, SEG * 2]} />
         <Glass color={c('glass')} />
       </mesh>
     </group>
@@ -354,21 +364,28 @@ function maijaPlate() {
 const MAIJA_PLATE = maijaPlate()
 
 // The feet sit under the pins, one of them toward the front. Each rod comes
-// straight down out of the shade to a knee, then out to its ball.
+// straight down out of the shade to a knee, then out to its ball. A shade
+// set lower brings the knees down with it.
 const MAIJA_ANGLES = [0, 1, 2].map(i => Math.PI / 2 + (i * Math.PI * 2) / 3)
-const MAIJA_FEET = MAIJA_ANGLES.map(a => {
-  const at = (r: number, y: number) => new Vector3(Math.cos(a) * r, y, Math.sin(a) * r)
-  return {
-    top: at(MAIJA_PIN_R, MAIJA_SHADE[0] + 0.012),
-    knee: at(MAIJA_PIN_R, MAIJA_KNEE_Y),
-    ball: at(MAIJA_FOOT_R, MAIJA_BALL_R),
-  }
-})
+function maijaFeet(bottom: number) {
+  const knee = Math.min(MAIJA_KNEE_Y, bottom - 0.01)
+  return MAIJA_ANGLES.map(a => {
+    const at = (r: number, y: number) => new Vector3(Math.cos(a) * r, y, Math.sin(a) * r)
+    return {
+      top: at(MAIJA_PIN_R, bottom + 0.012),
+      knee: at(MAIJA_PIN_R, knee),
+      ball: at(MAIJA_FOOT_R, MAIJA_BALL_R),
+    }
+  })
+}
 
-function Maija({ c, m, state }: ModelProps) {
-  const [bottom, top] = MAIJA_SHADE
+function Maija({ c, m, state, up }: ModelProps) {
+  // A taller Maija stands its shade higher on longer legs.
+  const [bottom, top] = [MAIJA_SHADE[0] + up, MAIJA_SHADE[1] + up]
+  const feet = useMemo(() => maijaFeet(bottom), [bottom])
   const ring = (top - bottom) / MAIJA_RINGS
-  const [diffuserR, diffuserBottom, diffuserTop] = MAIJA_DIFFUSER
+  const diffuserR = MAIJA_DIFFUSER[0]
+  const [diffuserBottom, diffuserTop] = [MAIJA_DIFFUSER[1] + up, MAIJA_DIFFUSER[2] + up]
   const brass = <BaseMaterial color={c('feet')} material={m('feet')} />
   return (
     <group>
@@ -392,7 +409,7 @@ function Maija({ c, m, state }: ModelProps) {
         <cylinderGeometry args={[diffuserR, diffuserR, diffuserTop - diffuserBottom, SEG * 4]} />
         <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
       </mesh>
-      {MAIJA_FEET.map((foot, i) => (
+      {feet.map((foot, i) => (
         <group key={i}>
           <Rod from={foot.top} to={foot.knee} r={MAIJA_ROD_R}>
             {brass}
@@ -460,9 +477,11 @@ function Stitches({ y, r, lean, c, m }: { y: number; r: number; lean: number; c:
   )
 }
 
-function BasicaMinima({ c, m, state }: ModelProps) {
+function BasicaMinima({ c, m, state, up }: ModelProps) {
   const [discR, discH] = BASICA_DISC
-  const [shadeBottom, shadeTop] = BASICA_SHADE
+  // A taller Básica Mínima has a longer column, with the shade on top.
+  const columnTop = BASICA_COLUMN_TOP + up
+  const [shadeBottom, shadeTop] = [BASICA_SHADE[0] + up, BASICA_SHADE[1] + up]
   const [rBottom, rTop] = BASICA_SHADE_R
   const shadeH = shadeTop - shadeBottom
   const lean = Math.atan((rBottom - rTop) / shadeH)
@@ -474,20 +493,22 @@ function BasicaMinima({ c, m, state }: ModelProps) {
         {bronze}
       </mesh>
       <mesh position={[0, (discH + BASICA_SLEEVE_TOP) / 2, 0]}>
-        <cylinderGeometry args={[BASICA_COLUMN_R + 0.0003, BASICA_COLUMN_R + 0.0003, BASICA_SLEEVE_TOP - discH, SEG * 2]} />
+        <cylinderGeometry
+          args={[BASICA_COLUMN_R + 0.0003, BASICA_COLUMN_R + 0.0003, BASICA_SLEEVE_TOP - discH, SEG * 2]}
+        />
         {bronze}
       </mesh>
-      <mesh position={[0, (BASICA_SLEEVE_TOP + BASICA_COLUMN_TOP) / 2, 0]}>
-        <cylinderGeometry args={[BASICA_COLUMN_R, BASICA_COLUMN_R, BASICA_COLUMN_TOP - BASICA_SLEEVE_TOP, SEG * 2]} />
+      <mesh position={[0, (BASICA_SLEEVE_TOP + columnTop) / 2, 0]}>
+        <cylinderGeometry args={[BASICA_COLUMN_R, BASICA_COLUMN_R, columnTop - BASICA_SLEEVE_TOP, SEG * 2]} />
         <BaseMaterial color={c('column')} material={m('column')} />
       </mesh>
       {/* The E14 holder on top of the column and the bulb in it, close
           under the light, so they let it by. */}
-      <mesh position={[0, BASICA_COLUMN_TOP + 0.01, 0]} userData={{ transmits: true }}>
+      <mesh position={[0, columnTop + 0.01, 0]} userData={{ transmits: true }}>
         <cylinderGeometry args={[0.0115, 0.0115, 0.02, SEG]} />
         {bronze}
       </mesh>
-      <mesh position={[0, BASICA_COLUMN_TOP + 0.042, 0]} userData={{ transmits: true }}>
+      <mesh position={[0, columnTop + 0.042, 0]} userData={{ transmits: true }}>
         <sphereGeometry args={[0.018, SEG, SEG / 2]} />
         <ShadeMaterial color="#f4f2ee" material="matte" state={state} />
       </mesh>
@@ -508,10 +529,10 @@ const MODELS: Record<string, (props: ModelProps) => ReactNode> = {
   basica_minima: BasicaMinima,
 }
 
-export default function TableLamp({ style, kx, ky, ...props }: ModelProps & { style: string; kx: number; ky: number }) {
+export default function TableLamp({ style, k, ...props }: ModelProps & { style: string; k: number }) {
   const Model = MODELS[style] ?? Cestita
   return (
-    <group scale={[kx, ky, kx]}>
+    <group scale={k}>
       <Model {...props} />
     </group>
   )

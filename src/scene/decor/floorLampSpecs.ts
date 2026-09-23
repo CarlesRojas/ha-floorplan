@@ -13,6 +13,11 @@ export type FloorLampSpec = {
   offset: number
   // Where the light comes from, before the lamp is moved by its offset.
   glow: [number, number, number]
+  // How much shorter and shallower the lamp can get, and how much of its
+  // added height the light rises by.
+  shrink: number
+  thin: number
+  rise: number
 }
 
 // TMM: 166 cm to the top of the mast, on a cross foot 50 cm across, with a
@@ -95,7 +100,16 @@ export const LAMINA_ARM_W = 0.02
 export const LAMINA_ARMS = [0.15, 1.8]
 
 export const FLOOR_LAMPS: Record<string, FloorLampSpec> = {
-  tmm: { size: 0.6, depth: 0.5, height: TMM_TOP, offset: 0.049, glow: [TMM_BULB_X, 1.32, 0] },
-  fad: { size: 0.49, depth: 0.49, height: FAD_TOP, offset: 0, glow: [0, 1.08, 0] },
-  lamina: { size: 0.21, depth: 0.21, height: 1.88, offset: 0, glow: [0, 0.976, 0.004] },
+  tmm: {
+    size: 0.6,
+    depth: 0.5,
+    height: TMM_TOP,
+    offset: 0.049,
+    glow: [TMM_BULB_X, 1.32, 0],
+    shrink: 0.35,
+    thin: 0.3,
+    rise: 1,
+  },
+  fad: { size: 0.49, depth: 0.49, height: FAD_TOP, offset: 0, glow: [0, 1.08, 0], shrink: 0.1, thin: 0.3, rise: 1 },
+  lamina: { size: 0.21, depth: 0.21, height: 1.88, offset: 0, glow: [0, 0.976, 0.004], shrink: 1, thin: 0, rise: 0.5 },
 }

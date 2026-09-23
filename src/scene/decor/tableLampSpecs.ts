@@ -9,6 +9,10 @@ export type TableLampSpec = {
   height: number
   // How high the light comes from.
   glow: number
+  // How much shorter the part that lengthens with the height can get, and
+  // how much of that lengthening the light rises by.
+  shrink: number
+  rise: number
 }
 
 // Cestita: 22 cm across its four posts and 36 cm to the top of the handle.
@@ -87,8 +91,8 @@ export const BASICA_SHADE_R: [number, number] = [0.06, 0.05]
 export const BASICA_STITCH = 0.01
 
 export const TABLE_LAMPS: Record<string, TableLampSpec> = {
-  cestita: { size: 0.22, height: 0.36, glow: 0.186 },
-  sylvestrina: { size: 0.13, height: 0.36, glow: 0.138 },
-  maija: { size: 0.21, height: 0.33, glow: 0.195 },
-  basica_minima: { size: 0.12, height: 0.3, glow: 0.235 },
+  cestita: { size: 0.22, height: 0.36, glow: 0.186, shrink: 0.07, rise: 0 },
+  sylvestrina: { size: 0.13, height: 0.36, glow: 0.138, shrink: 0.1, rise: 0.5 },
+  maija: { size: 0.21, height: 0.33, glow: 0.195, shrink: 0.04, rise: 1 },
+  basica_minima: { size: 0.12, height: 0.3, glow: 0.235, shrink: 0.1, rise: 1 },
 }

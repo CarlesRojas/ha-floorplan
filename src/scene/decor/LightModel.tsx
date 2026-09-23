@@ -141,34 +141,36 @@ export default function LightModel({ kind, item, state }: Props) {
     case 'light_floor': {
       const style = decorationVariant(kind, item.variant)?.id ?? 'tmm'
       const spec = FLOOR_LAMPS[style] ?? FLOOR_LAMPS.tmm
-      const kx = size / spec.size
-      const kz = p('depth') / spec.depth
-      const ky = p('height') / spec.height
-      glowAt = [(spec.glow[0] - spec.offset) * kx, spec.glow[1] * ky, spec.glow[2] * kz]
-      body = <FloorLamp style={style} kx={kx} ky={ky} kz={kz} c={c} m={m} state={state} />
+      // The width scales the whole lamp, and the height and depth lengthen
+      // parts of it.
+      const k = size / spec.size
+      const up = Math.max(p('height') / k - spec.height, -spec.shrink)
+      const out = Math.max(p('depth') / k - spec.depth, -spec.thin)
+      glowAt = [(spec.glow[0] - spec.offset) * k, (spec.glow[1] + spec.rise * up) * k, spec.glow[2] * k]
+      body = <FloorLamp style={style} k={k} up={up} out={out} c={c} m={m} state={state} />
       break
     }
     case 'light_table': {
       const style = decorationVariant(kind, item.variant)?.id ?? 'cestita'
       const spec = TABLE_LAMPS[style] ?? TABLE_LAMPS.cestita
-      const kx = size / spec.size
-      const ky = p('height') / spec.height
-      glowAt = [0, spec.glow * ky, 0]
-      body = <TableLamp style={style} kx={kx} ky={ky} c={c} m={m} state={state} />
+      const k = size / spec.size
+      const up = Math.max(p('height') / k - spec.height, -spec.shrink)
+      glowAt = [0, (spec.glow + spec.rise * up) * k, 0]
+      body = <TableLamp style={style} k={k} up={up} c={c} m={m} state={state} />
       break
     }
     case 'light_wall': {
       const style = decorationVariant(kind, item.variant)?.id ?? 'tmm'
       const spec = WALL_LAMPS[style] ?? WALL_LAMPS.tmm
-      const kx = size / spec.size
-      const kz = p('depth') / spec.depth
-      const ky = p('tall') / spec.height
+      const k = size / spec.size
+      const up = Math.max(p('tall') / k - spec.height, -spec.shrink)
+      const out = Math.max(p('depth') / k - spec.depth, -spec.thin)
       // Hung by its middle, out from the wall along z.
       const height = p('height')
-      glowAt = [spec.glow[0] * kx, height + spec.glow[1] * ky, spec.glow[2] * kz]
+      glowAt = [spec.glow[0] * k, height + (spec.glow[1] + spec.rise * up) * k, (spec.glow[2] + spec.reach * out) * k]
       body = (
         <group position={[0, height, 0]}>
-          <WallLamp style={style} kx={kx} ky={ky} kz={kz} c={c} m={m} state={state} />
+          <WallLamp style={style} k={k} up={up} out={out} c={c} m={m} state={state} />
         </group>
       )
       break
