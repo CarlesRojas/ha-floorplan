@@ -1,8 +1,8 @@
 // The measurements of the dining chair styles, in meters. Pilma gives each
 // chair's width, depth and height and nothing else, so the parts below are
-// off the product photos, scaled by those. Each chair is drawn at its real
-// size, facing +z, and the width, depth and height sliders scale that. The
-// models are in DiningChairs.tsx.
+// off the product photos, scaled by those. Each chair faces +z and is laid
+// out again at the width, depth and height the sliders give it, so its
+// parts keep their thickness. The models are in DiningChairs.tsx.
 
 export type DiningChairSpec = {
   // The chair's real width, depth and height, which the sliders start at.

@@ -171,9 +171,10 @@ function Molded({ w, d, h, M }: Size) {
   )
 }
 
-function Oia({ M }: { M: Props['M'] }) {
-  const { width: w, depth: d, height: h } = DINING_CHAIRS.oia
-  const [top, t] = OIA_SEAT
+function Oia({ w, d, h, M }: Size) {
+  const ky = h / DINING_CHAIRS.oia.height
+  const t = OIA_SEAT[1]
+  const top = OIA_SEAT[0] * ky
   const [upper, lower] = OIA_LEG.map(s => s / 2) as [number, number]
   const x = w / 2 - upper
   const front = d / 2 - upper
@@ -214,17 +215,21 @@ function Oia({ M }: { M: Props['M'] }) {
   )
 }
 
-function Sura({ M }: { M: Props['M'] }) {
-  const { width: w, depth: d, height: h } = DINING_CHAIRS.sura
-  const [top, bottom, deep] = SURA_SEAT
-  const [bw, bh, bt, br] = SURA_BOARD
+function Sura({ w, d, h, M }: Size) {
+  const spec = DINING_CHAIRS.sura
+  const [kx, ky, kz] = [w / spec.width, h / spec.height, d / spec.depth]
+  // The seat keeps its thickness, and the board its height and thickness.
+  const top = SURA_SEAT[0] * ky
+  const bottom = top - (SURA_SEAT[0] - SURA_SEAT[1])
+  const deep = SURA_SEAT[2] * kz
+  const [bw, bh, bt, br] = [SURA_BOARD[0] * kx, SURA_BOARD[1], SURA_BOARD[2], SURA_BOARD[3] * kx]
   const [seatR, footR, postR] = SURA_REAR_LEG
   const front = d / 2 - 0.02
   const fx = w / 2 - 0.025
   const rx = w / 2 - 0.04
   // The rear leg bends at the back of the seat: it rises from a foot splayed
   // back and leans back again above the seat.
-  const knee: Vec3 = [rx, bottom + 0.075, front - deep - 0.01]
+  const knee: Vec3 = [rx, bottom + 0.075 * ky, front - deep - 0.01]
   const foot: Vec3 = [rx, 0, -d / 2 + footR]
   const head: Vec3 = [rx, h, -d / 2 + postR]
   const lean = Math.atan2(knee[2] - head[2], head[1] - knee[1])
@@ -272,20 +277,22 @@ function Sura({ M }: { M: Props['M'] }) {
   )
 }
 
-function Varma({ M }: { M: Props['M'] }) {
-  const { width: w, depth: d, height: h } = DINING_CHAIRS.varma
-  const [top, pad] = VARMA_SEAT
+function Varma({ w, d, h, M }: Size) {
+  const spec = DINING_CHAIRS.varma
+  const [kx, ky, kz] = [w / spec.width, h / spec.height, d / spec.depth]
+  const pad = VARMA_SEAT[1]
+  const top = VARMA_SEAT[0] * ky
   const [railH, railT] = VARMA_RAIL
-  const [bw, bh, bt, br] = VARMA_BACK
+  const [bw, bh, bt, br] = [VARMA_BACK[0] * kx, VARMA_BACK[1], VARMA_BACK[2], VARMA_BACK[3] * kx]
   const [thick, thin] = VARMA_LEG
   const seat = top - pad
   // Front legs splay out a little, rear legs splay back, and the posts above
   // the seat draw in toward the backrest.
-  const fSeat: Vec3 = [w / 2 - 0.05, seat, d / 2 - 0.055]
-  const fFoot: Vec3 = [w / 2 - 0.035, 0, d / 2 - 0.025]
-  const rSeat: Vec3 = [w / 2 - 0.07, seat, -d / 2 + 0.065]
-  const rFoot: Vec3 = [w / 2 - 0.055, 0, -d / 2 + 0.015]
-  const head: Vec3 = [bw / 2 - 0.05, h, -d / 2 + 0.03]
+  const fSeat: Vec3 = [w / 2 - 0.05 * kx, seat, d / 2 - 0.055 * kz]
+  const fFoot: Vec3 = [w / 2 - 0.035 * kx, 0, d / 2 - 0.025 * kz]
+  const rSeat: Vec3 = [w / 2 - 0.07 * kx, seat, -d / 2 + 0.065 * kz]
+  const rFoot: Vec3 = [w / 2 - 0.055 * kx, 0, -d / 2 + 0.015 * kz]
+  const head: Vec3 = [bw / 2 - 0.05 * kx, h, -d / 2 + 0.03 * kz]
   const lean = Math.atan2(rSeat[2] - head[2], head[1] - rSeat[1])
   const backY = h - bh
   const postZ = rSeat[2] + ((head[2] - rSeat[2]) * (backY - rSeat[1])) / (head[1] - rSeat[1])
@@ -293,7 +300,7 @@ function Varma({ M }: { M: Props['M'] }) {
   // set back by that much for them to rest on the posts.
   const postX = rSeat[0] + ((head[0] - rSeat[0]) * (backY - rSeat[1])) / (head[1] - rSeat[1])
   const sag = br - Math.sqrt(br * br - postX * postX)
-  const [sy] = VARMA_STRETCHER
+  const sy = VARMA_STRETCHER[0] * ky
   const railX = (fSeat[0] + rSeat[0]) / 2
   return (
     <group>
@@ -345,14 +352,12 @@ function Varma({ M }: { M: Props['M'] }) {
   )
 }
 
-// Each chair is drawn at its real size and scaled to the sliders.
-export default function DiningChair({ style, w, d, h, M }: Props) {
-  const id = DINING_CHAIRS[style] ? style : 'molded'
-  const spec = DINING_CHAIRS[id]
-  if (id === 'molded') return <Molded w={w} d={d} h={h} M={M} />
-  return (
-    <group scale={[w / spec.width, h / spec.height, d / spec.depth]}>
-      {id === 'oia' ? <Oia M={M} /> : id === 'sura' ? <Sura M={M} /> : <Varma M={M} />}
-    </group>
-  )
+const CHAIRS: Record<string, (props: Size) => ReactNode> = { molded: Molded, oia: Oia, sura: Sura, varma: Varma }
+
+// Each chair is laid out again at the size the sliders give it: its legs
+// grow longer and its seat wider, while legs, boards and cushions keep their
+// thickness.
+export default function DiningChair({ style, ...size }: Props) {
+  const Chair = CHAIRS[style] ?? Molded
+  return <Chair {...size} />
 }
