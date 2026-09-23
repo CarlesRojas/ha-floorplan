@@ -48,9 +48,22 @@ export function initialTry(kind: DecorationKind): TryState {
 // A click on the piece in 3D, the way a click on a bound one toggles its
 // device. A positioned piece opens all the way or shuts.
 export function toggleTry(kind: DecorationKind, state: TryState): TryState {
-  if (!isPositioned(kind) || !('open' in state.levels)) return { ...state, on: !state.on }
-  const open = state.levels.open > 0 ? 0 : 1
-  return { ...state, on: open > 0, levels: { ...state.levels, open } }
+  return switchTry(kind, state, !state.on)
+}
+
+// The switch, which on a positioned piece is fully open or fully shut, the
+// way a cover driven by a device that only switches is.
+export function switchTry(kind: DecorationKind, state: TryState, on: boolean): TryState {
+  if (!isPositioned(kind) || !('open' in state.levels)) return { ...state, on }
+  return { ...state, on, levels: { ...state.levels, open: on ? 1 : 0 } }
+}
+
+// A level, which on a positioned piece is where it is, so anything open at
+// all counts as on, the way a cover reporting a position is.
+export function levelTry(kind: DecorationKind, state: TryState, id: string, value: number): TryState {
+  const levels = { ...state.levels, [id]: value }
+  if (!isPositioned(kind) || id !== 'open') return { ...state, levels }
+  return { ...state, on: value > 0, levels }
 }
 
 const fromSrgb = (r: number, g: number, b: number): [number, number, number] => {
@@ -68,9 +81,8 @@ export function tryItemState(kind: DecorationKind, state: TryState): ItemState {
     const c = new Color(tint?.mode === 'color' ? tint.hex : LIGHT_GLOW_COLOR)
     glow = [c.r, c.g, c.b]
   }
-  const positioned = isPositioned(kind) && 'open' in state.levels
   return {
-    on: positioned ? state.levels.open > 0 : state.on,
+    on: state.on,
     level: kind.expresses.includes('level') ? state.levels.open : undefined,
     levels: state.levels,
     glow,

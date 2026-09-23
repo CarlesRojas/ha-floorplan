@@ -3,6 +3,8 @@ import { Switch } from '#/editor/panel.tsx'
 import {
   initialTry,
   isPositioned,
+  levelTry,
+  switchTry,
   KELVIN_MAX,
   KELVIN_MIN,
   WARM_WHITE_K,
@@ -37,7 +39,8 @@ const TINTS: { mode: Tint['mode'] | 'default'; label: string }[] = [
 export default function TrySection({ kind, state, accent, onChange }: Props) {
   const s = state ?? initialTry(kind)
   const levels = itemLevels(kind)
-  const positioned = isPositioned(kind) && levels.some(l => l.id === 'open')
+  // A positioned piece's switch opens and shuts it, so it is named for that.
+  const switchLabel = SWITCH_LABELS[kind.id] ?? (isPositioned(kind) ? 'Open' : 'On')
   const isLight = kind.expresses.includes('color') || kind.expresses.includes('warmth')
   const set = (patch: Partial<TryState>) => onChange({ ...s, ...patch })
   const tintMode = s.tint?.mode ?? 'default'
@@ -56,14 +59,12 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
           </button>
         )}
       </div>
-      {/* A positioned piece is as open as its slider says, so its switch
-          would only repeat it. */}
-      {!positioned && (
-        <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-          {SWITCH_LABELS[kind.id] ?? 'On'}
-          <Switch checked={s.on} accent={accent} label={SWITCH_LABELS[kind.id] ?? 'On'} onChange={on => set({ on })} />
-        </label>
-      )}
+      {/* On a positioned piece the switch is fully open or fully shut,
+          and the slider anything in between. Each moves the other. */}
+      <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+        {switchLabel}
+        <Switch checked={s.on} accent={accent} label={switchLabel} onChange={on => onChange(switchTry(kind, s, on))} />
+      </label>
       {levels.map(level => {
         const value = s.levels[level.id] ?? 0
         const label = isLight ? 'Brightness' : level.label
@@ -78,7 +79,7 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
               value={value}
               aria-label={label}
               style={{ accentColor: accent }}
-              onChange={e => set({ levels: { ...s.levels, [level.id]: Number(e.target.value) } })}
+              onChange={e => onChange(levelTry(kind, s, level.id, Number(e.target.value)))}
             />
             <span className="text-right text-xs text-(--secondary-text-color)">{Math.round(value * 100)}%</span>
           </label>

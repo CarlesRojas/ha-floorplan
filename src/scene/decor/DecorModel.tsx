@@ -35,9 +35,11 @@ export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
-  // An unbound curtain hangs closed. Eased, so it draws rather than jumps
-  // as Home Assistant reports its position on the way.
-  const level = useTravel(state?.level ?? 0)
+  // An unbound curtain hangs closed. A device with a position draws it that
+  // far, one that only switches draws it all the way open or shut. Eased,
+  // so it draws rather than jumps as Home Assistant reports its position on
+  // the way.
+  const level = useTravel(state ? (state.levels.open ?? (state.on ? 1 : 0)) : 0)
 
   // A turned stoneware vase, narrow foot, full belly, drawn in neck.
   const isVase = kind.id === 'vase'
