@@ -5,7 +5,8 @@
 //
 // kind and variant pick the model, on=1 switches it on in a dark room, and
 // any other parameter is passed to the model as its own, so &size=0.3 or
-// &cord=0.5 set those. Drag to turn it, scroll to zoom.
+// &cord=0.5 set those. yaw turns the view round it by that many degrees, so
+// &yaw=90 looks at it from its right side. Drag to turn it, scroll to zoom.
 import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { CEILING_HEIGHT_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
@@ -20,7 +21,7 @@ const on = query.get('on') === '1'
 const kind = decorationKind(query.get('kind') ?? 'light_pendant')
 const params: Record<string, number> = {}
 for (const [key, value] of query) {
-  if (['kind', 'variant', 'on'].includes(key)) continue
+  if (['kind', 'variant', 'on', 'yaw'].includes(key)) continue
   if (Number.isFinite(Number(value))) params[key] = Number(value)
 }
 const item: DecorationConfig = {
@@ -31,6 +32,7 @@ const item: DecorationConfig = {
   position: [0, 0],
   params,
 }
+const yaw = (Number(query.get('yaw')) || 0) * (Math.PI / 180)
 const glow = new Color(LIGHT_GLOW_COLOR)
 // Ceiling items hang from a ceiling brought down near the floor, so a long
 // cord does not push the model out of frame.
@@ -41,7 +43,7 @@ root.style.cssText = `width:100vw;height:100vh;background:${on ? '#2a2a2e' : '#d
 document.body.appendChild(root)
 createRoot(root).render(
   kind ? (
-    <Canvas shadows dpr={2} camera={{ fov: 30, position: [0, 0.3, 3] }}>
+    <Canvas shadows dpr={2} camera={{ fov: 30, position: [3 * Math.sin(yaw), 0.3, 3 * Math.cos(yaw)] }}>
       <ambientLight intensity={on ? 0.15 : 0.7} />
       <directionalLight position={[3, 6, 4]} intensity={on ? 0.1 : 1.2} />
       <Bounds fit clip observe margin={1.15} maxDuration={0}>

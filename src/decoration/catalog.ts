@@ -206,6 +206,17 @@ const FLOOR_TMM: DecorationVariant = {
   materials: { shade: 'fabric', stand: 'wood', fittings: 'metal', cable: 'fabric' },
 }
 
+// The wall lamp's first style, which keeps the kind's old slots, so a saved
+// shade or channel color still lands on the TMM.
+const WALL_TMM: DecorationVariant = {
+  id: 'tmm',
+  label: 'TMM corto',
+  // A Ø20 shade 23 cm out from the wall, on a channel 20 cm tall.
+  params: { size: 0.2, depth: 0.23, tall: 0.2 },
+  colors: { shade: '#ecdfc0', channel: '#dfbb8f', cable: PENDANT_BLACK_COLOR },
+  materials: { shade: 'fabric', channel: 'wood', cable: 'fabric' },
+}
+
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
   kind(
@@ -350,10 +361,38 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'light',
     'Wall light',
     'wall',
-    [size(0.25, 0.1, 0.6), height(1.8, 0.5, 2.5)],
-    { shade: LIGHT_SHADE_COLOR, channel: LIGHT_BASE_COLOR },
-    { shade: 'fabric', channel: 'wood' },
+    // Size, depth and lamp height are the lamp's own, out from the wall, and
+    // height is how high its middle hangs. Each style starts at its lamp's
+    // own size, to the centimeter.
+    [
+      p('size', 'Width', 0.2, 0.08, 0.6, 0.01),
+      p('depth', 'Depth', 0.23, 0.08, 0.5, 0.01),
+      p('tall', 'Lamp height', 0.2, 0.08, 0.6, 0.01),
+      height(1.8, 0.5, 2.5),
+    ],
+    WALL_TMM.colors ?? {},
+    WALL_TMM.materials ?? {},
     LIGHT_SIGNALS,
+    // Three Santa & Cole lamps, each drawn from its dimensional drawing.
+    [
+      WALL_TMM,
+      {
+        id: 'singular',
+        label: 'Singular',
+        // 18 cm wide, 15 cm out and 30 cm tall.
+        params: { size: 0.18, depth: 0.15, tall: 0.3 },
+        colors: { shade: '#f4f1ea', structure: '#c9ccce' },
+        materials: { shade: 'fabric', structure: 'metal' },
+      },
+      {
+        id: 'wally',
+        label: 'Wally Cestita',
+        // A Ø18 globe 22 cm out, on a plate 24 cm tall.
+        params: { size: 0.18, depth: 0.22, tall: 0.24 },
+        colors: { globe: PENDANT_OPAL_COLOR, structure: PENDANT_BLACK_COLOR },
+        materials: { globe: 'matte', structure: 'matte' },
+      },
+    ],
   ),
   kind(
     'light_strip',

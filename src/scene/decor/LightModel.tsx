@@ -6,6 +6,8 @@ import Pendant from '#/scene/decor/Pendants.tsx'
 import { PENDANTS } from '#/scene/decor/pendantSpecs.ts'
 import TableLamp from '#/scene/decor/TableLamps.tsx'
 import { TABLE_LAMPS } from '#/scene/decor/tableLampSpecs.ts'
+import WallLamp from '#/scene/decor/WallLamps.tsx'
+import { WALL_LAMPS } from '#/scene/decor/wallLampSpecs.ts'
 import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
 import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGHT_POINT_INTENSITY } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -156,37 +158,17 @@ export default function LightModel({ kind, item, state }: Props) {
       break
     }
     case 'light_wall': {
-      // After the TMM wall lamp: a beech channel on the wall with a
-      // cylindrical parchment shade dropped into it.
+      const style = decorationVariant(kind, item.variant)?.id ?? 'tmm'
+      const spec = WALL_LAMPS[style] ?? WALL_LAMPS.tmm
+      const kx = size / spec.size
+      const kz = p('depth') / spec.depth
+      const ky = p('tall') / spec.height
+      // Hung by its middle, out from the wall along z.
       const height = p('height')
-      const r = size / 2
-      const shadeH = size * 0.95
-      const rail = 0.018
-      // In the middle of the shade, which sits proud of the channel.
-      glowAt = [0, height, rail + r * 0.55]
+      glowAt = [spec.glow[0] * kx, height + spec.glow[1] * ky, spec.glow[2] * kz]
       body = (
         <group position={[0, height, 0]}>
-          {/* The channel: a back board with a rail down each edge. */}
-          <mesh position={[0, 0, rail / 2]}>
-            <boxGeometry args={[size + rail * 2, shadeH * 1.05, rail]} />
-            <BaseMaterial color={c('channel')} material={m('channel')} />
-          </mesh>
-          {[-1, 1].map(s2 => (
-            <mesh key={s2} position={[(s2 * (size + rail)) / 2, 0, rail + r * 0.3]}>
-              <boxGeometry args={[rail, shadeH * 1.05, r * 0.6]} />
-              <BaseMaterial color={c('channel')} material={m('channel')} />
-            </mesh>
-          ))}
-          {/* The shade sits in the channel, proud of it at the front. */}
-          <mesh position={[0, 0, rail + r * 0.55]} castShadow userData={{ transmits: true }}>
-            <cylinderGeometry args={[r, r, shadeH, SEG * 2, 1, true]} />
-            <ShadeMaterial color={c('shade')} material={m('shade')} state={state} />
-          </mesh>
-          {/* The pull cord that switches it. */}
-          <mesh position={[0, -shadeH * 0.85, rail + r * 0.55]}>
-            <capsuleGeometry args={[0.003, shadeH * 0.5, 6, 12]} />
-            <BaseMaterial color={c('channel')} material={m('channel')} />
-          </mesh>
+          <WallLamp style={style} kx={kx} ky={ky} kz={kz} drop={height} c={c} m={m} state={state} />
         </group>
       )
       break

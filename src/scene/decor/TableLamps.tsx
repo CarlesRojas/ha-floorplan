@@ -1,3 +1,4 @@
+import { cestitaGlobeProfile } from '#/scene/decor/cestitaGlobe.ts'
 import { BaseMaterial, ShadeMaterial, type LightState } from '#/scene/decor/lightMaterials.tsx'
 import { Glass, Material, Rod, SEG } from '#/scene/decor/parts.tsx'
 import {
@@ -14,11 +15,6 @@ import {
   CESTITA_ARCH_T,
   CESTITA_ARCH_TOP,
   CESTITA_CAP,
-  CESTITA_GLOBE,
-  CESTITA_GLOBE_BOTTOM_R,
-  CESTITA_GLOBE_N,
-  CESTITA_GLOBE_R,
-  CESTITA_GLOBE_TOP_R,
   CESTITA_HANDLE_FOOT,
   CESTITA_HANDLE_T,
   CESTITA_HANDLE_TOP,
@@ -181,34 +177,6 @@ function Band({ r, t, y, children }: { r: number; t: number; y: [number, number]
 // Cestita: an opal globe in a cherry wood cradle. Four posts hold a ring at
 // the globe's waist, two arches cross under it for a foot, and a handle
 // pivots on the two tall posts, up over the top.
-
-function cestitaGlobeProfile(): [number, number][] {
-  const [yBottom, yTop] = CESTITA_GLOBE
-  const yc = (yTop + yBottom) / 2
-  const n = CESTITA_GLOBE_N
-  const e = 2 / n
-  const a = CESTITA_GLOBE_R
-  // A superellipse cut flat at both poles, so its half height reaches a
-  // little past them.
-  const cut = (r: number) => Math.pow(1 - Math.pow(r / a, n), 1 / n)
-  const b = (yTop - yBottom) / (cut(CESTITA_GLOBE_TOP_R) + cut(CESTITA_GLOBE_BOTTOM_R))
-  const points: [number, number][] = [
-    [0, yBottom],
-    [CESTITA_GLOBE_BOTTOM_R, yBottom],
-  ]
-  const steps = SEG * 4
-  for (let i = 0; i <= steps; i++) {
-    const t = -Math.PI / 2 + (i / steps) * Math.PI
-    const x = a * Math.pow(Math.cos(t), e)
-    const y = yc + b * Math.sign(Math.sin(t)) * Math.pow(Math.abs(Math.sin(t)), e)
-    if (y <= yBottom || y >= yTop) continue
-    if (y < yc && x < CESTITA_GLOBE_BOTTOM_R) continue
-    if (y > yc && x < CESTITA_GLOBE_TOP_R) continue
-    points.push([x, y])
-  }
-  points.push([CESTITA_GLOBE_TOP_R, yTop], [0, yTop])
-  return points
-}
 
 const CESTITA_GLOBE_PROFILE = lathe(cestitaGlobeProfile())
 
