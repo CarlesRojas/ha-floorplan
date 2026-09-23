@@ -2,7 +2,6 @@ import Canvas from '#/editor/Canvas.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import Scene from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
-import { cn } from '#/lib/utils.ts'
 import RoomInfo from '#/editor/RoomInfo.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
@@ -20,14 +19,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import { faCheck, faFloppyDisk, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
   EDITOR_GRID_M,
   EDITOR_PREVIEW_FRACTION,
   EDITOR_PREVIEW_MIN_PX,
-  EDITOR_SAVED_FLASH_MS,
   EDITOR_SIDEBAR_MIN_PX,
   EDITOR_HOUR,
   EDITOR_NIGHT_HOUR,
@@ -44,6 +42,9 @@ type Props = {
   hass: HomeAssistant | null
   config: CardConfig
   onChange: (config: CardConfig) => void
+  // Saves the card to the dashboard, not only to the dialog holding it.
+  // Throws when the save failed, so the editor stays open with the edits.
+  onSave?: () => Promise<unknown>
 }
 
 function nextRoomId(rooms: RoomConfig[]) {
@@ -52,7 +53,7 @@ function nextRoomId(rooms: RoomConfig[]) {
   return n
 }
 
-export default function Editor({ hass, config, onChange }: Props) {
+export default function Editor({ hass, config, onChange, onSave }: Props) {
   const [rooms, setRooms] = useState<RoomConfig[]>(config.rooms ?? [])
   const [devices, setDevices] = useState<DeviceConfig[]>(config.devices ?? [])
   const [decorations, setDecorations] = useState<DecorationConfig[]>(config.decorations ?? [])
@@ -476,21 +477,22 @@ export default function Editor({ hass, config, onChange }: Props) {
     setFullscreen(true)
   }
 
-  // Sends the edits on without leaving the editor, and makes this the state
-  // that Discard would go back to. The button says so for a moment, since
-  // nothing else on screen changes.
-  const [saved, setSaved] = useState(false)
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const save = () => {
+  // Saves the card to the dashboard and leaves, with Home Assistant's own
+  // dialog still open behind for visibility and layout. A rename still
+  // waiting on its pause is sent first, so the save carries it. If the save
+  // fails the editor stays open, so nothing is lost.
+  const [saving, setSaving] = useState(false)
+  const saveAndClose = async () => {
+    if (saving) return
     flushRename()
-    setOpened({ rooms, devices, decorations })
-    setSaved(true)
-    if (savedTimer.current) clearTimeout(savedTimer.current)
-    savedTimer.current = setTimeout(() => setSaved(false), EDITOR_SAVED_FLASH_MS)
-  }
-
-  const saveAndClose = () => {
-    flushRename()
+    setSaving(true)
+    try {
+      await onSave?.()
+    } catch {
+      setSaving(false)
+      return
+    }
+    setSaving(false)
     setDraft([])
     setFullscreen(false)
   }
@@ -753,22 +755,12 @@ export default function Editor({ hass, config, onChange }: Props) {
               </button>
               <button
                 type="button"
-                onClick={save}
-                className={cn(
-                  'flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors hover:opacity-90',
-                  saved ? 'border-emerald-600 text-emerald-500' : 'border-(--divider-color)',
-                )}
-              >
-                <FontAwesomeIcon icon={saved ? faCheck : faFloppyDisk} className="size-3.5" />
-                {saved ? 'Saved' : 'Save'}
-              </button>
-              <button
-                type="button"
                 onClick={saveAndClose}
-                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90"
+                disabled={saving}
+                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
                 <FontAwesomeIcon icon={faCheck} className="size-3.5" />
-                Save & Close
+                {saving ? 'Saving' : 'Save & Close'}
               </button>
             </div>
           </div>
