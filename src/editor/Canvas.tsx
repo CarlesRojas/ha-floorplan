@@ -1016,11 +1016,19 @@ export default function Canvas({
             const angle = -(item.rotation ?? 0)
             const [fw, fd] = footprint(kind, item.params)
             const r = EDITOR_DEVICE_RADIUS_PX
-            const halfW = Math.max(r, (fw / 2) * view.scale)
-            const halfD = Math.max(r, (fd / 2) * view.scale)
+            // The footprint at its true size, at every zoom. It used to be
+            // kept at least as big as the icon on it, so zoomed out far enough
+            // that a piece was smaller on screen than its icon, its box
+            // stopped shrinking while the room around it kept going, and
+            // pieces suddenly read too big for the plan. The icon keeps its
+            // size so it stays legible, and picking keeps its own minimum.
+            const halfW = (fw / 2) * view.scale
+            const halfD = (fd / 2) * view.scale
             // Zero rotation faces plan -y, so the handle starts below the item.
             const handleAngle = ((item.rotation ?? 0) - 90) * (Math.PI / 180)
-            const handleDist = Math.max(halfW, halfD) + 22
+            // Clear of the icon as well as the box, since a small piece's box
+            // can now sit inside its icon.
+            const handleDist = Math.max(halfW, halfD, r) + 22
             return (
               <g
                 key={item.id}
