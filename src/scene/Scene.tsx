@@ -18,6 +18,7 @@ import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils, PCFSoftShadowMap } from 'three'
+import { useCallback, useRef } from 'react'
 
 type Props = {
   hass: HomeAssistant | null
@@ -28,12 +29,22 @@ type Props = {
   // and the sidebar follow the view.
   onPickDecoration?: (id: string) => void
   onPickRoom?: (id: string) => void
+  // A click that lands on nothing at all, which lets go of whatever was
+  // picked, the way a click on the plan's empty background does.
+  onPickNothing?: () => void
 }
 
-export default function Scene({ hass, config, sky = 'auto', onPickDecoration, onPickRoom }: Props) {
+export default function Scene({ hass, config, sky = 'auto', onPickDecoration, onPickRoom, onPickNothing }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
   const gap = config.gap ?? ROOM_GAP_M
+  // When the press fallback last handed a near miss to a piece. Three still
+  // sees that same click as landing on nothing, a moment later, and without
+  // this it would let go of the piece the fallback had just picked.
+  const fallbackAt = useRef(0)
+  const markFallback = useCallback(() => {
+    fallbackAt.current = performance.now()
+  }, [])
 
   return (
     <Canvas
@@ -46,6 +57,17 @@ export default function Scene({ hass, config, sky = 'auto', onPickDecoration, on
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
+      // Three only calls a press missed when it barely moved, so letting go
+      // of the camera after orbiting never counts. A right click is left
+      // alone, and so is a click the fallback just gave to a piece nearby.
+      onPointerMissed={
+        onPickNothing &&
+        ((e: MouseEvent) => {
+          if (e.button !== 0) return
+          if (performance.now() - fallbackAt.current < 400) return
+          onPickNothing()
+        })
+      }
     >
       <Sky hass={hass} rooms={rooms} mode={sky} direction={config.sun_direction} />
       {/* Everything solid casts and receives, so a lamp throws the things
@@ -55,7 +77,7 @@ export default function Scene({ hass, config, sky = 'auto', onPickDecoration, on
       <Devices hass={hass} config={config} onPick={onPickDecoration} />
       {/* A press that misses everything looks around itself for something
           to act on, so small things are still easy to hit. */}
-      <PickFallback />
+      <PickFallback onHandled={markFallback} />
       {rooms.map((room, i) => (
         <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom} />
       ))}

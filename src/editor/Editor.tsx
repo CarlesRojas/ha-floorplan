@@ -834,6 +834,10 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       sky={hour}
                       onPickDecoration={pickDecoration}
                       onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
+                      onPickNothing={() => {
+                        setSelection({ roomId: null, vertex: null })
+                        setSelectedDecoration(null)
+                      }}
                     />
                   </div>
                 </>
