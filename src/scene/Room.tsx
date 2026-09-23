@@ -12,9 +12,11 @@ type Props = {
   index: number
   radius: number
   gap: number
+  // In the editor, clicking the bare floor picks the room.
+  onPick?: (id: string) => void
 }
 
-export default function Room({ room, index, radius, gap }: Props) {
+export default function Room({ room, index, radius, gap, onPick }: Props) {
   // The bevel grows outward from the outline, so inset by it as well to keep
   // the visible edge where the gap says it should be.
   const points = useMemo(
@@ -59,7 +61,18 @@ export default function Room({ room, index, radius, gap }: Props) {
   const color = room.floor?.color ?? floor?.color ?? room.color ?? ROOM_COLORS[index % ROOM_COLORS.length]
 
   return (
-    <mesh geometry={geometry} castShadow receiveShadow>
+    <mesh
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      onClick={
+        onPick &&
+        (e => {
+          e.stopPropagation()
+          onPick(room.id)
+        })
+      }
+    >
       {floor ? (
         // Extrude UVs are plan meters, so the surface tiles at its own
         // physical size, scaled and turned by what the room asks for.

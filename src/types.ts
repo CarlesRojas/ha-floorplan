@@ -54,21 +54,16 @@ export type RoomConfig = {
 }
 
 // A Home Assistant entity placed in a room.
+// An entity a decoration item stands in for. A device is never placed on
+// its own: the room and position follow the item that stands behind it.
 export type DeviceConfig = {
   entity_id: string
   room: string
   position: Point
-  // One of the types in the device catalog for the entity's domain.
-  type?: string
-  // Degrees, counter clockwise on the plan.
-  rotation?: number
-  // Meters, for strip-like types such as LED strips and blinds.
-  length?: number
   // Which of the device's percentages feeds each percentage of the items it
   // stands behind, for example its tilt driving a blind's slats.
   levels?: Record<string, string>
-  // Decoration items that stand in for this device in 3D. With none, the
-  // device shows as a sphere.
+  // Decoration items that stand in for this device in 3D.
   decorations?: string[]
 }
 
@@ -88,6 +83,8 @@ export type DecorationConfig = {
   params?: Record<string, number>
   // Colors per material slot, as hex strings.
   colors?: Record<string, string>
+  // Which of the kind's styles it is drawn in. The kind's first when absent.
+  variant?: string
 }
 
 export type CardConfig = {

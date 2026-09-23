@@ -6,17 +6,26 @@ import {
   screenSize,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { Bar, Blob, Dome, Glass, Material, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Blob, Dome, Glass, Led, Material, SEG, Slab, Spinner } from '#/scene/decor/parts.tsx'
 import { roundedShape } from '#/geometry/polygon.ts'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
-import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type ReactNode } from 'react'
-import { DoubleSide, ExtrudeGeometry, type Group } from 'three'
+import Vacuum from '#/scene/decor/Vacuum.tsx'
+import type { RoomConfig } from '#/types.ts'
+import { useMemo, type ReactNode } from 'react'
+import { DoubleSide, ExtrudeGeometry } from 'three'
 
-type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
+type Props = {
+  kind: DecorationKind
+  item: DecorationConfig
+  state: ItemState | null
+  // The room the piece stands in and everything else in the plan, for the
+  // few models that have to know where they can drive.
+  room?: RoomConfig
+  all: DecorationConfig[]
+}
 
 // A flat shape cut from the front and extruded toward the viewer: the bar
 // of a lever handle, drawn as a rectangle with fully rounded ends.
@@ -52,40 +61,11 @@ function Plate({
   )
 }
 
-// Blades that spin while the device runs, faster at a higher level.
-function Spinner({ speed, children }: { speed: number; children: ReactNode }) {
-  const ref = useRef<Group>(null)
-  useFrame((_, delta) => {
-    if (ref.current && speed > 0) ref.current.rotation.y += delta * speed
-  })
-  return <group ref={ref}>{children}</group>
-}
-
-function Led({
-  on,
-  position,
-  color = '#8fd6a0',
-  radius = 0.012,
-}: {
-  on: boolean
-  position: [number, number, number]
-  color?: string
-  radius?: number
-}) {
-  const lit = useEased(on ? 1 : 0, 11)
-  return (
-    <mesh position={position}>
-      <sphereGeometry args={[radius, 8, 6]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * lit} />
-    </mesh>
-  )
-}
-
 // Media, climate, covers, security and the small smart home fittings.
-export default function DeviceModel({ kind, item, state }: Props) {
+export default function DeviceModel({ kind, item, state, room, all }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a device's colors read as its parts.
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
   const on = state?.on ?? false
@@ -99,21 +79,17 @@ export default function DeviceModel({ kind, item, state }: Props) {
   // Anything that lights up fades with this, and anything that spins uses
   // it to run down rather than stopping dead.
   const lit = useEased(on ? 1 : 0, 9)
-  // An unbound cover shows closed, so the item is visible on the plan.
-  // Home Assistant says so outright while a cover runs, which is a better
-  // signal than the positions alone.
-  const moving = state?.text === 'opening' ? 1 : state?.text === 'closing' ? -1 : 0
   // How far open the item is: the percentage feeding it, or its switch when
   // it has none. Without the switch, a cover bound to something that only
   // turns on and off would never move.
   const openTarget = state ? (state.levels.open ?? (state.on ? 1 : 0)) : 0
-  const coverLevel = useTravel(openTarget, moving)
+  const coverLevel = useTravel(openTarget)
   // Same, but a cover with no position at all counts as fully open.
   const openAmount = coverLevel
   // Slats, or a window's tilt, when a second percentage feeds it.
   // Home Assistant counts a tilt up from shut, so nothing feeding it means
   // slats closed and a window standing straight.
-  const tiltAmount = useTravel(state?.levels.tilt ?? 0, 0)
+  const tiltAmount = useTravel(state?.levels.tilt ?? 0)
   const runLevel = useEased(level, 6)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or
@@ -772,12 +748,15 @@ export default function DeviceModel({ kind, item, state }: Props) {
     }
     case 'window': {
       // A frame with as many casements as the width takes, each between half
-      // a meter and a meter wide. They swing inward when the cover opens,
-      // hinged on the outer edge so a pair opens from the middle.
+      // a meter and a meter wide. They swing inward when the cover opens.
+      // Left alone, a run of them opens from the middle the way a pair of
+      // French casements does. Hinge right swings every one of them from its
+      // right edge instead, which is the other way a run of casements is
+      // actually hung. Mirroring the run was the old meaning, and on the
+      // pair most windows are it changed nothing at all.
       const w = p('width')
       const h = p('height')
-      // 1 hinges the first casement on the left, -1 on the right.
-      const side = p('flip') > 0.5 ? -1 : 1
+      const hingeRight = p('flip') > 0.5
       const f = 0.05
       const d = 0.05
       const frame = <Material color={c('frame')} material={m('frame')} />
@@ -799,9 +778,7 @@ export default function DeviceModel({ kind, item, state }: Props) {
             {frame}
           </Slab>
           {Array.from({ length: leaves }).map((_, i) => {
-            // A pair still opens from the middle. A single casement, and the
-            // odd one in an odd run, takes the side the switch picks.
-            const left = side > 0 ? i < leaves / 2 : i >= (leaves - 1) / 2
+            const left = !hingeRight && i < leaves / 2
             const edge = -inner.w / 2 + i * leafW
             const hinge = left ? edge : edge + leafW
             const open = (left ? 0.85 : -0.85) * coverLevel
@@ -1298,50 +1275,8 @@ export default function DeviceModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'vacuum_robot': {
-      // A low puck: a bumper wrapping the front half, a lidar turret set
-      // back on the top plate, and a side brush that spins while it runs.
-      const r = p('size') / 2
-      const h = 0.085
-      return (
-        <group>
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <cylinderGeometry args={[r, r * 0.98, h, SEG]} />
-            {M('body')}
-          </mesh>
-          {/* Bumper, the front half of the rim only. */}
-          <mesh position={[0, h * 0.34, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <cylinderGeometry args={[r * 1.02, r * 1.02, h * 0.42, SEG, 1, true, 0, Math.PI]} />
-            <Material color={c('bumper')} material={m('bumper')} doubleSide />
-          </mesh>
-          {/* Lidar turret, behind the middle. */}
-          <mesh position={[0, h + 0.012, -r * 0.34]}>
-            <cylinderGeometry args={[r * 0.3, r * 0.32, 0.024, SEG]} />
-            {M('bumper')}
-          </mesh>
-          <mesh position={[0, h + 0.026, -r * 0.34]}>
-            <cylinderGeometry args={[r * 0.26, r * 0.28, 0.006, SEG]} />
-            {M('body')}
-          </mesh>
-          {/* A round button in front of the turret. */}
-          <mesh position={[0, h + 0.002, r * 0.3]}>
-            <cylinderGeometry args={[r * 0.16, r * 0.16, 0.006, SEG]} />
-            {M('bumper')}
-          </mesh>
-          <Led on={on} position={[0, h + 0.008, r * 0.62]} radius={0.007} />
-          <Spinner speed={9 * lit}>
-            <mesh position={[r * 0.72, 0.01, 0]}>
-              <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
-              {M('brushes')}
-            </mesh>
-            <mesh position={[-r * 0.72, 0.01, 0]}>
-              <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
-              {M('brushes')}
-            </mesh>
-          </Spinner>
-        </group>
-      )
-    }
+    case 'vacuum_robot':
+      return <Vacuum kind={kind} item={item} state={state} room={room} all={all} lit={lit} />
     default:
       return null
   }

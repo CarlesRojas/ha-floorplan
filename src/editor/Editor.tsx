@@ -1,19 +1,16 @@
 import Canvas from '#/editor/Canvas.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
-import DevicePanel from '#/editor/DevicePanel.tsx'
-import ModeSwitch from '#/editor/ModeSwitch.tsx'
 import Scene from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import { cn } from '#/lib/utils.ts'
 import RoomInfo from '#/editor/RoomInfo.tsx'
-import RoomList from '#/editor/RoomList.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
-import type { Mode, Selection, Tool } from '#/editor/types.ts'
+import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
-import { deviceType, type EntityInfo } from '#/devices/catalog.ts'
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { DEFAULT_FLOOR_MATERIAL } from '#/theme.ts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +25,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
   EDITOR_GRID_M,
-  EDITOR_MODE_LABELS_PX,
   EDITOR_PREVIEW_FRACTION,
   EDITOR_PREVIEW_MIN_PX,
   EDITOR_SAVED_FLASH_MS,
@@ -64,8 +60,6 @@ export default function Editor({ hass, config, onChange }: Props) {
   // A copied item, kept whole so it can be pasted into another room later,
   // even after the original is gone.
   const [clipboard, setClipboard] = useState<DecorationConfig | null>(null)
-  const [mode, setModeState] = useState<Mode>('rooms')
-  const [selectedDevice, setSelectedDevice] = useState<string | null>(null)
   const [tool, setTool] = useState<Tool>('select')
   const [selection, setSelection] = useState<Selection>({ roomId: null, vertex: null })
   const [draft, setDraft] = useState<Point[]>([])
@@ -89,9 +83,28 @@ export default function Editor({ hass, config, onChange }: Props) {
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
+  // The room the next piece goes in. Picking a room or a piece sets it, and
+  // it outlives both, so a run of pieces added one after another all land in
+  // the room that was picked rather than scattering once the selection moves
+  // to the piece just added.
+  const [addRoom, setAddRoom] = useState<string | null>(null)
+  // One thing at a time is selected, a room or a piece, never both. Picking
+  // either lets go of the other.
   const pickRoom = (next: Selection) => {
-    if (next.roomId) setShowRoom(true)
+    if (next.roomId) {
+      setShowRoom(true)
+      setSelectedDecoration(null)
+      setAddRoom(next.roomId)
+    }
     setSelection(next)
+  }
+  const pickDecoration = (id: string | null) => {
+    if (id) {
+      setSelection({ roomId: null, vertex: null })
+      const item = decorations.find(d => d.id === id)
+      if (item) setAddRoom(item.room)
+    }
+    setSelectedDecoration(id)
   }
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
@@ -124,11 +137,26 @@ export default function Editor({ hass, config, onChange }: Props) {
     setDecorations(config.decorations ?? [])
   }, [config])
 
+  // A device is only ever a binding: one with nothing standing in for it is
+  // dropped, and the ones that are left follow the item they stand behind,
+  // so a device never has a place of its own on the plan.
+  const settle = (list: DeviceConfig[], items: DecorationConfig[]): DeviceConfig[] => {
+    const out: DeviceConfig[] = []
+    for (const device of list) {
+      const bound = (device.decorations ?? []).filter(id => items.some(d => d.id === id))
+      if (bound.length === 0) continue
+      const first = items.find(d => d.id === bound[0])!
+      out.push({ ...device, decorations: bound, room: first.room, position: first.position })
+    }
+    return out
+  }
+
   const commit = (
     nextRooms: RoomConfig[],
-    nextDevices: DeviceConfig[] = devices,
+    devicesIn: DeviceConfig[] = devices,
     nextDecorations: DecorationConfig[] = decorations,
   ) => {
+    const nextDevices = settle(devicesIn, nextDecorations)
     setRooms(nextRooms)
     setDevices(nextDevices)
     setDecorations(nextDecorations)
@@ -169,7 +197,8 @@ export default function Editor({ hass, config, onChange }: Props) {
       item.rotation = snapped.rotation
     }
     commit(rooms, devices, [...decorations, item])
-    setSelection({ roomId: room.id, vertex: null })
+    setSelection({ roomId: null, vertex: null })
+    setAddRoom(room.id)
     setSelectedDecoration(item.id)
   }
 
@@ -252,7 +281,7 @@ export default function Editor({ hass, config, onChange }: Props) {
     )
     copy.id = nextDecorationId(item.kind)
     commit(rooms, devices, [...decorations, copy])
-    setSelection({ roomId: copy.room, vertex: null })
+    setSelection({ roomId: null, vertex: null })
     setSelectedDecoration(copy.id)
   }
 
@@ -269,9 +298,8 @@ export default function Editor({ hass, config, onChange }: Props) {
     const copy = offsetCopy(item, room)
     copy.id = nextDecorationId(item.kind)
     if (!within(copy.position, room.points)) copy.position = pointInside(room.points)
-    setMode('decoration')
     commit(rooms, devices, [...decorations, copy])
-    setSelection({ roomId: room.id, vertex: null })
+    setSelection({ roomId: null, vertex: null })
     setSelectedDecoration(copy.id)
   }
 
@@ -302,7 +330,7 @@ export default function Editor({ hass, config, onChange }: Props) {
   const nudge = (dx: number, dy: number, fine: boolean) => {
     const step = fine ? EDITOR_DEVICE_GRID_M : EDITOR_GRID_M
     const move = ([x, y]: Point): Point => [round(x + dx * step), round(y + dy * step)]
-    if (mode === 'decoration' && selectedDecoration) {
+    if (selectedDecoration) {
       const item = decorations.find(d => d.id === selectedDecoration)
       const room = rooms.find(r => r.id === item?.room)
       if (!item || !room) return
@@ -313,14 +341,6 @@ export default function Editor({ hass, config, onChange }: Props) {
         const snapped = snapToWall(target, room.points)
         updateDecoration(item.id, { position: snapped.point, rotation: snapped.rotation })
       } else updateDecoration(item.id, { position: target })
-      return
-    }
-    if (mode === 'devices' && selectedDevice) {
-      const device = devices.find(d => d.entity_id === selectedDevice)
-      const room = rooms.find(r => r.id === device?.room)
-      if (!device || !room) return
-      const target = move(device.position)
-      if (within(target, room.points)) updateDevice(device.entity_id, { position: target })
       return
     }
     const room = selectedRoom
@@ -334,13 +354,12 @@ export default function Editor({ hass, config, onChange }: Props) {
   }
 
   const duplicateSelected = () => {
-    if (mode === 'decoration' && selectedDecoration) duplicateDecoration(selectedDecoration)
-    else if (mode === 'rooms' && selection.roomId) duplicateRoom(selection.roomId)
+    if (selectedDecoration) duplicateDecoration(selectedDecoration)
+    else if (selection.roomId) duplicateRoom(selection.roomId)
   }
 
   const rotateSelected = () => {
-    if (mode === 'decoration' && selectedDecoration) rotateDecoration(selectedDecoration)
-    else if (mode === 'devices' && selectedDevice) rotateDevice(selectedDevice)
+    if (selectedDecoration) rotateDecoration(selectedDecoration)
   }
 
   const rotateDecoration = (id: string) => {
@@ -348,14 +367,34 @@ export default function Editor({ hass, config, onChange }: Props) {
     if (item) updateDecoration(id, { rotation: ((item.rotation ?? 0) + 90) % 360 })
   }
 
-  const bindDecoration = (entityId: string, id: string, bound: boolean) => {
+  // A device is nothing but a binding: picking one for an item creates it,
+  // dropping it leaves nothing behind. Its room and position follow the item
+  // that stands in for it, since it is never placed on the plan itself.
+  const bindDecoration = (id: string, entityId: string | null) => {
+    const item = decorations.find(d => d.id === id)
+    if (!item) return
     const cleared = unbindEverywhere(devices, id)
-    commit(
-      rooms,
-      bound
-        ? cleared.map(d => (d.entity_id === entityId ? { ...d, decorations: [...(d.decorations ?? []), id] } : d))
-        : cleared,
-    )
+    if (!entityId) {
+      commit(rooms, cleared)
+      return
+    }
+    const existing = cleared.find(d => d.entity_id === entityId)
+    const next = existing
+      ? cleared.map(d =>
+          d.entity_id === entityId
+            ? { ...d, room: item.room, position: item.position, decorations: [...(d.decorations ?? []), id] }
+            : d,
+        )
+      : [
+          ...cleared,
+          {
+            entity_id: entityId,
+            room: item.room,
+            position: item.position,
+            decorations: [id],
+          } as DeviceConfig,
+        ]
+    commit(rooms, next)
   }
 
   const setFloor = (roomId: string, floor: RoomConfig['floor']) =>
@@ -370,62 +409,31 @@ export default function Editor({ hass, config, onChange }: Props) {
       }),
     )
 
-  const setMode = (next: Mode) => {
-    setModeState(next)
-    setTool('select')
-    setDraft([])
-    // Changing mode starts clean: nothing picked, in any of the three.
-    setSelection({ roomId: null, vertex: null })
-    setSelectedDevice(null)
-    setSelectedDecoration(null)
-  }
-
-  // Devices
-
   const selectedRoom = rooms.find(r => r.id === selection.roomId) ?? null
 
-  // The selected room, or any room when none is selected.
-  const targetRoom = () => selectedRoom ?? (rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null)
-
-  const addDevice = (entity: EntityInfo) => {
-    const room = targetRoom()
-    if (!room) return
-    const type = deviceType({ entity_id: entity.entity_id, type: entity.suggestedType })
-    const device: DeviceConfig = {
-      entity_id: entity.entity_id,
-      room: room.id,
-      position: pointInside(room.points),
-      type: type?.id,
-    }
-    if (type?.hasLength) device.length = type.defaultLength
-    commit(rooms, [...devices.filter(d => d.entity_id !== entity.entity_id), device])
-    setSelection({ roomId: room.id, vertex: null })
-    setSelectedDevice(entity.entity_id)
+  // Where a new piece lands: the selected room, the room the selected piece
+  // stands in, the last room either of them was in, or any room at all.
+  const targetRoom = () => {
+    if (selectedRoom) return selectedRoom
+    const item = decorations.find(d => d.id === selectedDecoration)
+    const its = item ? rooms.find(r => r.id === item.room) : undefined
+    if (its) return its
+    const last = rooms.find(r => r.id === addRoom)
+    if (last) return last
+    return rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null
   }
 
-  const updateDevice = (entityId: string, patch: Partial<DeviceConfig>) =>
+  // Which of a device's percentages drives which movement of the item.
+  const setDeviceLevels = (entityId: string, levels: Record<string, string>) =>
     commit(
       rooms,
-      devices.map(d => (d.entity_id === entityId ? { ...d, ...patch } : d)),
+      devices.map(d => (d.entity_id === entityId ? { ...d, levels } : d)),
     )
-
-  const removeDevice = (entityId: string) => {
-    commit(
-      rooms,
-      devices.filter(d => d.entity_id !== entityId),
-    )
-    if (selectedDevice === entityId) setSelectedDevice(null)
-  }
 
   const assignArea = (roomId: string, areaId: string | undefined) => {
     const room = rooms.find(r => r.id === roomId)
     if (!room || room.area_id === areaId) return
     commit(rooms.map(r => (r.id === roomId ? { ...r, area_id: areaId } : r)))
-  }
-
-  const rotateDevice = (entityId: string) => {
-    const device = devices.find(d => d.entity_id === entityId)
-    if (device) updateDevice(entityId, { rotation: ((device.rotation ?? 0) + 90) % 360 })
   }
 
   const updateRoom = (id: string, patch: Partial<RoomConfig>) =>
@@ -493,7 +501,6 @@ export default function Editor({ hass, config, onChange }: Props) {
     pendingRooms.current = null
     setDraft([])
     setSelection({ roomId: null, vertex: null })
-    setSelectedDevice(null)
     setSelectedDecoration(null)
     commit(opened.rooms, opened.devices, opened.decorations)
     setConfirmDiscard(false)
@@ -510,7 +517,12 @@ export default function Editor({ hass, config, onChange }: Props) {
     )
       return
     const n = nextRoomId(rooms)
-    const room: RoomConfig = { id: `room-${n}`, name: `Room ${n}`, points: draft.map(([x, y]) => [round(x), round(y)]) }
+    const room: RoomConfig = {
+      id: `room-${n}`,
+      name: `Room ${n}`,
+      points: draft.map(([x, y]) => [round(x), round(y)]),
+      floor: { material: DEFAULT_FLOOR_MATERIAL },
+    }
     commit([...rooms, room])
     setDraft([])
     setSelection({ roomId: room.id, vertex: null })
@@ -571,7 +583,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'd':
       case 'D':
-        if (mode === 'rooms') setTool('draw')
+        setTool('draw')
         break
       case 'f':
       case 'F':
@@ -579,7 +591,7 @@ export default function Editor({ hass, config, onChange }: Props) {
         break
       case 'l':
       case 'L':
-        if (mode === 'rooms') setShowLengths(!showLengths)
+        setShowLengths(!showLengths)
         break
       case 'p':
       case 'P':
@@ -602,13 +614,11 @@ export default function Editor({ hass, config, onChange }: Props) {
       case 'Escape':
         setDraft([])
         setSelection({ roomId: null, vertex: null })
-        setSelectedDevice(null)
         setSelectedDecoration(null)
         break
       case 'Delete':
       case 'Backspace':
-        if (mode === 'devices' && selectedDevice) removeDevice(selectedDevice)
-        else if (mode === 'decoration' && selectedDecoration) removeDecoration(selectedDecoration)
+        if (selectedDecoration) removeDecoration(selectedDecoration)
         else deleteSelectedVertex()
         break
       default:
@@ -635,18 +645,12 @@ export default function Editor({ hass, config, onChange }: Props) {
 
   const canvas = (
     <Canvas
-      mode={mode}
       rooms={rooms}
       devices={devices}
-      selectedDevice={selectedDevice}
-      onDevices={(next, done) => (done ? commit(rooms, next) : setDevices(next))}
-      onSelectDevice={setSelectedDevice}
-      onRemoveDevice={removeDevice}
-      onRotateDevice={rotateDevice}
       decorations={decorations}
       selectedDecoration={selectedDecoration}
       onDecorations={(next, done) => (done ? commit(rooms, devices, next) : setDecorations(next))}
-      onSelectDecoration={setSelectedDecoration}
+      onSelectDecoration={pickDecoration}
       onRemoveDecoration={removeDecoration}
       onRotateDecoration={rotateDecoration}
       onDuplicateDecoration={duplicateDecoration}
@@ -679,7 +683,6 @@ export default function Editor({ hass, config, onChange }: Props) {
   const toolbar = (
     <div className="flex items-center gap-3">
       <Toolbar
-        mode={mode}
         tool={tool}
         onTool={setTool}
         onFit={() => setView(null)}
@@ -699,61 +702,39 @@ export default function Editor({ hass, config, onChange }: Props) {
   // The selected room fills the sidebar on its own, the way a selected item
   // or device does. Selecting something inside the room is what is being
   // looked at then, so the room steps aside.
-  const nothingElseSelected = mode === 'rooms' ? true : mode === 'devices' ? !selectedDevice : !selectedDecoration
   // The cross closes the room's block without letting go of the room, since
   // what is added next still belongs in it.
   const roomInfo =
-    selectedRoom && showRoom && nothingElseSelected ? (
+    selectedRoom && showRoom ? (
       <RoomInfo
         room={selectedRoom}
         rooms={rooms}
         areas={Object.values(hass?.areas ?? {})}
-        mode={mode}
         onRename={renameRoom}
         onRenameDone={flushRename}
         onAssignArea={assignArea}
         onFloor={setFloor}
+        onDelete={deleteRoom}
         onDeselect={() => setShowRoom(false)}
       />
     ) : null
 
-  const panels =
-    mode === 'decoration' ? (
-      <DecorationPanel
-        hass={hass}
-        rooms={rooms}
-        devices={devices}
-        decorations={decorations}
-        selected={selectedDecoration}
-        onAdd={addDecoration}
-        onUpdate={updateDecoration}
-        onRemove={removeDecoration}
-        onBind={(id, entityId) => (entityId ? bindDecoration(entityId, id, true) : bindDecoration('', id, false))}
-        onStandOn={standOn}
-        onSelect={setSelectedDecoration}
-      />
-    ) : mode === 'devices' ? (
-      <DevicePanel
-        hass={hass}
-        rooms={rooms}
-        devices={devices}
-        decorations={decorations}
-        onBindDecoration={bindDecoration}
-        selected={selectedDevice}
-        onSelect={setSelectedDevice}
-        onAdd={addDevice}
-        onUpdate={updateDevice}
-        onRemove={removeDevice}
-      />
-    ) : (
-      <RoomList
-        rooms={rooms}
-        areas={Object.values(hass?.areas ?? {})}
-        selection={selection}
-        onSelect={roomId => pickRoom({ roomId, vertex: null })}
-        onDelete={deleteRoom}
-      />
-    )
+  const panels = (
+    <DecorationPanel
+      hass={hass}
+      rooms={rooms}
+      devices={devices}
+      decorations={decorations}
+      selected={selectedDecoration}
+      onAdd={addDecoration}
+      onUpdate={updateDecoration}
+      onRemove={removeDecoration}
+      onBind={bindDecoration}
+      onDeviceLevels={setDeviceLevels}
+      onStandOn={standOn}
+      onSelect={pickDecoration}
+    />
+  )
 
   if (fullscreen) {
     return (
@@ -832,6 +813,8 @@ export default function Editor({ hass, config, onChange }: Props) {
                       hass={hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
+                      onPickDecoration={pickDecoration}
+                      onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
                     />
                   </div>
                 </>
@@ -859,11 +842,8 @@ export default function Editor({ hass, config, onChange }: Props) {
               <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
             </div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
-              {/* The mode is the first thing in the sidebar and stays put. */}
-              <div className="sticky top-0 z-20 -mx-1 bg-(--card-background-color) px-1 pb-2">
-                <ModeSwitch mode={mode} onMode={setMode} compact={sidebarWidth < EDITOR_MODE_LABELS_PX} />
-              </div>
-              {roomInfo ?? panels}
+              {roomInfo}
+              {panels}
             </div>
           </div>
         </div>

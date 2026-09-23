@@ -23,6 +23,17 @@ export type DecorationParam = {
   toggle?: boolean
 }
 
+// One style of a kind. A pendant is a pendant whichever one it is, so the
+// catalog lists it once and the style is picked in the item's own panel,
+// above its sizes. A style that paints different parts brings its own
+// slots, which then stand in for the kind's.
+export type DecorationVariant = {
+  id: string
+  label: string
+  colors?: Record<string, string>
+  materials?: Record<string, string>
+}
+
 export type DecorationKind = {
   id: string
   family: string
@@ -33,6 +44,9 @@ export type DecorationKind = {
   colors: Record<string, string>
   // Default surface per slot, matte when missing.
   materials?: Record<string, string>
+  // The styles this kind comes in, the first one the default. Absent when
+  // there is only one way to draw it.
+  variants?: DecorationVariant[]
   // Signals the model can express visually. Anything else can still be
   // bound, the model just does not change.
   expresses: Signal[]
@@ -68,11 +82,20 @@ const round2 = (value: number) => Math.round(value * 100) / 100
 // both directions, so nothing is capped just short of a real piece of
 // furniture: a wardrobe three meters wide, a coffee table at ankle height.
 // Counts, which take whole steps, are left exactly as they are given.
+
+// A slider counts its stops from its own start, so a start that is not a
+// whole number of steps puts every stop at an odd value: a bookshelf that
+// starts at 23 cm and steps by 5 offers 78, 83, 88. Both ends are pulled
+// out to the nearest whole step, which puts the stops on 80, 85, 90.
+const down = (value: number, step: number) => round2(Math.floor(value / step + 1e-9) * step)
+const up = (value: number, step: number) => round2(Math.ceil(value / step - 1e-9) * step)
+
 const range = (id: string, d: number, min: number, max: number, step: number) => {
   if (step >= 1) return { min, max }
-  const low = round2(Math.max(Math.min(min, d * 0.25), VERTICAL.has(id) ? 0 : 0.05))
-  const high = round2(Math.max(max, d * 3))
-  return { min: low, max: VERTICAL.has(id) ? Math.min(high, CEILING_LIMIT_M) : high }
+  const low = Math.max(Math.min(min, d * 0.25), VERTICAL.has(id) ? 0 : 0.05)
+  const high = Math.max(max, d * 3)
+  const top = VERTICAL.has(id) ? Math.min(high, CEILING_LIMIT_M) : high
+  return { min: down(low, step), max: up(top, step) }
 }
 
 const p = (
@@ -81,16 +104,23 @@ const p = (
   d: number,
   min: number,
   max: number,
-  step = 0.05,
+  step?: number,
   unit?: string,
-): DecorationParam => ({
-  id,
-  label,
-  default: d,
-  ...range(id, d, min, max, step),
-  step,
-  unit,
-})
+): DecorationParam => {
+  // A small thing wants a finer step than a wardrobe does: a seven
+  // centimeter sensor on a five centimeter step has four places to be.
+  const grid = step ?? (d < 0.5 ? 0.01 : 0.05)
+  return {
+    id,
+    label,
+    // On a stop of its own slider, so the first drag nudges it by one step
+    // rather than jumping it to the nearest round value.
+    default: round2(Math.round(d / grid) * grid),
+    ...range(id, d, min, max, grid),
+    step: grid,
+    unit,
+  }
+}
 const width = (d: number, min = 0.3, max = 4) => p('width', 'Width', d, min, max)
 const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max)
 const height = (d: number, min = 0.2, max = 2.6) => p('height', 'Height', d, min, max)
@@ -131,7 +161,8 @@ const kind = (
   colors: Record<string, string>,
   materials: Record<string, string>,
   expresses: Signal[] = NONE,
-): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses })
+  variants?: DecorationVariant[],
+): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses, variants })
 
 export const DECORATION_KINDS: DecorationKind[] = [
   // Lights
@@ -154,6 +185,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { slats: LIGHT_BASE_COLOR, rings: SCANDI.slate, diffuser: LIGHT_SHADE_COLOR, cord: LIGHT_CORD_COLOR },
     { slats: 'wood', rings: 'metal', diffuser: 'matte', cord: 'fabric' },
     LIGHT_SIGNALS,
+    [
+      { id: 'slatted', label: 'Slatted drum' },
+      {
+        id: 'globe',
+        label: 'Globe in a cage',
+        colors: { globe: LIGHT_SHADE_COLOR, cage: LIGHT_BASE_COLOR, cord: LIGHT_CORD_COLOR },
+        materials: { globe: 'matte', cage: 'wood', cord: 'fabric' },
+      },
+    ],
   ),
   kind(
     'light_floor',
@@ -245,6 +285,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { shell: 'fabric', legs: 'metal' },
   ),
   kind(
+    'office_chair',
+    'seating',
+    'Office chair',
+    'floor',
+    [width(0.64, 0.5, 0.8), depth(0.62, 0.5, 0.8), height(0.48, 0.38, 0.62)],
+    { seat: SCANDI.slate, back: SCANDI.charcoal, frame: SCANDI.charcoal, base: SCANDI.slate },
+    { seat: 'fabric', back: 'fabric', frame: 'metal', base: 'metal' },
+  ),
+  kind(
     'stool',
     'seating',
     'Stool',
@@ -310,13 +359,13 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { top: 'wood', legs: 'wood', drawer: 'matte', handle: 'metal' },
   ),
   kind(
-    'console_table',
+    'office_table',
     'table',
-    'Console table',
+    'Office table',
     'floor',
-    [width(1.1, 0.7, 1.8), depth(0.36, 0.25, 0.5), height(0.8, 0.7, 0.95)],
-    { top: SCANDI.oak, legs: SCANDI.oak, shelf: SCANDI.oak },
-    { top: 'wood', legs: 'wood', shelf: 'wood' },
+    [width(1.6, 1.1, 2.4), depth(0.8, 0.6, 1), height(0.74, 0.65, 1.2)],
+    { top: SCANDI.oak, frame: SCANDI.charcoal, tray: SCANDI.slate },
+    { top: 'wood', frame: 'metal', tray: 'metal' },
   ),
   kind(
     'nightstand',
@@ -335,8 +384,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Bookshelf',
     'floor',
     [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4)],
-    { cabinet: SCANDI.oak, shelves: SCANDI.oak, books: SCANDI.clay },
-    { cabinet: 'wood', shelves: 'wood', books: 'matte' },
+    { cabinet: SCANDI.oak, shelves: SCANDI.oak },
+    { cabinet: 'wood', shelves: 'wood' },
   ),
   kind(
     'sideboard',
@@ -473,6 +522,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     TOGGLE_LEVEL,
   ),
   kind(
+    'ceiling_extractor',
+    'kitchen',
+    'Ceiling extractor',
+    'ceiling',
+    [width(0.9, 0.6, 1.4), depth(0.5, 0.35, 0.9)],
+    { panel: SCANDI.offWhite, grille: SCANDI.slate },
+    { panel: 'matte', grille: 'metal' },
+    TOGGLE_LEVEL,
+  ),
+  kind(
     'dishwasher',
     'kitchen',
     'Dishwasher',
@@ -593,6 +652,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
   ),
 
   // Decor
+  kind(
+    'half_wall',
+    'decor',
+    'Half wall',
+    'floor',
+    [width(2, 0.4, 8), depth(0.2, 0.1, 0.4), height(1, 0.4, 1.6)],
+    { wall: SCANDI.offWhite },
+    { wall: 'matte' },
+  ),
   kind(
     'rug',
     'decor',
@@ -1058,18 +1126,54 @@ export const DECORATION_KINDS: DecorationKind[] = [
 
 export const decorationKind = (id: string) => DECORATION_KINDS.find(k => k.id === id)
 
-export function paramValue(kind: DecorationKind, params: Record<string, number> | undefined, id: string) {
-  return params?.[id] ?? kind.params.find(p => p.id === id)?.default ?? 0
+// A saved size onto the stops its slider actually offers. A plan written
+// before a slider's steps changed can hold a value between two of them, or
+// outside the range altogether, and a slider cannot show either: the thumb
+// lands somewhere the number is not. Everything reads its sizes through
+// here, so the plan is drawn at the size the editor would show.
+export function snapParam(spec: DecorationParam, value: number) {
+  if (!Number.isFinite(value)) return spec.default
+  const inside = Math.min(Math.max(value, spec.min), spec.max)
+  const stops = Math.round((inside - spec.min) / spec.step)
+  return round2(spec.min + stops * spec.step)
 }
 
-export function colorValue(kind: DecorationKind, colors: Record<string, string> | undefined, slot: string) {
-  return colors?.[slot] ?? kind.colors[slot] ?? '#ffffff'
+export function paramValue(kind: DecorationKind, params: Record<string, number> | undefined, id: string) {
+  const spec = kind.params.find(p => p.id === id)
+  const saved = params?.[id]
+  if (!spec) return saved ?? 0
+  return saved === undefined ? spec.default : snapParam(spec, saved)
+}
+
+// The style an item is drawn in: the one it names, or the kind's first.
+export function decorationVariant(kind: DecorationKind, variant: string | undefined) {
+  if (!kind.variants || kind.variants.length === 0) return undefined
+  return kind.variants.find(v => v.id === variant) ?? kind.variants[0]
+}
+
+// The slots a style paints, which stand in for the kind's own when it has
+// any. A style that paints the same parts brings none and uses the kind's.
+export function kindColors(kind: DecorationKind, variant?: string) {
+  return decorationVariant(kind, variant)?.colors ?? kind.colors
+}
+
+export function kindMaterials(kind: DecorationKind, variant?: string) {
+  return decorationVariant(kind, variant)?.materials ?? kind.materials
+}
+
+export function colorValue(
+  kind: DecorationKind,
+  colors: Record<string, string> | undefined,
+  slot: string,
+  variant?: string,
+) {
+  return colors?.[slot] ?? kindColors(kind, variant)[slot] ?? '#ffffff'
 }
 
 // The surface of a slot is part of what the piece is, so it comes from the
 // kind. Only the color is the viewer's to pick.
-export function materialValue(kind: DecorationKind, slot: string) {
-  return kind.materials?.[slot] ?? 'matte'
+export function materialValue(kind: DecorationKind, slot: string, variant?: string) {
+  return kindMaterials(kind, variant)?.[slot] ?? 'matte'
 }
 
 // Footprint on the plan, for the 2D editor.
@@ -1128,7 +1232,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
   coffee_table: 'height',
   side_table: 'height',
   desk: 'height',
-  console_table: 'height',
+  office_table: 'height',
   nightstand: 'height',
   sideboard: 'height',
   dresser: 'height',
@@ -1139,6 +1243,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
   kitchen_island: 'height',
   washing_machine: 'height',
   dryer: 'height',
+  half_wall: 'height',
   bench: 0.42,
   pouf: 'height',
 }

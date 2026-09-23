@@ -9,13 +9,16 @@ import LightModel from '#/scene/decor/LightModel.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationKind } from '#/decoration/catalog.ts'
 import type { ReactNode } from 'react'
-import type { DecorationConfig } from '#/types.ts'
+import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils } from 'three'
 
 type Props = {
   item: DecorationConfig
   // Every item in the plan, so one standing on another can follow its top.
   all: DecorationConfig[]
+  // The room it stands in, for the models that have to know the floor they
+  // are on. Absent in the sidebar's preview, where there is no room.
+  room?: RoomConfig
   state: ItemState | null
   onClick?: () => void
   // A right click, or a long press, asks Home Assistant for the entity's own
@@ -24,7 +27,13 @@ type Props = {
   onOpen?: () => void
 }
 
-type FamilyModel = (props: { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }) => ReactNode
+type FamilyModel = (props: {
+  kind: DecorationKind
+  item: DecorationConfig
+  state: ItemState | null
+  room?: RoomConfig
+  all: DecorationConfig[]
+}) => ReactNode
 
 const FAMILY_MODELS: Record<string, FamilyModel> = {
   light: LightModel,
@@ -46,7 +55,7 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-export default function DecorationModel({ item, all, state, onClick, onOpen }: Props) {
+export default function DecorationModel({ item, all, room, state, onClick, onOpen }: Props) {
   const interactive = usePressActions(onClick, onOpen)
   const kind = decorationKind(item.kind)
   if (!kind) return null
@@ -64,7 +73,7 @@ export default function DecorationModel({ item, all, state, onClick, onOpen }: P
       userData={onClick ? { pick: { click: onClick, open: onOpen ?? onClick } } : undefined}
       {...interactive}
     >
-      <Model kind={kind} item={item} state={state} />
+      <Model kind={kind} item={item} state={state} room={room} all={all} />
     </group>
   )
 }

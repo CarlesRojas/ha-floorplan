@@ -25,11 +25,10 @@ export const CARD_CORNER_RADIUS_PX = 24
 export const EDITOR_SELECTED_COLOR = '#03a9f4'
 
 // Accent color of each editor mode.
-export const EDITOR_MODE_COLORS = {
-  rooms: '#03a9f4',
-  devices: '#f59e0b',
-  decoration: '#34d399',
-}
+// The editor's own colors: what it draws and picks, and the amber that
+// marks an item a device stands behind.
+export const EDITOR_ACCENT_COLOR = '#34d399'
+export const EDITOR_BOUND_COLOR = '#f59e0b'
 
 // Decoration
 
@@ -67,7 +66,7 @@ export const LIGHT_CORD_COLOR = '#8f877b'
 // with no color temperature to read sits around 3000 K: warm white, not the
 // amber of a candle.
 export const LIGHT_GLOW_COLOR = '#ffe3bd'
-export const LIGHT_POINT_INTENSITY = 5.5
+export const LIGHT_POINT_INTENSITY = 3.6
 // How a lamp's light divides: the part that leaves the shade and casts
 // shadows, and the part that comes through the shade itself and casts none.
 export const LAMP_KEY_SHARE = 0.7
@@ -77,6 +76,7 @@ export const LAMP_THROUGH_SHARE = 0.4
 // diffuser, so it gives less than a floor lamp standing in the open.
 export const LAMP_OUTPUT: Record<string, number> = {
   light_pendant: 0.5,
+  light_globe: 0.6,
   light_table: 0.75,
   light_wall: 0.8,
   light_ceiling: 0.9,
@@ -98,12 +98,12 @@ export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
 export const DAY_AMBIENT_INTENSITY = 0.12
 export const DAY_HEMISPHERE_INTENSITY = 0.6
-export const NIGHT_AMBIENT_INTENSITY = 0.04
-export const NIGHT_HEMISPHERE_INTENSITY = 0.1
+export const NIGHT_AMBIENT_INTENSITY = 0.07
+export const NIGHT_HEMISPHERE_INTENSITY = 0.18
 // The sun itself. It is kept gentle, and its shadow map is deliberately
 // coarse, so daylight models the room without cutting hard edges into it.
 export const DAY_SUN_INTENSITY = 1.35
-export const NIGHT_SUN_INTENSITY = 0.03
+export const NIGHT_SUN_INTENSITY = 0.05
 
 // How far from a press the card looks for something to act on, in pixels.
 // A ray hits one point, so a press that lands on nothing is tried again in
@@ -117,6 +117,9 @@ export const DEVICE_SPHERE_COLOR = '#ffffff'
 
 // Floor materials a room can have. Color is the default tint, roughness the
 // sheen of the surface.
+// What a room is floored with until it is told otherwise: warm oak boards.
+export const DEFAULT_FLOOR_MATERIAL = 'wood'
+
 export const FLOOR_MATERIALS: Record<string, { label: string; color: string; surface: string }> = {
   wood: { label: 'Wood', color: '#dcc3a0', surface: 'wood_floor' },
   tiles: { label: 'Tiles', color: '#d9d2c5', surface: 'tiles' },

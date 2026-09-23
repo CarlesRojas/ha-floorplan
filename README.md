@@ -22,6 +22,8 @@ In Home Assistant go to Settings > Dashboards > three-dot menu (top right) > Res
 
 Every save rebuilds and reloads the dashboard. No cache busting needed. Keep only one of the two resources (dev server or `/local`) enabled at a time, otherwise the element gets registered twice.
 
+The dashboard fetches that URL on every load, so the dev server has to be running whenever the card is on screen. When it is not, Home Assistant says **Custom element doesn't exist: floorplan-3d**: nothing answered, so the module never ran and never registered the element. A reload will not help while the server is down. Start `pnpm dev` again, or switch the resource to the `/local` build below.
+
 ### Production build into Home Assistant
 
 This is what the mini PC will use. It also works locally to test the real bundle.
@@ -47,7 +49,7 @@ docker compose exec homeassistant ls /config/www/floorplan-3d
 
 You should see `card.js`. If Home Assistant was started before `/config/www` existed, restart it once so it serves `/local/`.
 
-Register `/local/floorplan-3d/card.js?v=1` as a JavaScript module resource. Bump `?v=` after each new build so browsers pick it up. `pnpm watch` rebuilds `dist/card.js` on change if you want to test the bundle continuously.
+Register `/local/floorplan-3d/card.js?v=1` as a JavaScript module resource. Bump `?v=` after each new build so browsers pick it up. `pnpm watch` rebuilds `dist/card.js` on change if you want to test the bundle continuously. The build writes into a staging folder inside `dist` and renames the file into place, so Home Assistant never serves a half written `card.js`: a browser that fetched one mid write throws on load and then reports that the custom element does not exist until the page is reloaded.
 
 ### Add the card
 
@@ -65,7 +67,7 @@ It opens fullscreen. Save sends the edits on without leaving and says Saved for 
 - Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
 - Rooms never overlap. While dragging, the room follows the pointer and turns red where it would overlap. On release it lands on the nearest valid position, sliding along the free axis. A corner cannot be drawn inside a room or through one.
 
-The selected room fills the sidebar in every mode, on its own: its name, the Home Assistant area it stands for, the floor under it, and a cross back to the list. The cross lets go of the block, not of the room, so what you add next still lands in it. Selecting a device or an item inside the room shows that instead. An area can be linked to one room only. Radius and color can be set per room in the YAML.
+The sidebar shows the decoration catalog. Selecting a room puts a block for it above the catalog: its name, the Home Assistant area it stands for, the floor under it, a button to delete it, and a cross that puts the block away. The cross lets go of the block, not of the room. Selecting an item inside the room shows that item instead, in place of both. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 
 ### Editing commands
 
@@ -80,19 +82,7 @@ The commands every drawing program has, with the same keys. They all show in the
 | Delete | Del or Backspace |
 | Deselect, cancel a drawing | Escape |
 
-Alt and drag copies furniture and rooms. A duplicated room keeps its shape and floor but not its area, since an area stands for one room. A copy released on top of another room moves to the nearest free spot. Devices are never duplicated, since an entity is placed once.
-
-### Devices mode
-
-The mode switch sits at the top of the sidebar and stays there while the rest scrolls. Changing mode lets go of whatever was picked. Rooms are picked in Rooms mode only, so in the other two an item is added to a room at random and dragged from there. In Devices mode the sidebar lists every entity that can be placed, alphabetically, with a search box. Placed ones carry a tag with their room. Adding with no room selected drops the entity in a random room. Any entity can go in any room. A placed entity that Home Assistant puts in a different area shows a warning. Supported entities: lights, switches, covers, media players, fans, climate, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
-
-- Add places the entity in the room. Placed entities are marked and can be dragged around, including into another room, which moves them there. Outside every room they show red and land on the wall on release.
-- A placed entity has a type that sets its look, for example ceiling light, floor lamp or floor LED strip for a light, or blind, curtain and garage door for a cover. Strip-like types have a length. Every device has a rotation.
-- Selecting a device fills the sidebar the same way, with the controls the entity offers written out: on and off, percentage, color, warmth, reading, modes. The same icons are on every row of the list. The items it could stand in for are listed under Suggested first, the ones that express the most of those controls, each with the same icons. Searching a domain, light or cover, lists every entity in it.
-- Right click a device to rotate it or remove it. Delete removes the selected device.
-- Deleting a room removes its devices.
-
-### Decoration mode
+Alt and drag copies furniture and rooms. A duplicated room keeps its shape and floor but not its area, since an area stands for one room. A copy released on top of another room moves to the nearest free spot. A copy is never bound to the original's entity, since an entity is stood in for once.
 
 The toolbar's sun button opens a time of day slider for the 3D preview, N,
 starting at one in the afternoon: what is being drawn should look the same
@@ -103,17 +93,18 @@ direction, S, which decides which way every shadow falls. The preview follows
 that one as it is dragged and the card takes the new direction when it is let
 go, so the room is lit the same way outside the editor.
 
-The third mode places furniture and fixtures. The sidebar shows the catalog. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. Adding with no room selected drops the item in a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and the plus button places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: sizes, rotation, one color per part, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll, and the preview has a handle under it to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
+The sidebar shows the catalog of furniture and fixtures. Floor patterns are drawn at their real size, boards 16 cm wide and 1.6 m long, tiles 40 cm across, carpet in a pile of about 8 cm, so the pattern size only has to change when a room should read coarser or finer. Pattern depth is how much the pattern shows at all: 0 leaves a plain tint, 1 is the surface as designed, 2 doubles its contrast and relief. The floor is painted from above, so the rounded edge and the sides of the slab carry the same boards as the top. The angle turns the pattern on the floor, for example to run the boards across the room instead of along it. An item is added to the selected room, or to the room the selected piece stands in, or to the last room either of them was in, so a run of items added one after another all land in the same room even as the selection moves to each new piece. With nothing ever picked it goes to a random room, from where it can be dragged. Hovering an item shows a small 3D preview, and clicking anywhere on its row places it in the room. Selecting a placed item fills the sidebar with a larger 3D preview and its settings: the style it is drawn in when the kind comes in more than one, sizes, rotation, one color per part, and the device it stands in for. The preview, the item's name and the way back to the list stay at the top while the settings scroll. It is square until the handle under it is dragged to make it taller or shorter. Searching a family name, kitchen or lights, lists everything in it.
 
-- Whatever is selected is drawn last, so it takes the press when two items sit over each other and its rotation handle is never covered. Clicking that spot again steps down to the one underneath, and round again, since something buried cannot be reached any other way. Dragging still moves whatever is selected.
+- Rooms and items are picked at any time, with no mode to switch, and one at a time: picking a piece lets go of the room, and picking a room lets go of the piece. While a piece is dragged the room it would land in lifts a little, which is a hint, not a selection. Whatever is selected is drawn last, so it takes the press when two items sit over each other and its rotation handle is never covered. Clicking that spot again steps down to the item underneath, then to the room they all stand in, and round again, since something buried cannot be reached any other way. Dragging still moves whatever is selected. A press in the 3D view does what it would in the card, and in the editor also picks what it landed on, so orbiting around to a lamp and clicking it opens that lamp in the sidebar.
 - Items drag on the canvas, into any room. Wall items sit on the nearest wall and face into the room. Ceiling items show a dashed outline.
-- Tables, desks, counters, islands, sideboards, dressers, nightstands, shelves, stools, benches, poufs, washing machines and dryers have a top other things can stand on. Drag a lamp, a kettle, a vase, a monitor or a TV over one and it lands on it: the top lights up while the item is over it, and the item carries a ring on the plan to show it is raised. Moving the support takes everything on it along, and deleting the support leaves them on the floor. The sidebar has a Standing on dropdown for the same thing without dragging. A hob and a sink let into a worktop instead of resting on it. An item that stands on nothing sits at its own Standing on height. A wall item hangs at its height, except a door, a garage door and a radiator, which stand on the floor, and a window, which starts at its sill.
-- A device with no decoration bound shows as a sphere in 3D. Bound items take its clicks and show its state, for example a lamp glows with the light's brightness and color. A device can have several items, an item stands in for one device, so an item another device already has is not on offer. Bindings are edited from either side: the device panel lists the items with checkboxes, the item panel has a device dropdown. A device whose signals the item cannot express can still be bound, the item just does not change. Clicking an item acts on its device. Right clicking it, or holding it on a touch screen, opens Home Assistant's own dialog for the entity, where everything a click cannot do lives: brightness, color, a cover's exact position. A press that wanders is the camera being moved, so it never opens the dialog.
+- Tables, desks, counters, islands, sideboards, dressers, nightstands, shelves, stools, benches, poufs, half walls, washing machines and dryers have a top other things can stand on. Drag a lamp, a kettle, a vase, a monitor or a TV over one and it lands on it: the top lights up while the item is over it, and the item carries a ring on the plan to show it is raised. Moving the support takes everything on it along, and deleting the support leaves them on the floor. The sidebar has a Standing on dropdown for the same thing without dragging. A hob and a sink let into a worktop instead of resting on it. An item that stands on nothing sits at its own Standing on height. A wall item hangs at its height, except a door, a garage door and a radiator, which stand on the floor, and a window, which starts at its sill.
+- An item can stand in for a Home Assistant entity, which is the only way an entity reaches the plan: nothing is placed on its own. The item panel has a Device dropdown listing every entity that drives at least one of the things that item can show, the ones that fit best first, each with the controls it brings at the end of its row and the pieces it already drives listed under its name. A list of more than a handful searches itself: a box at the top of the panel takes the focus as it opens and filters on the entity's name and its id, the arrows walk what is left and Enter takes it. An entity can have several items, an item stands in for one entity, so an entity already behind another piece is still on offer. When it is behind more than one, the panel lists the others under Also driving: a row goes to that piece, the bin beside it asks first and then lets go of it. The room and position of the binding follow the item, and an item on the plan with an entity behind it carries an amber outline. Bound items take the entity's clicks and show its state, for example a lamp glows with the light's brightness and color. Clicking an item acts on its entity. Right clicking it, or holding it on a touch screen, opens Home Assistant's own dialog for the entity, where everything a click cannot do lives: brightness, color, a cover's exact position. A press that wanders is the camera being moved, so it never opens the dialog. Deleting an item, or the room it is in, drops the binding with it. Entities on offer: lights, switches, covers, media players, fans, climate, humidifiers, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 
 Things are small seen from across a room, so a press that lands on nothing is tried again in rings around itself, growing outward to `PICK_RADIUS_PX` in `src/theme.ts`. The first thing it finds takes the press, which means a lamp does not have to be hit exactly. Past that it is taken as a press on the room.
 
-Everything that moves is eased rather than switched. Home Assistant reports a cover's position every second or so while it travels, and a switch flips in one step, so without this a sliding door would stutter along in jumps and a window would snap open. Doors and casements swing, panels travel, curtains draw, screens roll, fans come up to speed and lamps fade up and down.
-- A window is divided into casements by how wide it is, each leaf between half a meter and a meter. A sliding door takes its number of panels as a setting, and the panels split the width between them and gather one in front of another as it opens.
+Everything that moves is eased rather than switched. Home Assistant reports a cover's position every second or so while it travels, and a switch flips in one step, so without this a sliding door would stutter along in jumps and a window would snap open. Doors and casements swing, panels travel, curtains draw, screens roll, fans come up to speed and lamps fade up and down. A travelling cover only ever heads for the position Home Assistant last reported, never past it: what the reports give is the pace, since how far it moved between one and the next divided by how long that took is how fast the cover travels. Driving at that pace means arriving just as the next report lands, so a set of steps reads as one movement.
+- A window is divided into casements by how wide it is, each leaf between half a meter and a meter. Left alone they open from the middle, the way a pair of French casements does. Hinge right swings every one of them from its right edge instead. A sliding door takes its number of panels as a setting, and the panels split the width between them and gather one in front of another as it opens.
+- A kind can come in more than one style, and it is still listed once in the catalog: the item's own panel has a Style dropdown above its sizes. A pendant is a slatted drum or a glass globe in a wooden cage, and the color slots follow the style, since the two are made of different parts. Every search box has a cross to empty it.
 - Items are grouped by family in the sidebar, with a search box. Every model is built from primitives in code, in a Scandinavian vocabulary: pale oak, chalky whites, muted greens and clays, rounded frames on tapered legs, plump linen upholstery.
 
 ### Catalog
@@ -121,14 +112,14 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Family | Items |
 | --- | --- |
 | Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip |
-| Seating | Sofa, armchair, dining chair, stool, bench, pouf |
-| Tables | Dining table, coffee table, side table, desk, console table, nightstand |
+| Seating | Sofa, armchair, dining chair, office chair, stool, bench, pouf |
+| Tables | Dining table, coffee table, side table, desk, office table, nightstand |
 | Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |
 | Beds | Bed, crib |
-| Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, dishwasher, sink, microwave, coffee machine, kettle |
+| Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle |
 | Laundry | Washing machine, dryer |
 | Bathroom | Toilet, basin, bathtub, shower, towel rail |
-| Decor | Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
+| Decor | Half wall, Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
 | Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, projector screen |
 | Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
 | Windows and doors | Blind, roller shutter, window, door, sliding door, sliding glass door, garage door, awning |
@@ -177,12 +168,13 @@ A bound device drives what the item does in 3D, when its signals match:
 - TVs and monitors play a picture on their screen, and are black glass when off. A TV is set by its diagonal in inches, always in 16:9, and a motorized projector screen rolls out of its case at the ceiling by the cover's position. Speakers and soundbars light a small indicator.
 - Blinds, shutters, curtains, garage doors and awnings move to the cover's position, and a blind's slats turn with its tilt. Doors and window casements swing open, a window tilts as well, and sliding doors run along their track, partway when the cover reports a position. A device that only switches drives the same items fully open and shut.
 - A device with more than one percentage, a cover with a position and a tilt, says which one feeds each percentage of the item it stands behind. A window and a blind take two: how far open they are, and how far tilted.
-- Fans and robot vacuums spin, faster at a higher level. Washing machines turn their drum.
+- Fans spin, faster at a higher level, and washing machines turn their drum.
+- A robot vacuum comes with the dock it charges on. The dock stays where the piece was placed, since that is the thing plugged into the wall, and the robot leaves it while the vacuum is cleaning: it sweeps the room in long parallel passes, each one cut back to the stretches clear of the furniture standing on the floor, and the move from the end of one pass to the start of the next is routed across the free floor as well, so no leg of the round crosses a sofa. A rug is the one thing on the floor it drives straight over, along with everything that hangs on a wall or from the ceiling. When the vacuum stops it drives straight back to the dock by the shortest way across that same free floor, rather than retracing everything it has just swept, and parks facing out of the dock. A vacuum has no toggle service, so a press sends it out with `vacuum.start` and home with `vacuum.return_to_base`, by what it is doing at the time. A press on either the robot or the dock does what a press on the piece does.
 - Radiators and towel rails warm up, hobs light their rings, ovens glow behind the glass.
 - Fridges, dishwashers, kettles and coffee machines show a status light.
 - Thermostats, alarm panels and air quality sensors light their display.
 
-A device whose signals the item cannot express can still be bound. Clicking it works, the item just does not change.
+Only entities that drive at least one of the things an item can show are on offer for it, so an item is never bound to something it cannot express.
 
 ## Card config
 
@@ -193,7 +185,7 @@ A device whose signals the item cannot express can still be bound. Clicking it w
 | `gap` | `0.12` | Gap in meters between adjacent rooms |
 | `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
 | `sun_direction` | `145` | Where the sun comes from, in degrees clockwise from the top of the plan |
-| `devices` | `[]` | List of placed entities, see below |
+| `devices` | `[]` | Entities bound to decoration items, see below |
 | `decorations` | `[]` | List of placed decoration items, see below |
 
 Defaults for these and other visual values live in `src/theme.ts`.
@@ -208,19 +200,17 @@ Each room:
 | `name` | Label override |
 | `radius` | Corner radius override |
 | `color` | Fill color override |
-| `floor` | `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
+| `floor` | Wood on a room drawn in the editor. `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
 
-Each device:
+Each device. A device is only a binding: it is never placed on its own, and its room and position follow the first item that stands in for it.
 
 | Key | Description |
 | --- | --- |
 | `entity_id` | Home Assistant entity, required |
 | `room` | Id of the room it sits in, required |
 | `position` | `[x, y]` in meters, required |
-| `type` | Look, one of the types for the entity's domain. Defaults to the first |
-| `rotation` | Degrees, counter clockwise on the plan |
-| `length` | Meters, for strip-like types |
-| `decorations` | Ids of decoration items that stand in for this device in 3D |
+| `decorations` | Ids of decoration items that stand in for this device in 3D, required |
+| `levels` | Which of the entity's percentages feeds each of the item's, for example `{ open: position, tilt: tilt }` |
 
 Each decoration:
 
@@ -232,10 +222,13 @@ Each decoration:
 | `position` | `[x, y]` in meters, required |
 | `rotation` | Degrees, counter clockwise on the plan |
 | `on` | Id of the item this one stands on, for example the table under a lamp |
-| `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height |
+| `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height. Both ends of a slider, and its starting value, sit on a whole number of steps, so a bookshelf steps through 80, 85, 90 rather than 78, 83, 88. Anything under half a meter steps by a centimeter instead of five, since a seven centimeter sensor on a five centimeter step has nowhere to go. A size saved before a slider's steps changed is snapped to the nearest stop when it is read, so what is drawn is what the editor shows |
+| `variant` | Which of the kind's styles it is drawn in, for a kind that comes in more than one. The first when absent |
 | `colors` | Hex color per part. Each kind names its own parts, for example a door has `frame`, `panel` and `handle`, a sofa has `frame`, `upholstery` and `cushions`. Parts are painted plain: the kind decides how matte or polished each one is, and nothing but the floor carries a pattern |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
+
+A piece or a device that names a room the plan no longer has is left out rather than taken as a reason to refuse the whole card, and a kind that has since been folded into another is carried over to it.
 
 ### When changes don't show up
 

@@ -1,9 +1,7 @@
-import { deviceType } from '#/devices/catalog.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
-import { usePressActions } from '#/scene/decor/press.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import { clickAction, deviceSignals, kelvinToRgb, levelChannels, levelValues, signalValues } from '#/signals.ts'
-import { CEILING_HEIGHT_M, DEVICE_SPHERE_COLOR, DEVICE_SPHERE_RADIUS_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
+import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
 import { Color, SRGBColorSpace } from 'three'
@@ -11,24 +9,17 @@ import { Color, SRGBColorSpace } from 'three'
 type Props = {
   hass: HomeAssistant | null
   config: CardConfig
+  // In the editor, a press also picks the piece it landed on.
+  onPick?: (id: string) => void
 }
 
-const CEILING_TYPES = new Set(['ceiling', 'ceiling_lamp', 'spot', 'ceiling_fan'])
-
-function sphereHeight(device: DeviceConfig) {
-  const type = deviceType(device)?.id
-  if (type && CEILING_TYPES.has(type)) return CEILING_HEIGHT_M - 0.3
-  if (type === 'led_strip') return 0.1
-  return 0.9
-}
-
-// What a bound device tells its decoration items. Null when the device says
 // The last color each light was seen with. Home Assistant drops rgb_color
 // and brightness the moment a light goes off, so without this the shade
 // jumps to the default warm glow for the length of the fade out: a flicker
 // of the wrong color on the way down.
 const lastGlow = new Map<string, [number, number, number]>()
 
+// What a bound device tells its decoration items. Null when the device says
 // nothing a model can draw, so the item stays neutral.
 function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null {
   const entityId = device.entity_id
@@ -80,41 +71,15 @@ function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null 
   }
 }
 
-// A device with nothing standing in for it, shown as a small sphere that
-// lights up with it.
-function DeviceSphere({
-  position,
-  on,
-  onClick,
-  onOpen,
-}: {
-  position: [number, number, number]
-  on: boolean
-  onClick: () => void
-  onOpen: () => void
-}) {
-  const interactive = usePressActions(onClick, onOpen)
-  return (
-    <mesh position={position} userData={{ pick: { click: onClick, open: onOpen } }} {...interactive}>
-      <sphereGeometry args={[DEVICE_SPHERE_RADIUS_M, 12, 8]} />
-      <meshStandardMaterial
-        color={DEVICE_SPHERE_COLOR}
-        emissive={LIGHT_GLOW_COLOR}
-        emissiveIntensity={on ? 1.2 : 0}
-        roughness={0.6}
-      />
-    </mesh>
-  )
-}
-
-export default function Devices({ hass, config }: Props) {
+export default function Devices({ hass, config, onPick }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
+  const rooms = config.rooms ?? []
   const boundTo = new Map<string, DeviceConfig>()
   for (const device of devices) for (const id of device.decorations ?? []) boundTo.set(id, device)
 
   const act = (entityId: string) => {
-    const action = clickAction(entityId)
+    const action = clickAction(entityId, hass?.states[entityId]?.state)
     if (hass && action) void hass.callService(action.domain, action.service, { entity_id: entityId })
   }
 
@@ -130,30 +95,26 @@ export default function Devices({ hass, config }: Props) {
 
   return (
     <>
-      {devices.map(device => {
-        const bound = (device.decorations ?? []).some(id => decorations.some(d => d.id === id))
-        if (bound) return null
-        const on = hass ? (signalValues(hass, device.entity_id).on ?? false) : false
-        return (
-          <DeviceSphere
-            key={device.entity_id}
-            position={[device.position[0], sphereHeight(device), -device.position[1]]}
-            on={on}
-            onClick={() => act(device.entity_id)}
-            onOpen={() => openMoreInfo(device.entity_id)}
-          />
-        )
-      })}
       {decorations.map(item => {
         const device = boundTo.get(item.id)
         const state = device && hass ? itemState(hass, device) : null
+        // A press does what the device says, and in the editor also picks
+        // the piece. A piece with nothing behind it is still pickable.
+        const onClick =
+          device || onPick
+            ? () => {
+                onPick?.(item.id)
+                if (device) act(device.entity_id)
+              }
+            : undefined
         return (
           <DecorationModel
             key={item.id}
             item={item}
             all={decorations}
+            room={rooms.find(r => r.id === item.room)}
             state={state}
-            onClick={device ? () => act(device.entity_id) : undefined}
+            onClick={onClick}
             onOpen={device ? () => openMoreInfo(device.entity_id) : undefined}
           />
         )

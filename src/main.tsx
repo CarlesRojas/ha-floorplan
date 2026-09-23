@@ -6,6 +6,33 @@ import type { CardConfig } from '#/types.ts'
 const CARD_TYPE = 'floorplan-3d'
 const EDITOR_TYPE = `${CARD_TYPE}-editor`
 
+// Kinds that were renamed or folded into another one. A plan written
+// before the change still names the old one, and without this the piece
+// would quietly vanish from the plan: the catalog would not know it.
+const RENAMED: Record<string, { kind: string; variant?: string }> = {
+  // The Globo Cesta was its own kind for a moment, then became a style of
+  // the pendant.
+  light_globe: { kind: 'light_pendant', variant: 'globe' },
+}
+
+function migrate(config: CardConfig): CardConfig {
+  const rooms = Array.isArray(config.rooms) ? config.rooms : []
+  const known = new Set(rooms.map(r => r.id))
+  const next = { ...config }
+  if (Array.isArray(config.decorations)) {
+    next.decorations = config.decorations
+      // A piece whose room is gone has nowhere to be drawn. It is left out
+      // rather than taken as a reason to refuse the whole card.
+      .filter(d => known.has(d.room))
+      .map(d => {
+        const now = RENAMED[d.kind]
+        return now ? { ...d, kind: now.kind, variant: d.variant ?? now.variant } : d
+      })
+  }
+  if (Array.isArray(config.devices)) next.devices = config.devices.filter(d => known.has(d.room))
+  return next
+}
+
 function validate(config: CardConfig) {
   if (config.rooms !== undefined && !Array.isArray(config.rooms)) throw new Error('rooms must be a list')
   for (const room of config.rooms ?? []) {
@@ -16,8 +43,6 @@ function validate(config: CardConfig) {
   if (config.devices !== undefined && !Array.isArray(config.devices)) throw new Error('devices must be a list')
   for (const device of config.devices ?? []) {
     if (!device.entity_id) throw new Error('Every device needs an entity_id')
-    if (!config.rooms?.some(r => r.id === device.room))
-      throw new Error(`Device ${device.entity_id} points at an unknown room`)
     if (!Array.isArray(device.position) || device.position.length !== 2)
       throw new Error(`Device ${device.entity_id} needs a position`)
   }
@@ -26,7 +51,6 @@ function validate(config: CardConfig) {
   for (const item of config.decorations ?? []) {
     if (!item.id) throw new Error('Every decoration needs an id')
     if (!item.kind) throw new Error(`Decoration ${item.id} needs a kind`)
-    if (!config.rooms?.some(r => r.id === item.room)) throw new Error(`Decoration ${item.id} points at an unknown room`)
     if (!Array.isArray(item.position) || item.position.length !== 2)
       throw new Error(`Decoration ${item.id} needs a position`)
   }
@@ -44,7 +68,7 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
   // Called by HA once with the YAML config for this card.
   setConfig(config: CardConfig) {
     validate(config)
-    this._config = config
+    this._config = migrate(config)
     this.render()
   }
 
@@ -60,7 +84,7 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
 
 class Floorplan3DEditor extends ReactHost<CardConfig> {
   setConfig(config: CardConfig) {
-    this._config = config
+    this._config = migrate(config)
     this.render()
   }
 

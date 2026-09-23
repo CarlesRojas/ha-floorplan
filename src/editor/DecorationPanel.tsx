@@ -2,21 +2,35 @@ import {
   canRide,
   DECORATION_KINDS,
   decorationKind,
+  decorationVariant,
   isSupport,
+  itemLevels,
+  kindColors,
+  paramValue,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { ridersOf } from '#/decoration/surfaces.ts'
-import { entityName } from '#/devices/catalog.ts'
+import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
-import { EDITOR_SIDEBAR_PREVIEW_PX } from '#/constants.ts'
+import { Select } from '#/components/ui/select.tsx'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '#/components/ui/alert-dialog.tsx'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_MODE_COLORS, ROOM_COLORS } from '#/theme.ts'
+import { deviceSignals, levelChannels } from '#/signals.ts'
+import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
-import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 type Props = {
   hass: HomeAssistant | null
@@ -28,13 +42,14 @@ type Props = {
   onUpdate: (id: string, patch: Partial<DecorationConfig>) => void
   onRemove: (id: string) => void
   onBind: (id: string, entityId: string | null) => void
+  onDeviceLevels: (entityId: string, levels: Record<string, string>) => void
   onStandOn: (id: string, supportId: string | null) => void
   onSelect: (id: string | null) => void
 }
 
 const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
-const accent = EDITOR_MODE_COLORS.decoration
+const accent = EDITOR_ACCENT_COLOR
 
 export default function DecorationPanel({
   hass,
@@ -46,17 +61,60 @@ export default function DecorationPanel({
   onUpdate,
   onRemove,
   onBind,
+  onDeviceLevels,
   onStandOn,
   onSelect,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
   const [query, setQuery] = useState('')
-  const [previewHeight, setPreviewHeight] = useState(EDITOR_SIDEBAR_PREVIEW_PX)
+  // Null until the handle is dragged: the preview is square by default, so
+  // it takes the shape of the sidebar it sits in, whatever that is.
+  const [previewHeight, setPreviewHeight] = useState<number | null>(null)
+  const previewBox = useRef<HTMLDivElement>(null)
+  // Dragging starts from whatever the square came out as, which only the
+  // laid out element knows.
+  const resize = (dy: number) =>
+    setPreviewHeight(h => {
+      const from = h ?? previewBox.current?.getBoundingClientRect().height ?? 240
+      return Math.min(Math.max(from + dy, 120), 520)
+    })
+  const previewShape = {
+    className: cn(
+      'w-full overflow-hidden rounded-xl bg-(--secondary-background-color)',
+      !previewHeight && 'aspect-square',
+    ),
+    style: previewHeight ? { height: previewHeight } : undefined,
+  }
+  // The item a trash icon in the device's list was clicked on, waiting for
+  // the yes.
+  const [unbinding, setUnbinding] = useState<DecorationConfig | null>(null)
   const item = selected ? decorations.find(d => d.id === selected) : undefined
   const kind = item ? decorationKind(item.kind) : undefined
 
   if (item && kind) {
     const boundDevice = devices.find(d => d.decorations?.includes(item.id))
+    const boundSignals = hass && boundDevice ? deviceSignals(hass, boundDevice.entity_id) : []
+    const channels = hass && boundDevice ? levelChannels(hass, boundDevice.entity_id) : []
+    // The other pieces the same device stands behind, so what it drives can
+    // be seen and let go of from here.
+    const siblings = (boundDevice?.decorations ?? [])
+      .filter(id => id !== item.id)
+      .map(id => decorations.find(d => d.id === id))
+      .filter((d): d is DecorationConfig => !!d)
+    // What a device already stands behind, named by the pieces themselves.
+    const driving = (entityId: string) =>
+      (devices.find(d => d.entity_id === entityId)?.decorations ?? [])
+        .map(id => decorations.find(x => x.id === id))
+        .filter((d): d is DecorationConfig => !!d)
+        .map(d => ({ id: d.id, label: decorationKind(d.kind)?.label ?? d.kind }))
+    // Entities that drive at least one of the things this item can show,
+    // the ones that fit best first. A device can stand behind several
+    // pieces at once, so one already in use is still on offer.
+    const shared = (entityId: string) =>
+      hass ? deviceSignals(hass, entityId).filter(x => kind.expresses.includes(x)).length : 0
+    const fits = (hass ? placeableEntities(hass) : [])
+      .filter(e => shared(e.entity_id) > 0)
+      .sort((a, b) => shared(b.entity_id) - shared(a.entity_id) || a.name.localeCompare(b.name))
     // Tops in the same room, never the item itself or anything on it.
     const mine = new Set([item.id, ...ridersOf(item.id, decorations).map(r => r.id)])
     const supports = decorations.filter(d => {
@@ -78,17 +136,29 @@ export default function DecorationPanel({
       <div className="flex flex-col gap-3">
         <Sticky>
           <SelectedHeader title={kind.label} tag={roomTag} accent={accent} onBack={() => onSelect(null)} />
-          <ModelPreview
-            item={item}
-            className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-            style={{ height: previewHeight }}
-          />
-          <PreviewHandle onDrag={dy => setPreviewHeight(h => Math.min(Math.max(h + dy, 120), 520))} />
+          <ModelPreview item={item} boxRef={previewBox} {...previewShape} />
+          <PreviewHandle onDrag={resize} />
           <Signals signals={kind.expresses} accent={accent} />
         </Sticky>
 
+        {/* Which style of the kind this one is. A pendant is listed once in
+            the catalog and says here which of them it is. */}
+        {kind.variants && kind.variants.length > 1 && (
+          <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+            Style
+            <Select
+              aria-label="Style"
+              value={decorationVariant(kind, item.variant)?.id ?? ''}
+              options={kind.variants.map(v => ({ value: v.id, label: v.label }))}
+              onChange={v => onUpdate(item.id, { variant: v })}
+            />
+          </label>
+        )}
+
         {kind.params.map(p => {
-          const value = item.params?.[p.id] ?? p.default
+          // Read through the catalog, so a size saved before this slider's
+          // steps changed shows on a stop rather than between two of them.
+          const value = paramValue(kind, item.params, p.id)
           // A two state parameter is a switch, not a slider with two stops.
           if (p.toggle)
             return (
@@ -140,7 +210,7 @@ export default function DecorationPanel({
             color is the viewer's to pick. */}
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
           <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
-          {Object.entries(kind.colors).map(([slot, fallback]) => (
+          {Object.entries(kindColors(kind, item.variant)).map(([slot, fallback]) => (
             <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
               {slot}
               <input
@@ -156,39 +226,141 @@ export default function DecorationPanel({
         {canRide(kind) && (
           <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
             <p className="text-xs font-semibold text-(--secondary-text-color)">Standing on</p>
-            <select
-              className={input}
+            <Select
+              aria-label="Standing on"
               value={item.on ?? ''}
-              onChange={e => onStandOn(item.id, e.target.value || null)}
-            >
-              <option value="">The floor</option>
-              {supports.map(s => (
-                <option key={s.id} value={s.id}>
-                  {decorationKind(s.kind)?.label ?? s.kind}
-                </option>
-              ))}
-            </select>
+              placeholder="The floor"
+              options={[
+                { value: '', label: 'The floor' },
+                ...supports.map(s => ({ value: s.id, label: decorationKind(s.kind)?.label ?? s.kind })),
+              ]}
+              onChange={v => onStandOn(item.id, v || null)}
+            />
           </div>
         )}
 
+        {/* What in Home Assistant this piece stands for. Only entities that
+            can drive at least one thing the item does are on offer, each
+            listed with the controls it brings. */}
         <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
           <p className="text-xs font-semibold text-(--secondary-text-color)">Device</p>
-          <select
-            className={input}
-            value={boundDevice?.entity_id ?? ''}
-            onChange={e => onBind(item.id, e.target.value || null)}
-          >
-            <option value="">None</option>
-            {devices.map(d => (
-              <option key={d.entity_id} value={d.entity_id}>
-                {hass ? entityName(hass, d.entity_id) : d.entity_id}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-(--secondary-text-color)">
-            Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for the
-            device's own dialog in Home Assistant, where brightness, color and the rest live.
-          </p>
+          {kind.expresses.length === 0 ? (
+            <p className="text-xs text-(--secondary-text-color)">
+              This item shows nothing a device could drive, so it stands for nothing.
+            </p>
+          ) : (
+            <>
+              <Select
+                aria-label="Device"
+                value={boundDevice?.entity_id ?? ''}
+                style={boundDevice ? { borderColor: EDITOR_BOUND_COLOR } : undefined}
+                options={[
+                  { value: '', label: 'None' },
+                  // Each entity says what it brings, as the icons used
+                  // everywhere else, and lists the pieces it already drives
+                  // under its name: one to a line, since a device can stand
+                  // behind several and that is worth seeing before adding
+                  // one more.
+                  ...fits.map(e => ({
+                    value: e.entity_id,
+                    label: e.name,
+                    keywords: e.entity_id,
+                    badge: hass ? (
+                      <Signals signals={deviceSignals(hass, e.entity_id)} size="sm" accent={accent} />
+                    ) : undefined,
+                    detail:
+                      driving(e.entity_id).length > 0 ? (
+                        <span className="block text-xs text-(--secondary-text-color)">
+                          {driving(e.entity_id).map(d => (
+                            <span key={d.id} className="block truncate">
+                              {d.label}
+                            </span>
+                          ))}
+                        </span>
+                      ) : undefined,
+                  })),
+                ]}
+                onChange={v => onBind(item.id, v || null)}
+              />
+              {fits.length === 0 && (
+                <p className="text-xs text-(--secondary-text-color)">
+                  Nothing in Home Assistant drives what this item shows.
+                </p>
+              )}
+              {boundDevice && (
+                <>
+                  <Signals signals={boundSignals} accent={accent} />
+                  {/* Which of the device's percentages drives each of the
+                      item's: how far it opens, how far it tilts. Only worth
+                      asking when there is a choice to make. */}
+                  {channels.length > 0 &&
+                    (channels.length > 1 || itemLevels(kind).length > 1) &&
+                    itemLevels(kind).map(level => (
+                      <label key={level.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                        {level.label}
+                        <Select
+                          aria-label={level.label}
+                          value={boundDevice.levels?.[level.id] ?? ''}
+                          options={[
+                            {
+                              value: '',
+                              label: level.id === 'tilt' ? 'None' : (channels[0]?.label ?? 'None'),
+                            },
+                            ...channels.map(ch => ({ value: ch.id, label: ch.label })),
+                          ]}
+                          onChange={v =>
+                            onDeviceLevels(boundDevice.entity_id, { ...boundDevice.levels, [level.id]: v })
+                          }
+                        />
+                      </label>
+                    ))}
+                  {/* The other pieces this same device drives. A row goes to
+                      that piece, the bin lets go of it. */}
+                  {siblings.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs font-semibold text-(--secondary-text-color)">Also driving</p>
+                      {siblings.map(other => {
+                        const k = decorationKind(other.kind)
+                        const room = rooms.find(r => r.id === other.room)
+                        return (
+                          <div key={other.id} className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => onSelect(other.id)}
+                              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1 text-left text-sm hover:bg-(--secondary-background-color)"
+                            >
+                              <FontAwesomeIcon
+                                icon={decorationIcon(other.kind, k?.family ?? 'decor')}
+                                className="size-3.5 shrink-0 text-(--secondary-text-color)"
+                              />
+                              <span className="min-w-0 flex-1 truncate">{k?.label ?? other.kind}</span>
+                              {room && (
+                                <span className="shrink-0 text-xs text-(--secondary-text-color)">
+                                  {room.name ?? room.id}
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Unbind ${k?.label ?? other.kind}`}
+                              onClick={() => setUnbinding(other)}
+                              className="flex size-7 shrink-0 items-center justify-center rounded-lg text-(--error-color)/70 hover:bg-(--secondary-background-color) hover:text-(--error-color)"
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="size-3.5" />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-(--secondary-text-color)">
+                    Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for the
+                    device's own dialog in Home Assistant, where brightness, color and the rest live.
+                  </p>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         <button
@@ -197,8 +369,30 @@ export default function DecorationPanel({
           className="mt-1 flex h-9 items-center justify-center gap-2 rounded-lg border border-(--divider-color) text-sm font-semibold text-(--error-color)"
         >
           <FontAwesomeIcon icon={faTrash} className="size-3.5" />
-          Remove from plan
+          Delete {kind.label}
         </button>
+
+        <AlertDialog open={unbinding !== null} onOpenChange={open => !open && setUnbinding(null)}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Let go of this piece?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {decorationKind(unbinding?.kind ?? '')?.label ?? 'The item'} stops standing in for this device. The piece
+              itself stays on the plan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUnbinding(null)}>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (unbinding) onBind(unbinding.id, null)
+                setUnbinding(null)
+              }}
+            >
+              Unbind
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialog>
       </div>
     )
   }
@@ -211,14 +405,11 @@ export default function DecorationPanel({
   return (
     <div className="flex flex-col gap-3">
       {rooms.length === 0 && (
-        <p className="text-sm text-(--secondary-text-color)">Draw rooms in the Rooms mode first.</p>
+        <p className="text-sm text-(--secondary-text-color)">Draw a room first, with the draw tool.</p>
       )}
 
       <Sticky>
-        <div
-          className="w-full overflow-hidden rounded-xl bg-(--secondary-background-color)"
-          style={{ height: previewHeight }}
-        >
+        <div ref={previewBox} {...previewShape}>
           {previewItem ? (
             <ModelPreview item={previewItem} className="h-full w-full" />
           ) : (
@@ -227,8 +418,25 @@ export default function DecorationPanel({
             </div>
           )}
         </div>
-        <PreviewHandle onDrag={dy => setPreviewHeight(h => Math.min(Math.max(h + dy, 120), 520))} />
-        <input className={input} placeholder="Search items" value={query} onChange={e => setQuery(e.target.value)} />
+        <PreviewHandle onDrag={resize} />
+        <div className="relative flex min-w-0 items-center">
+          <input
+            className={cn(input, 'w-full pr-8')}
+            placeholder="Search items"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear the search"
+              onClick={() => setQuery('')}
+              className="absolute right-1 flex size-6 items-center justify-center rounded text-(--secondary-text-color) hover:bg-(--secondary-background-color) hover:text-(--primary-text-color)"
+            >
+              <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+            </button>
+          )}
+        </div>
       </Sticky>
 
       {families.map(family => {
@@ -244,12 +452,18 @@ export default function DecorationPanel({
           <div key={family} className="flex flex-col gap-1">
             <p className="text-xs font-semibold text-(--secondary-text-color)">{FAMILY_LABELS[family] ?? family}</p>
             {shown.map(k => (
-              <div
+              // The whole row adds the piece, not the plus alone: the plus
+              // is what the row does, not the only place it can be asked.
+              <button
                 key={k.id}
+                type="button"
+                disabled={rooms.length === 0}
+                aria-label={`Add ${k.label}`}
                 onMouseEnter={() => setHovered(k)}
                 onMouseLeave={() => setHovered(h => (h?.id === k.id ? null : h))}
+                onClick={() => onAdd(k)}
                 className={cn(
-                  'grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1',
+                  'grid w-full grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1 text-left disabled:cursor-default',
                   hovered?.id === k.id && 'bg-(--secondary-background-color)',
                 )}
               >
@@ -265,19 +479,13 @@ export default function DecorationPanel({
                   <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
                 </div>
                 {rooms.length > 0 ? (
-                  <button
-                    type="button"
-                    aria-label={`Add ${k.label}`}
-                    onClick={() => onAdd(k)}
-                    className="flex size-8 items-center justify-center rounded-lg hover:bg-(--card-background-color)"
-                    style={{ color: accent }}
-                  >
+                  <span className="flex size-8 items-center justify-center" style={{ color: accent }}>
                     <FontAwesomeIcon icon={faPlus} className="size-4" />
-                  </button>
+                  </span>
                 ) : (
                   <span />
                 )}
-              </div>
+              </button>
             ))}
           </div>
         )

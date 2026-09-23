@@ -11,8 +11,8 @@ type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | 
 // fronts with small round pulls.
 export default function FurnitureModel({ kind, item }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a piece's colors read as its parts.
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
 
@@ -166,6 +166,70 @@ export default function FurnitureModel({ kind, item }: Props) {
           <Cushion size={[w - 0.02, backH, 0.08]} rotation={[-0.14, 0, 0]} position={[0, seatH, -d / 2 + 0.07]}>
             {M('shell')}
           </Cushion>
+        </group>
+      )
+    }
+    case 'office_chair': {
+      // A task chair: a five star base on castors, a gas lift, a padded seat
+      // and a back on a slim frame, with an armrest each side.
+      const w = p('width')
+      const d = p('depth')
+      const seatH = p('height')
+      const seat = 0.1
+      const backH = 0.5
+      const reach = Math.min(w, d) / 2
+      const lift = seatH - seat - 0.06
+      return (
+        <group>
+          {/* Five arms out from the column, each ending on a castor. */}
+          {Array.from({ length: 5 }).map((_, i) => {
+            const a = (i / 5) * Math.PI * 2
+            return (
+              <group key={i} rotation={[0, -a, 0]}>
+                <mesh position={[0, 0.055, reach / 2]} rotation={[0.06, 0, 0]} castShadow>
+                  <boxGeometry args={[0.035, 0.022, reach]} />
+                  {M('base')}
+                </mesh>
+                {/* The castor, a small wheel lying on its side. */}
+                <mesh position={[0, 0.026, reach - 0.02]} rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.026, 0.026, 0.016, 10]} />
+                  {M('base')}
+                </mesh>
+              </group>
+            )
+          })}
+          {/* The gas lift, in its wider sleeve. */}
+          <mesh position={[0, lift / 2 + 0.05, 0]} castShadow>
+            <cylinderGeometry args={[0.028, 0.032, lift, 12]} />
+            {M('base')}
+          </mesh>
+          <mesh position={[0, seatH - seat - 0.03, 0]}>
+            <cylinderGeometry args={[0.055, 0.055, 0.05, 12]} />
+            {M('frame')}
+          </mesh>
+          {/* Seat and back, the back leaning away on its own frame. */}
+          <Cushion size={[w * 0.82, seat, d * 0.82]} position={[0, seatH - seat, 0]}>
+            {M('seat')}
+          </Cushion>
+          <mesh position={[0, seatH + 0.08, -d * 0.36]} rotation={[0.16, 0, 0]} castShadow>
+            <boxGeometry args={[0.05, 0.22, 0.04]} />
+            {M('frame')}
+          </mesh>
+          <Cushion size={[w * 0.74, backH, 0.07]} rotation={[-0.16, 0, 0]} position={[0, seatH + 0.16, -d * 0.33]}>
+            {M('back')}
+          </Cushion>
+          {/* An armrest each side: a post up from the seat and a pad on top. */}
+          {[-1, 1].map(sx => (
+            <group key={sx} position={[(sx * w * 0.78) / 2, 0, 0]}>
+              <mesh position={[0, seatH + 0.09, -d * 0.04]} castShadow>
+                <boxGeometry args={[0.028, 0.18, 0.032]} />
+                {M('frame')}
+              </mesh>
+              <Slab size={[0.05, 0.028, d * 0.38]} radius={0.014} bevel={0.008} position={[0, seatH + 0.18, -d * 0.04]}>
+                {M('back')}
+              </Slab>
+            </group>
+          ))}
         </group>
       )
     }
@@ -329,9 +393,56 @@ export default function FurnitureModel({ kind, item }: Props) {
         </group>
       )
     }
+    case 'office_table': {
+      // A work table rather than a writing desk: a plain rectangular top on
+      // two steel T frames tied by a beam, with a cable tray slung under the
+      // back edge. The height goes up far enough to stand at.
+      const w = p('width')
+      const d = p('depth')
+      const h = p('height')
+      const top = 0.025
+      const post = 0.06
+      const inset = 0.16
+      return (
+        <group>
+          {[-1, 1].map(sx => (
+            <group key={sx} position={[(sx * (w - inset * 2)) / 2, 0, 0]}>
+              {/* The foot, running front to back under the post. */}
+              <Slab size={[0.08, 0.025, d - 0.1]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
+                {M('frame')}
+              </Slab>
+              <mesh position={[0, (h - top) / 2, 0]} castShadow>
+                <boxGeometry args={[post, h - top, post]} />
+                {M('frame')}
+              </mesh>
+              {/* The arm the top sits on. */}
+              <Slab size={[0.09, 0.022, d - 0.16]} radius={0.01} bevel={0.005} position={[0, h - top - 0.022, 0]}>
+                {M('frame')}
+              </Slab>
+            </group>
+          ))}
+          {/* The beam between the two frames, set back under the top. */}
+          <mesh position={[0, h - top - 0.09, -d * 0.16]}>
+            <boxGeometry args={[w - inset * 2 - post, 0.05, 0.05]} />
+            {M('frame')}
+          </mesh>
+          {/* Cable tray along the back, where the leads are gathered. */}
+          <Slab
+            size={[w * 0.45, 0.05, 0.09]}
+            radius={0.012}
+            bevel={0.004}
+            position={[0, h - top - 0.14, -d / 2 + 0.12]}
+          >
+            {M('tray')}
+          </Slab>
+          <Slab size={[w, top, d]} radius={0.01} bevel={0.005} position={[0, h - top, 0]}>
+            {M('top')}
+          </Slab>
+        </group>
+      )
+    }
     case 'desk':
-    case 'coffee_table':
-    case 'console_table': {
+    case 'coffee_table': {
       // A plain top on tapered dowel legs, with an apron tying them
       // together. A long table grows a middle pair rather than sagging.
       const w = p('width')
@@ -384,11 +495,6 @@ export default function FurnitureModel({ kind, item }: Props) {
                 <Material color={c('handle')} material="metal" />
               </Bar>
             </group>
-          )}
-          {kind.id === 'console_table' && (
-            <Slab size={[w - inset * 1.6, 0.025, d - 0.07]} radius={0.015} position={[0, h * 0.28, 0]}>
-              {M('shelf')}
-            </Slab>
           )}
           {kind.id === 'coffee_table' && (
             // A slatted shelf underneath, the slats following the depth.
@@ -473,8 +579,8 @@ export default function FurnitureModel({ kind, item }: Props) {
     // Storage
     case 'bookshelf': {
       // Open case with a back, standing on a recessed plinth. Shelves are
-      // spaced by the height, and each one carries a run of books that ends
-      // somewhere different.
+      // spaced by the height, and what goes on them is the viewer's own
+      // business: the case is drawn empty.
       const w = p('width')
       const d = p('depth')
       const h = p('height')
@@ -482,7 +588,6 @@ export default function FurnitureModel({ kind, item }: Props) {
       const inner = h - plinth
       const shelves = Math.max(2, Math.round(inner / 0.36))
       const gap = inner / shelves
-      const bookSpan = w - 0.1
       return (
         <group>
           <Slab size={[w - 0.08, plinth, d - 0.06]} radius={0.01} position={[0, 0, 0]}>
@@ -501,26 +606,6 @@ export default function FurnitureModel({ kind, item }: Props) {
               {M('shelves')}
             </Slab>
           ))}
-          {Array.from({ length: shelves }).map((_, i) => {
-            // How far along the shelf the books reach, different each time.
-            const fill = 0.45 + ((i * 37) % 5) * 0.11
-            const count = Math.max(2, Math.round((bookSpan * fill) / 0.045))
-            return Array.from({ length: count }).map((__, j) => {
-              const bw = 0.028 + ((j * 7 + i * 3) % 3) * 0.011
-              const bh = Math.min(gap - 0.07, 0.17 + ((j * 5 + i) % 4) * 0.022)
-              return (
-                <Slab
-                  key={`${i}-${j}`}
-                  size={[bw, bh, d * 0.66]}
-                  radius={0.004}
-                  bevel={0.002}
-                  position={[-bookSpan / 2 + 0.02 + j * 0.046, plinth + gap * i + 0.022, 0.01]}
-                >
-                  <Material color={c('books')} material={m('books')} />
-                </Slab>
-              )
-            })
-          })}
         </group>
       )
     }

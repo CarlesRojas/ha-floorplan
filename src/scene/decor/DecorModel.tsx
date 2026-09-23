@@ -33,11 +33,11 @@ function Leaf({
 // Rugs, plants, art and the soft things that make a room feel lived in.
 export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // An unbound curtain hangs closed. Eased, so it draws rather than jumps
   // as Home Assistant reports its position on the way.
-  const level = useTravel(state?.level ?? 0, state?.text === 'opening' ? 1 : state?.text === 'closing' ? -1 : 0)
+  const level = useTravel(state?.level ?? 0)
 
   // A turned stoneware vase, narrow foot, full belly, drawn in neck.
   const isVase = kind.id === 'vase'
@@ -66,6 +66,18 @@ export default function DecorModel({ kind, item, state }: Props) {
   }, [isVase, vaseR, vaseH])
 
   switch (kind.id) {
+    case 'half_wall': {
+      // A low dividing wall: one plain block, long in one direction and
+      // thin in the other, with a top other things stand on.
+      const w = p('width')
+      const d = p('depth')
+      const h = p('height')
+      return (
+        <Slab size={[w, h, d]} radius={0.012} bevel={0.006} position={[0, 0, 0]}>
+          <Material color={c('wall')} material={m('wall')} />
+        </Slab>
+      )
+    }
     case 'rug': {
       // A flat woven rug: one low pile, a narrow border stripe and fringed
       // short ends, the way a Nordic wool rug is finished.

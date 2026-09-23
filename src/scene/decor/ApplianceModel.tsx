@@ -1,6 +1,7 @@
 import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
@@ -42,8 +43,8 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
 // cabinetry: handleless chalk fronts, oak worktops, matte ceramics.
 export default function ApplianceModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id)
-  const c = (slot: string) => colorValue(kind, item.colors, slot)
-  const m = (slot: string) => materialValue(kind, slot)
+  const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
+  const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a fitting's colors read as its parts.
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
   const on = state?.on ?? false
@@ -249,13 +250,48 @@ export default function ApplianceModel({ kind, item, state }: Props) {
         </group>
       )
     }
+    case 'ceiling_extractor': {
+      // A flush ceiling extractor: a shallow panel let into the ceiling
+      // rather than a canopy hanging over the hob, with a perimeter grille
+      // it draws through and a lit face that comes up with the fan.
+      const w = p('width')
+      const d = p('depth')
+      // A ceiling item is already lifted to the ceiling, so the model hangs
+      // down from nothing.
+      const panel = 0.03
+      const edge = 0.05
+      return (
+        <group>
+          <Slab size={[w, panel, d]} radius={0.012} bevel={0.005} position={[0, -panel, 0]}>
+            {M('panel')}
+          </Slab>
+          {/* The slot it draws through, all the way round the panel. */}
+          <Slab size={[w - edge, 0.006, d - edge]} radius={0.01} bevel={0.002} position={[0, -panel - 0.006, 0]}>
+            {M('grille')}
+          </Slab>
+          {/* The lit face, inset from the slot, which is all that shows from
+              below when it is off. */}
+          <mesh position={[0, -panel - 0.008, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[w - edge * 2.4, d - edge * 2.4]} />
+            <meshStandardMaterial
+              color={c('panel')}
+              emissive={'#ffd9a0'}
+              emissiveIntensity={1.1 * level * lit}
+              roughness={0.5}
+            />
+          </mesh>
+        </group>
+      )
+    }
     case 'extractor_hood': {
       // A box canopy with a slim chimney, a grease filter panel underneath
       // and two task lights in it.
       const w = p('width')
       const d = p('depth')
-      const hoodY = 1.55
+      // A ceiling item hangs from nothing, so the canopy is placed by how
+      // far below the ceiling it sits rather than how high off the floor.
       const canopy = 0.14
+      const hoodY = -(CEILING_HEIGHT_M - 1.55)
       return (
         <group>
           <Slab size={[w, canopy, d]} radius={0.015} bevel={0.01} position={[0, hoodY, 0]}>
@@ -263,7 +299,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           </Slab>
           {/* The chimney, narrower than the canopy, up to the ceiling. */}
           <Slab
-            size={[w * 0.36, 2.6 - hoodY - canopy, d * 0.36]}
+            size={[w * 0.36, -hoodY - canopy, d * 0.36]}
             radius={0.012}
             bevel={0.006}
             position={[0, hoodY + canopy, -d * 0.08]}

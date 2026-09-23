@@ -1,5 +1,3 @@
-export type Mode = 'rooms' | 'devices' | 'decoration'
-
 export type Tool = 'select' | 'draw'
 
 export type Selection = {
