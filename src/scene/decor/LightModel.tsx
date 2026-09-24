@@ -178,20 +178,24 @@ export default function LightModel({ kind, item, state }: Props) {
     case 'light_strip':
     case 'light_strip_ceiling':
     case 'light_strip_wall': {
-      // An aluminium channel with a frosted diffuser in it. Lights place
-      // themselves, so the ceiling one goes up to the ceiling and the other
-      // two take their own height.
+      // An aluminium channel with a frosted diffuser under it. Lights place
+      // themselves, so the ceiling one goes up against the ceiling and the
+      // other two take their own height. The wall one stands off the wall
+      // on its channel instead of sinking into it.
       const length = p('length')
-      const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.04 : p('height')
-      glowAt = [0, height + 0.05, 0]
+      const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.046 : p('height')
+      const z = kind.id === 'light_strip_wall' ? 0.016 : 0
+      // The light comes from just under the diffuser, so the channel above
+      // it never shades the strip's own wash.
+      glowAt = [0, height + 0.005, z]
       glowSpread = length
       body = (
         <group>
-          <mesh position={[0, height + 0.035, 0]}>
+          <mesh position={[0, height + 0.035, z]}>
             <boxGeometry args={[length, 0.022, 0.03]} />
             <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
-          <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
+          <mesh position={[0, height + 0.018, z]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
             <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 8, 20]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>

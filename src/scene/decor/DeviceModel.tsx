@@ -15,7 +15,7 @@ import { useEased, useTravel } from '#/scene/decor/ease.ts'
 import Vacuum from '#/scene/decor/Vacuum.tsx'
 import type { RoomConfig } from '#/types.ts'
 import { useMemo, type ReactNode } from 'react'
-import { DoubleSide, ExtrudeGeometry } from 'three'
+import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3 } from 'three'
 
 type Props = {
   kind: DecorationKind
@@ -103,6 +103,24 @@ function Blade({
 }
 
 // Media, climate, covers, security and the small smart home fittings.
+type Vec3 = [number, number, number]
+
+// A straight rod between two points: one cylinder moved and stretched into
+// place, so an arm that folds as a cover runs is never rebuilt.
+function Rod({ from, to, radius, children }: { from: Vec3; to: Vec3; radius: number; children: ReactNode }) {
+  const a = new Vector3(...from)
+  const dir = new Vector3(...to).sub(a)
+  const length = Math.max(dir.length(), 0.001)
+  const turn = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), dir.divideScalar(length))
+  const mid = a.addScaledVector(dir, length / 2)
+  return (
+    <mesh position={mid.toArray()} quaternion={turn} scale={[1, length, 1]} castShadow>
+      <cylinderGeometry args={[radius, radius, 1, 12]} />
+      {children}
+    </mesh>
+  )
+}
+
 export default function DeviceModel({ kind, item, state, room, all }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
@@ -837,12 +855,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
     case 'awning': {
       const w = p('width')
       const full = p('drop')
-      // Home Assistant reports 1 as open, so an open cover is gathered up.
-      // The parts are built once at full size and the group is scaled, which
-      // keeps the travel smooth: rebuilding a slat or a slab every frame is
-      // what made these move in steps.
-      const out = Math.max(1 - coverLevel, 0.001)
+      // Home Assistant reports 1 as open, so an open blind or shutter is
+      // gathered up, while an open awning is the one run out over the
+      // terrace. The parts are built once at full size and the group is
+      // scaled, which keeps the travel smooth: rebuilding a slat or a slab
+      // every frame is what made these move in steps.
       const awning = kind.id === 'awning'
+      const out = Math.max(awning ? coverLevel : 1 - coverLevel, 0.001)
       // Each of these calls its moving part and its head by its own name.
       const cloth = awning ? 'canopy' : 'slats'
       const head = awning ? 'cassette' : 'rail'
@@ -850,32 +869,83 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // A blind's slats turn with its second percentage: flat lets the light
       // through, upright shuts it out.
       const slatAngle = (1 - tiltAmount) * 1.2
+      if (awning) {
+        // After the Markilux 990: the cloth runs out of a cassette on a
+        // front profile carried by two folding arms, which open out from
+        // brackets under the cassette as the awning extends.
+        const pitch = 0.25
+        const reach = full * out
+        const cassette = { h: 0.16, d: 0.22 }
+        const endY = -cassette.h + 0.02 - reach * Math.sin(pitch)
+        const endZ = cassette.d - 0.02 + reach * Math.cos(pitch)
+        const armX = w / 2 - Math.min(0.15, w * 0.1)
+        // Each arm is two halves, as long as the full extension needs, and
+        // never so long that the two meet when they fold.
+        const half = Math.min(full * 0.52, armX - 0.05)
+        const metal = <Material color={c(head)} material={m(head)} />
+        return (
+          <group>
+            <Slab size={[w + 0.04, cassette.h, cassette.d]} radius={0.05} position={[0, -cassette.h, cassette.d / 2]}>
+              {metal}
+            </Slab>
+            <group position={[0, -cassette.h + 0.02, cassette.d - 0.02]} rotation={[pitch, 0, 0]} scale={[1, 1, out]}>
+              <Slab size={[w - 0.04, 0.01, full]} radius={0.005} position={[0, 0, full / 2]}>
+                <Material color={c(cloth)} material={m(cloth)} />
+              </Slab>
+            </group>
+            {/* The front profile, with a short valance hanging from it. */}
+            <Slab size={[w, 0.06, 0.07]} radius={0.02} position={[0, endY - 0.05, endZ]}>
+              {metal}
+            </Slab>
+            <Slab size={[w - 0.02, 0.16, 0.006]} radius={0.002} bevel={0.001} position={[0, endY - 0.21, endZ + 0.03]}>
+              <Material color={c(cloth)} material={m(cloth)} />
+            </Slab>
+            {[-1, 1].map(sx => {
+              const shoulder: Vec3 = [sx * armX, -cassette.h - 0.07, 0.06]
+              const hand: Vec3 = [sx * armX, endY - 0.02, endZ - 0.02]
+              const span = Math.hypot(hand[1] - shoulder[1], hand[2] - shoulder[2])
+              const bend = Math.sqrt(Math.max(half * half - (span / 2) ** 2, 0))
+              // The elbow swings in toward the middle as the arm folds.
+              const elbow: Vec3 = [sx * (armX - bend), (shoulder[1] + hand[1]) / 2, (shoulder[2] + hand[2]) / 2]
+              return (
+                <group key={sx}>
+                  <Slab size={[0.08, 0.1, 0.07]} radius={0.015} position={[sx * armX, -cassette.h - 0.1, 0.035]}>
+                    {metal}
+                  </Slab>
+                  <Rod from={shoulder} to={elbow} radius={0.018}>
+                    {metal}
+                  </Rod>
+                  <Rod from={elbow} to={hand} radius={0.015}>
+                    {metal}
+                  </Rod>
+                  <mesh position={elbow}>
+                    <sphereGeometry args={[0.024, 12, 8]} />
+                    {metal}
+                  </mesh>
+                </group>
+              )
+            })}
+          </group>
+        )
+      }
       return (
         <group>
           <Slab size={[w + 0.06, 0.07, 0.08]} radius={0.02} position={[0, -0.07, 0.04]}>
             <Material color={c(head)} material={m(head)} />
           </Slab>
-          {awning ? (
-            <group position={[0, -0.14, 0]} rotation={[0.25, 0, 0]} scale={[1, 1, out]}>
-              <Slab size={[w, 0.02, full]} radius={0.01} position={[0, 0, full / 2]}>
+          <group position={[0, -0.07, 0]} scale={[1, out, 1]}>
+            {Array.from({ length: slats }).map((_, i) => (
+              <Slab
+                key={i}
+                size={[w, 0.075, 0.018]}
+                radius={0.008}
+                position={[0, -0.02 - i * 0.085, 0.04]}
+                rotation={kind.id === 'blind' ? [slatAngle, 0, 0] : undefined}
+              >
                 <Material color={c(cloth)} material={m(cloth)} />
               </Slab>
-            </group>
-          ) : (
-            <group position={[0, -0.07, 0]} scale={[1, out, 1]}>
-              {Array.from({ length: slats }).map((_, i) => (
-                <Slab
-                  key={i}
-                  size={[w, 0.075, 0.018]}
-                  radius={0.008}
-                  position={[0, -0.02 - i * 0.085, 0.04]}
-                  rotation={kind.id === 'blind' ? [slatAngle, 0, 0] : undefined}
-                >
-                  <Material color={c(cloth)} material={m(cloth)} />
-                </Slab>
-              ))}
-            </group>
-          )}
+            ))}
+          </group>
         </group>
       )
     }
@@ -932,11 +1002,15 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
     case 'door': {
       // A plain flush leaf in a lining, with an architrave on both faces and
       // a lever handle on each side. The hinge sits on the left unless the
-      // flip switch moves it to the right.
+      // flip switch moves it to the right. An opening wider than a single
+      // leaf is hung with a pair, hinged at both jambs and meeting in the
+      // middle, the way a pair of French doors is.
       const w = p('width')
       const h = p('height')
       // 1 hinges on the left, -1 on the right.
-      const side = p('flip') > 0.5 ? -1 : 1
+      const hinge = p('flip') > 0.5 ? -1 : 1
+      const pair = w > 1.2
+      const lw = pair ? w / 2 : w
       const leaf = 0.042
       const jamb = 0.05
       // How far the frame runs into the wall.
@@ -945,11 +1019,11 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // A lever on a round rose: a 5 cm rose, a 2.2 cm neck out of it and a
       // 13 by 2.5 cm bar with fully rounded ends, running back toward the
       // hinge.
-      const handle = (face: number) => {
+      const handle = (side: number, face: number) => {
         const z = face > 0 ? leaf : 0
         const out = (d: number) => z + face * d
         return (
-          <group position={[side * (w - 0.085), h * 0.47, 0]}>
+          <group position={[side * (lw - 0.085), h * 0.47, 0]}>
             <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, out(0.0035)]}>
               <cylinderGeometry args={[0.025, 0.025, 0.007, SEG * 2]} />
               {metal}
@@ -987,20 +1061,22 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           <Slab size={[w + jamb * 2, jamb, lining]} radius={0.006} bevel={0.004} position={[0, h, leaf / 2]}>
             {M('frame')}
           </Slab>
-          {/* The leaf, hinged on whichever edge the switch picks, and square
-              to the wall when fully open. */}
-          <group position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * (Math.PI / 2) * coverLevel, 0]}>
-            <Slab
-              size={[w - 0.008, h - 0.006, leaf]}
-              radius={0.004}
-              bevel={0.003}
-              position={[(side * w) / 2, 0, leaf / 2]}
-            >
-              {M('panel')}
-            </Slab>
-            {handle(1)}
-            {handle(-1)}
-          </group>
+          {/* Each leaf, hinged on its jamb, and square to the wall when
+              fully open. */}
+          {(pair ? [1, -1] : [hinge]).map(side => (
+            <group key={side} position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * (Math.PI / 2) * coverLevel, 0]}>
+              <Slab
+                size={[lw - (pair ? 0.006 : 0.008), h - 0.006, leaf]}
+                radius={0.004}
+                bevel={0.003}
+                position={[(side * lw) / 2, 0, leaf / 2]}
+              >
+                {M('panel')}
+              </Slab>
+              {handle(side, 1)}
+              {handle(side, -1)}
+            </group>
+          ))}
         </group>
       )
     }
@@ -1041,12 +1117,16 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           {Array.from({ length: count }).map((_, i) => {
             // The panel at the far end stays put and the others gather in
             // front of it, at whichever end the switch picks.
-            const slide = side * openAmount * (side > 0 ? count - 1 - i : i) * panelW
+            // A lone panel has nothing to stack on, so it runs into the wall
+            // beside the opening the way a pocket door does, leaving its
+            // edge out to pull it back by.
+            const steps = count === 1 ? 1 - 0.06 / panelW : side > 0 ? count - 1 - i : i
+            const slide = side * openAmount * steps * panelW
             const cx = -run / 2 + panelW * (i + 0.5) + slide
             const z = (i - (count - 1) / 2) * track
             return (
               <group key={i} position={[cx, 0.02, z]}>
-                {sash(0, panelW, h - f - 0.02, frame, glazed ? c('glass') : null, 0.045)}
+                {sash(0, panelW, h - f - 0.02, frame, glazed ? c('glass') : null, Math.min(0.045, panelW * 0.15))}
               </group>
             )
           })}

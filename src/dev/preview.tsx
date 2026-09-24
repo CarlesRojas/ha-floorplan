@@ -77,7 +77,7 @@ createRoot(root).render(
               key={d.id}
               item={d}
               all={all}
-              state={{ on, level: 1, levels: { open: 1 }, glow: [glow.r, glow.g, glow.b] }}
+              state={{ on, level: 1, levels: { open: Number(query.get('open') ?? 1) }, glow: [glow.r, glow.g, glow.b] }}
             />
           ))}
         </group>

@@ -905,11 +905,13 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Upper cabinets',
     'wall',
     // Built from 60 cm units the way the counter is, with the same wide
-    // switch and growing unit, so a run of them can line up over one.
+    // switch and growing unit, so a run of them can line up over one. The
+    // height is the top of the units, which are 70 cm tall, so by default
+    // they clear a 90 cm counter by 60 cm.
     [
       width(1.8, 0.6, 4),
       depth(0.35, 0.25, 0.45),
-      height(1.5, 1.2, 2),
+      height(2.2, 1.8, 2.4),
       flag('wide', 'Wide module'),
       cycle('grow', 'Growing module'),
     ],
