@@ -3,7 +3,7 @@ import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef, type ReactNode } from 'react'
-import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3, type Group } from 'three'
+import { CatmullRomCurve3, DoubleSide, ExtrudeGeometry, Quaternion, TubeGeometry, Vector3, type Group } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
 // Scandinavian: softly rounded boxes, tapered legs, plump cushions and thin
@@ -12,6 +12,11 @@ import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3, type Group } from 'th
 export const SEG = 32
 
 type Vec3 = [number, number, number]
+
+// A rounded rectangle cut through a slab: its middle at `x`, `z` in the
+// slab's own frame, `w` along x and `d` along z before it turns `turn`
+// radians the way a piece turns on the plan, and `r` its corner radius.
+export type Hole = { x: number; z: number; w: number; d: number; r: number; turn?: number }
 
 export function Material({
   color,
@@ -53,6 +58,7 @@ export function Slab({
   bevel = 0.012,
   position = [0, 0, 0],
   rotation,
+  holes,
   children,
 }: {
   size: Vec3
@@ -60,9 +66,13 @@ export function Slab({
   bevel?: number
   position?: Vec3
   rotation?: Vec3
+  // Openings cut all the way through, for a sink in a worktop.
+  holes?: Hole[]
   children: ReactNode
 }) {
   const [w, h, d] = size
+  // The holes are made again every render, so their numbers are the key.
+  const cut = holes?.map(o => [o.x, o.z, o.w, o.d, o.r, o.turn ?? 0].join(',')).join(';') ?? ''
   const geometry = useMemo(() => {
     const r = Math.min(radius, w / 2 - 0.001, d / 2 - 0.001)
     const b = Math.min(bevel, h / 2 - 0.001, r / 2)
@@ -75,6 +85,15 @@ export function Slab({
       ],
       Math.max(r - b, 0.001),
     )
+    // The bevel grows the solid into each hole too, so a hole is drawn that
+    // much wider to come out its own size.
+    for (const part of cut ? cut.split(';') : []) {
+      const [x, z, hw, hd, hr, turn] = part.split(',').map(Number)
+      const [cos, sin] = [Math.cos(turn), Math.sin(turn)]
+      const at = (px: number, pz: number): [number, number] => [x + px * cos + pz * sin, -(z - px * sin + pz * cos)]
+      const [ax, az] = [hw / 2 + b, hd / 2 + b]
+      shape.holes.push(roundedShape([at(-ax, -az), at(-ax, az), at(ax, az), at(ax, -az)], Math.max(hr + b, 0.001)))
+    }
     const geo = new ExtrudeGeometry(shape, {
       depth: Math.max(h - b * 2, 0.001),
       bevelEnabled: b > 0.002,
@@ -89,9 +108,74 @@ export function Slab({
     geo.rotateX(-Math.PI / 2)
     geo.translate(0, b, 0)
     return geo
-  }, [w, h, d, radius, bevel])
+  }, [w, h, d, radius, bevel, cut])
   return (
     <mesh geometry={geometry} position={position} rotation={rotation} castShadow receiveShadow>
+      {children}
+    </mesh>
+  )
+}
+
+// An open topped box with rounded corners: walls `wall` thick round a
+// hollow, on a floor `floor` thick. A sink, a basin or a bath.
+export function Hollow({
+  size,
+  wall,
+  radius = 0.02,
+  floor = wall,
+  position = [0, 0, 0],
+  children,
+}: {
+  size: Vec3
+  wall: number
+  // The radius of the hollow's corners. The outside is `wall` rounder.
+  radius?: number
+  floor?: number
+  position?: Vec3
+  children: ReactNode
+}) {
+  const [w, , d] = size
+  return (
+    <group position={position}>
+      <Slab
+        size={size}
+        radius={radius + wall}
+        bevel={Math.min(0.004, wall / 3)}
+        holes={[{ x: 0, z: 0, w: w - wall * 2, d: d - wall * 2, r: radius }]}
+      >
+        {children}
+      </Slab>
+      <Slab size={[w - wall, floor, d - wall]} radius={radius + wall / 2} bevel={Math.min(0.003, floor / 3)}>
+        {children}
+      </Slab>
+    </group>
+  )
+}
+
+// A round tube along a smooth curve through the points given: a spout, a
+// hose, a handle.
+export function Tube({
+  points,
+  radius,
+  segments = 48,
+  children,
+}: {
+  points: Vec3[]
+  radius: number
+  segments?: number
+  children: ReactNode
+}) {
+  // The points are made again every render, so their numbers are the key.
+  const key = points.flat().join(',')
+  const geometry = useMemo(() => {
+    const at = key.split(',').map(Number)
+    const curve = new CatmullRomCurve3(
+      Array.from({ length: at.length / 3 }, (_, i) => new Vector3(at[i * 3], at[i * 3 + 1], at[i * 3 + 2])),
+    )
+    return new TubeGeometry(curve, segments, radius, 12, false)
+  }, [key, radius, segments])
+  return (
+    <mesh geometry={geometry} castShadow>
       {children}
     </mesh>
   )

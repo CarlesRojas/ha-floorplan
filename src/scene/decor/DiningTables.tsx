@@ -48,7 +48,19 @@ function prism(bottom: Span, top: Span, h: number) {
   return geo
 }
 
-function Prism({ bottom, top, h, y = 0, children }: { bottom: Span; top: Span; h: number; y?: number; children: ReactNode }) {
+function Prism({
+  bottom,
+  top,
+  h,
+  y = 0,
+  children,
+}: {
+  bottom: Span
+  top: Span
+  h: number
+  y?: number
+  children: ReactNode
+}) {
   const geometry = useMemo(() => prism(bottom, top, h), [bottom, top, h])
   return (
     <mesh geometry={geometry} position={[0, y, 0]} castShadow receiveShadow>
@@ -226,7 +238,12 @@ function Deva({ w, d, h, M }: Omit<Props, 'style'>) {
           {M('frame')}
         </mesh>
       ))}
-      <Slab size={[w - apronIn * 2, apronH, d - apronIn * 2]} radius={DEVA_CORNER} bevel={0.003} position={[0, under - apronH, 0]}>
+      <Slab
+        size={[w - apronIn * 2, apronH, d - apronIn * 2]}
+        radius={DEVA_CORNER}
+        bevel={0.003}
+        position={[0, under - apronH, 0]}
+      >
         {M('frame')}
       </Slab>
       <Slab size={[w, DEVA_BAND, d]} radius={DEVA_CORNER} bevel={0.004} position={[0, under, 0]}>

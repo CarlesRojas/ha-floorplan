@@ -1,11 +1,4 @@
-import {
-  OFFICE_CHAIRS,
-  TECK_ARM,
-  TECK_BACK,
-  TECK_SEAT,
-  TECK_STAR,
-  type Star,
-} from '#/scene/decor/officeChairSpecs.ts'
+import { OFFICE_CHAIRS, TECK_ARM, TECK_BACK, TECK_SEAT, TECK_STAR, type Star } from '#/scene/decor/officeChairSpecs.ts'
 import { Cushion, Slab } from '#/scene/decor/parts.tsx'
 import { bendAround, plate, taperedOutline } from '#/scene/decor/plates.ts'
 import type { Vec3 } from '#/scene/decor/points.ts'

@@ -987,9 +987,27 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Sink',
     'floor',
-    [width(0.55, 0.4, 0.9), depth(0.45, 0.35, 0.6), lift(0.9)],
-    { bowl: SCANDI.slate, tap: SCANDI.slate },
+    [width(0.54, 0.4, 1.2), depth(0.44, 0.35, 0.7), lift(0.9)],
+    { bowl: '#b9bdbf', tap: '#c4c7c8' },
     { bowl: 'metal', tap: 'metal' },
+    undefined,
+    [
+      { id: 'undermount', label: 'Steel Andor' },
+      {
+        id: 'belfast',
+        label: 'Fireclay Hollin',
+        colors: { bowl: '#f2f0ea', tap: '#b08d57' },
+        materials: { bowl: 'ceramic', tap: 'metal' },
+        params: { width: 0.6, depth: 0.5 },
+      },
+      {
+        id: 'inset',
+        label: 'Granite Marra',
+        colors: { bowl: '#56544f', tap: '#2e3133' },
+        materials: { bowl: 'matte', tap: 'metal' },
+        params: { width: 1, depth: 0.5 },
+      },
+    ],
   ),
   kind(
     'microwave',
@@ -1802,9 +1820,10 @@ const SURFACE_TOPS: Record<string, string | number> = {
 
 // Items let into a worktop rather than set on it, and how far their origin
 // moves for it: down into the worktop, or up when the item hangs below its
-// own rim, as a sink does. Never exactly flush, since two surfaces in the
-// same plane fight over which one is drawn.
-const BUILT_IN: Record<string, number> = { hob: 0.01, kitchen_sink: -0.015 }
+// own rim. The hob and the sink both keep their origin on the worktop and
+// draw nothing facing up in its plane, since two surfaces in the same plane
+// fight over which one is drawn. The counter cuts the holes a sink needs.
+const BUILT_IN: Record<string, number> = { hob: 0, kitchen_sink: 0 }
 
 export const isSupport = (kind: DecorationKind) => kind.id in SURFACE_TOPS
 // Anything with a "Standing on" parameter is meant to stand on something.

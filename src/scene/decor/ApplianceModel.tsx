@@ -1,13 +1,16 @@
 import {
   colorValue,
   counterModules,
+  decorationKind,
   decorationVariant,
   materialValue,
   paramValue,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
-import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Cushion, Material, Panel, SEG, Slab, type Hole } from '#/scene/decor/parts.tsx'
+import { Sink } from '#/scene/decor/Sink.tsx'
+import { sinkPlan, sinkStyle } from '#/scene/decor/sinkSpecs.ts'
 import Shower from '#/scene/decor/Shower.tsx'
 import { Dishwasher, Fridge, Hob, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
@@ -17,7 +20,51 @@ import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import type { Group } from 'three'
 
-type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
+type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null; all: DecorationConfig[] }
+
+// The holes the sinks standing on a counter need in it, in the counter's own
+// frame less `offset`, where the part being cut sits. A hole is kept a
+// centimeter inside the part's `size`, so a sink hanging over an edge never
+// splits the part open.
+function sinkHoles(
+  counter: DecorationConfig,
+  all: DecorationConfig[],
+  part: 'worktop' | 'carcass',
+  size: [number, number],
+  offset: [number, number],
+): Hole[] {
+  const turn = (d: DecorationConfig) => ((d.rotation ?? 0) * Math.PI) / 180
+  const rc = turn(counter)
+  const [W, D] = [size[0] / 2 - 0.01, size[1] / 2 - 0.01]
+  return all.flatMap(sink => {
+    if (sink.on !== counter.id || sink.kind !== 'kitchen_sink') return []
+    const kind = decorationKind(sink.kind)
+    if (!kind) return []
+    const v = (id: string) => paramValue(kind, sink.params, id, sink.variant)
+    const plan = sinkPlan(sinkStyle(decorationVariant(kind, sink.variant)?.id), v('width'), v('depth'))
+    const rs = turn(sink)
+    // Plan y runs the other way to the scene's z.
+    const dx = sink.position[0] - counter.position[0]
+    const dz = -(sink.position[1] - counter.position[1])
+    // A quarter turn either way swaps the hole's sides, so it can be kept in
+    // bounds along the counter's own axes.
+    const quarter = Math.round((rs - rc) / (Math.PI / 2))
+    const square = Math.abs(rs - rc - quarter * (Math.PI / 2)) < 0.01
+    return plan[part].flatMap(h => {
+      const hx = dx + h.x * Math.cos(rs) + h.z * Math.sin(rs)
+      const hz = dz - h.x * Math.sin(rs) + h.z * Math.cos(rs)
+      const x = hx * Math.cos(rc) - hz * Math.sin(rc) - offset[0]
+      const z = hx * Math.sin(rc) + hz * Math.cos(rc) - offset[1]
+      if (!square) return [{ ...h, x, z, turn: rs - rc }]
+      const [w, d] = quarter % 2 === 0 ? [h.w, h.d] : [h.d, h.w]
+      const [x0, x1] = [Math.max(x - w / 2, -W), Math.min(x + w / 2, W)]
+      const [z0, z1] = [Math.max(z - d / 2, -D), Math.min(z + d / 2, D)]
+      if (x1 - x0 < 0.02 || z1 - z0 < 0.02) return []
+      const r = Math.min(h.r, (x1 - x0) / 2 - 0.001, (z1 - z0) / 2 - 0.001)
+      return [{ x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0, r }]
+    })
+  })
+}
 
 const LED_ON = '#8fd6a0'
 
@@ -50,7 +97,7 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
 
 // Kitchen, laundry and bathroom fittings. References are plain Nordic
 // cabinetry: handleless chalk fronts, oak worktops, matte ceramics.
-export default function ApplianceModel({ kind, item, state }: Props) {
+export default function ApplianceModel({ kind, item, state, all }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
@@ -83,7 +130,12 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           <Slab size={[w - 0.1, plinth, d - 0.08]} radius={0.01} position={[0, 0, island ? 0 : -0.04]}>
             {M('cabinets')}
           </Slab>
-          <Slab size={[w, h - topH - plinth, d]} radius={0.02} position={[0, plinth, 0]}>
+          <Slab
+            size={[w, h - topH - plinth, d]}
+            radius={0.02}
+            position={[0, plinth, 0]}
+            holes={sinkHoles(item, all, 'carcass', [w, d], [0, 0])}
+          >
             {M('cabinets')}
           </Slab>
           {/* Handleless fronts with a shadow gap between them, each unit a
@@ -115,6 +167,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             size={[w + 0.03, topH, d + (island ? 0.16 : 0.03)]}
             radius={0.015}
             position={[0, h - topH, island ? -0.06 : 0]}
+            holes={sinkHoles(item, all, 'worktop', [w + 0.03, d + (island ? 0.16 : 0.03)], [0, island ? -0.06 : 0])}
           >
             {M('worktop')}
           </Slab>
@@ -243,47 +296,10 @@ export default function ApplianceModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'kitchen_sink': {
-      // An undermount bowl: a rim flush with the worktop, a hollow with a
-      // drain in it and a tall lever tap behind.
-      const w = p('width')
-      const d = p('depth')
-      const wall = 0.035
+    case 'kitchen_sink':
       return (
-        <group>
-          <Slab size={[w, 0.03, d]} radius={0.02} bevel={0.006} position={[0, -0.03, 0]}>
-            {M('bowl')}
-          </Slab>
-          {/* Bowl walls and floor, so the sink reads as hollow. */}
-          <Slab size={[w - wall * 2, 0.13, d - wall * 2]} radius={0.03} bevel={0.008} position={[0, -0.17, 0]}>
-            <Material color="#dfe5e7" material={m('bowl')} />
-          </Slab>
-          <Slab size={[w - wall * 4, 0.1, d - wall * 4]} radius={0.025} bevel={0.006} position={[0, -0.145, 0]}>
-            {M('bowl')}
-          </Slab>
-          <mesh position={[0, -0.14, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.026, 0.026, 0.008, 24]} />
-            {M('tap')}
-          </mesh>
-          {/* A tall tap: a straight riser, a curved neck and a lever. */}
-          <mesh position={[0, 0.14, -d / 2 + 0.05]}>
-            <cylinderGeometry args={[0.016, 0.02, 0.28, 24]} />
-            {M('tap')}
-          </mesh>
-          <mesh position={[0, 0.28, -d / 2 + 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.06, 0.015, 16, 32, Math.PI]} />
-            {M('tap')}
-          </mesh>
-          <mesh position={[0, 0.255, -d / 2 + 0.17]}>
-            <cylinderGeometry args={[0.014, 0.014, 0.04, 20]} />
-            {M('tap')}
-          </mesh>
-          <Bar length={0.07} radius={0.008} rotation={[0.5, 0, Math.PI / 2]} position={[0.035, 0.27, -d / 2 + 0.02]}>
-            {M('tap')}
-          </Bar>
-        </group>
+        <Sink style={sinkStyle(decorationVariant(kind, item.variant)?.id)} w={p('width')} d={p('depth')} fit={fit} />
       )
-    }
     case 'coffee_machine': {
       // An espresso machine: a body with a cup recess, a group head with a
       // portafilter, a steam wand and a cup shelf on top.

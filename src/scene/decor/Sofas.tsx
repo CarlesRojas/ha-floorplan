@@ -194,7 +194,7 @@ export function Sofa({
           size={[SOFA_ARM_W, SOFA_ARM_TOP - SOFA_ARM_BOTTOM, d]}
           round={[0.055, 0.1, 0.14]}
           puff={[0.018, 0.01, 0]}
-          position={[s * (w - SOFA_ARM_W) / 2, (SOFA_ARM_TOP + SOFA_ARM_BOTTOM) / 2, back + d / 2]}
+          position={[(s * (w - SOFA_ARM_W)) / 2, (SOFA_ARM_TOP + SOFA_ARM_BOTTOM) / 2, back + d / 2]}
         >
           {M('upholstery')}
         </Soft>
@@ -213,7 +213,10 @@ export function Sofa({
             </Soft>
             {/* The back cushion stands on the back of the seat and leans on
                 the frame, and the lumbar cushion leans on it. */}
-            <group position={[seatX(i), seatY + SOFA_SEAT_H - settle, seatBack + cushionT]} rotation={[-cushionLean, 0, 0]}>
+            <group
+              position={[seatX(i), seatY + SOFA_SEAT_H - settle, seatBack + cushionT]}
+              rotation={[-cushionLean, 0, 0]}
+            >
               <Soft
                 size={[seatW - 0.02, cushionH, cushionT]}
                 round={[0.07, 0.07, 0.07]}
@@ -248,7 +251,9 @@ export function Sofa({
 export function Pouf({ size, h, M }: { size: number; h: number; M: Slot }) {
   const legH = Math.min(SOFA_LEG_H, h * 0.45)
   const edge = size / 2 - SOFA_LEG_INSET * 0.8
-  const legs: LegAt[] = [-1, 1].flatMap(sx => [-1, 1].map(sz => ({ x: sx * edge, z: sz * edge, out: [sx, sz] as [number, number] })))
+  const legs: LegAt[] = [-1, 1].flatMap(sx =>
+    [-1, 1].map(sz => ({ x: sx * edge, z: sz * edge, out: [sx, sz] as [number, number] })),
+  )
   const blockH = h - legH
   return (
     <group>

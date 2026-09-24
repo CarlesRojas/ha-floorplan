@@ -231,12 +231,7 @@ function GloboCestita({ k, top, c, m, state }: ModelProps) {
         c={c('cord')}
         m={m('cord')}
       />
-      <Canopy
-        diameter={CESTITA_PENDANT_CANOPY[0]}
-        height={CESTITA_PENDANT_CANOPY[1]}
-        c={c('canopy')}
-        m={m('canopy')}
-      />
+      <Canopy diameter={CESTITA_PENDANT_CANOPY[0]} height={CESTITA_PENDANT_CANOPY[1]} c={c('canopy')} m={m('canopy')} />
     </>
   )
 }
