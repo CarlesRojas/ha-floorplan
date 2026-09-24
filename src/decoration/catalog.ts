@@ -779,7 +779,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'storage',
     'Bookshelf',
     'floor',
-    [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4)],
+    // The shelves between the bottom and the top, spaced evenly.
+    [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4), p('shelves', 'Shelves', 4, 0, 8, 1, '')],
     { cabinet: SCANDI.oak, shelves: SCANDI.oak },
     { cabinet: 'wood', shelves: 'wood' },
   ),

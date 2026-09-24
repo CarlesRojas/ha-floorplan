@@ -203,16 +203,17 @@ export default function FurnitureModel({ kind, item }: Props) {
     }
     // Storage
     case 'bookshelf': {
-      // Open case with a back, standing on a recessed plinth. Shelves are
-      // spaced by the height, and what goes on them is the viewer's own
-      // business: the case is drawn empty.
+      // Open case with a back, standing on a recessed plinth. The shelves
+      // are spaced evenly between the bottom and the top, and what goes on
+      // them is the viewer's own business: the case is drawn empty.
       const w = p('width')
       const d = p('depth')
       const h = p('height')
       const plinth = 0.06
       const inner = h - plinth
-      const shelves = Math.max(2, Math.round(inner / 0.36))
-      const gap = inner / shelves
+      // Boards from the bottom, at 0, to the top, at `shelves`.
+      const shelves = Math.round(p('shelves')) + 1
+      const gap = (inner - 0.022) / shelves
       return (
         <group>
           <Slab size={[w - 0.08, plinth, d - 0.06]} radius={0.01} position={[0, 0, 0]}>
@@ -226,9 +227,16 @@ export default function FurnitureModel({ kind, item }: Props) {
           <Slab size={[w - 0.048, inner, 0.012]} radius={0.004} position={[0, plinth, -d / 2 + 0.006]}>
             {M('cabinet')}
           </Slab>
+          {/* The top sits between the sides, flush with their top and front
+              faces, and the shelves below are set back a little. */}
           {Array.from({ length: shelves + 1 }).map((_, i) => (
-            <Slab key={i} size={[w - 0.048, 0.022, d - 0.02]} radius={0.006} position={[0, plinth + gap * i, 0]}>
-              {M('shelves')}
+            <Slab
+              key={i}
+              size={[w - 0.048, 0.022, i === shelves ? d : d - 0.02]}
+              radius={0.006}
+              position={[0, i === shelves ? h - 0.022 : plinth + gap * i, 0]}
+            >
+              {M(i === shelves ? 'cabinet' : 'shelves')}
             </Slab>
           ))}
         </group>
