@@ -1,4 +1,4 @@
-import { Bar, Led, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Led, Material, Panel, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ReactNode } from 'react'
 
@@ -624,6 +624,214 @@ export function CeilingExtractor({ w, d, fit }: { w: number; d: number; fit: Fit
           <meshStandardMaterial color={c('panel')} emissive="#ffe2b8" emissiveIntensity={1.8 * level * lit} />
         </mesh>
       ))}
+    </group>
+  )
+}
+
+// An espresso machine after the La Marzocco Linea Mini, 36 by 45 by 38 cm:
+// a steel box on short feet with colored side panels, the group head under
+// its front, a portafilter with a wooden handle and a paddle over it, a
+// steam wand on the right and a hot water tap on the left, a drip tray in
+// the recess below and a rail round the cup tray on top.
+export function CoffeeMachine({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const feet = 0.015
+  const body = h - feet
+  // The recess the cups stand in, under the head, as a share of the depth.
+  const recess = d * 0.3
+  // The cups stand under the head at the same height however tall the
+  // machine is made; only the box above it grows.
+  const headY = feet + Math.min(body * 0.5, 0.19)
+  const side = 0.012
+  const group = Math.min(0.036, w * 0.1)
+  const slots = Math.max(2, Math.floor((w - 0.06) / 0.02))
+  return (
+    <group>
+      {[-1, 1].flatMap(sx =>
+        [-1, 1].map(sz => (
+          <mesh key={`${sx}${sz}`} position={[sx * (w / 2 - 0.04), feet / 2, sz * (d / 2 - 0.05)]}>
+            <cylinderGeometry args={[0.012, 0.014, feet, 16]} />
+            {M('steel')}
+          </mesh>
+        )),
+      )}
+      {/* The back block, full height, and the head over the recess. */}
+      <Slab size={[w - side * 2, body, d - recess]} radius={0.01} bevel={0.004} position={[0, feet, -recess / 2]}>
+        {M('steel')}
+      </Slab>
+      <Slab
+        size={[w - side * 2, body - (headY - feet), recess]}
+        radius={0.01}
+        bevel={0.004}
+        position={[0, headY, d / 2 - recess / 2]}
+      >
+        {M('steel')}
+      </Slab>
+      {/* The colored side panels. */}
+      {[-1, 1].map(s => (
+        <Slab key={s} size={[side, body, d]} radius={0.004} bevel={0.002} position={[s * (w / 2 - side / 2), feet, 0]}>
+          {M('body')}
+        </Slab>
+      ))}
+      {/* The drip tray, a grate over the base of the recess. */}
+      <Slab
+        size={[w - side * 2 - 0.01, 0.03, recess - 0.01]}
+        radius={0.006}
+        bevel={0.002}
+        position={[0, feet, d / 2 - recess / 2]}
+      >
+        {M('steel')}
+      </Slab>
+      {Array.from({ length: slots }, (_, i) => (
+        <mesh key={i} position={[-(slots - 1) * 0.01 + i * 0.02, feet + 0.0305, d / 2 - recess / 2]}>
+          <boxGeometry args={[0.004, 0.001, recess - 0.03]} />
+          <meshStandardMaterial color="#1c1f21" roughness={0.6} />
+        </mesh>
+      ))}
+      {/* The group head, the portafilter hanging from it and its handle. */}
+      <group position={[0, headY, d / 2 - recess * 0.45]}>
+        <mesh position={[0, -0.012, 0]}>
+          <cylinderGeometry args={[group, group * 1.05, 0.024, SEG]} />
+          {M('steel')}
+        </mesh>
+        <mesh position={[0, -0.04, 0]}>
+          <cylinderGeometry args={[group * 1.02, group * 0.9, 0.032, SEG]} />
+          {M('steel')}
+        </mesh>
+        <Tube
+          radius={0.012}
+          points={[
+            [0, -0.04, group * 0.8],
+            [0, -0.045, group + 0.05],
+            [0, -0.055, group + 0.12],
+          ]}
+        >
+          {M('wood')}
+        </Tube>
+      </group>
+      {/* The brew paddle on top of the head. */}
+      <Bar
+        length={0.07}
+        radius={0.007}
+        rotation={[0, 0, Math.PI / 2 - 0.3]}
+        position={[0.02, feet + body + 0.012, d / 2 - recess * 0.45]}
+      >
+        {M('wood')}
+      </Bar>
+      {/* The steam wand on the right and the hot water tap on the left, each
+          with its wooden knob on the side panel. */}
+      {[-1, 1].map(s => (
+        <group key={s}>
+          <Tube
+            radius={0.0055}
+            points={[
+              [s * (w / 2 - side - 0.03), headY + 0.01, d / 2 - 0.02],
+              [s * (w / 2 - side - 0.025), headY - 0.02, d / 2 + 0.01],
+              [s * (w / 2 - side - 0.02), headY - (s > 0 ? 0.14 : 0.06), d / 2 + 0.025],
+            ]}
+          >
+            {M('steel')}
+          </Tube>
+          <mesh
+            position={[s * (w / 2 + 0.012), headY + body * 0.25, d / 2 - recess * 0.5]}
+            rotation={[0, 0, Math.PI / 2]}
+          >
+            <cylinderGeometry args={[0.018, 0.02, 0.024, SEG]} />
+            {M('wood')}
+          </mesh>
+        </group>
+      ))}
+      {/* The rail round the cup tray on top. */}
+      {[-1, 1].map(s => (
+        <Bar
+          key={s}
+          length={d - 0.06}
+          radius={0.004}
+          rotation={[Math.PI / 2, 0, 0]}
+          position={[s * (w / 2 - side - 0.01), feet + body + 0.02, 0]}
+        >
+          {M('steel')}
+        </Bar>
+      ))}
+      <Bar
+        length={w - side * 2 - 0.02}
+        radius={0.004}
+        rotation={[0, 0, Math.PI / 2]}
+        position={[0, feet + body + 0.02, -d / 2 + 0.03]}
+      >
+        {M('steel')}
+      </Bar>
+      <Led on={fit.on} radius={0.005} position={[-w / 2 + side + 0.03, headY + body * 0.3, d / 2 + 0.001]} />
+    </group>
+  )
+}
+
+// A pour over kettle after the Fellow Stagg EKG: a squat drum with a flat
+// lid and a tall knob, a thin gooseneck spout rising from low on its front,
+// a tall hoop handle behind, on a round base with a dial. `size` is the
+// drum's width, and everything else follows it.
+export function Kettle({ size, fit }: { size: number; fit: Fit }) {
+  const { M, c, m, lit } = fit
+  const r = size / 2
+  const base = r * 0.22
+  const h = r * 1.35
+  const top = base + h
+  return (
+    <group>
+      <mesh position={[0, base / 2, 0]}>
+        <cylinderGeometry args={[r * 1.12, r * 1.16, base, SEG * 2]} />
+        {M('body')}
+      </mesh>
+      {/* The dial on the front of the base, with a ring that glows while
+          it heats. */}
+      <mesh position={[0, base / 2, r * 1.15]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[base * 0.35, base * 0.35, r * 0.1, 24]} />
+        {M('fittings')}
+      </mesh>
+      <mesh position={[0, base + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[r * 1.02, r * 1.1, SEG * 2]} />
+        <meshStandardMaterial color={c('body')} emissive="#ff9a55" emissiveIntensity={1.2 * lit} />
+      </mesh>
+      <mesh position={[0, base + h / 2, 0]} castShadow>
+        <cylinderGeometry args={[r * 0.97, r, h, SEG * 2]} />
+        {M('body')}
+      </mesh>
+      {/* The lid, a touch inset, and its tall knob. */}
+      <mesh position={[0, top + r * 0.03, 0]}>
+        <cylinderGeometry args={[r * 0.8, r * 0.84, r * 0.06, SEG * 2]} />
+        {M('body')}
+      </mesh>
+      <mesh position={[0, top + r * 0.06 + r * 0.2, 0]}>
+        <cylinderGeometry args={[r * 0.1, r * 0.13, r * 0.4, 24]} />
+        {M('fittings')}
+      </mesh>
+      {/* The gooseneck, out from low on the drum, up and over. */}
+      <Tube
+        radius={r * 0.07}
+        points={[
+          [r * 0.85, base + h * 0.15, 0],
+          [r * 1.25, base + h * 0.35, 0],
+          [r * 1.45, base + h * 0.85, 0],
+          [r * 1.62, base + h * 1.15, 0],
+          [r * 1.9, base + h * 1.1, 0],
+          [r * 2.05, base + h * 0.98, 0],
+        ]}
+      >
+        <Material color={c('body')} material={m('body')} />
+      </Tube>
+      {/* The handle, a tall hoop off the back. */}
+      <Tube
+        radius={r * 0.1}
+        points={[
+          [-r * 0.9, base + h * 0.95, 0],
+          [-r * 1.4, base + h * 1.1, 0],
+          [-r * 1.62, base + h * 0.7, 0],
+          [-r * 1.5, base + h * 0.2, 0],
+          [-r * 0.95, base + h * 0.15, 0],
+        ]}
+      >
+        {M('fittings')}
+      </Tube>
     </group>
   )
 }

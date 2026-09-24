@@ -256,58 +256,58 @@ rooms:
     name: "Coffee machine"
     points:
       - [14.5, 13.35]
-      - [15.72, 13.35]
-      - [15.72, 14.75]
-      - [14.5, 14.75]
+      - [15.86, 13.35]
+      - [15.86, 14.8]
+      - [14.5, 14.8]
   - id: kettle
     name: "Kettle"
     points:
-      - [14.5, 15.15]
-      - [15.66, 15.15]
-      - [15.66, 16.55]
-      - [14.5, 16.55]
+      - [14.5, 15.2]
+      - [15.65, 15.2]
+      - [15.65, 16.6]
+      - [14.5, 16.6]
   - id: washing_machine
     name: "Washing machine"
     points:
-      - [14.5, 16.95]
-      - [16.1, 16.95]
-      - [16.1, 18.55]
-      - [14.5, 18.55]
+      - [14.5, 17]
+      - [16.1, 17]
+      - [16.1, 18.6]
+      - [14.5, 18.6]
   - id: dryer
     name: "Dryer"
     points:
-      - [14.5, 18.95]
-      - [16.1, 18.95]
-      - [16.1, 20.55]
-      - [14.5, 20.55]
+      - [14.5, 19]
+      - [16.1, 19]
+      - [16.1, 20.6]
+      - [14.5, 20.6]
   - id: toilet
     name: "Toilet"
     points:
-      - [14.5, 20.95]
-      - [15.88, 20.95]
-      - [15.88, 22.65]
-      - [14.5, 22.65]
+      - [14.5, 21]
+      - [15.88, 21]
+      - [15.88, 22.7]
+      - [14.5, 22.7]
   - id: basin
     name: "Basin"
     points:
-      - [14.5, 23.05]
-      - [16.1, 23.05]
-      - [16.1, 24.5]
-      - [14.5, 24.5]
+      - [14.5, 23.1]
+      - [16.1, 23.1]
+      - [16.1, 24.55]
+      - [14.5, 24.55]
   - id: bathtub
     name: "Bathtub"
     points:
-      - [14.5, 24.9]
-      - [16.3, 24.9]
-      - [16.3, 27.6]
-      - [14.5, 27.6]
+      - [14.5, 24.95]
+      - [16.3, 24.95]
+      - [16.3, 27.65]
+      - [14.5, 27.65]
   - id: shower
     name: "Shower"
     points:
-      - [14.5, 28]
-      - [16.4, 28]
-      - [16.4, 29.9]
-      - [14.5, 29.9]
+      - [14.5, 28.05]
+      - [16.4, 28.05]
+      - [16.4, 29.95]
+      - [14.5, 29.95]
   - id: towel_rail
     name: "Towel rail"
     points:
@@ -919,35 +919,35 @@ decorations:
   - id: coffee_machine
     kind: coffee_machine
     room: coffee_machine
-    position: [15.11, 14.05]
+    position: [15.18, 14.08]
   - id: kettle
     kind: kettle
     room: kettle
-    position: [15.08, 15.85]
+    position: [15.08, 15.9]
   - id: washing_machine
     kind: washing_machine
     room: washing_machine
-    position: [15.3, 17.75]
+    position: [15.3, 17.8]
   - id: dryer
     kind: dryer
     room: dryer
-    position: [15.3, 19.75]
+    position: [15.3, 19.8]
   - id: toilet
     kind: toilet
     room: toilet
-    position: [15.19, 21.8]
+    position: [15.19, 21.85]
   - id: basin
     kind: basin
     room: basin
-    position: [15.3, 23.78]
+    position: [15.3, 23.83]
   - id: bathtub
     kind: bathtub
     room: bathtub
-    position: [15.4, 26.25]
+    position: [15.4, 26.3]
   - id: shower
     kind: shower
     room: shower
-    position: [15.45, 28.95]
+    position: [15.45, 29]
   - id: towel_rail
     kind: towel_rail
     room: towel_rail

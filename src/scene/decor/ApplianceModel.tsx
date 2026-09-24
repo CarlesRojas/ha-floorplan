@@ -12,7 +12,18 @@ import { Bar, Cushion, Material, Panel, SEG, Slab, type Hole } from '#/scene/dec
 import { Sink } from '#/scene/decor/Sink.tsx'
 import { sinkPlan, sinkStyle } from '#/scene/decor/sinkSpecs.ts'
 import Shower from '#/scene/decor/Shower.tsx'
-import { CeilingExtractor, Dishwasher, Fridge, Hob, Hood, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
+import {
+  CeilingExtractor,
+  CoffeeMachine,
+  Dishwasher,
+  Fridge,
+  Hob,
+  Hood,
+  Kettle,
+  Microwave,
+  Oven,
+  type Fit,
+} from '#/scene/decor/Kitchen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
@@ -227,91 +238,10 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       return (
         <Sink style={sinkStyle(decorationVariant(kind, item.variant)?.id)} w={p('width')} d={p('depth')} fit={fit} />
       )
-    case 'coffee_machine': {
-      // An espresso machine: a body with a cup recess, a group head with a
-      // portafilter, a steam wand and a cup shelf on top.
-      const s = p('size')
-      const h = p('height')
-      return (
-        <group>
-          <Slab size={[s, h * 0.75, s * 0.9]} radius={0.025} bevel={0.01} position={[0, 0, 0]}>
-            {M('body')}
-          </Slab>
-          {/* The cup recess, cut out of the lower front. */}
-          <mesh position={[0, h * 0.14, s * 0.32]}>
-            <boxGeometry args={[s * 0.6, h * 0.28, s * 0.3]} />
-            <Material color="#2f3336" material="matte" />
-          </mesh>
-          <mesh position={[0, 0.012, s * 0.32]}>
-            <boxGeometry args={[s * 0.58, 0.012, s * 0.28]} />
-            {M('fittings')}
-          </mesh>
-          {/* Group head and portafilter handle. */}
-          <mesh position={[0, h * 0.44, s * 0.4]}>
-            <cylinderGeometry args={[s * 0.16, s * 0.18, 0.05, SEG]} />
-            {M('fittings')}
-          </mesh>
-          <Bar length={s * 0.34} radius={0.012} rotation={[Math.PI / 2, 0, 0]} position={[0, h * 0.42, s * 0.58]}>
-            <Material color={c('fittings')} material="matte" />
-          </Bar>
-          {/* Steam wand on the side. */}
-          <mesh position={[s * 0.42, h * 0.5, s * 0.3]} rotation={[0.5, 0, 0.2]}>
-            <cylinderGeometry args={[0.007, 0.009, s * 0.5, 16]} />
-            {M('fittings')}
-          </mesh>
-          {/* Warming shelf and water tank behind it. */}
-          <Slab size={[s, h * 0.25, s * 0.5]} radius={0.02} bevel={0.008} position={[0, h * 0.75, -s * 0.2]}>
-            {M('body')}
-          </Slab>
-          <mesh position={[0, h * 0.755, s * 0.16]}>
-            <boxGeometry args={[s * 0.8, 0.008, s * 0.28]} />
-            {M('fittings')}
-          </mesh>
-          <Led on={on} position={[s * 0.3, h * 0.6, s * 0.46]} />
-        </group>
-      )
-    }
-    case 'kettle': {
-      // A stoneware style kettle on its power base: a tapered body, a
-      // gooseneck spout, a lid knob and a handle.
-      const r = p('size') / 2
-      const h = r * 2.4
-      return (
-        <group>
-          <mesh position={[0, 0.012, 0]}>
-            <cylinderGeometry args={[r * 1.05, r * 1.1, 0.024, SEG * 2]} />
-            {M('fittings')}
-          </mesh>
-          <mesh position={[0, 0.024 + h / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.8, r, h, SEG * 2]} />
-            <Material color={c('body')} material={m('body')} emissive={[1, 0.6, 0.3]} emissiveIntensity={0.25 * lit} />
-          </mesh>
-          {/* Lid and knob. */}
-          <mesh position={[0, h + 0.03, 0]}>
-            <cylinderGeometry args={[r * 0.78, r * 0.82, 0.02, SEG * 2]} />
-            {M('fittings')}
-          </mesh>
-          <mesh position={[0, h + 0.05, 0]}>
-            <sphereGeometry args={[r * 0.16, 20, 16]} />
-            {M('fittings')}
-          </mesh>
-          {/* Gooseneck spout, rising and curling forward. */}
-          <mesh position={[r * 0.72, h * 0.55, 0]} rotation={[0, 0, -0.25]}>
-            <cylinderGeometry args={[r * 0.1, r * 0.13, h * 0.75, 20]} />
-            <Material color={c('body')} material={m('body')} />
-          </mesh>
-          <mesh position={[r * 0.98, h * 0.95, 0]} rotation={[Math.PI / 2, 0, 0.6]}>
-            <torusGeometry args={[r * 0.28, r * 0.09, 12, 24, Math.PI * 0.8]} />
-            <Material color={c('body')} material={m('body')} />
-          </mesh>
-          {/* Handle, a loop off the back. */}
-          <mesh position={[-r * 0.95, h * 0.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.5, r * 0.09, 12, 28, Math.PI]} />
-            {M('fittings')}
-          </mesh>
-        </group>
-      )
-    }
+    case 'coffee_machine':
+      return <CoffeeMachine w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
+    case 'kettle':
+      return <Kettle size={p('size')} fit={fit} />
     // Laundry
     case 'washing_machine':
     case 'dryer': {
