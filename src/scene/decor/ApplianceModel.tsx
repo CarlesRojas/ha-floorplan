@@ -340,14 +340,17 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
         />
       )
     case 'towel_rail': {
-      // A heated ladder rail: two uprights and evenly spaced bars, with a
-      // towel folded over one of them.
+      // A heated towel rail after the Zehnder Forma: two flat uprights and
+      // round tubes between them in groups of four, with a gap between the
+      // groups to hang a towel through. The height param is where its top
+      // is hung, and it reaches down to 15 cm off the floor, up to 1.7 m
+      // long, with as many groups as fit.
       const w = p('width')
-      // The height param is where the rail is hung, so the ladder drops from
-      // it and never reaches past the floor.
-      const h = Math.min(p('height') - 0.1, 0.95)
-      const bars = Math.max(3, Math.round(h / 0.16))
-      const gap = h / (bars + 1)
+      const h = Math.min(p('height') - 0.15, 1.7)
+      const pitch = 0.034
+      const groups = Math.max(1, Math.round(h / 0.3))
+      const span = h / groups
+      const tube = 0.0115
       const glow = (
         <Material
           color={c('rail')}
@@ -356,39 +359,41 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
           emissiveIntensity={0.5 * level * lit}
         />
       )
+      // The tubes of each group, from the top of it down.
+      const bars = Array.from({ length: groups }, (_, g) =>
+        [0, 1, 2, 3].map(i => h - span * g - 0.04 - i * pitch),
+      ).flat()
+      const hangAt = groups > 1 ? h - span - 0.04 : h - 0.04
+      const towel = Math.min(0.42, h * 0.4)
       return (
         <group position={[0, -h, 0]}>
           {[-1, 1].map(s => (
-            <mesh key={s} position={[(s * (w - 0.03)) / 2, h / 2, 0.055]}>
-              <cylinderGeometry args={[0.014, 0.014, h, 20]} />
+            <Slab
+              key={s}
+              size={[0.03, h, 0.036]}
+              radius={0.012}
+              bevel={0.004}
+              position={[s * (w / 2 - 0.015), 0, 0.055]}
+            >
               {glow}
-            </mesh>
+            </Slab>
           ))}
           {/* Wall brackets, top and bottom. */}
           {[-1, 1].flatMap(s =>
-            [0.12, h - 0.12].map(y => (
-              <mesh key={`${s}:${y}`} position={[(s * (w - 0.03)) / 2, y, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.012, 0.012, 0.07, 16]} />
+            [0.1, h - 0.1].map(y => (
+              <mesh key={`${s}:${y}`} position={[s * (w / 2 - 0.015), y, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.01, 0.01, 0.07, 16]} />
                 {M('rail')}
               </mesh>
             )),
           )}
-          {Array.from({ length: bars }).map((_, i) => (
-            <Bar
-              key={i}
-              length={w - 0.03}
-              radius={0.011}
-              rotation={[0, 0, Math.PI / 2]}
-              position={[0, gap * (i + 1), 0.055]}
-            >
+          {bars.map(y => (
+            <Bar key={y} length={w - 0.03} radius={tube} rotation={[0, 0, Math.PI / 2]} position={[0, y, 0.055]}>
               {glow}
             </Bar>
           ))}
-          {/* A towel folded over the second bar from the top. */}
-          <Cushion
-            size={[w * 0.42, Math.min(0.42, h * 0.4), 0.07]}
-            position={[w * 0.16, gap * (bars - 1) - Math.min(0.42, h * 0.4) / 2, 0.085]}
-          >
+          {/* A towel folded over the top tube of the second group. */}
+          <Cushion size={[w * 0.5, towel, 0.06]} position={[w * 0.12, hangAt - towel / 2 + 0.02, 0.07]}>
             <Material color={c('towel')} material={m('towel')} />
           </Cushion>
         </group>
