@@ -1,11 +1,11 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useTravel } from '#/scene/decor/ease.ts'
-import { Bar, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Material, Panel, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
 import { FloorPlant, ShelfPlant, WallPlant } from '#/scene/decor/Plants.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
-import { useMemo } from 'react'
-import { LatheGeometry, Vector2 } from 'three'
+import { useLayoutEffect, useMemo, useRef } from 'react'
+import { Euler, InstancedMesh, LatheGeometry, Matrix4, Quaternion, Vector2, Vector3 } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
@@ -28,6 +28,39 @@ function Leaf({
       <sphereGeometry args={[0.5, 20, 12]} />
       {children}
     </mesh>
+  )
+}
+
+// The fringe along both short ends of a rug, one instanced mesh however
+// long the rug is, so a wide one does not cost a mesh per tuft.
+function Fringe({ width, depth, children }: { width: number; depth: number; children: React.ReactNode }) {
+  const tufts = Math.max(6, Math.round(width / 0.03))
+  const mesh = useRef<InstancedMesh>(null)
+  useLayoutEffect(() => {
+    const fringe = mesh.current
+    if (!fringe) return
+    const place = new Matrix4()
+    const turn = new Euler()
+    const one = new Vector3(1, 1, 1)
+    for (let i = 0; i < tufts * 2; i++) {
+      const s = i < tufts ? -1 : 1
+      const k = i % tufts
+      turn.set(Math.PI / 2, 0, ((k % 3) - 1) * 0.08)
+      place.compose(
+        new Vector3(-width / 2 + ((k + 0.5) * width) / tufts, 0.006, s * (depth / 2 + 0.028)),
+        new Quaternion().setFromEuler(turn),
+        one,
+      )
+      fringe.setMatrixAt(i, place)
+    }
+    fringe.instanceMatrix.needsUpdate = true
+    fringe.computeBoundingSphere()
+  }, [tufts, width, depth])
+  return (
+    <instancedMesh key={tufts} ref={mesh} args={[undefined, undefined, tufts * 2]}>
+      <capsuleGeometry args={[0.004, 0.05, 4, 10]} />
+      {children}
+    </instancedMesh>
   )
 }
 
@@ -89,7 +122,6 @@ export default function DecorModel({ kind, item, state }: Props) {
       const w = p('width')
       const d = p('depth')
       const band = Math.min(0.12, Math.min(w, d) * 0.12)
-      const tufts = Math.max(6, Math.round(w / 0.06))
       return (
         <group>
           <Slab size={[w, 0.011, d]} radius={0.02} bevel={0.004} position={[0, 0.001, 0]}>
@@ -109,18 +141,9 @@ export default function DecorModel({ kind, item, state }: Props) {
             </mesh>
           ))}
           {/* Fringes, on the short ends only. */}
-          {[-1, 1].flatMap(s =>
-            Array.from({ length: tufts }).map((_, i) => (
-              <mesh
-                key={`f${s}:${i}`}
-                position={[-w / 2 + ((i + 0.5) * w) / tufts, 0.006, s * (d / 2 + 0.028)]}
-                rotation={[Math.PI / 2, 0, ((i % 3) - 1) * 0.08]}
-              >
-                <capsuleGeometry args={[0.004, 0.05, 4, 10]} />
-                <Material color={c('field')} material={m('field')} />
-              </mesh>
-            )),
-          )}
+          <Fringe width={w} depth={d}>
+            <Material color={c('field')} material={m('field')} />
+          </Fringe>
         </group>
       )
     }
@@ -136,8 +159,10 @@ export default function DecorModel({ kind, item, state }: Props) {
       const h = w * p('ratio')
       const bar = Math.min(0.05, Math.min(w, h) * 0.09)
       const mount = bar * 1.4
+      // Centered on the height set, but raised when it would reach the floor.
+      const up = Math.max(0, h / 2 + 0.02 - p('height'))
       return (
-        <group position={[0, -h / 2, 0]}>
+        <group position={[0, -h / 2 + up, 0]}>
           {/* Backing board, so the frame is never see through. */}
           <mesh position={[0, h / 2, 0.006]}>
             <planeGeometry args={[w - bar, h - bar]} />
@@ -151,12 +176,13 @@ export default function DecorModel({ kind, item, state }: Props) {
             <planeGeometry args={[w - bar * 2 - mount * 2, h - bar * 2 - mount * 2]} />
             <Material color={c('art')} material={m('art')} />
           </mesh>
-          {/* The four frame members, mitred by overlap at the corners. */}
+          {/* The four frame members, mitred by overlap at the corners. A panel
+              sits on its position, so each is set by its lower edge. */}
           {[-1, 1].map(s => (
             <Panel
               key={`h${s}`}
               size={[w, bar, 0.026]}
-              position={[0, h / 2 + (s * (h - bar)) / 2, 0.013]}
+              position={[0, h / 2 + (s * (h - bar)) / 2 - bar / 2, 0.013]}
               radius={0.004}
             >
               <Material color={c('frame')} material={m('frame')} />
@@ -166,7 +192,7 @@ export default function DecorModel({ kind, item, state }: Props) {
             <Panel
               key={`v${s}`}
               size={[bar, h - bar * 2, 0.026]}
-              position={[(s * (w - bar)) / 2, h / 2, 0.013]}
+              position={[(s * (w - bar)) / 2, bar, 0.013]}
               radius={0.004}
             >
               <Material color={c('frame')} material={m('frame')} />
@@ -179,8 +205,9 @@ export default function DecorModel({ kind, item, state }: Props) {
       // A slim ring frame with the glass set inside it, not behind a slab.
       const r = p('size') / 2
       const ring = Math.min(0.03, r * 0.12)
+      const up = Math.max(0, r + 0.02 - p('height'))
       return (
-        <group>
+        <group position={[0, up, 0]}>
           <mesh position={[0, 0, 0.022]}>
             <torusGeometry args={[r - ring, ring, 20, SEG * 2]} />
             <Material color={c('frame')} material={m('frame')} />
@@ -195,8 +222,9 @@ export default function DecorModel({ kind, item, state }: Props) {
     case 'wall_clock': {
       const r = p('size') / 2
       const ring = Math.min(0.016, r * 0.1)
+      const up = Math.max(0, r + 0.02 - p('height'))
       return (
-        <group>
+        <group position={[0, up, 0]}>
           <mesh position={[0, 0, 0.02]}>
             <torusGeometry args={[r - ring, ring, 16, SEG * 2]} />
             <Material color={c('rim')} material={m('rim')} />
@@ -214,17 +242,17 @@ export default function DecorModel({ kind, item, state }: Props) {
                 position={[Math.sin(a) * (r - ring * 2.4), Math.cos(a) * (r - ring * 2.4), 0.027]}
                 rotation={[0, 0, -a]}
               >
-                <boxGeometry args={[0.006, r * 0.14, 0.004]} />
+                <boxGeometry args={[r * 0.04, r * 0.14, 0.004]} />
                 <Material color={c('rim')} material={m('rim')} />
               </mesh>
             )
           })}
           <mesh position={[Math.sin(0.2) * r * 0.25, Math.cos(0.2) * r * 0.25, 0.03]} rotation={[0, 0, -0.2]}>
-            <boxGeometry args={[0.008, r * 0.5, 0.005]} />
+            <boxGeometry args={[r * 0.05, r * 0.5, 0.005]} />
             <Material color={c('hands')} material={m('hands')} />
           </mesh>
           <mesh position={[r * 0.19, 0, 0.032]} rotation={[0, 0, Math.PI / 2]}>
-            <boxGeometry args={[0.007, r * 0.38, 0.005]} />
+            <boxGeometry args={[r * 0.045, r * 0.38, 0.005]} />
             <Material color={c('hands')} material={m('hands')} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.034]}>
@@ -247,25 +275,28 @@ export default function DecorModel({ kind, item, state }: Props) {
           )}
           {Array.from({ length: stems }).map((_, i) => {
             const a = i * 2.39
-            const lean = 0.18 + (i % 3) * 0.08
             const top = h * (1.3 + (i % 2) * 0.22)
             const reach = r * (0.5 + (i % 3) * 0.45)
+            const out = (k: number): [number, number] => [Math.cos(a) * k, Math.sin(a) * k]
+            // Each stem rises from inside the vase straight up through the
+            // neck, then bends out to where its flower is.
+            const [x0, z0] = out(r * 0.12)
+            const [x1, z1] = out(r * 0.3)
+            const [x2, z2] = out(reach)
             return (
               <group key={i}>
-                <Bar
-                  length={top - h * 0.85}
-                  radius={0.005}
-                  position={[(Math.cos(a) * reach) / 2, (h * 0.85 + top) / 2, (Math.sin(a) * reach) / 2]}
-                  rotation={[Math.sin(a) * lean, 0, -Math.cos(a) * lean]}
+                <Tube
+                  points={[
+                    [x0, h * 0.7, z0],
+                    [x1, h * 1.02, z1],
+                    [x2, top, z2],
+                  ]}
+                  radius={Math.min(0.005, r * 0.05)}
+                  segments={16}
                 >
                   <Material color={c('stems')} material={m('stems')} />
-                </Bar>
-                <Leaf
-                  length={r * 0.9}
-                  width={r * 0.4}
-                  position={[Math.cos(a) * reach, top, Math.sin(a) * reach]}
-                  rotation={[0, -a + Math.PI / 2, 0.9]}
-                >
+                </Tube>
+                <Leaf length={r * 0.9} width={r * 0.4} position={[x2, top, z2]} rotation={[0, -a + Math.PI / 2, 0.9]}>
                   <Material color={c('flowers')} material={m('flowers')} doubleSide />
                 </Leaf>
               </group>
@@ -275,20 +306,25 @@ export default function DecorModel({ kind, item, state }: Props) {
       )
     }
     case 'books': {
+      // A stack of books as tall as set, each a little out of line with
+      // the one under it and a little smaller or larger, never shrinking
+      // away to nothing however many there are.
       const w = p('width')
       const h = p('height')
-      const count = Math.max(2, Math.round(h / 0.045))
+      const count = Math.max(1, Math.round(h / 0.042))
+      const step = h / count
+      const trims = [0, 0.07, 0.03, 0.1, 0.05]
       return (
         <group>
           {Array.from({ length: count }).map((_, i) => {
-            const shrink = i * 0.012
+            const trim = 1 - trims[i % trims.length]
             return (
               <Slab
                 key={i}
-                size={[w - shrink, 0.038, w * 0.72 - shrink]}
-                radius={0.006}
-                bevel={0.003}
-                position={[((i % 2) - 0.5) * 0.012, i * 0.042, ((i % 3) - 1) * 0.008]}
+                size={[w * trim, step - 0.004, w * 0.72 * trim]}
+                radius={Math.min(0.006, w * 0.03)}
+                bevel={Math.min(0.003, step * 0.08)}
+                position={[((i % 2) - 0.5) * w * 0.04, i * step, ((i % 3) - 1) * w * 0.03]}
               >
                 <Material color={c('covers')} material={m('covers')} />
               </Slab>
@@ -301,6 +337,9 @@ export default function DecorModel({ kind, item, state }: Props) {
       // A woven seagrass basket: flared body, rolled rim and two cut handles.
       const r = p('size') / 2
       const h = p('height')
+      // The rim and handles are cane, as thick as a small basket allows.
+      const rim = Math.min(0.022, r * 0.08, h * 0.08)
+      const cane = Math.min(0.014, r * 0.05)
       return (
         <group>
           <mesh position={[0, h / 2, 0]} castShadow>
@@ -312,17 +351,17 @@ export default function DecorModel({ kind, item, state }: Props) {
             <Material color={c('weave')} material={m('weave')} />
           </mesh>
           <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.022, 16, SEG * 2]} />
+            <torusGeometry args={[r, rim, 16, SEG * 2]} />
             <Material color={c('weave')} material={m('weave')} />
           </mesh>
           {/* Handles, arching out of the rim on opposite sides. */}
           {[-1, 1].map(s => (
             <mesh
               key={s}
-              position={[s * r * 0.98, h - 0.02, 0]}
+              position={[s * r * 0.98, h - rim, 0]}
               rotation={[Math.PI / 2, 0, s > 0 ? -Math.PI / 2 : Math.PI / 2]}
             >
-              <torusGeometry args={[Math.min(0.07, h * 0.28), 0.014, 12, 28, Math.PI]} />
+              <torusGeometry args={[Math.min(0.07, h * 0.28, r * 0.35), cane, 12, 28, Math.PI]} />
               <Material color={c('weave')} material={m('weave')} />
             </mesh>
           ))}
@@ -330,35 +369,61 @@ export default function DecorModel({ kind, item, state }: Props) {
       )
     }
     case 'curtain': {
-      // Two pleated linen panels on a slim rail, parting as the cover opens.
+      // After IKEA's Hilja panels on a Räcka rod: a slim rod on two wall
+      // brackets with a ball at each end, and two pleated linen panels
+      // hanging from rings to just off the floor. Opening gathers each
+      // panel toward its own end of the rod, and never past it.
       const w = p('width')
-      const h = 2.1
-      const part = (w / 2) * 0.55 * level
-      // The panels are cut once at their widest and gathered by scaling, so
-      // nothing is rebuilt while they draw.
-      const full = w / 2
-      const gather = 1 - 0.4 * (part / full)
-      const pleats = Math.max(4, Math.round(full / 0.14))
+      // The rod is at the height set, so the drop is all the way down.
+      const drop = Math.max(p('height') - 0.015, 0.2)
+      const rod = w + 0.2
+      const z = 0.075
+      // Each panel, laid out from its outer end, reaches the middle when
+      // shut and bunches to a third of that when open.
+      const full = w / 2 + 0.06
+      const gather = 1 - 0.66 * level
+      const pleats = Math.max(4, Math.round(full / 0.12))
+      const pitch = (full * gather) / pleats
       return (
-        <group position={[0, -h, 0]}>
-          <Bar length={w + 0.12} radius={0.012} rotation={[0, 0, Math.PI / 2]} position={[0, h + 0.04, 0.05]}>
+        <group>
+          <Bar length={rod} radius={0.01} rotation={[0, 0, Math.PI / 2]} position={[0, 0.02, z]}>
             <Material color={c('rail')} material={m('rail')} />
           </Bar>
           {[-1, 1].map(s => (
-            <group key={s} position={[s * (w / 2 + part * 0.4), 0, 0]} scale={[gather, 1, 1]}>
-              {/* Each pleat is a soft column, so the panel reads as cloth. */}
-              {Array.from({ length: pleats }).map((_, i) => {
-                const x = -s * (full * ((i + 0.5) / pleats))
-                const fold = i % 2 === 0 ? 0.055 : 0.02
-                return (
-                  <mesh key={i} position={[x, h / 2, 0.06 + fold]} scale={[full / pleats / 0.09, 1, 1]} castShadow>
-                    <cylinderGeometry args={[0.045, 0.05, h, 16, 1, false, 0, Math.PI * 2]} />
-                    <Material color={c('fabric')} material={m('fabric')} />
-                  </mesh>
-                )
-              })}
+            <group key={s}>
+              <mesh position={[(s * rod) / 2, 0.02, z]}>
+                <sphereGeometry args={[0.02, 20, 14]} />
+                <Material color={c('rail')} material={m('rail')} />
+              </mesh>
+              <mesh position={[s * (w / 2 + 0.03), 0.02, z / 2]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.008, 0.008, z, 12]} />
+                <Material color={c('rail')} material={m('rail')} />
+              </mesh>
+              <mesh position={[s * (w / 2 + 0.03), 0.02, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.022, 0.022, 0.008, 20]} />
+                <Material color={c('rail')} material={m('rail')} />
+              </mesh>
             </group>
           ))}
+          {[-1, 1].map(s =>
+            Array.from({ length: pleats }).map((_, i) => {
+              const x = s * (full - (i + 0.5) * pitch)
+              const fold = i % 2 === 0 ? 0.018 : -0.012
+              return (
+                <group key={`${s}:${i}`}>
+                  {/* Each pleat is a soft column, so the panel reads as cloth. */}
+                  <mesh position={[x, -drop / 2, z + fold]} scale={[pitch / 0.09, 1, 0.9 + 0.2 * level]} castShadow>
+                    <cylinderGeometry args={[0.045, 0.05, drop, 16]} />
+                    <Material color={c('fabric')} material={m('fabric')} />
+                  </mesh>
+                  <mesh position={[x, 0.02, z]} rotation={[0, Math.PI / 2, 0]}>
+                    <torusGeometry args={[0.016, 0.003, 8, 20]} />
+                    <Material color={c('rail')} material={m('rail')} />
+                  </mesh>
+                </group>
+              )
+            }),
+          )}
         </group>
       )
     }
