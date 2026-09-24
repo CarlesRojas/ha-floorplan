@@ -12,6 +12,7 @@ import { Bar, Cushion, Material, Panel, SEG, Slab, type Hole } from '#/scene/dec
 import { Sink } from '#/scene/decor/Sink.tsx'
 import { sinkPlan, sinkStyle } from '#/scene/decor/sinkSpecs.ts'
 import Shower from '#/scene/decor/Shower.tsx'
+import { Basin, Bathtub, Toilet } from '#/scene/decor/Bathroom.tsx'
 import {
   CeilingExtractor,
   CoffeeMachine,
@@ -120,6 +121,7 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
   const lit = useEased(on ? 1 : 0, 9)
 
   const fit: Fit = { M, c, m, on, lit, level }
+  const style = decorationVariant(kind, item.variant)?.id
 
   switch (kind.id) {
     case 'kitchen_counter': {
@@ -298,142 +300,12 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
     }
 
     // Bathroom
-    case 'toilet': {
-      // A back to wall pan: a slim cistern panel with a flush plate, a pan
-      // that tapers forward and an oval seat with the lid resting on it.
-      const w = p('width')
-      const d = p('depth')
-      const panH = 0.42
-      const cistern = 0.9
-      const seatR = w / 2 + 0.005
-      return (
-        <group>
-          <Slab size={[w * 1.05, cistern, d * 0.2]} radius={0.03} bevel={0.02} position={[0, 0, -d / 2 + d * 0.1]}>
-            {M('pan')}
-          </Slab>
-          {/* Flush plate, set into the face of the cistern panel. */}
-          <mesh position={[0, cistern - 0.14, -d / 2 + d * 0.2 + 0.006]}>
-            <planeGeometry args={[w * 0.4, 0.13]} />
-            {M('flush')}
-          </mesh>
-          {/* The pan and the seat are stretched along z, so the bowl reads
-              as an oval rather than a drum. */}
-          <group scale={[1, 1, (d * 0.6) / (seatR * 2)]}>
-            <mesh position={[0, panH / 2, (d * 0.02) / ((d * 0.6) / (seatR * 2))]} castShadow>
-              <cylinderGeometry args={[seatR, seatR * 0.6, panH, SEG * 2]} />
-              {M('pan')}
-            </mesh>
-            <mesh position={[0, panH + 0.012, (d * 0.02) / ((d * 0.6) / (seatR * 2))]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[seatR * 0.78, seatR * 0.2, 16, SEG * 2]} />
-              {M('seat')}
-            </mesh>
-          </group>
-          {/* The shroud joining the pan to the cistern panel. */}
-          <mesh position={[0, panH / 2, -d * 0.22]} castShadow>
-            <boxGeometry args={[w * 0.62, panH, d * 0.3]} />
-            {M('pan')}
-          </mesh>
-          {/* Lid, lying flat over the seat with a small hinge block. */}
-          <mesh position={[0, panH + 0.042, d * 0.02]} scale={[seatR, 0.016, d * 0.31]}>
-            <sphereGeometry args={[1, SEG, SEG]} />
-            {M('seat')}
-          </mesh>
-          <mesh position={[0, panH + 0.03, -d / 2 + d * 0.22]}>
-            <boxGeometry args={[w * 0.3, 0.03, 0.04]} />
-            {M('flush')}
-          </mesh>
-        </group>
-      )
-    }
-    case 'basin': {
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const bowlR = Math.min(w, d) * 0.36
-      return (
-        <group>
-          {/* Oak vanity floating over a recessed plinth, one long drawer. */}
-          <Slab size={[w - 0.08, 0.09, d - 0.08]} radius={0.02} position={[0, 0, 0]}>
-            {M('vanity')}
-          </Slab>
-          <Slab size={[w, h - 0.15, d]} radius={0.03} position={[0, 0.09, 0]}>
-            {M('vanity')}
-          </Slab>
-          {/* The drawer front, set proud of the carcass with a long pull. */}
-          <Panel size={[w - 0.03, (h - 0.2) * 0.52, 0.02]} position={[0, h - 0.11 - (h - 0.2) * 0.26, d / 2 + 0.008]}>
-            {M('vanity')}
-          </Panel>
-          <Bar length={w * 0.4} radius={0.008} rotation={[0, 0, Math.PI / 2]} position={[0, h - 0.17, d / 2 + 0.03]}>
-            {M('handle')}
-          </Bar>
-          <Slab size={[w, 0.035, d]} radius={0.015} position={[0, h - 0.06, 0]}>
-            {M('vanity')}
-          </Slab>
-          {/* A thin walled basin: an outer shell with the dish cut into it. */}
-          <mesh position={[0, h + 0.035, 0.02]} castShadow>
-            <cylinderGeometry args={[bowlR, bowlR * 0.82, 0.12, SEG * 2]} />
-            {M('bowl')}
-          </mesh>
-          <mesh position={[0, h + 0.1, 0.02]}>
-            <sphereGeometry args={[bowlR - 0.018, SEG * 2, SEG, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
-            <Material color="#e9f1f3" material="ceramic" doubleSide />
-          </mesh>
-          <mesh position={[0, h + 0.038, 0.02]}>
-            <cylinderGeometry args={[0.016, 0.016, 0.008, 20]} />
-            {M('tap')}
-          </mesh>
-          {/* A slim pillar tap with a forward spout and a lever. */}
-          <mesh position={[0, h + 0.12, -d / 2 + 0.09]}>
-            <cylinderGeometry args={[0.018, 0.022, 0.24, 20]} />
-            {M('tap')}
-          </mesh>
-          <mesh position={[0, h + 0.235, -d / 2 + 0.115]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.09, 20]} />
-            {M('tap')}
-          </mesh>
-          <Bar length={0.09} radius={0.008} position={[0.03, h + 0.26, -d / 2 + 0.06]} rotation={[0, 0.5, Math.PI / 2]}>
-            {M('tap')}
-          </Bar>
-        </group>
-      )
-    }
-    case 'bathtub': {
-      // A freestanding oval tub on a narrow plinth, with a rolled rim.
-      const w = p('width')
-      const l = p('length')
-      const h = 0.56
-      const r = Math.min(w, l) * 0.44
-      return (
-        <group>
-          <Slab size={[w * 0.78, 0.05, l * 0.78]} radius={r * 0.7} bevel={0.02} position={[0, 0, 0]}>
-            {M('plinth')}
-          </Slab>
-          <Slab size={[w, h - 0.05, l]} radius={r} bevel={0.06} position={[0, 0.05, 0]}>
-            {M('tub')}
-          </Slab>
-          {/* The rim, a touch wider than the shell, and the hollow inside. */}
-          <Slab size={[w + 0.02, 0.05, l + 0.02]} radius={r} bevel={0.022} position={[0, h - 0.05, 0]}>
-            {M('tub')}
-          </Slab>
-          <Slab size={[w - 0.1, 0.34, l - 0.1]} radius={r * 0.9} bevel={0.04} position={[0, h - 0.33, 0]}>
-            <Material color="#e9f1f3" material="ceramic" />
-          </Slab>
-          {/* Waste and overflow at the tap end. */}
-          <mesh position={[0, h - 0.015, -l / 2 + 0.13]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.028, 0.028, 0.01, 24]} />
-            {M('tap')}
-          </mesh>
-          <mesh position={[0, h + 0.11, -l / 2 + 0.1]}>
-            <cylinderGeometry args={[0.016, 0.02, 0.22, 20]} />
-            {M('tap')}
-          </mesh>
-          <mesh position={[0, h + 0.215, -l / 2 + 0.145]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.013, 0.013, 0.1, 20]} />
-            {M('tap')}
-          </mesh>
-        </group>
-      )
-    }
+    case 'toilet':
+      return <Toilet style={style} w={p('width')} d={p('depth')} fit={fit} />
+    case 'basin':
+      return <Basin style={style} w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
+    case 'bathtub':
+      return <Bathtub style={style} w={p('width')} l={p('length')} fit={fit} />
     case 'shower':
       return (
         <Shower

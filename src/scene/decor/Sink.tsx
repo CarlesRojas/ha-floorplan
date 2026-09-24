@@ -55,7 +55,7 @@ function LeverTap({ fit }: { fit: Fit }) {
 
 // A bridge mixer after the Perrin & Rowe Ionian: two valves with cross
 // handles joined by a bar, and a swan neck spout rising from its middle.
-function BridgeTap({ fit }: { fit: Fit }) {
+export function BridgeTap({ fit }: { fit: Fit }) {
   const metal = fit.M('tap')
   return (
     <group>

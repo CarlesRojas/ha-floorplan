@@ -208,6 +208,10 @@ const kind = (
 
 // The pendant's styles are real lamps, so they wear their real finishes:
 // natural wood, opal glass, white ceramic, and black canopies and cords.
+// Bathroom ceramics, and the tiled boxing and panels round them.
+const BATH_WHITE = '#f4f3ef'
+const BATH_TILE = '#e3dfd7'
+
 const PENDANT_BLACK_COLOR = '#232426'
 const PENDANT_OPAL_COLOR = '#f6f4ef'
 const PENDANT_CERAMIC_COLOR = '#f8f7f4'
@@ -1068,27 +1072,80 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'bathroom',
     'Toilet',
     'floor',
-    [width(0.38, 0.3, 0.5), depth(0.68, 0.5, 0.85)],
-    { pan: SCANDI.offWhite, seat: SCANDI.oak, flush: SCANDI.slate },
-    { pan: 'ceramic', seat: 'wood', flush: 'metal' },
+    [width(0.37, 0.3, 0.5), depth(0.72, 0.5, 0.9)],
+    { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#c4c7c8', box: BATH_TILE },
+    { pan: 'ceramic', seat: 'ceramic', flush: 'metal', box: 'matte' },
+    undefined,
+    [
+      {
+        id: 'wall_hung',
+        label: 'Vela Hung',
+        colors: { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#2b2c2d', box: BATH_TILE },
+        materials: { pan: 'ceramic', seat: 'ceramic', flush: 'matte', box: 'matte' },
+      },
+      { id: 'back_to_wall', label: 'Brune Flush', params: { depth: 0.7 } },
+      {
+        id: 'close_coupled',
+        label: 'Oda Pair',
+        colors: { pan: BATH_WHITE, seat: SCANDI.oak, flush: '#c4c7c8' },
+        materials: { pan: 'ceramic', seat: 'wood', flush: 'metal' },
+        params: { depth: 0.65 },
+      },
+    ],
   ),
   kind(
     'basin',
     'bathroom',
     'Basin',
     'floor',
-    [width(0.6, 0.4, 1.2), depth(0.45, 0.35, 0.6), height(0.85, 0.7, 0.95)],
-    { bowl: SCANDI.offWhite, vanity: SCANDI.oak, tap: SCANDI.slate, handle: SCANDI.slate },
-    { bowl: 'ceramic', vanity: 'wood', tap: 'metal', handle: 'metal' },
+    [width(0.6, 0.4, 1.2), depth(0.46, 0.35, 0.6), height(0.85, 0.7, 0.95)],
+    { bowl: BATH_WHITE, tap: '#c4c7c8' },
+    { bowl: 'ceramic', tap: 'metal' },
+    undefined,
+    [
+      {
+        id: 'vanity',
+        label: 'Lumen Console',
+        colors: { bowl: BATH_WHITE, vanity: SCANDI.oak, tap: '#c4c7c8' },
+        materials: { bowl: 'ceramic', vanity: 'wood', tap: 'metal' },
+        params: { width: 0.8, depth: 0.48 },
+      },
+      { id: 'wall_hung', label: 'Pell Hung' },
+      {
+        id: 'pedestal',
+        label: 'Stave Pedestal',
+        colors: { bowl: BATH_WHITE, tap: '#b08d57' },
+        materials: { bowl: 'ceramic', tap: 'metal' },
+        params: { depth: 0.45 },
+      },
+    ],
   ),
   kind(
     'bathtub',
     'bathroom',
     'Bathtub',
     'floor',
-    [width(0.78, 0.6, 1), length(1.7, 1.3, 2, 0.05)],
-    { tub: SCANDI.offWhite, plinth: SCANDI.slate, tap: SCANDI.slate },
-    { tub: 'ceramic', plinth: 'metal', tap: 'metal' },
+    [width(0.8, 0.6, 1), length(1.7, 1.3, 2, 0.05)],
+    { tub: BATH_WHITE, tap: '#c4c7c8' },
+    { tub: 'ceramic', tap: 'metal' },
+    undefined,
+    [
+      { id: 'freestanding', label: 'Isle Shell', params: { width: 0.85, length: 1.8 } },
+      {
+        id: 'built_in',
+        label: 'Inlet Steel',
+        colors: { tub: BATH_WHITE, panel: BATH_TILE, tap: '#c4c7c8' },
+        materials: { tub: 'ceramic', panel: 'matte', tap: 'metal' },
+        params: { width: 0.75, length: 1.7 },
+      },
+      {
+        id: 'roll_top',
+        label: 'Foundry Roll',
+        colors: { tub: BATH_WHITE, feet: '#b08d57', tap: '#b08d57' },
+        materials: { tub: 'ceramic', feet: 'metal', tap: 'metal' },
+        params: { width: 0.91, length: 1.9 },
+      },
+    ],
   ),
   kind(
     'shower',
