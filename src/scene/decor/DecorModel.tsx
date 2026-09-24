@@ -1,6 +1,7 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useTravel } from '#/scene/decor/ease.ts'
-import { Bar, Material, Panel, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
+import { Material, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
+import { Books, Clock, Curtain, Mirror, Rug } from '#/scene/decor/Furnishings.tsx'
 import { FloorPlant, ShelfPlant, WallPlant } from '#/scene/decor/Plants.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -117,34 +118,21 @@ export default function DecorModel({ kind, item, state }: Props) {
       )
     }
     case 'rug': {
-      // A flat woven rug: one low pile, a narrow border stripe and fringed
-      // short ends, the way a Nordic wool rug is finished.
       const w = p('width')
       const d = p('depth')
-      const band = Math.min(0.12, Math.min(w, d) * 0.12)
       return (
-        <group>
-          <Slab size={[w, 0.011, d]} radius={0.02} bevel={0.004} position={[0, 0.001, 0]}>
-            <Material color={c('field')} material={m('field')} />
-          </Slab>
-          {/* The border, drawn as four stripes so the field stays plain. */}
-          {[-1, 1].map(s => (
-            <mesh key={`x${s}`} position={[0, 0.013, (s * (d - band)) / 2]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[w - band * 2, band * 0.45]} />
-              <Material color={c('border')} material={m('border')} />
-            </mesh>
-          ))}
-          {[-1, 1].map(s => (
-            <mesh key={`z${s}`} position={[(s * (w - band)) / 2, 0.013, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-              <planeGeometry args={[d - band * 2, band * 0.45]} />
-              <Material color={c('border')} material={m('border')} />
-            </mesh>
-          ))}
-          {/* Fringes, on the short ends only. */}
-          <Fringe width={w} depth={d}>
-            <Material color={c('field')} material={m('field')} />
-          </Fringe>
-        </group>
+        <Rug
+          style={style}
+          w={w}
+          d={d}
+          plain={p('plain') > 0}
+          paint={paint}
+          fringe={children => (
+            <Fringe width={w} depth={d}>
+              {children}
+            </Fringe>
+          )}
+        />
       )
     }
     case 'plant_large':
@@ -153,112 +141,19 @@ export default function DecorModel({ kind, item, state }: Props) {
       return <ShelfPlant style={style} size={p('size')} height={p('height')} trail={p('trail')} paint={paint} />
     case 'plant_wall':
       return <WallPlant style={style} width={p('width')} ratio={p('ratio')} paint={paint} />
-    case 'picture': {
-      // A thin oak frame around a wide pale mount, the print recessed in it.
-      const w = p('width')
-      const h = w * p('ratio')
-      const bar = Math.min(0.05, Math.min(w, h) * 0.09)
-      const mount = bar * 1.4
-      // Centered on the height set, but raised when it would reach the floor.
-      const up = Math.max(0, h / 2 + 0.02 - p('height'))
-      return (
-        <group position={[0, -h / 2 + up, 0]}>
-          {/* Backing board, so the frame is never see through. */}
-          <mesh position={[0, h / 2, 0.006]}>
-            <planeGeometry args={[w - bar, h - bar]} />
-            <Material color={c('frame')} material={m('frame')} />
-          </mesh>
-          <mesh position={[0, h / 2, 0.016]}>
-            <planeGeometry args={[w - bar * 2, h - bar * 2]} />
-            <Material color={c('mount')} material={m('mount')} />
-          </mesh>
-          <mesh position={[0, h / 2, 0.018]}>
-            <planeGeometry args={[w - bar * 2 - mount * 2, h - bar * 2 - mount * 2]} />
-            <Material color={c('art')} material={m('art')} />
-          </mesh>
-          {/* The four frame members, mitred by overlap at the corners. A panel
-              sits on its position, so each is set by its lower edge. */}
-          {[-1, 1].map(s => (
-            <Panel
-              key={`h${s}`}
-              size={[w, bar, 0.026]}
-              position={[0, h / 2 + (s * (h - bar)) / 2 - bar / 2, 0.013]}
-              radius={0.004}
-            >
-              <Material color={c('frame')} material={m('frame')} />
-            </Panel>
-          ))}
-          {[-1, 1].map(s => (
-            <Panel
-              key={`v${s}`}
-              size={[bar, h - bar * 2, 0.026]}
-              position={[(s * (w - bar)) / 2, bar, 0.013]}
-              radius={0.004}
-            >
-              <Material color={c('frame')} material={m('frame')} />
-            </Panel>
-          ))}
-        </group>
-      )
-    }
     case 'wall_mirror': {
-      // A slim ring frame with the glass set inside it, not behind a slab.
-      const r = p('size') / 2
-      const ring = Math.min(0.03, r * 0.12)
-      const up = Math.max(0, r + 0.02 - p('height'))
+      const s = p('size')
       return (
-        <group position={[0, up, 0]}>
-          <mesh position={[0, 0, 0.022]}>
-            <torusGeometry args={[r - ring, ring, 20, SEG * 2]} />
-            <Material color={c('frame')} material={m('frame')} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.018]}>
-            <cylinderGeometry args={[r - ring, r - ring, 0.01, SEG * 2]} />
-            <Material color={c('glass')} material={m('glass')} />
-          </mesh>
+        <group position={[0, Math.max(0, s / 2 + 0.02 - p('height')), 0]}>
+          <Mirror style={style} s={s} paint={paint} />
         </group>
       )
     }
     case 'wall_clock': {
-      const r = p('size') / 2
-      const ring = Math.min(0.016, r * 0.1)
-      const up = Math.max(0, r + 0.02 - p('height'))
+      const s = p('size')
       return (
-        <group position={[0, up, 0]}>
-          <mesh position={[0, 0, 0.02]}>
-            <torusGeometry args={[r - ring, ring, 16, SEG * 2]} />
-            <Material color={c('rim')} material={m('rim')} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.016]}>
-            <cylinderGeometry args={[r - ring * 0.6, r - ring * 0.6, 0.014, SEG * 2]} />
-            <Material color={c('face')} material={m('face')} />
-          </mesh>
-          {/* Four quarter markers, the pared back Nordic dial. */}
-          {Array.from({ length: 4 }).map((_, i) => {
-            const a = (i / 4) * Math.PI * 2
-            return (
-              <mesh
-                key={i}
-                position={[Math.sin(a) * (r - ring * 2.4), Math.cos(a) * (r - ring * 2.4), 0.027]}
-                rotation={[0, 0, -a]}
-              >
-                <boxGeometry args={[r * 0.04, r * 0.14, 0.004]} />
-                <Material color={c('rim')} material={m('rim')} />
-              </mesh>
-            )
-          })}
-          <mesh position={[Math.sin(0.2) * r * 0.25, Math.cos(0.2) * r * 0.25, 0.03]} rotation={[0, 0, -0.2]}>
-            <boxGeometry args={[r * 0.05, r * 0.5, 0.005]} />
-            <Material color={c('hands')} material={m('hands')} />
-          </mesh>
-          <mesh position={[r * 0.19, 0, 0.032]} rotation={[0, 0, Math.PI / 2]}>
-            <boxGeometry args={[r * 0.045, r * 0.38, 0.005]} />
-            <Material color={c('hands')} material={m('hands')} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.034]}>
-            <cylinderGeometry args={[r * 0.05, r * 0.05, 0.008, 20]} />
-            <Material color={c('hands')} material={m('hands')} />
-          </mesh>
+        <group position={[0, Math.max(0, s / 2 + 0.02 - p('height')), 0]}>
+          <Clock style={style} s={s} paint={paint} />
         </group>
       )
     }
@@ -305,34 +200,8 @@ export default function DecorModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'books': {
-      // A stack of books as tall as set, each a little out of line with
-      // the one under it and a little smaller or larger, never shrinking
-      // away to nothing however many there are.
-      const w = p('width')
-      const h = p('height')
-      const count = Math.max(1, Math.round(h / 0.042))
-      const step = h / count
-      const trims = [0, 0.07, 0.03, 0.1, 0.05]
-      return (
-        <group>
-          {Array.from({ length: count }).map((_, i) => {
-            const trim = 1 - trims[i % trims.length]
-            return (
-              <Slab
-                key={i}
-                size={[w * trim, step - 0.004, w * 0.72 * trim]}
-                radius={Math.min(0.006, w * 0.03)}
-                bevel={Math.min(0.003, step * 0.08)}
-                position={[((i % 2) - 0.5) * w * 0.04, i * step, ((i % 3) - 1) * w * 0.03]}
-              >
-                <Material color={c('covers')} material={m('covers')} />
-              </Slab>
-            )
-          })}
-        </group>
-      )
-    }
+    case 'books':
+      return <Books w={p('width')} h={p('height')} paint={paint} />
     case 'basket': {
       // A woven seagrass basket: flared body, rolled rim and two cut handles.
       const r = p('size') / 2
@@ -368,65 +237,18 @@ export default function DecorModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'curtain': {
-      // After IKEA's Hilja panels on a Räcka rod: a slim rod on two wall
-      // brackets with a ball at each end, and two pleated linen panels
-      // hanging from rings to just off the floor. Opening gathers each
-      // panel toward its own end of the rod, and never past it.
-      const w = p('width')
-      // The rod is at the height set, so the drop is all the way down.
-      const drop = Math.max(p('height') - 0.015, 0.2)
-      const rod = w + 0.2
-      const z = 0.075
-      // Each panel, laid out from its outer end, reaches the middle when
-      // shut and bunches to a third of that when open.
-      const full = w / 2 + 0.06
-      const gather = 1 - 0.66 * level
-      const pleats = Math.max(4, Math.round(full / 0.12))
-      const pitch = (full * gather) / pleats
+    case 'curtain':
       return (
-        <group>
-          <Bar length={rod} radius={0.01} rotation={[0, 0, Math.PI / 2]} position={[0, 0.02, z]}>
-            <Material color={c('rail')} material={m('rail')} />
-          </Bar>
-          {[-1, 1].map(s => (
-            <group key={s}>
-              <mesh position={[(s * rod) / 2, 0.02, z]}>
-                <sphereGeometry args={[0.02, 20, 14]} />
-                <Material color={c('rail')} material={m('rail')} />
-              </mesh>
-              <mesh position={[s * (w / 2 + 0.03), 0.02, z / 2]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.008, 0.008, z, 12]} />
-                <Material color={c('rail')} material={m('rail')} />
-              </mesh>
-              <mesh position={[s * (w / 2 + 0.03), 0.02, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.022, 0.022, 0.008, 20]} />
-                <Material color={c('rail')} material={m('rail')} />
-              </mesh>
-            </group>
-          ))}
-          {[-1, 1].map(s =>
-            Array.from({ length: pleats }).map((_, i) => {
-              const x = s * (full - (i + 0.5) * pitch)
-              const fold = i % 2 === 0 ? 0.018 : -0.012
-              return (
-                <group key={`${s}:${i}`}>
-                  {/* Each pleat is a soft column, so the panel reads as cloth. */}
-                  <mesh position={[x, -drop / 2, z + fold]} scale={[pitch / 0.09, 1, 0.9 + 0.2 * level]} castShadow>
-                    <cylinderGeometry args={[0.045, 0.05, drop, 16]} />
-                    <Material color={c('fabric')} material={m('fabric')} />
-                  </mesh>
-                  <mesh position={[x, 0.02, z]} rotation={[0, Math.PI / 2, 0]}>
-                    <torusGeometry args={[0.016, 0.003, 8, 20]} />
-                    <Material color={c('rail')} material={m('rail')} />
-                  </mesh>
-                </group>
-              )
-            }),
-          )}
-        </group>
+        <Curtain
+          style={style}
+          w={p('width')}
+          height={p('height')}
+          hem={p('hem')}
+          level={level}
+          paint={paint}
+          sheer={<Material color={c('fabric')} material={m('fabric')} doubleSide opacity={0.55} />}
+        />
       )
-    }
     default:
       return null
   }

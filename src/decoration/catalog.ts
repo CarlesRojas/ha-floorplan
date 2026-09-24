@@ -81,7 +81,7 @@ export function itemLevels(kind: DecorationKind) {
 
 // Vertical parameters: how tall something is, or how high it sits. They are
 // kept inside a room, a little above the ceiling at most.
-const VERTICAL = new Set(['height', 'sill', 'lift', 'drop', 'cord'])
+const VERTICAL = new Set(['height', 'sill', 'lift', 'drop', 'cord', 'hem'])
 const CEILING_LIMIT_M = 3
 const round2 = (value: number) => Math.round(value * 100) / 100
 
@@ -1373,9 +1373,34 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'decor',
     'Rug',
     'floor',
-    [width(2, 0.6, 4), depth(1.4, 0.5, 3)],
+    [width(2, 0.6, 4), depth(1.4, 0.5, 3), only(flag('plain', 'No lines'), ['border', 'kilim', 'round'])],
     { field: SCANDI.linen, border: SCANDI.clay },
     { field: 'carpet', border: 'carpet' },
+    undefined,
+    [
+      { id: 'border', label: 'Nord Border' },
+      {
+        id: 'kilim',
+        label: 'Kilim Stripe',
+        colors: { field: '#e9e2d4', border: '#3f4a52', accent: '#c47a52' },
+        materials: { field: 'carpet', border: 'carpet', accent: 'carpet' },
+        params: { width: 2.3, depth: 1.6 },
+      },
+      {
+        id: 'shag',
+        label: 'Plain Pile',
+        colors: { field: '#cfc8bc' },
+        materials: { field: 'carpet' },
+        params: { width: 2, depth: 1.4 },
+      },
+      {
+        id: 'round',
+        label: 'Round Loop',
+        colors: { field: '#d9cdb8', border: '#b9a584' },
+        materials: { field: 'carpet', border: 'carpet' },
+        params: { width: 1.6, depth: 1.6 },
+      },
+    ],
   ),
   kind(
     'plant_large',
@@ -1464,15 +1489,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     ],
   ),
   kind(
-    'picture',
-    'decor',
-    'Picture',
-    'wall',
-    [width(0.5, 0.2, 1.4), height(1.6, 0.8, 2.3), p('ratio', 'Height ratio', 1.3, 0.5, 2, 0.05)],
-    { frame: SCANDI.oak, mount: '#efeae2', art: SCANDI.sage },
-    { frame: 'wood', mount: 'matte', art: 'matte' },
-  ),
-  kind(
     'wall_mirror',
     'decor',
     'Wall mirror',
@@ -1480,6 +1496,17 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [size(0.7, 0.3, 1.3), height(1.6, 0.8, 2.3)],
     { frame: SCANDI.oak, glass: SCANDI.mist },
     { frame: 'wood', glass: 'metal' },
+    undefined,
+    [
+      { id: 'round', label: 'Halo Round' },
+      {
+        id: 'square',
+        label: 'Frame Square',
+        colors: { frame: '#2b2c2d', glass: SCANDI.mist },
+        materials: { frame: 'metal', glass: 'metal' },
+        params: { size: 0.6 },
+      },
+    ],
   ),
   kind(
     'wall_clock',
@@ -1487,8 +1514,25 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Wall clock',
     'wall',
     [size(0.3, 0.15, 0.6), height(1.9, 1, 2.4)],
-    { rim: SCANDI.oak, face: SCANDI.offWhite, hands: SCANDI.charcoal },
-    { rim: 'wood', face: 'matte', hands: 'matte' },
+    { rim: SCANDI.oak, face: SCANDI.offWhite, hands: SCANDI.charcoal, accent: '#c8553d' },
+    { rim: 'wood', face: 'matte', hands: 'matte', accent: 'matte' },
+    undefined,
+    [
+      { id: 'oak', label: 'Oak Ring' },
+      {
+        id: 'station',
+        label: 'Station Tid',
+        colors: { rim: '#2b2c2d', face: '#f7f6f2', hands: '#1f2123', accent: '#c8553d' },
+        materials: { rim: 'metal', face: 'matte', hands: 'matte', accent: 'matte' },
+      },
+      {
+        id: 'ball',
+        label: 'Ball Nelo',
+        colors: { rim: '#6f5236', face: '#2b2c2d', hands: '#1f2123', accent: '#c8553d' },
+        materials: { rim: 'wood', face: 'metal', hands: 'matte', accent: 'matte' },
+        params: { size: 0.33 },
+      },
+    ],
   ),
   kind(
     'vase',
@@ -1505,8 +1549,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Books',
     'floor',
     [width(0.26, 0.12, 0.5), height(0.14, 0.06, 0.3), lift(0.75)],
-    { covers: SCANDI.clay },
-    { covers: 'matte' },
+    { first: '#2f4a5c', second: '#c47a52', third: '#d8c9a8', pages: '#f1ebdd' },
+    { first: 'matte', second: 'matte', third: 'matte', pages: 'matte' },
   ),
   kind(
     'basket',
@@ -1522,10 +1566,25 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'decor',
     'Curtain',
     'wall',
-    [width(1.4, 0.6, 3), height(2.3, 1.2, 2.6)],
+    [width(1.4, 0.6, 3), height(2.3, 1.2, 2.6), p('hem', 'Off floor', 0.02, 0, 1.5)],
     { fabric: SCANDI.linen, rail: SCANDI.slate },
     { fabric: 'fabric', rail: 'metal' },
     TOGGLE_LEVEL,
+    [
+      { id: 'pleat', label: 'Linen Pleat' },
+      {
+        id: 'wave',
+        label: 'Sheer Wave',
+        colors: { fabric: '#f4f1ea', rail: '#e9e7e2' },
+        materials: { fabric: 'fabric', rail: 'matte' },
+      },
+      {
+        id: 'eyelet',
+        label: 'Velvet Eyelet',
+        colors: { fabric: '#5b6b5a', rail: '#2b2c2d' },
+        materials: { fabric: 'fabric', rail: 'metal' },
+      },
+    ],
   ),
 
   // Media
@@ -1535,8 +1594,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'TV',
     'floor',
     [inches(60, 24, 110), lift(0)],
-    { bezel: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.oak },
-    { bezel: 'matte', screen: 'ceramic', stand: 'wood' },
+    { bezel: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: '#b4b8bb' },
+    { bezel: 'matte', screen: 'ceramic', stand: 'metal' },
     TOGGLE,
   ),
   kind(

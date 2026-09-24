@@ -120,7 +120,7 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle |
 | Laundry | Washing machine, dryer |
 | Bathroom | Toilet, basin, bathtub, shower, towel rail |
-| Decor | Half wall, Rug, large plant, small plant, picture, wall mirror, wall clock, vase, books, basket, curtain |
+| Decor | Half wall, Rug, large plant, small plant, wall mirror, wall clock, vase, books, basket, curtain |
 | Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, projector screen |
 | Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
 | Windows and doors | Blind, roller shutter, window, door, sliding door, sliding glass door, garage door, awning |

@@ -64,7 +64,6 @@ const BY_KIND: Record<string, IconDefinition> = {
   plant_large: faSeedling,
   plant_small: faSeedling,
   plant_wall: faLeaf,
-  picture: faImage,
   wall_mirror: faImage,
   wall_clock: faClock,
   vase: faSeedling,

@@ -27,6 +27,10 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   nightstand: { kind: 'side_table', variant: 'nightstand' },
 }
 
+// Kinds that were dropped with nothing to take their place. A saved one is
+// left out.
+const DROPPED = new Set(['picture'])
+
 // Parameters that were split in two, per kind. The side table was square,
 // with one size for both sides, before it had a width and a depth.
 const SPLIT: Record<string, Record<string, string[]>> = {
@@ -38,6 +42,7 @@ const SPLIT: Record<string, Record<string, string[]>> = {
 // Globo Cesta gave way to the smaller Globo Cestita. The
 // dining chair's first style was a Pilma chair, then a molded shell, then
 // the Jin, and each of those is now the slab chair that took its place.
+// The toilet's back to wall style gave way to a square close coupled one.
 const RESTYLED: Record<string, Record<string, string>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
   dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
@@ -52,7 +57,7 @@ function migrate(config: CardConfig): CardConfig {
     next.decorations = config.decorations
       // A piece whose room is gone has nowhere to be drawn. It is left out
       // rather than taken as a reason to refuse the whole card.
-      .filter(d => known.has(d.room))
+      .filter(d => known.has(d.room) && !DROPPED.has(d.kind))
       .map(d => {
         const now = RENAMED[d.kind]
         if (!now) return d
