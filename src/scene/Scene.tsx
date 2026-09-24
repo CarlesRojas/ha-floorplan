@@ -20,7 +20,7 @@ import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils, PCFSoftShadowMap } from 'three'
-import { useCallback, useRef } from 'react'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 
 type Props = {
   hass: HomeAssistant | null
@@ -63,6 +63,13 @@ export default function Scene({
   const markFallback = useCallback(() => {
     fallbackAt.current = performance.now()
   }, [])
+  // The rooms are only drawn again when they change, so they are handed a
+  // pick that stays the same and calls whatever the editor passed last.
+  const latestPickRoom = useRef(onPickRoom)
+  useLayoutEffect(() => {
+    latestPickRoom.current = onPickRoom
+  })
+  const pickRoom = useCallback((id: string) => latestPickRoom.current?.(id), [])
 
   return (
     <Canvas
@@ -98,7 +105,7 @@ export default function Scene({
       <PickFallback onHandled={markFallback} />
       {selected && <SelectionOutline target={selected} />}
       {rooms.map((room, i) => (
-        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom} />
+        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom && pickRoom} />
       ))}
       <OrbitControls
         makeDefault

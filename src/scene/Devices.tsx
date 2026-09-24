@@ -6,6 +6,7 @@ import { clickAction, deviceSignals, kelvinToRgb, levelChannels, levelValues, si
 import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
+import { useState } from 'react'
 import { Color, SRGBColorSpace } from 'three'
 
 type Props = {
@@ -99,6 +100,20 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
     )
   }
 
+  // What a press on each piece does. The models are only drawn again when
+  // they change, so each is handed a handler that stays the same and calls
+  // whatever this render says a press does now.
+  const [actions] = useState(() => new Map<string, { click?: () => void; open?: () => void }>())
+  const [handlers] = useState(() => new Map<string, { click: () => void; open: () => void }>())
+  const handler = (id: string) => {
+    let h = handlers.get(id)
+    if (!h) {
+      h = { click: () => actions.get(id)?.click?.(), open: () => actions.get(id)?.open?.() }
+      handlers.set(id, h)
+    }
+    return h
+  }
+
   return (
     <>
       {decorations.map(item => {
@@ -119,6 +134,9 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
                 else if (tried) onTry(item.id)
               }
             : undefined
+        const onOpen = device ? () => openMoreInfo(device.entity_id) : undefined
+        actions.set(item.id, { click: onClick, open: onOpen })
+        const h = handler(item.id)
         return (
           <DecorationModel
             key={item.id}
@@ -126,8 +144,8 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
             all={decorations}
             room={rooms.find(r => r.id === item.room)}
             state={state}
-            onClick={onClick}
-            onOpen={device ? () => openMoreInfo(device.entity_id) : undefined}
+            onClick={onClick && h.click}
+            onOpen={onOpen && h.open}
           />
         )
       })}

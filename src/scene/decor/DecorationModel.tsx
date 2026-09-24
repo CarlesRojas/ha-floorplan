@@ -6,9 +6,9 @@ import DecorModel from '#/scene/decor/DecorModel.tsx'
 import DeviceModel from '#/scene/decor/DeviceModel.tsx'
 import FurnitureModel from '#/scene/decor/FurnitureModel.tsx'
 import LightModel from '#/scene/decor/LightModel.tsx'
-import type { ItemState } from '#/scene/decor/state.ts'
+import { sameState, type ItemState } from '#/scene/decor/state.ts'
 import type { DecorationKind } from '#/decoration/catalog.ts'
-import type { ReactNode } from 'react'
+import { memo, type ReactNode } from 'react'
 import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils } from 'three'
 
@@ -52,10 +52,14 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
   decor: DecorModel,
 }
 
+// The models that read the rest of the plan, not just the piece they stand
+// on: the vacuum finds its way round everything on the floor.
+const READS_PLAN = new Set(['vacuum_robot'])
+
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-export default function DecorationModel({ item, all, room, state, onClick, onOpen }: Props) {
+function DecorationModel({ item, all, room, state, onClick, onOpen }: Props) {
   const interactive = usePressActions(onClick, onOpen)
   const kind = decorationKind(item.kind)
   if (!kind) return null
@@ -79,3 +83,16 @@ export default function DecorationModel({ item, all, room, state, onClick, onOpe
     </group>
   )
 }
+
+// A piece is only drawn again when something it shows has changed. Moving a
+// slider on one piece, or a device reporting on another, used to rebuild
+// every model in the flat, and the plan a piece stands in changes with every
+// edit, so it only counts through the height it lifts the piece to.
+function unchanged(a: Props, b: Props) {
+  if (a.item !== b.item || a.room !== b.room || a.onClick !== b.onClick || a.onOpen !== b.onOpen) return false
+  if (!sameState(a.state, b.state)) return false
+  if (a.all === b.all) return true
+  return !READS_PLAN.has(a.item.kind) && standHeight(a.item, a.all) === standHeight(b.item, b.all)
+}
+
+export default memo(DecorationModel, unchanged)
