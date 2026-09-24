@@ -1,4 +1,11 @@
-import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import {
+  bookshelfShelves,
+  colorValue,
+  decorationVariant,
+  materialValue,
+  paramValue,
+  type DecorationKind,
+} from '#/decoration/catalog.ts'
 import Bench from '#/scene/decor/Benches.tsx'
 import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
@@ -204,7 +211,8 @@ export default function FurnitureModel({ kind, item }: Props) {
     // Storage
     case 'bookshelf': {
       // Open case with a back, standing on a recessed plinth. The shelves
-      // are spaced evenly between the bottom and the top, and what goes on
+      // follow the height, give or take the ones added or taken away, and
+      // are spaced evenly between the bottom and the top. What goes on
       // them is the viewer's own business: the case is drawn empty.
       const w = p('width')
       const d = p('depth')
@@ -212,7 +220,7 @@ export default function FurnitureModel({ kind, item }: Props) {
       const plinth = 0.06
       const inner = h - plinth
       // Boards from the bottom, at 0, to the top, at `shelves`.
-      const shelves = Math.round(p('shelves')) + 1
+      const shelves = bookshelfShelves(h, p('shelves')) + 1
       const gap = (inner - 0.022) / shelves
       return (
         <group>

@@ -18,6 +18,10 @@ export type DecorationParam = {
   // A place in a row of parts, which a button steps through. How many places
   // there are is cycleLength's to say, and the value wraps round it.
   cycle?: boolean
+  // A number of parts added to or taken from the count the size gives, which
+  // minus and plus buttons step. The editor shows the count that results,
+  // which adjustedCount says.
+  adjust?: boolean
   // The styles it means something on. Every style when missing.
   variants?: string[]
 }
@@ -159,6 +163,19 @@ const cycle = (id: string, label: string): DecorationParam => ({
   step: 1,
   unit: '',
   cycle: true,
+})
+
+// Parts added to or taken from the count the size gives, so the count keeps
+// following the size after it is adjusted.
+const adjust = (id: string, label: string): DecorationParam => ({
+  id,
+  label,
+  default: 0,
+  min: -10,
+  max: 10,
+  step: 1,
+  unit: '',
+  adjust: true,
 })
 
 // A parameter only some of the kind's styles have.
@@ -779,8 +796,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'storage',
     'Bookshelf',
     'floor',
-    // The shelves between the bottom and the top, spaced evenly.
-    [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4), p('shelves', 'Shelves', 4, 0, 8, 1, '')],
+    // The shelves between the bottom and the top follow the height, and a
+    // few can be added or taken away.
+    [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4), adjust('shelves', 'Shelves')],
     { cabinet: SCANDI.oak, shelves: SCANDI.oak },
     { cabinet: 'wood', shelves: 'wood' },
   ),
@@ -1651,6 +1669,23 @@ export function counterModules(width: number, wide: boolean, grow: number) {
   const count = units + (growing > 0.005 ? 1 : 0)
   const at = ((grow % count) + count) % count
   return Array.from({ length: count }, (_, i) => (count > units && i === at ? growing : COUNTER_UNIT))
+}
+
+// The most shelves a bookshelf takes, however tall.
+export const MAX_SHELVES = 12
+
+// How many shelves stand between a bookshelf's bottom and its top: about
+// one every 36 cm of height, and `extra` more or fewer.
+export function bookshelfShelves(height: number, extra: number) {
+  const auto = Math.max(1, Math.round((height - 0.06) / 0.36)) - 1
+  return Math.min(Math.max(auto + Math.round(extra), 0), MAX_SHELVES)
+}
+
+// The count an adjust parameter ends at, and the most it can reach.
+export function adjustedCount(kind: DecorationKind, params: Record<string, number> | undefined, variant?: string) {
+  const v = (id: string) => paramValue(kind, params, id, variant)
+  if (kind.id !== 'bookshelf') return { count: 0, max: 0 }
+  return { count: bookshelfShelves(v('height'), v('shelves')), max: MAX_SHELVES }
 }
 
 // How many places a cycle parameter steps through.
