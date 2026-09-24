@@ -1,17 +1,14 @@
 import {
+  JIN_CORNER,
+  JIN_FRAME,
+  JIN_HALF,
+  JIN_LEG,
+  JIN_LEG_FOOT,
+  JIN_LEG_TOP,
+  JIN_PROFILE,
+  JIN_RISE,
+  JIN_THICK,
   DINING_CHAIRS,
-  MOLDED_CAP,
-  MOLDED_CORNER,
-  MOLDED_CROSS,
-  MOLDED_HALF,
-  MOLDED_LEG,
-  MOLDED_LEG_FOOT,
-  MOLDED_LEG_TOP,
-  MOLDED_MOUNT,
-  MOLDED_PROFILE,
-  MOLDED_RISE,
-  MOLDED_THICK,
-  MOLDED_WIRE,
   OIA_BACK_T,
   OIA_LEAN,
   OIA_LEG,
@@ -58,20 +55,25 @@ function eased(table: [number, number][], s: number) {
   return table[table.length - 1][1]
 }
 
-// The molded shell's face as a grid, rows from the front lip to the top of
-// the back and columns across. Its outline and profile stretch with the
-// chair, and its edges turn up by the same amount at any size.
-function moldedFace(kx: number, ky: number, kz: number) {
+// The shell's face as a grid, rows from the front edge to the top of the
+// back and columns across. Its outline and profile stretch with the chair,
+// and its edges turn up by the same amount at any size.
+function shellFace(kx: number, ky: number, kz: number) {
   const curve = new CatmullRomCurve3(
-    MOLDED_PROFILE.map(([z, y]) => new Vector3(0, y * ky, z * kz)),
+    JIN_PROFILE.map(([z, y]) => new Vector3(0, y * ky, z * kz)),
     false,
     'centripetal',
   )
   const length = curve.getLength()
-  const [r0, r1] = MOLDED_CORNER
+  const [r0, r1] = JIN_CORNER
   const rows = 72
   const cols = 29
-  const corner = (r: number, from: number) => (from < r ? r * (Math.sqrt(1 - ((r - from) / r) ** 2) - 1) : 0)
+  // The rounding stops just short of square to the edge: the shell is thick,
+  // and an edge row lying along its neighbours would leave it no normal.
+  const corner = (r: number, from: number) => {
+    const t = Math.min(1, 0.12 + (0.88 * from) / r)
+    return r * (Math.sqrt(1 - (1 - t) ** 2) - 1)
+  }
   return Array.from({ length: rows + 1 }, (_, i) => {
     // Rows closer together at the ends, where the corners round off.
     const s = (1 - Math.cos((Math.PI * i) / rows)) / 2
@@ -79,8 +81,8 @@ function moldedFace(kx: number, ky: number, kz: number) {
     const t = curve.getTangentAt(s)
     // Toward the sitter: up on the seat and forward on the back.
     const toward = new Vector3(0, -t.z, t.y).normalize()
-    const half = eased(MOLDED_HALF, s) * kx + corner(r0, s * length) + corner(r1, (1 - s) * length)
-    const rise = eased(MOLDED_RISE, s)
+    const half = eased(JIN_HALF, s) * kx + corner(r0, s * length) + corner(r1, (1 - s) * length)
+    const rise = eased(JIN_RISE, s)
     return Array.from({ length: cols }, (_, j) => {
       const u = (j / (cols - 1)) * 2 - 1
       return p
@@ -91,82 +93,61 @@ function moldedFace(kx: number, ky: number, kz: number) {
   })
 }
 
-function Molded({ w, d, h, M }: Size) {
-  const spec = DINING_CHAIRS.molded
+function Jin({ w, d, h, M }: Size) {
+  const spec = DINING_CHAIRS.jin
   const [kx, ky, kz] = [w / spec.width, h / spec.height, d / spec.depth]
   const { face, geometry } = useMemo(() => {
-    const face = moldedFace(kx, ky, kz)
-    return { face, geometry: thicken(face, MOLDED_THICK) }
+    const face = shellFace(kx, ky, kz)
+    return { face, geometry: thicken(face, JIN_THICK) }
   }, [kx, ky, kz])
-  // The underside of the seat over a point, for the mounts.
-  const under = (x: number, z: number) => {
-    let best = face[0][0]
+  // The underside of the seat over the frame's middle, which the frame and
+  // the legs hang from.
+  const frameY = useMemo(() => {
+    let low = Infinity
     for (const row of face.slice(0, face.length / 2)) {
       for (const p of row) {
-        if ((p.x - x) ** 2 + (p.z - z) ** 2 < (best.x - x) ** 2 + (best.z - z) ** 2) best = p
+        if (Math.abs(p.x) < JIN_FRAME[0] * kx && Math.abs(p.z) < JIN_FRAME[1] * kz) low = Math.min(low, p.y)
       }
     }
-    return best.y - MOLDED_THICK
-  }
+    return low - JIN_THICK
+  }, [face, kx, kz])
+  const [fx, fz, bar] = [JIN_FRAME[0] * kx, JIN_FRAME[1] * kz, JIN_FRAME[2]]
   const legs = [-1, 1].flatMap(sx =>
-    [-1, 1].map(sz => {
-      const top: Vec3 = [sx * MOLDED_LEG_TOP[0] * kx, MOLDED_LEG_TOP[1] * ky, sz * MOLDED_LEG_TOP[2] * kz]
-      const foot: Vec3 = [sx * MOLDED_LEG_FOOT[0] * kx, 0, sz * MOLDED_LEG_FOOT[1] * kz]
-      const mx = sx * MOLDED_MOUNT[0] * kx
-      const mz = sz * MOLDED_MOUNT[1] * kz
-      return { key: `${sx}${sz}`, top, foot, mount: [mx, under(mx, mz), mz] as Vec3 }
-    }),
+    [-1, 1].map(sz => ({
+      key: `${sx}${sz}`,
+      top: [sx * JIN_LEG_TOP[0] * kx, frameY - bar, sz * JIN_LEG_TOP[1] * kz] as Vec3,
+      foot: [sx * JIN_LEG_FOOT[0] * kx, 0, sz * JIN_LEG_FOOT[1] * kz] as Vec3,
+    })),
   )
-  const [capR, capH] = MOLDED_CAP
   const black = <Material color="#1b1b1c" material="matte" />
-  // Each side of the base is crossed by two wires, from the top of one leg
-  // down to a bolt low on the next.
-  const sides = [
-    [0, 1],
-    [2, 3],
-    [0, 2],
-    [1, 3],
-  ]
   return (
     <group>
       <mesh geometry={geometry} castShadow receiveShadow>
         {M('shell')}
       </mesh>
-      {legs.map(({ key, top, foot, mount }) => (
+      {/* The frame under the seat: two side bars and two cross bars. */}
+      {[-1, 1].map(sx => (
+        <mesh key={`x${sx}`} position={[sx * fx, frameY - bar / 2, 0]}>
+          <boxGeometry args={[bar, bar, fz * 2 + bar]} />
+          {M('legs')}
+        </mesh>
+      ))}
+      {[-1, 1].map(sz => (
+        <mesh key={`z${sz}`} position={[0, frameY - bar / 2, sz * fz]}>
+          <boxGeometry args={[fx * 2, bar * 0.6, bar * 0.6]} />
+          {M('legs')}
+        </mesh>
+      ))}
+      {legs.map(({ key, top, foot }) => (
         <group key={key}>
-          <Dowel from={foot} to={atHeight(foot, top, top[1] - capH)} r={[MOLDED_LEG[1], MOLDED_LEG[0]]}>
+          <Dowel from={foot} to={top} r={[JIN_LEG[1], JIN_LEG[0]]}>
             {M('legs')}
           </Dowel>
-          <Dowel from={atHeight(foot, top, top[1] - capH)} to={top} r={[capR, capR * 0.8]}>
-            {M('wires')}
-          </Dowel>
-          <Dowel from={foot} to={atHeight(foot, top, 0.012)} r={[0.011, 0.011]}>
+          <Dowel from={foot} to={atHeight(foot, top, 0.012)} r={[0.0085, 0.0085]}>
             {black}
           </Dowel>
-          <Dowel from={top} to={[mount[0], mount[1] - 0.012, mount[2]]} r={[MOLDED_WIRE, MOLDED_WIRE]}>
-            {M('wires')}
-          </Dowel>
-          <mesh position={[mount[0], mount[1] - 0.006, mount[2]]}>
-            <cylinderGeometry args={[0.02, 0.02, 0.012, 24]} />
-            {black}
-          </mesh>
         </group>
       ))}
-      {sides.flatMap(([a, b]) =>
-        [
-          [a, b],
-          [b, a],
-        ].map(([from, to]) => (
-          <Dowel
-            key={`${from}${to}`}
-            from={legs[from].top}
-            to={atHeight(legs[to].foot, legs[to].top, MOLDED_CROSS * ky)}
-            r={[MOLDED_WIRE, MOLDED_WIRE]}
-          >
-            {M('wires')}
-          </Dowel>
-        )),
-      )}
     </group>
   )
 }
@@ -352,12 +333,12 @@ function Varma({ w, d, h, M }: Size) {
   )
 }
 
-const CHAIRS: Record<string, (props: Size) => ReactNode> = { molded: Molded, oia: Oia, sura: Sura, varma: Varma }
+const CHAIRS: Record<string, (props: Size) => ReactNode> = { jin: Jin, oia: Oia, sura: Sura, varma: Varma }
 
 // Each chair is laid out again at the size the sliders give it: its legs
 // grow longer and its seat wider, while legs, boards and cushions keep their
 // thickness.
 export default function DiningChair({ style, ...size }: Props) {
-  const Chair = CHAIRS[style] ?? Molded
+  const Chair = CHAIRS[style] ?? Jin
   return <Chair {...size} />
 }

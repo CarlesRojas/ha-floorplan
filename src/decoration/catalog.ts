@@ -219,13 +219,13 @@ const DINING_VIOK: DecorationVariant = {
 
 // The dining chair's first style, which keeps the kind's old shell and
 // legs slots, so a saved color still lands on it.
-const CHAIR_MOLDED: DecorationVariant = {
-  id: 'molded',
-  label: 'Molded Shell',
-  // 47 by 55 cm, 83 cm tall.
-  params: { width: 0.47, depth: 0.55, height: 0.83 },
-  colors: { shell: '#eeebe4', legs: '#d9b384', wires: '#c9ccd0' },
-  materials: { shell: 'matte', legs: 'wood', wires: 'metal' },
+const CHAIR_JIN: DecorationVariant = {
+  id: 'jin',
+  label: 'Padded Shell',
+  // 44 by 56 cm, 89 cm tall.
+  params: { width: 0.44, depth: 0.56, height: 0.89 },
+  colors: { shell: '#d6ccbc', legs: '#7c7f81' },
+  materials: { shell: 'fabric', legs: 'matte' },
 }
 
 // The office chair's first style, which keeps the kind's old seat, back,
@@ -513,17 +513,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     // Each style starts at its chair's own size, to the centimeter, and the
     // sliders scale the chair from there.
     [
-      p('width', 'Width', 0.47, 0.35, 0.7, 0.01),
-      p('depth', 'Depth', 0.55, 0.35, 0.7, 0.01),
-      p('height', 'Height', 0.83, 0.6, 1.1, 0.01),
+      p('width', 'Width', 0.44, 0.35, 0.7, 0.01),
+      p('depth', 'Depth', 0.56, 0.35, 0.7, 0.01),
+      p('height', 'Height', 0.89, 0.6, 1.1, 0.01),
     ],
-    CHAIR_MOLDED.colors ?? {},
-    CHAIR_MOLDED.materials ?? {},
+    CHAIR_JIN.colors ?? {},
+    CHAIR_JIN.materials ?? {},
     undefined,
-    // A molded shell chair after the Eames DSW, and three Pilma chairs, from
-    // their stated sizes and product photos.
+    // Four Pilma chairs, from their stated sizes and product photos.
     [
-      CHAIR_MOLDED,
+      CHAIR_JIN,
       {
         id: 'oia',
         label: 'Leather Wrapped',

@@ -21,10 +21,11 @@ const RENAMED: Record<string, { kind: string; variant?: string }> = {
 // Styles that were renamed, per kind. The pendant's first two were loose
 // takes on the Nagoya and the Globo Cesta, then became those lamps, and the
 // Globo Cesta gave way to the smaller Globo Cestita. The
-// dining chair's first style was a Pilma chair, then a molded shell.
+// dining chair's first style was a Pilma chair, then a molded shell, then
+// the Jin.
 const RESTYLED: Record<string, Record<string, string>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
-  dining_chair: { aix: 'molded' },
+  dining_chair: { aix: 'jin', molded: 'jin' },
 }
 
 function migrate(config: CardConfig): CardConfig {
