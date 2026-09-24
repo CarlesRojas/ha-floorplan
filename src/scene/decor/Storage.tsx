@@ -1,0 +1,865 @@
+import { Bar, Knob, Legs, Panel, Slab } from '#/scene/decor/parts.tsx'
+import { Dowel } from '#/scene/decor/woodwork.tsx'
+import { Fragment, useMemo, type ReactNode } from 'react'
+import { Color, ExtrudeGeometry, LatheGeometry, Shape, Vector2 } from 'three'
+
+// The other styles of the tables and the storage: each a real piece, laid
+// out again at the size the sliders give it. The first style of each kind
+// stays in FurnitureModel.
+
+type Fill = (slot: string) => ReactNode
+type Size = { w: number; d: number; h: number; M: Fill }
+
+const range = (n: number) => Array.from({ length: n }, (_, i) => i)
+
+// A turned solid from a profile of [radius, height] pairs, bottom to top
+// round the outside and back in over the top, so its faces point out.
+function Turned({
+  profile,
+  scale,
+  position,
+  children,
+}: {
+  profile: [number, number][]
+  scale?: [number, number, number]
+  position?: [number, number, number]
+  children: ReactNode
+}) {
+  const key = profile.flat().join(',')
+  const geometry = useMemo(() => {
+    const at = key.split(',').map(Number)
+    const points = range(at.length / 2).map(i => new Vector2(at[i * 2], at[i * 2 + 1]))
+    return new LatheGeometry(points, 64)
+  }, [key])
+  return (
+    <mesh geometry={geometry} scale={scale} position={position} castShadow receiveShadow>
+      {children}
+    </mesh>
+  )
+}
+
+// A dark film over a gap or a groove, so it reads as a shadow whatever
+// color the piece is painted. Centered on its position, facing +z.
+function Shadow({ size, position }: { size: [number, number]; position: [number, number, number] }) {
+  return (
+    <mesh position={position}>
+      <planeGeometry args={size} />
+      <meshBasicMaterial color="#000000" transparent opacity={0.35} depthWrite={false} />
+    </mesh>
+  )
+}
+
+// Coffee tables
+
+// After the IKEA Lack: a thick top on four square legs, and a shelf between
+// them near the floor.
+export function BlockCoffeeTable({ w, d, h, M }: Size) {
+  const top = Math.min(0.05, h * 0.12)
+  const leg = Math.min(0.05, w * 0.08, d * 0.1)
+  const shelf = Math.min(0.03, h * 0.07)
+  return (
+    <group>
+      {[-1, 1].flatMap(sx =>
+        [-1, 1].map(sz => (
+          <Slab
+            key={`${sx}${sz}`}
+            size={[leg, h - top, leg]}
+            radius={0.004}
+            bevel={0.002}
+            position={[sx * (w / 2 - leg / 2), 0, sz * (d / 2 - leg / 2)]}
+          >
+            {M('legs')}
+          </Slab>
+        )),
+      )}
+      <Slab size={[w - leg * 2, shelf, d - leg * 2]} radius={0.003} bevel={0.002} position={[0, h * 0.22, 0]}>
+        {M('shelf')}
+      </Slab>
+      <Slab size={[w, top, d]} radius={0.006} bevel={0.003} position={[0, h - top, 0]}>
+        {M('top')}
+      </Slab>
+    </group>
+  )
+}
+
+// After the Saarinen low table: an oval stone top on a single stem that
+// flares into a wide foot, drawn as one turned piece.
+export function TulipCoffeeTable({ w, d, h, M }: Size) {
+  const top = Math.min(0.02, h * 0.06)
+  const r = Math.min(w, d) / 2
+  const foot = r * 0.62
+  const neck = Math.min(0.045, r * 0.14)
+  const y = h - top
+  const profile: [number, number][] = [
+    [0.001, 0],
+    [foot, 0],
+    [foot, 0.008],
+    [foot * 0.8, 0.018],
+    [foot * 0.45, y * 0.1],
+    [neck * 1.3, y * 0.35],
+    [neck, y * 0.55],
+    [neck * 1.4, y * 0.8],
+    [r * 0.45, y - 0.012],
+    [r * 0.5, y - 0.004],
+    [r * 0.5, y],
+    [0.001, y],
+  ]
+  return (
+    <group>
+      {/* The base stretches with the top, so an oval top has an oval foot. */}
+      <Turned profile={profile} scale={[w / (2 * r), 1, d / (2 * r)]}>
+        {M('base')}
+      </Turned>
+      <mesh position={[0, y + top / 2, 0]} scale={[w, top, d]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.5, 0.5, 1, 96]} />
+        {M('top')}
+      </mesh>
+    </group>
+  )
+}
+
+// Side tables
+
+// A small top on four thin legs, with a lower shelf.
+export function ShelfSideTable({ w, d, h, M }: Size) {
+  const top = Math.min(0.03, h * 0.08)
+  const inset = Math.min(0.05, w * 0.12, d * 0.12)
+  const leg = Math.min(0.017, w * 0.04, d * 0.04)
+  return (
+    <group>
+      <Legs width={w} depth={d} height={h - top} inset={inset} top={leg} bottom={leg * 0.7}>
+        {M('legs')}
+      </Legs>
+      <Slab
+        size={[w - inset * 1.2, Math.min(0.02, h * 0.05), d - inset * 1.2]}
+        radius={0.02}
+        position={[0, h * 0.3, 0]}
+      >
+        {M('shelf')}
+      </Slab>
+      <Slab size={[w, top, d]} radius={0.04} position={[0, h - top, 0]}>
+        {M('top')}
+      </Slab>
+    </group>
+  )
+}
+
+// A small cabinet on tapered legs, with a drawer for every 25 cm or so of
+// its height and a slim pull on each.
+export function Nightstand({ w, d, h, M }: Size) {
+  const legH = Math.min(0.16, h * 0.3)
+  const carcass = h - legH
+  const frame = Math.min(0.015, carcass * 0.08)
+  const drawers = Math.max(1, Math.min(5, Math.round(carcass / 0.25)))
+  const dh = (carcass - frame * 2) / drawers
+  const inset = Math.min(0.05, w * 0.12, d * 0.12)
+  const leg = Math.min(0.02, w * 0.045, d * 0.045)
+  const splay = Math.min(0.05, Math.max(0, ((inset - leg) * 2) / Math.max(legH, 0.01)))
+  return (
+    <group>
+      <Legs width={w} depth={d} height={legH} inset={inset} top={leg} bottom={leg * 0.7} splay={splay}>
+        {M('cabinet')}
+      </Legs>
+      <Slab size={[w, carcass, d]} radius={0.025} position={[0, legH, 0]}>
+        {M('cabinet')}
+      </Slab>
+      {range(drawers).map(i => (
+        <group key={i}>
+          <Panel
+            size={[w - frame * 2, dh - Math.min(0.012, dh * 0.15), 0.016]}
+            position={[0, legH + frame + dh * i, d / 2 + 0.006]}
+            radius={0.01}
+          >
+            {M('drawers')}
+          </Panel>
+          <Bar
+            length={Math.min(w * 0.34, 0.16)}
+            radius={0.007}
+            rotation={[0, 0, Math.PI / 2]}
+            position={[0, legH + frame + dh * (i + 0.72), d / 2 + 0.028]}
+          >
+            {M('handles')}
+          </Bar>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+// After the IKEA Gladom: a round tray with a raised rim, lifted on thin
+// splayed legs. An oblong table has an oval tray.
+export function TraySideTable({ w, d, h, M }: Size) {
+  const r = w / 2
+  const rim = Math.min(0.045, h * 0.1)
+  const wall = 0.008
+  const legs = 4
+  const legR = Math.min(0.008, r * 0.04)
+  const profile: [number, number][] = [
+    [0.001, 0],
+    [r - 0.012, 0],
+    [r, 0.012],
+    [r, rim],
+    [r - wall, rim],
+    [r - wall, wall],
+    [0.001, wall],
+  ]
+  return (
+    <group>
+      <Turned profile={profile} scale={[1, 1, d / w]} position={[0, h - rim, 0]}>
+        {M('tray')}
+      </Turned>
+      {range(legs).map(i => {
+        const a = (i / legs) * Math.PI * 2 + Math.PI / 4
+        const [cx, cz] = [Math.cos(a) * (w / 2), Math.sin(a) * (d / 2)]
+        return (
+          <Dowel key={i} from={[cx * 0.85, 0, cz * 0.85]} to={[cx * 0.6, h - rim, cz * 0.6]} r={[legR * 0.8, legR]}>
+            {M('legs')}
+          </Dowel>
+        )
+      })}
+    </group>
+  )
+}
+
+// Bookshelves
+
+// After the IKEA Kallax: a grid of open cubes about 34 cm inside, in a
+// thick outer frame with thinner boards between. No back and no plinth.
+export function CubeShelf({ w, d, h, M }: Size) {
+  const outer = Math.min(0.039, w * 0.06, h * 0.04)
+  const inner = 0.016
+  const cols = Math.max(1, Math.round((w - outer * 2 + inner) / (0.335 + inner)))
+  const rows = Math.max(1, Math.round((h - outer * 2 + inner) / (0.335 + inner)))
+  const cellW = (w - outer * 2 - inner * (cols - 1)) / cols
+  const cellH = (h - outer * 2 - inner * (rows - 1)) / rows
+  const inside = h - outer * 2
+  return (
+    <group>
+      {[0, h - outer].map(y => (
+        <Slab key={y} size={[w, outer, d]} radius={0.004} bevel={0.002} position={[0, y, 0]}>
+          {M('cabinet')}
+        </Slab>
+      ))}
+      {[-1, 1].map(s => (
+        <Slab
+          key={s}
+          size={[outer, inside, d]}
+          radius={0.002}
+          bevel={0.001}
+          position={[(s * (w - outer)) / 2, outer, 0]}
+        >
+          {M('cabinet')}
+        </Slab>
+      ))}
+      {range(cols - 1).map(i => (
+        <Slab
+          key={`v${i}`}
+          size={[inner, inside, d]}
+          radius={0.002}
+          bevel={0.001}
+          position={[-w / 2 + outer + cellW * (i + 1) + inner * (i + 0.5), outer, 0]}
+        >
+          {M('cabinet')}
+        </Slab>
+      ))}
+      {range(cols).flatMap(cIndex =>
+        range(rows - 1).map(r => (
+          <Slab
+            key={`h${cIndex}-${r}`}
+            size={[cellW, inner, d]}
+            radius={0.002}
+            bevel={0.001}
+            position={[
+              -w / 2 + outer + cellW * (cIndex + 0.5) + inner * cIndex,
+              outer + cellH * (r + 1) + inner * r,
+              0,
+            ]}
+          >
+            {M('shelves')}
+          </Slab>
+        )),
+      )}
+    </group>
+  )
+}
+
+// A wire ladder, its two uprights `depth` apart along z and rungs across
+// them every few centimeters: the side panel of a String shelf.
+function WireLadder({ height, depth, x, z = 0, M }: { height: number; depth: number; x: number; z?: number; M: Fill }) {
+  const rod = 0.0035
+  const rungs = Math.max(2, Math.round(height / 0.075))
+  return (
+    <group position={[x, 0, z]}>
+      {[-1, 1].map(s => (
+        <Bar key={s} length={height} radius={rod} position={[0, height / 2, (s * (depth - rod * 2)) / 2]}>
+          {M('frame')}
+        </Bar>
+      ))}
+      {range(rungs + 1).map(i => (
+        <Bar
+          key={i}
+          length={depth - rod * 2}
+          radius={rod * 0.7}
+          rotation={[Math.PI / 2, 0, 0]}
+          position={[0, rod + ((height - rod * 2) / rungs) * i, 0]}
+        >
+          {M('frame')}
+        </Bar>
+      ))}
+    </group>
+  )
+}
+
+// After the String system on floor panels: wire ladders about 80 cm apart
+// with thin boards hung between them, from a hand above the floor to a
+// hand below the top.
+export function StringShelf({ w, d, h, M, boards }: Size & { boards: number }) {
+  const bays = Math.max(1, Math.round(w / 0.8))
+  const bayW = w / bays
+  const board = 0.018
+  const low = Math.min(0.12, h * 0.1)
+  const high = h - Math.min(0.08, h * 0.06)
+  const n = Math.max(2, boards)
+  const panel = (slot: string) => M(slot === 'frame' ? 'cabinet' : slot)
+  return (
+    <group>
+      {range(bays + 1).map(i => (
+        <WireLadder key={i} height={h} depth={d} x={-w / 2 + 0.004 + (bayW - 0.008 / bays) * i} M={panel} />
+      ))}
+      {range(bays).flatMap(b =>
+        range(n).map(i => (
+          <Slab
+            key={`${b}-${i}`}
+            size={[bayW - 0.012, board, d - 0.01]}
+            radius={0.004}
+            bevel={0.002}
+            position={[-w / 2 + bayW * (b + 0.5), low + ((high - low) / (n - 1)) * i, 0]}
+          >
+            {M('shelves')}
+          </Slab>
+        )),
+      )}
+    </group>
+  )
+}
+
+// Sideboards
+
+// After the USM Haller: chrome tubes along every edge of 35 cm cells,
+// meeting in chrome balls, with colored steel panels filling them and a
+// small round lock on each drop front.
+export function ChromeSideboard({ w, d, h, M }: Size) {
+  const tube = 0.0095
+  const ball = 0.0125
+  const feet = Math.min(0.03, h * 0.05)
+  const H = h - feet
+  const cols = Math.max(1, Math.round(w / 0.75))
+  const rows = Math.max(1, Math.round(H / 0.35))
+  const xs = range(cols + 1).map(i => -w / 2 + ball + ((w - ball * 2) / cols) * i)
+  const ys = range(rows + 1).map(j => feet + ball + ((H - ball * 2) / rows) * j)
+  const zs = [-d / 2 + ball, d / 2 - ball]
+  const cellW = (w - ball * 2) / cols
+  const cellH = (H - ball * 2) / rows
+  const tubeX = w - ball * 2
+  const tubeY = cellH
+  return (
+    <group>
+      {/* The panels, as one colored body just inside the frame. */}
+      <Slab
+        size={[w - ball * 2, H - ball * 2, d - ball * 2]}
+        radius={0.002}
+        bevel={0.001}
+        position={[0, feet + ball, 0]}
+      >
+        {M('fronts')}
+      </Slab>
+      {ys.flatMap(y =>
+        zs.map(z => (
+          <Bar key={`x${y}${z}`} length={tubeX} radius={tube} rotation={[0, 0, Math.PI / 2]} position={[0, y, z]}>
+            {M('frame')}
+          </Bar>
+        )),
+      )}
+      {xs.flatMap(x =>
+        zs.flatMap(z =>
+          range(rows).map(j => (
+            <Bar key={`y${x}${z}${j}`} length={tubeY} radius={tube} position={[x, ys[j] + cellH / 2, z]}>
+              {M('frame')}
+            </Bar>
+          )),
+        ),
+      )}
+      {xs.flatMap(x =>
+        ys.map(y => (
+          <Fragment key={`z${x}${y}`}>
+            <Bar length={d - ball * 2} radius={tube} rotation={[Math.PI / 2, 0, 0]} position={[x, y, 0]}>
+              {M('frame')}
+            </Bar>
+            {zs.map(z => (
+              <mesh key={z} position={[x, y, z]} castShadow>
+                <sphereGeometry args={[ball, 20, 14]} />
+                {M('frame')}
+              </mesh>
+            ))}
+          </Fragment>
+        )),
+      )}
+      {/* Leveling feet under the bottom balls. */}
+      {xs.flatMap(x =>
+        zs.map(z => (
+          <mesh key={`f${x}${z}`} position={[x, (feet + ball) / 2, z]}>
+            <cylinderGeometry args={[0.006, 0.008, feet + ball, 12]} />
+            {M('frame')}
+          </mesh>
+        )),
+      )}
+      {range(cols).flatMap(i =>
+        range(rows).map(j => (
+          <Knob
+            key={`k${i}${j}`}
+            radius={0.008}
+            position={[-w / 2 + ball + cellW * (i + 0.5), ys[j] + cellH - 0.035, d / 2 - ball + 0.004]}
+          >
+            {M('handles')}
+          </Knob>
+        )),
+      )}
+    </group>
+  )
+}
+
+// After the IKEA Besta: a plain carcass of 60 cm units on slim metal legs,
+// with push to open fronts and no handles. The middle of three units is a
+// pair of drawers.
+export function PushSideboard({ w, d, h, M }: Size) {
+  const legH = Math.min(0.1, h * 0.15)
+  const H = h - legH
+  const units = Math.max(1, Math.round(w / 0.6))
+  const unitW = w / units
+  const gap = 0.003
+  return (
+    <group>
+      <Legs
+        width={w}
+        depth={d}
+        height={legH}
+        inset={Math.min(0.05, d * 0.12)}
+        top={0.016}
+        bottom={0.012}
+        columns={units > 2 ? units : 2}
+      >
+        {M('legs')}
+      </Legs>
+      <Slab size={[w, H, d - 0.02]} radius={0.004} bevel={0.002} position={[0, legH, -0.01]}>
+        {M('cabinet')}
+      </Slab>
+      {range(units).map(i => {
+        const x = -w / 2 + unitW * (i + 0.5)
+        const drawers = units % 2 === 1 && units > 1 && i === (units - 1) / 2 ? 2 : 1
+        return range(drawers).map(j => (
+          <Panel
+            key={`${i}-${j}`}
+            size={[unitW - gap * 2, H / drawers - gap * 2, 0.018]}
+            position={[x, legH + gap + (H / drawers) * j, d / 2 - 0.02]}
+            radius={0.003}
+          >
+            {M('fronts')}
+          </Panel>
+        ))
+      })}
+    </group>
+  )
+}
+
+// Dressers
+
+// After the IKEA Malm: a plain box between two sides, its drawers without
+// handles. The top edge of every front is cut back, which reads as a dark
+// line to pull on.
+export function PlainDresser({ w, d, h, M }: Size) {
+  const side = 0.018
+  const top = 0.02
+  const toe = Math.min(0.03, h * 0.04)
+  const rows = Math.max(2, Math.round((h - top - toe) / 0.24))
+  const rowH = (h - top - toe) / rows
+  const grip = Math.min(0.018, rowH * 0.12)
+  return (
+    <group>
+      <Slab size={[w, h - top, d - 0.02]} radius={0.003} bevel={0.002} position={[0, 0, -0.01]}>
+        {M('cabinet')}
+      </Slab>
+      <Slab size={[w, top, d]} radius={0.003} bevel={0.002} position={[0, h - top, 0]}>
+        {M('cabinet')}
+      </Slab>
+      {range(rows).map(i => (
+        <Fragment key={i}>
+          <Panel size={[w - side * 2, rowH - grip, 0.018]} position={[0, toe + rowH * i, d / 2 - 0.019]} radius={0.003}>
+            {M('fronts')}
+          </Panel>
+          {/* The grip above the front. */}
+          <Shadow size={[w - side * 2, grip]} position={[0, toe + rowH * (i + 1) - grip / 2, d / 2 - 0.019]} />
+        </Fragment>
+      ))}
+    </group>
+  )
+}
+
+// After the IKEA Hemnes chest: a top that overhangs a face frame, a skirt
+// between four feet, two small drawers across the top and wide ones
+// below, each with round wooden knobs.
+export function PaintedDresser({ w, d, h, M }: Size) {
+  const top = Math.min(0.03, h * 0.04)
+  const feet = Math.min(0.1, h * 0.12)
+  const body = h - top - feet
+  const frame = 0.022
+  const wide = Math.max(1, Math.round((body - 0.2) / 0.26))
+  const smallH = Math.min(0.2, body * 0.25)
+  const wideH = (body - frame - smallH) / wide
+  const front = (x: number, y: number, fw: number, fh: number, knobs: number, key: string) => (
+    <group key={key}>
+      <Panel size={[fw, fh - frame, 0.018]} position={[x, y, d / 2]} radius={0.004}>
+        {M('fronts')}
+      </Panel>
+      {range(knobs).map(k => (
+        <Knob
+          key={k}
+          radius={0.017}
+          position={[knobs === 1 ? x : x + (k === 0 ? -fw / 4 : fw / 4), y + (fh - frame) / 2, d / 2 + 0.019]}
+        >
+          {M('handles')}
+        </Knob>
+      ))}
+    </group>
+  )
+  const innerW = w - frame * 2
+  return (
+    <group>
+      {[-1, 1].flatMap(sx =>
+        [-1, 1].map(sz => (
+          <Slab
+            key={`${sx}${sz}`}
+            size={[0.05, feet + 0.01, 0.05]}
+            radius={0.004}
+            bevel={0.002}
+            position={[sx * (w / 2 - 0.025), 0, sz * (d / 2 - 0.035)]}
+          >
+            {M('cabinet')}
+          </Slab>
+        )),
+      )}
+      {/* The skirt, its lower edge rising between the feet. */}
+      <Slab size={[w - 0.1, feet * 0.45, 0.02]} radius={0.003} bevel={0.002} position={[0, feet * 0.55, d / 2 - 0.02]}>
+        {M('cabinet')}
+      </Slab>
+      <Slab size={[w, body, d - 0.02]} radius={0.003} bevel={0.002} position={[0, feet, -0.01]}>
+        {M('cabinet')}
+      </Slab>
+      <Slab size={[w + 0.04, top, d + 0.03]} radius={0.008} bevel={0.004} position={[0, h - top, 0.005]}>
+        {M('cabinet')}
+      </Slab>
+      {range(wide).map(i => front(0, feet + frame + wideH * i, innerW, wideH, 2, `w${i}`))}
+      {[-1, 1].map(s =>
+        front((s * (innerW + frame)) / 4, feet + frame + wideH * wide, (innerW - frame) / 2, smallH, 1, `s${s}`),
+      )}
+    </group>
+  )
+}
+
+// Wardrobes
+
+// After the IKEA Pax with Hasvik doors: a tall carcass on a plinth, with
+// two doors sliding on tracks one in front of the other, each edged with an
+// aluminium profile to pull on.
+export function SlidingWardrobe({ w, d, h, M }: Size) {
+  const rail = 0.05
+  const plinth = 0.04
+  const doorW = w / 2 + 0.02
+  const doorH = h - rail - plinth - 0.01
+  const tracks = [d / 2 - 0.03, d / 2 - 0.005]
+  return (
+    <group>
+      <Slab size={[w - 0.04, plinth, d - 0.08]} radius={0.004} bevel={0.002} position={[0, 0, -0.04]}>
+        {M('cabinet')}
+      </Slab>
+      <Slab size={[w, h - plinth, d - 0.07]} radius={0.004} bevel={0.002} position={[0, plinth, -0.035]}>
+        {M('cabinet')}
+      </Slab>
+      {/* The top track and the bottom rail the doors run in. */}
+      <Slab size={[w, rail, 0.07]} radius={0.004} bevel={0.002} position={[0, h - rail, d / 2 - 0.035]}>
+        {M('handles')}
+      </Slab>
+      <Slab size={[w, plinth, 0.07]} radius={0.004} bevel={0.002} position={[0, 0, d / 2 - 0.035]}>
+        {M('handles')}
+      </Slab>
+      {[-1, 1].map((s, i) => {
+        const x = s * (w / 2 - doorW / 2)
+        return (
+          <group key={s} position={[x, plinth + 0.005, tracks[i] - 0.009]}>
+            <Panel size={[doorW - 0.04, doorH, 0.016]} position={[0, 0, 0]} radius={0.002}>
+              {M('fronts')}
+            </Panel>
+            {[-1, 1].map(e => (
+              <Slab
+                key={e}
+                size={[0.02, doorH, 0.024]}
+                radius={0.003}
+                bevel={0.002}
+                position={[(e * (doorW - 0.02)) / 2, 0, 0]}
+              >
+                {M('handles')}
+              </Slab>
+            ))}
+            {[0, doorH - 0.02].map(y => (
+              <Slab key={y} size={[doorW - 0.04, 0.02, 0.02]} radius={0.003} bevel={0.002} position={[0, y, 0]}>
+                {M('handles')}
+              </Slab>
+            ))}
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+// The same color a little lighter or darker, for garments that do not
+// all match.
+function shade(color: string, by: number) {
+  const c = new Color(color)
+  c.offsetHSL(by * 0.35, 0, by * 0.6)
+  return `#${c.getHexString()}`
+}
+
+// A garment on its hanger, seen edge on from the rail: `across` wide along
+// z, its shoulders sloping down from the hook and its hem `long` below it.
+function Garment({ long, across, color }: { long: number; across: number; color: string }) {
+  const geometry = useMemo(() => {
+    const half = across / 2
+    const s = new Shape()
+    s.moveTo(-0.04, 0)
+    s.lineTo(0.04, 0)
+    s.quadraticCurveTo(half * 0.7, -0.02, half, -0.08)
+    s.lineTo(half * 0.94, -long)
+    s.lineTo(-half * 0.94, -long)
+    s.lineTo(-half, -0.08)
+    s.quadraticCurveTo(-half * 0.7, -0.02, -0.04, 0)
+    const geo = new ExtrudeGeometry(s, {
+      depth: 0.02,
+      bevelEnabled: true,
+      bevelThickness: 0.008,
+      bevelSize: 0.008,
+      bevelSegments: 3,
+    })
+    geo.translate(0, 0, -0.01)
+    geo.rotateY(Math.PI / 2)
+    return geo
+  }, [long, across])
+  return (
+    <mesh geometry={geometry} castShadow>
+      <meshStandardMaterial color={color} roughness={0.95} />
+    </mesh>
+  )
+}
+
+const GARMENTS = [
+  { long: 0.95, tone: 0 },
+  { long: 0.7, tone: 0.3 },
+  { long: 0.85, tone: -0.2 },
+  { long: 0.66, tone: 0.5 },
+  { long: 1.05, tone: -0.35 },
+  { long: 0.72, tone: 0.15 },
+  { long: 0.9, tone: -0.1 },
+]
+
+// After the IKEA Mulig: an open clothes rack of thin white tube, a rail
+// across the top hung with clothes and a shelf near the floor for shoes
+// and boxes.
+export function OpenRail({ w, d, h, M, clothes }: Size & { clothes: string }) {
+  const tube = 0.011
+  const post = d / 2 - 0.03
+  const shelfY = Math.min(0.22, h * 0.15)
+  const count = Math.max(1, Math.floor((w - 0.16) / 0.085))
+  const across = Math.min(0.46, d * 0.9)
+  const hang = h - 0.08
+  return (
+    <group>
+      {[-1, 1].map(sx => (
+        <group key={sx} position={[(sx * (w - tube * 2)) / 2, 0, 0]}>
+          {[-1, 1].map(sz => (
+            <Bar key={sz} length={h} radius={tube} position={[0, h / 2, sz * post]}>
+              {M('frame')}
+            </Bar>
+          ))}
+          {/* A foot along the depth, and the head over the two posts. */}
+          {[tube, h - tube].map(y => (
+            <Bar key={y} length={post * 2 + tube * 2} radius={tube} rotation={[Math.PI / 2, 0, 0]} position={[0, y, 0]}>
+              {M('frame')}
+            </Bar>
+          ))}
+        </group>
+      ))}
+      <Bar length={w} radius={tube} rotation={[0, 0, Math.PI / 2]} position={[0, h - tube, 0]}>
+        {M('frame')}
+      </Bar>
+      <Slab size={[w - tube * 4, 0.014, post * 2]} radius={0.004} bevel={0.002} position={[0, shelfY, 0]}>
+        {M('frame')}
+      </Slab>
+      {range(count).map(i => {
+        const g = GARMENTS[i % GARMENTS.length]
+        const long = Math.min(g.long, hang - shelfY - 0.1)
+        const x = -w / 2 + 0.08 + ((w - 0.16) / Math.max(1, count - 1)) * i
+        const color = shade(clothes, g.tone)
+        return (
+          <group key={i} position={[count === 1 ? 0 : x, 0, 0]}>
+            {/* The hanger's hook over the rail. */}
+            <Bar length={0.06} radius={0.003} position={[0, hang + 0.03, 0]}>
+              {M('frame')}
+            </Bar>
+            <group position={[0, hang, 0]}>
+              <Garment long={long} across={across} color={color} />
+            </group>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+// Shoe racks
+
+// After the IKEA Hemnes shoe cabinet: a shallow case on low feet with an
+// overhanging top and a tilting compartment for every 55 cm or so of
+// height, each front framed and pulled by a wooden knob at the top.
+export function TiltShoeCabinet({ w, d, h, M }: Size) {
+  const top = Math.min(0.025, h * 0.04)
+  const feet = Math.min(0.08, h * 0.12)
+  const body = h - top - feet
+  const n = Math.max(1, Math.round(body / 0.55))
+  const cellH = body / n
+  const frame = 0.02
+  return (
+    <group>
+      {[-1, 1].map(sx => (
+        <Slab
+          key={sx}
+          size={[0.03, feet + 0.01, d - 0.03]}
+          radius={0.004}
+          bevel={0.002}
+          position={[sx * (w / 2 - 0.035), 0, -0.01]}
+        >
+          {M('frame')}
+        </Slab>
+      ))}
+      <Slab size={[w - 0.1, feet * 0.5, 0.018]} radius={0.003} bevel={0.002} position={[0, feet * 0.5, d / 2 - 0.03]}>
+        {M('frame')}
+      </Slab>
+      <Slab size={[w, body, d - 0.03]} radius={0.004} bevel={0.002} position={[0, feet, -0.015]}>
+        {M('frame')}
+      </Slab>
+      <Slab size={[w + 0.03, top, d + 0.01]} radius={0.006} bevel={0.003} position={[0, h - top, 0.005]}>
+        {M('frame')}
+      </Slab>
+      {range(n).map(i => {
+        const y = feet + cellH * i + frame / 2
+        const fh = cellH - frame
+        return (
+          <group key={i}>
+            <Panel size={[w - frame * 2, fh, 0.018]} position={[0, y, d / 2 - 0.03]} radius={0.004}>
+              {M('fronts')}
+            </Panel>
+            {/* The seam under the front, and a groove round the panel
+                inside its frame. */}
+            <Shadow size={[w - frame * 2, frame]} position={[0, y - frame / 2, d / 2 - 0.029]} />
+            {[
+              [w - frame * 2 - 0.12, 0.006, 0, 0.06],
+              [w - frame * 2 - 0.12, 0.006, 0, fh - 0.06],
+              [0.006, fh - 0.12, -(w - frame * 2 - 0.12) / 2, fh / 2],
+              [0.006, fh - 0.12, (w - frame * 2 - 0.12) / 2, fh / 2],
+            ].map(([gw, gh, gx, gy], k) => (
+              <Shadow key={k} size={[gw, gh]} position={[gx, y + gy, d / 2 - 0.0205]} />
+            ))}
+            <Knob radius={0.016} position={[0, y + fh - 0.035, d / 2 - 0.011]}>
+              {M('handles')}
+            </Knob>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+// After the IKEA Tjusig bench: a slatted seat on two solid ends, with a
+// slatted shelf underneath for the shoes.
+export function ShoeBench({ w, d, h, M }: Size) {
+  const end = 0.03
+  const seat = Math.min(0.025, h * 0.06)
+  const slats = Math.max(2, Math.round(d / 0.1))
+  const slatD = (d - 0.02) / slats
+  const shelfY = Math.min(0.1, h * 0.2)
+  const inner = w - end * 2
+  return (
+    <group>
+      {[-1, 1].map(s => (
+        <Slab key={s} size={[end, h - seat, d]} radius={0.005} bevel={0.003} position={[(s * (w - end)) / 2, 0, 0]}>
+          {M('frame')}
+        </Slab>
+      ))}
+      {/* A rail under the back of the seat ties the ends together. */}
+      <Slab size={[inner, 0.06, 0.02]} radius={0.003} bevel={0.002} position={[0, h - seat - 0.06, -d / 2 + 0.02]}>
+        {M('frame')}
+      </Slab>
+      {range(slats).map(i => (
+        <Fragment key={i}>
+          <Slab
+            size={[w, seat, slatD - 0.012]}
+            radius={0.006}
+            bevel={0.003}
+            position={[0, h - seat, -d / 2 + 0.01 + slatD * (i + 0.5)]}
+          >
+            {M('seat')}
+          </Slab>
+          <Slab
+            size={[inner, 0.018, slatD - 0.02]}
+            radius={0.004}
+            bevel={0.002}
+            position={[0, shelfY, -d / 2 + 0.01 + slatD * (i + 0.5)]}
+          >
+            {M('rails')}
+          </Slab>
+        </Fragment>
+      ))}
+    </group>
+  )
+}
+
+// Wall shelves. They are drawn from the wall at z 0 out along +z, their
+// origin at the height they hang.
+
+// After the IKEA Lack wall shelf: a thick board with its fixings hidden
+// inside it.
+export function FloatingShelf({ w, d, M }: { w: number; d: number; M: Fill }) {
+  return (
+    <Slab size={[w, 0.05, d]} radius={0.004} bevel={0.002} position={[0, 0, d / 2]}>
+      {M('shelf')}
+    </Slab>
+  )
+}
+
+// After the String Pocket: two wire ladders 50 cm tall screwed to the wall
+// with three thin shelves hung between them, rising from the height it
+// hangs at.
+export function WirePocket({ w, d, M }: { w: number; d: number; M: Fill }) {
+  const tall = 0.5
+  const panel = (slot: string) => M(slot === 'frame' ? 'panels' : slot)
+  return (
+    <group>
+      {[-1, 1].map(s => (
+        <WireLadder key={s} height={tall} depth={d} x={s * (w / 2 - 0.004)} z={d / 2} M={panel} />
+      ))}
+      {[0.02, 0.24, 0.46].map(y => (
+        <Slab key={y} size={[w - 0.012, 0.014, d - 0.008]} radius={0.004} bevel={0.002} position={[0, y, d / 2]}>
+          {M('shelf')}
+        </Slab>
+      ))}
+    </group>
+  )
+}

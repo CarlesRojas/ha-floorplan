@@ -23,6 +23,14 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   kitchen_island: { kind: 'kitchen_counter', variant: 'island' },
   // The crib was dropped, and a saved one becomes the narrowest bed.
   crib: { kind: 'bed_double', params: { width: 0.9, length: 1.8 } },
+  // The nightstand became a style of the side table.
+  nightstand: { kind: 'side_table', variant: 'nightstand' },
+}
+
+// Parameters that were split in two, per kind. The side table was square,
+// with one size for both sides, before it had a width and a depth.
+const SPLIT: Record<string, Record<string, string[]>> = {
+  side_table: { size: ['width', 'depth'] },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose
@@ -53,6 +61,17 @@ function migrate(config: CardConfig): CardConfig {
       .map(d => {
         const style = d.variant ? RESTYLED[d.kind]?.[d.variant] : undefined
         return style ? { ...d, variant: style } : d
+      })
+      .map(d => {
+        const split = SPLIT[d.kind]
+        if (!split || !d.params) return d
+        const params = { ...d.params }
+        for (const [old, now] of Object.entries(split)) {
+          if (params[old] === undefined) continue
+          for (const id of now) params[id] ??= params[old]
+          delete params[old]
+        }
+        return { ...d, params }
       })
   }
   if (Array.isArray(config.devices)) next.devices = config.devices.filter(d => known.has(d.room))

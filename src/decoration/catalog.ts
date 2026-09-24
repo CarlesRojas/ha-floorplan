@@ -750,15 +750,56 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(1.1, 0.6, 1.6), depth(0.6, 0.4, 0.9), height(0.4, 0.3, 0.5)],
     { top: SCANDI.oak, legs: SCANDI.oak, shelf: SCANDI.oak },
     { top: 'wood', legs: 'wood', shelf: 'wood' },
+    undefined,
+    [
+      { id: 'slatted', label: 'Oak Slatted' },
+      {
+        id: 'lack',
+        label: 'Block Lakka',
+        // 90 by 55 cm, 45 cm tall.
+        params: { width: 0.9, depth: 0.55, height: 0.45 },
+        colors: { top: '#f3f1ec', legs: '#f3f1ec', shelf: '#f3f1ec' },
+        materials: { top: 'matte', legs: 'matte', shelf: 'matte' },
+      },
+      {
+        id: 'tulip',
+        label: 'Oval Tulpa',
+        // 107 by 71 cm, 39 cm tall.
+        params: { width: 1.07, depth: 0.71, height: 0.39 },
+        colors: { top: '#e9e5de', base: '#f2f1ee' },
+        materials: { top: 'ceramic', base: 'matte' },
+      },
+    ],
   ),
   kind(
     'side_table',
     'table',
     'Side table',
     'floor',
-    [size(0.45, 0.3, 0.7), height(0.5, 0.35, 0.7)],
+    // The nightstand was a kind of its own, and a saved one is read as a
+    // side table in that style.
+    [width(0.45, 0.3, 0.7), depth(0.45, 0.3, 0.7), height(0.5, 0.35, 0.75)],
     { top: SCANDI.oak, legs: SCANDI.oak, shelf: SCANDI.oak },
     { top: 'wood', legs: 'wood', shelf: 'wood' },
+    undefined,
+    [
+      { id: 'shelf', label: 'Oak Tier' },
+      {
+        id: 'nightstand',
+        label: 'Drawer Natta',
+        params: { width: 0.45, depth: 0.4, height: 0.5 },
+        colors: { cabinet: SCANDI.oak, drawers: SCANDI.offWhite, handles: SCANDI.slate },
+        materials: { cabinet: 'wood', drawers: 'matte', handles: 'metal' },
+      },
+      {
+        id: 'tray',
+        label: 'Tray Glada',
+        // 45 cm across, 53 cm tall.
+        params: { width: 0.45, depth: 0.45, height: 0.53 },
+        colors: { tray: '#8c9483', legs: '#8c9483' },
+        materials: { tray: 'matte', legs: 'matte' },
+      },
+    ],
   ),
   kind(
     'desk',
@@ -784,15 +825,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
     ],
   ),
-  kind(
-    'nightstand',
-    'table',
-    'Nightstand',
-    'floor',
-    [width(0.45, 0.3, 0.7), depth(0.4, 0.3, 0.5), height(0.5, 0.35, 0.7)],
-    { cabinet: SCANDI.oak, drawers: SCANDI.offWhite, handles: SCANDI.slate },
-    { cabinet: 'wood', drawers: 'matte', handles: 'metal' },
-  ),
 
   // Storage
   kind(
@@ -802,9 +834,34 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'floor',
     // The shelves between the bottom and the top follow the height, and a
     // few can be added or taken away.
-    [width(0.9, 0.5, 2), depth(0.32, 0.2, 0.5), height(1.8, 0.8, 2.4), adjust('shelves', 'Shelves')],
+    [
+      width(0.9, 0.5, 2),
+      depth(0.32, 0.2, 0.5),
+      height(1.8, 0.8, 2.4),
+      only(adjust('shelves', 'Shelves'), ['billy', 'string']),
+    ],
     { cabinet: SCANDI.oak, shelves: SCANDI.oak },
     { cabinet: 'wood', shelves: 'wood' },
+    undefined,
+    [
+      { id: 'billy', label: 'Birch Bilbo' },
+      {
+        id: 'kallax',
+        label: 'Cube Kalla',
+        // Two cubes by four, 77 by 147 cm.
+        params: { width: 0.77, depth: 0.39, height: 1.47 },
+        colors: { cabinet: '#f3f1ec', shelves: '#f3f1ec' },
+        materials: { cabinet: 'matte', shelves: 'matte' },
+      },
+      {
+        id: 'string',
+        label: 'Wire Strand',
+        // Two floor panels 200 cm tall, 30 cm deep, with 78 cm shelves.
+        params: { width: 0.82, depth: 0.3, height: 2 },
+        colors: { cabinet: '#2b2c2d', shelves: SCANDI.walnut },
+        materials: { cabinet: 'metal', shelves: 'wood' },
+      },
+    ],
   ),
   kind(
     'sideboard',
@@ -814,15 +871,55 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(1.6, 0.9, 2.6), depth(0.42, 0.3, 0.6), height(0.75, 0.6, 1)],
     { cabinet: SCANDI.oak, fronts: SCANDI.offWhite, handles: SCANDI.slate },
     { cabinet: 'wood', fronts: 'matte', handles: 'metal' },
+    undefined,
+    [
+      { id: 'oak', label: 'Oak Board' },
+      {
+        id: 'usm',
+        label: 'Chrome Hallo',
+        // Two bays 75 cm wide, two rows of 35 cm, on short feet.
+        params: { width: 1.53, depth: 0.37, height: 0.74 },
+        colors: { frame: '#c9ccce', fronts: '#2f5b8a', handles: '#c9ccce' },
+        materials: { frame: 'metal', fronts: 'metal', handles: 'metal' },
+      },
+      {
+        id: 'besta',
+        label: 'Push Bessa',
+        // Three 60 cm units on metal legs, 180 by 42 cm, 74 cm tall.
+        params: { width: 1.8, depth: 0.42, height: 0.74 },
+        colors: { cabinet: '#f3f1ec', fronts: '#f3f1ec', legs: '#8a8f92' },
+        materials: { cabinet: 'matte', fronts: 'matte', legs: 'metal' },
+      },
+    ],
   ),
   kind(
     'wardrobe',
     'storage',
     'Wardrobe',
     'floor',
-    [width(1.2, 0.6, 2.6), depth(0.6, 0.45, 0.75), height(2.1, 1.6, 2.5)],
+    [width(1.2, 0.6, 2.6), depth(0.6, 0.45, 0.75), height(2.1, 1.4, 2.5)],
     { cabinet: SCANDI.offWhite, fronts: SCANDI.oak, handles: SCANDI.slate },
     { cabinet: 'matte', fronts: 'wood', handles: 'metal' },
+    undefined,
+    [
+      { id: 'hinged', label: 'Oak Doors' },
+      {
+        id: 'sliding',
+        label: 'Sliding Paxa',
+        // 150 by 66 cm, 201 cm tall, with two sliding doors.
+        params: { width: 1.5, depth: 0.66, height: 2.01 },
+        colors: { cabinet: SCANDI.offWhite, fronts: '#d8d3ca', handles: '#8a8f92' },
+        materials: { cabinet: 'matte', fronts: 'matte', handles: 'metal' },
+      },
+      {
+        id: 'rail',
+        label: 'Open Rail',
+        // 99 by 46 cm, 151 cm tall.
+        params: { width: 0.99, depth: 0.46, height: 1.51 },
+        colors: { frame: '#f3f1ec', clothes: '#8b98a3' },
+        materials: { frame: 'metal', clothes: 'fabric' },
+      },
+    ],
   ),
   kind(
     'dresser',
@@ -832,15 +929,55 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(1, 0.6, 1.8), depth(0.45, 0.35, 0.6), height(0.9, 0.6, 1.3)],
     { cabinet: SCANDI.oak, fronts: SCANDI.offWhite, handles: SCANDI.slate },
     { cabinet: 'wood', fronts: 'matte', handles: 'metal' },
+    undefined,
+    [
+      { id: 'oak', label: 'Oak Chest' },
+      {
+        id: 'malm',
+        label: 'Plain Malma',
+        // Four drawers, 80 by 48 cm, 100 cm tall.
+        params: { width: 0.8, depth: 0.48, height: 1 },
+        colors: { cabinet: '#f3f1ec', fronts: '#f3f1ec' },
+        materials: { cabinet: 'matte', fronts: 'matte' },
+      },
+      {
+        id: 'hemnes',
+        label: 'Painted Hemma',
+        // Three drawers, 108 by 50 cm, 96 cm tall.
+        params: { width: 1.08, depth: 0.5, height: 0.96 },
+        colors: { cabinet: '#efece5', fronts: '#efece5', handles: '#e2ddd3' },
+        materials: { cabinet: 'wood', fronts: 'wood', handles: 'wood' },
+      },
+    ],
   ),
   kind(
     'shoe_rack',
     'storage',
     'Shoe rack',
     'floor',
-    [width(0.8, 0.5, 1.4), depth(0.3, 0.2, 0.4), height(0.5, 0.3, 0.9)],
+    [width(0.8, 0.5, 1.4), depth(0.3, 0.2, 0.4), height(0.5, 0.3, 1.4)],
     { frame: SCANDI.oak, rails: SCANDI.oak },
     { frame: 'wood', rails: 'wood' },
+    undefined,
+    [
+      { id: 'rungs', label: 'Oak Rungs' },
+      {
+        id: 'cabinet',
+        label: 'Tilt Hemma',
+        // Two tilting compartments, 89 by 30 cm, 127 cm tall.
+        params: { width: 0.89, depth: 0.3, height: 1.27 },
+        colors: { frame: '#efece5', fronts: '#efece5', handles: '#e2ddd3' },
+        materials: { frame: 'wood', fronts: 'wood', handles: 'wood' },
+      },
+      {
+        id: 'bench',
+        label: 'Seat Tjusa',
+        // 81 by 34 cm, 50 cm tall.
+        params: { width: 0.81, depth: 0.34, height: 0.5 },
+        colors: { frame: '#2b2c2d', seat: SCANDI.oak, rails: '#2b2c2d' },
+        materials: { frame: 'metal', seat: 'wood', rails: 'metal' },
+      },
+    ],
   ),
   kind(
     'wall_shelf',
@@ -850,6 +987,26 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.9, 0.4, 1.8), depth(0.24, 0.15, 0.4), height(1.5, 0.6, 2.3)],
     { shelf: SCANDI.oak },
     { shelf: 'wood' },
+    undefined,
+    [
+      { id: 'ledge', label: 'Lipped Ledge' },
+      {
+        id: 'floating',
+        label: 'Floating Lakka',
+        // 110 by 26 cm, 5 cm thick.
+        params: { width: 1.1, depth: 0.26 },
+        colors: { shelf: '#f3f1ec' },
+        materials: { shelf: 'matte' },
+      },
+      {
+        id: 'string',
+        label: 'Wire Pocket',
+        // 60 by 15 cm, 50 cm tall, with three shelves.
+        params: { width: 0.6, depth: 0.15 },
+        colors: { panels: '#f2f1ee', shelf: '#f2f1ee' },
+        materials: { panels: 'metal', shelf: 'matte' },
+      },
+    ],
   ),
 
   // Bedroom
@@ -1889,7 +2046,6 @@ const SURFACE_TOPS: Record<string, string | number> = {
   coffee_table: 'height',
   side_table: 'height',
   desk: 'height',
-  nightstand: 'height',
   sideboard: 'height',
   dresser: 'height',
   shoe_rack: 'height',

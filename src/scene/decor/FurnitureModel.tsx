@@ -12,6 +12,25 @@ import DiningTable from '#/scene/decor/DiningTables.tsx'
 import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
 import { Pouf, Sofa } from '#/scene/decor/Sofas.tsx'
 import Stool from '#/scene/decor/Stools.tsx'
+import {
+  BlockCoffeeTable,
+  ChromeSideboard,
+  CubeShelf,
+  FloatingShelf,
+  Nightstand,
+  OpenRail,
+  PaintedDresser,
+  PlainDresser,
+  PushSideboard,
+  ShelfSideTable,
+  ShoeBench,
+  SlidingWardrobe,
+  StringShelf,
+  TiltShoeCabinet,
+  TraySideTable,
+  TulipCoffeeTable,
+  WirePocket,
+} from '#/scene/decor/Storage.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
 import type { ReactNode } from 'react'
@@ -72,8 +91,15 @@ export default function FurnitureModel({ kind, item }: Props) {
     }
     case 'desk':
     case 'coffee_table': {
-      if (kind.id === 'desk' && decorationVariant(kind, item.variant)?.id === 'office_table') {
+      const style = decorationVariant(kind, item.variant)?.id
+      if (kind.id === 'desk' && style === 'office_table') {
         return <OfficeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
+      }
+      if (kind.id === 'coffee_table' && style === 'lack') {
+        return <BlockCoffeeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
+      }
+      if (kind.id === 'coffee_table' && style === 'tulip') {
+        return <TulipCoffeeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
       }
       // A plain top on tapered dowel legs, with an apron tying them
       // together. A long table grows a middle pair rather than sagging, and
@@ -160,76 +186,18 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'side_table': {
-      // A small square top on four thin legs, with a lower shelf.
-      const w = p('size')
-      const h = p('height')
-      const top = Math.min(0.03, h * 0.08)
-      const inset = Math.min(0.05, w * 0.12)
-      const leg = Math.min(0.017, w * 0.04)
-      return (
-        <group>
-          <Legs width={w} depth={w} height={h - top} inset={inset} top={leg} bottom={leg * 0.7}>
-            {M('legs')}
-          </Legs>
-          <Slab
-            size={[w - inset * 1.2, Math.min(0.02, h * 0.05), w - inset * 1.2]}
-            radius={0.02}
-            position={[0, h * 0.3, 0]}
-          >
-            {M('shelf')}
-          </Slab>
-          <Slab size={[w, top, w]} radius={0.04} position={[0, h - top, 0]}>
-            {M('top')}
-          </Slab>
-        </group>
-      )
-    }
-    case 'nightstand': {
-      // A small cabinet on tapered legs, with a drawer for every 25 cm or so
-      // of its height and a slim pull on each.
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const legH = Math.min(0.16, h * 0.3)
-      const carcass = h - legH
-      const frame = Math.min(0.015, carcass * 0.08)
-      const drawers = Math.max(1, Math.min(5, Math.round(carcass / 0.25)))
-      const dh = (carcass - frame * 2) / drawers
-      const inset = Math.min(0.05, w * 0.12, d * 0.12)
-      const leg = Math.min(0.02, w * 0.045, d * 0.045)
-      const splay = Math.min(0.05, Math.max(0, ((inset - leg) * 2) / Math.max(legH, 0.01)))
-      return (
-        <group>
-          <Legs width={w} depth={d} height={legH} inset={inset} top={leg} bottom={leg * 0.7} splay={splay}>
-            {M('cabinet')}
-          </Legs>
-          <Slab size={[w, carcass, d]} radius={0.025} position={[0, legH, 0]}>
-            {M('cabinet')}
-          </Slab>
-          {Array.from({ length: drawers }).map((_, i) => (
-            <group key={i}>
-              <Panel
-                size={[w - frame * 2, dh - Math.min(0.012, dh * 0.15), 0.016]}
-                position={[0, legH + frame + dh * i, d / 2 + 0.006]}
-                radius={0.01}
-              >
-                <Material color={c('drawers')} material={m('drawers')} />
-              </Panel>
-              <Bar
-                length={Math.min(w * 0.34, 0.16)}
-                radius={0.007}
-                rotation={[0, 0, Math.PI / 2]}
-                position={[0, legH + frame + dh * (i + 0.72), d / 2 + 0.028]}
-              >
-                <Material color={c('handles')} material="metal" />
-              </Bar>
-            </group>
-          ))}
-        </group>
-      )
+      const style = decorationVariant(kind, item.variant)?.id ?? 'shelf'
+      const size = { w: p('width'), d: p('depth'), h: p('height'), M }
+      if (style === 'nightstand') return <Nightstand {...size} />
+      if (style === 'tray') return <TraySideTable {...size} />
+      return <ShelfSideTable {...size} />
     }
     // Storage
     case 'bookshelf': {
+      const style = decorationVariant(kind, item.variant)?.id ?? 'billy'
+      const size = { w: p('width'), d: p('depth'), h: p('height'), M }
+      if (style === 'kallax') return <CubeShelf {...size} />
+      if (style === 'string') return <StringShelf {...size} boards={bookshelfShelves(size.h, p('shelves')) + 2} />
       // Open case after the IKEA Billy: bays about 80 cm wide between full
       // height uprights, a back, and a recessed plinth. The shelves follow
       // the height, give or take the ones added or taken away, and are
@@ -295,6 +263,14 @@ export default function FurnitureModel({ kind, item }: Props) {
     case 'sideboard':
     case 'dresser':
     case 'wardrobe': {
+      const style = decorationVariant(kind, item.variant)?.id
+      const size = { w: p('width'), d: p('depth'), h: p('height'), M }
+      if (style === 'usm') return <ChromeSideboard {...size} />
+      if (style === 'besta') return <PushSideboard {...size} />
+      if (style === 'malm') return <PlainDresser {...size} />
+      if (style === 'hemnes') return <PaintedDresser {...size} />
+      if (style === 'sliding') return <SlidingWardrobe {...size} />
+      if (style === 'rail') return <OpenRail {...size} clothes={c('clothes')} />
       // One carcass, three ways of closing it: doors across the width for a
       // sideboard, drawers stacked by height for a dresser, tall doors and a
       // plinth for a wardrobe. All of them count their fronts from the size.
@@ -416,6 +392,10 @@ export default function FurnitureModel({ kind, item }: Props) {
       )
     }
     case 'shoe_rack': {
+      const style = decorationVariant(kind, item.variant)?.id
+      const size = { w: p('width'), d: p('depth'), h: p('height'), M }
+      if (style === 'cabinet') return <TiltShoeCabinet {...size} />
+      if (style === 'bench') return <ShoeBench {...size} />
       // Tiers of dowels between uprights, as many tiers as the height takes
       // and a bay for every 70 cm or so of width.
       const w = p('width')
@@ -460,8 +440,11 @@ export default function FurnitureModel({ kind, item }: Props) {
     }
     case 'wall_shelf': {
       // Floating oak board with a thin front lip.
+      const style = decorationVariant(kind, item.variant)?.id
       const w = p('width')
       const d = p('depth')
+      if (style === 'floating') return <FloatingShelf w={w} d={d} M={M} />
+      if (style === 'string') return <WirePocket w={w} d={d} M={M} />
       return (
         <group>
           <Slab size={[w, 0.035, d]} radius={0.015} position={[0, 0, d / 2]}>
