@@ -25,6 +25,9 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   crib: { kind: 'bed_double', params: { width: 0.9, length: 1.8 } },
   // The nightstand became a style of the side table.
   nightstand: { kind: 'side_table', variant: 'nightstand' },
+  // The standing fan and the tower fan became styles of the floor fan.
+  fan_standing: { kind: 'fan_floor', variant: 'pedestal' },
+  fan_tower: { kind: 'fan_floor', variant: 'tower' },
 }
 
 // Kinds that were dropped with nothing to take their place. A saved one is

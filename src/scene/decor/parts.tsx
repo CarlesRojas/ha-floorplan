@@ -450,3 +450,26 @@ export function Led({
     </mesh>
   )
 }
+
+/**
+ * A faint pool of light round a small device's indicator, so its state
+ * reads from across the room. It reaches a few tens of centimeters and
+ * no further. It stays mounted at zero when off, since adding and
+ * removing lights recompiles every material in the scene.
+ */
+export function Halo({
+  on,
+  position,
+  color = '#8fd6a0',
+  intensity = 0.05,
+  distance = 0.45,
+}: {
+  on: boolean
+  position: [number, number, number]
+  color?: string
+  intensity?: number
+  distance?: number
+}) {
+  const lit = useEased(on ? 1 : 0, 9)
+  return <pointLight position={position} color={color} intensity={intensity * lit} distance={distance} decay={1} />
+}

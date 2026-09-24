@@ -121,8 +121,8 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Laundry | Washing machine, dryer |
 | Bathroom | Toilet, basin, bathtub, shower, towel rail |
 | Decor | Half wall, Rug, large plant, small plant, wall mirror, wall clock, vase, books, basket, curtain |
-| Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, projector screen |
-| Climate | Radiator, air conditioner, ceiling fan, standing fan, tower fan, air purifier, humidifier, thermostat |
+| Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, portable projector, projector screen |
+| Climate | Radiator, air conditioner, ceiling fan, floor fan (pedestal or tower), air purifier, humidifier, thermostat |
 | Windows and doors | Blind, roller shutter, window, door, sliding door, sliding glass door, garage door, awning |
 | Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor |
 | Smart home | Robot vacuum |
