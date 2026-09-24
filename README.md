@@ -241,3 +241,4 @@ Home Assistant and the browser cache resources aggressively. After a rebuild, ha
 - `pnpm build`: typecheck and build `dist/card.js` once
 - `pnpm watch`: rebuild `dist/card.js` on change
 - `pnpm lint`: run oxlint
+- `pnpm showroom`: write `showroom.yaml`, a complete card with every decoration and each of its styles at their defaults, to paste into a dashboard
