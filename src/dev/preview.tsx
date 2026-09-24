@@ -24,7 +24,7 @@ const params: Record<string, number> = {}
 // dark model.
 const colors: Record<string, string> = {}
 for (const [key, value] of query) {
-  if (['kind', 'variant', 'on', 'yaw'].includes(key)) continue
+  if (['kind', 'variant', 'on', 'yaw', 'pitch'].includes(key)) continue
   if (value.startsWith('#')) colors[key] = value
   else if (Number.isFinite(Number(value))) params[key] = Number(value)
 }
@@ -38,6 +38,9 @@ const item: DecorationConfig = {
   colors,
 }
 const yaw = (Number(query.get('yaw')) || 0) * (Math.PI / 180)
+// How far above the model the camera looks down from, for flat things like
+// a hob.
+const pitch = (Number(query.get('pitch')) || 5.7) * (Math.PI / 180)
 const glow = new Color(LIGHT_GLOW_COLOR)
 // Ceiling items hang from a ceiling brought down near the floor, so a long
 // cord does not push the model out of frame.
@@ -48,7 +51,14 @@ root.style.cssText = `width:100vw;height:100vh;background:${on ? '#2a2a2e' : '#d
 document.body.appendChild(root)
 createRoot(root).render(
   kind ? (
-    <Canvas shadows dpr={2} camera={{ fov: 30, position: [3 * Math.sin(yaw), 0.3, 3 * Math.cos(yaw)] }}>
+    <Canvas
+      shadows
+      dpr={2}
+      camera={{
+        fov: 30,
+        position: [3 * Math.sin(yaw) * Math.cos(pitch), 3 * Math.sin(pitch), 3 * Math.cos(yaw) * Math.cos(pitch)],
+      }}
+    >
       <ambientLight intensity={on ? 0.15 : 0.7} />
       <directionalLight position={[3, 6, 4]} intensity={on ? 0.1 : 1.2} />
       <Bounds fit clip observe margin={1.15} maxDuration={0}>
