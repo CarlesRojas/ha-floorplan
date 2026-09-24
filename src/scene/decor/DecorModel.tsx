@@ -1,6 +1,7 @@
-import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useTravel } from '#/scene/decor/ease.ts'
 import { Bar, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { FloorPlant, ShelfPlant, WallPlant } from '#/scene/decor/Plants.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useMemo } from 'react'
@@ -35,6 +36,8 @@ export default function DecorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
+  const style = decorationVariant(kind, item.variant)?.id ?? ''
+  const paint = (slot: string, both = false) => <Material color={c(slot)} material={m(slot)} doubleSide={both} />
   // An unbound curtain hangs closed. A device with a position draws it that
   // far, one that only switches draws it all the way open or shut. Eased,
   // so it draws rather than jumps as Home Assistant reports its position on
@@ -121,100 +124,12 @@ export default function DecorModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'plant_large': {
-      // A fiddle leaf fig: a slim trunk out of a ribbed pot, broad leaves
-      // climbing it and spreading wider toward the top.
-      const r = p('size') / 2
-      const h = p('height')
-      const potH = Math.min(0.42, h * 0.32)
-      const trunk = h * 0.72
-      const leaves = Math.max(7, Math.round(h * 6))
-      return (
-        <group>
-          <mesh position={[0, potH / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.9, r * 0.66, potH, SEG]} />
-            <Material color={c('pot')} material={m('pot')} />
-          </mesh>
-          <mesh position={[0, potH, 0]}>
-            <cylinderGeometry args={[r * 0.94, r * 0.9, 0.035, SEG]} />
-            <Material color={c('pot')} material={m('pot')} />
-          </mesh>
-          {/* Soil, sunk just below the rim. */}
-          <mesh position={[0, potH - 0.02, 0]}>
-            <cylinderGeometry args={[r * 0.86, r * 0.86, 0.02, SEG]} />
-            <Material color={c('soil')} material={m('soil')} />
-          </mesh>
-          <Bar length={trunk} radius={r * 0.075} position={[0, potH + trunk / 2 - 0.05, 0]} rotation={[0, 0, 0.03]}>
-            <Material color={c('stems')} material={m('stems')} />
-          </Bar>
-          {Array.from({ length: leaves }).map((_, i) => {
-            const t = (i + 1) / (leaves + 1)
-            const a = i * 2.39
-            const y = potH + 0.12 + trunk * t
-            // Lower leaves sit closer to the trunk, the crown spreads out.
-            const reach = r * (0.5 + t * 1.05)
-            const size = r * (0.7 + t * 0.5)
-            return (
-              <group key={i}>
-                <Bar
-                  length={reach}
-                  radius={0.008}
-                  position={[(Math.cos(a) * reach) / 2, y + size * 0.1, (Math.sin(a) * reach) / 2]}
-                  rotation={[0, -a, Math.PI / 2 - 0.35]}
-                >
-                  <Material color={c('stems')} material={m('stems')} />
-                </Bar>
-                <Leaf
-                  length={size * 1.5}
-                  width={size}
-                  position={[Math.cos(a) * (reach + size * 0.6), y + size * 0.3, Math.sin(a) * (reach + size * 0.6)]}
-                  rotation={[0, -a + Math.PI / 2, 0.35]}
-                >
-                  <Material color={c('leaves')} material={m('leaves')} doubleSide />
-                </Leaf>
-              </group>
-            )
-          })}
-        </group>
-      )
-    }
-    case 'plant_small': {
-      // A potted herb or small monstera: a tight rosette over dark soil.
-      const r = p('size') / 2
-      const potH = r * 1.1
-      return (
-        <group>
-          <mesh position={[0, potH / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.85, r * 0.65, potH, SEG]} />
-            <Material color={c('pot')} material={m('pot')} />
-          </mesh>
-          <mesh position={[0, potH, 0]}>
-            <cylinderGeometry args={[r * 0.9, r * 0.85, 0.018, SEG]} />
-            <Material color={c('pot')} material={m('pot')} />
-          </mesh>
-          <mesh position={[0, potH - 0.012, 0]}>
-            <cylinderGeometry args={[r * 0.8, r * 0.8, 0.015, SEG]} />
-            <Material color={c('soil')} material={m('soil')} />
-          </mesh>
-          {Array.from({ length: 7 }).map((_, i) => {
-            const a = i * 2.39
-            const t = (i % 3) / 3
-            const reach = r * (0.35 + t * 0.45)
-            return (
-              <Leaf
-                key={i}
-                length={r * (1 + t * 0.5)}
-                width={r * (0.55 + t * 0.2)}
-                position={[Math.cos(a) * reach, potH + r * (0.35 + t * 0.4), Math.sin(a) * reach]}
-                rotation={[0, -a + Math.PI / 2, 0.55 - t * 0.25]}
-              >
-                <Material color={c('leaves')} material={m('leaves')} doubleSide />
-              </Leaf>
-            )
-          })}
-        </group>
-      )
-    }
+    case 'plant_large':
+      return <FloorPlant style={style} size={p('size')} height={p('height')} paint={paint} />
+    case 'plant_small':
+      return <ShelfPlant style={style} size={p('size')} height={p('height')} trail={p('trail')} paint={paint} />
+    case 'plant_wall':
+      return <WallPlant style={style} width={p('width')} ratio={p('ratio')} paint={paint} />
     case 'picture': {
       // A thin oak frame around a wide pale mount, the print recessed in it.
       const w = p('width')
