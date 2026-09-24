@@ -1,13 +1,4 @@
 import {
-  JIN_CORNER,
-  JIN_FRAME,
-  JIN_HALF,
-  JIN_LEG,
-  JIN_LEG_FOOT,
-  JIN_LEG_TOP,
-  JIN_PROFILE,
-  JIN_RISE,
-  JIN_THICK,
   DINING_CHAIRS,
   OIA_BACK_T,
   OIA_LEAN,
@@ -23,12 +14,10 @@ import {
   VARMA_SEAT,
   VARMA_STRETCHER,
 } from '#/scene/decor/diningChairSpecs.ts'
-import { Cushion, Material, Slab } from '#/scene/decor/parts.tsx'
-import { thicken } from '#/scene/decor/plates.ts'
+import { Cushion, Slab } from '#/scene/decor/parts.tsx'
 import { ArcBack, Dowel } from '#/scene/decor/woodwork.tsx'
 import { atHeight, type Vec3 } from '#/scene/decor/points.ts'
-import { useMemo, type ReactNode } from 'react'
-import { CatmullRomCurve3, Vector3 } from 'three'
+import { type ReactNode } from 'react'
 
 type Props = {
   style: string
@@ -41,116 +30,6 @@ type Props = {
 
 // A chair's size as the sliders give it, and its materials.
 type Size = Omit<Props, 'style'>
-
-// A value from a table of shares and values, eased between them.
-function eased(table: [number, number][], s: number) {
-  for (let k = 1; k < table.length; k++) {
-    const [s0, v0] = table[k - 1]
-    const [s1, v1] = table[k]
-    if (s <= s1) {
-      const t = (s - s0) / (s1 - s0)
-      return v0 + (v1 - v0) * t * t * (3 - 2 * t)
-    }
-  }
-  return table[table.length - 1][1]
-}
-
-// The shell's face as a grid, rows from the front edge to the top of the
-// back and columns across. Its outline and profile stretch with the chair,
-// and its edges turn up by the same amount at any size.
-function shellFace(kx: number, ky: number, kz: number) {
-  const curve = new CatmullRomCurve3(
-    JIN_PROFILE.map(([z, y]) => new Vector3(0, y * ky, z * kz)),
-    false,
-    'centripetal',
-  )
-  const length = curve.getLength()
-  const [r0, r1] = JIN_CORNER
-  const rows = 120
-  const cols = 45
-  // The rounding stops just short of square to the edge: the shell is thick,
-  // and an edge row lying along its neighbours would leave it no normal.
-  const corner = (r: number, from: number) => {
-    const t = Math.min(1, 0.12 + (0.88 * from) / r)
-    return r * (Math.sqrt(1 - (1 - t) ** 2) - 1)
-  }
-  return Array.from({ length: rows + 1 }, (_, i) => {
-    // Rows closer together at the ends, where the corners round off.
-    const s = (1 - Math.cos((Math.PI * i) / rows)) / 2
-    const p = curve.getPointAt(s)
-    const t = curve.getTangentAt(s)
-    // Toward the sitter: up on the seat and forward on the back.
-    const toward = new Vector3(0, -t.z, t.y).normalize()
-    const half = eased(JIN_HALF, s) * kx + corner(r0, s * length) + corner(r1, (1 - s) * length)
-    const rise = eased(JIN_RISE, s)
-    return Array.from({ length: cols }, (_, j) => {
-      const u = (j / (cols - 1)) * 2 - 1
-      return p
-        .clone()
-        .add(new Vector3(u * half, 0, 0))
-        .addScaledVector(toward, rise * Math.abs(u) ** 2.4)
-    })
-  })
-}
-
-function Jin({ w, d, h, M }: Size) {
-  const spec = DINING_CHAIRS.jin
-  const [kx, ky, kz] = [w / spec.width, h / spec.height, d / spec.depth]
-  const { face, geometry } = useMemo(() => {
-    const face = shellFace(kx, ky, kz)
-    return { face, geometry: thicken(face, JIN_THICK, true) }
-  }, [kx, ky, kz])
-  // The underside of the seat over the frame's middle, which the frame and
-  // the legs hang from.
-  const frameY = useMemo(() => {
-    let low = Infinity
-    for (const row of face.slice(0, face.length / 2)) {
-      for (const p of row) {
-        if (Math.abs(p.x) < JIN_FRAME[0] * kx && Math.abs(p.z) < JIN_FRAME[1] * kz) low = Math.min(low, p.y)
-      }
-    }
-    return low - JIN_THICK
-  }, [face, kx, kz])
-  const [fx, fz, bar] = [JIN_FRAME[0] * kx, JIN_FRAME[1] * kz, JIN_FRAME[2]]
-  const legs = [-1, 1].flatMap(sx =>
-    [-1, 1].map(sz => ({
-      key: `${sx}${sz}`,
-      top: [sx * JIN_LEG_TOP[0] * kx, frameY - bar, sz * JIN_LEG_TOP[1] * kz] as Vec3,
-      foot: [sx * JIN_LEG_FOOT[0] * kx, 0, sz * JIN_LEG_FOOT[1] * kz] as Vec3,
-    })),
-  )
-  const black = <Material color="#1b1b1c" material="matte" />
-  return (
-    <group>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        {M('shell')}
-      </mesh>
-      {/* The frame under the seat: two side bars and two cross bars. */}
-      {[-1, 1].map(sx => (
-        <mesh key={`x${sx}`} position={[sx * fx, frameY - bar / 2, 0]}>
-          <boxGeometry args={[bar, bar, fz * 2 + bar]} />
-          {M('legs')}
-        </mesh>
-      ))}
-      {[-1, 1].map(sz => (
-        <mesh key={`z${sz}`} position={[0, frameY - bar / 2, sz * fz]}>
-          <boxGeometry args={[fx * 2, bar * 0.6, bar * 0.6]} />
-          {M('legs')}
-        </mesh>
-      ))}
-      {legs.map(({ key, top, foot }) => (
-        <group key={key}>
-          <Dowel from={foot} to={top} r={[JIN_LEG[1], JIN_LEG[0]]}>
-            {M('legs')}
-          </Dowel>
-          <Dowel from={foot} to={atHeight(foot, top, 0.012)} r={[0.0085, 0.0085]}>
-            {black}
-          </Dowel>
-        </group>
-      ))}
-    </group>
-  )
-}
 
 function Oia({ w, d, h, M }: Size) {
   const ky = h / DINING_CHAIRS.oia.height
@@ -333,12 +212,12 @@ function Varma({ w, d, h, M }: Size) {
   )
 }
 
-const CHAIRS: Record<string, (props: Size) => ReactNode> = { jin: Jin, oia: Oia, sura: Sura, varma: Varma }
+const CHAIRS: Record<string, (props: Size) => ReactNode> = { oia: Oia, sura: Sura, varma: Varma }
 
 // Each chair is laid out again at the size the sliders give it: its legs
 // grow longer and its seat wider, while legs, boards and cushions keep their
 // thickness.
 export default function DiningChair({ style, ...size }: Props) {
-  const Chair = CHAIRS[style] ?? Jin
+  const Chair = CHAIRS[style] ?? Oia
   return <Chair {...size} />
 }

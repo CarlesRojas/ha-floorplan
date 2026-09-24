@@ -25,10 +25,10 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
 // takes on the Nagoya and the Globo Cesta, then became those lamps, and the
 // Globo Cesta gave way to the smaller Globo Cestita. The
 // dining chair's first style was a Pilma chair, then a molded shell, then
-// the Jin.
+// the Jin, and each of those is now the slab chair that took its place.
 const RESTYLED: Record<string, Record<string, string>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
-  dining_chair: { aix: 'jin', molded: 'jin' },
+  dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
 }
 
 function migrate(config: CardConfig): CardConfig {

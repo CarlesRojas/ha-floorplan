@@ -229,20 +229,20 @@ const DINING_VIOK: DecorationVariant = {
   materials: { top: 'wood', frame: 'metal' },
 }
 
-// The dining chair's first style, which keeps the kind's old shell and
-// legs slots, so a saved color still lands on it.
 // The sofa and the pouf, after Pilma's Dresde in its natural fabric, on
 // legs painted mocha.
 const SOFA_FABRIC_COLOR = '#e4ded4'
 const SOFA_LEG_COLOR = '#3d3530'
 
-const CHAIR_JIN: DecorationVariant = {
-  id: 'jin',
-  label: 'Padded Shell',
-  // 44 by 56 cm, 89 cm tall.
-  params: { width: 0.44, depth: 0.56, height: 0.89 },
-  colors: { shell: '#d6ccbc', legs: '#7c7f81' },
-  materials: { shell: 'fabric', legs: 'matte' },
+// The dining chair's first style, which keeps the kind's old shell and
+// legs slots, so a saved color still lands on it.
+const CHAIR_SLAB: DecorationVariant = {
+  id: 'oia',
+  label: 'Molded Slab',
+  // 48 by 51 cm, 85 cm tall.
+  params: { width: 0.48, depth: 0.51, height: 0.85 },
+  colors: { shell: '#45403d', legs: '#45403d' },
+  materials: { shell: 'matte', legs: 'matte' },
 }
 
 // The office chair's first style, which keeps the kind's old seat, back,
@@ -537,20 +537,12 @@ export const DECORATION_KINDS: DecorationKind[] = [
       p('depth', 'Depth', 0.56, 0.35, 0.7, 0.01),
       p('height', 'Height', 0.89, 0.6, 1.1, 0.01),
     ],
-    CHAIR_JIN.colors ?? {},
-    CHAIR_JIN.materials ?? {},
+    CHAIR_SLAB.colors ?? {},
+    CHAIR_SLAB.materials ?? {},
     undefined,
-    // Four Pilma chairs, from their stated sizes and product photos.
+    // Three Pilma chairs, from their stated sizes and product photos.
     [
-      CHAIR_JIN,
-      {
-        id: 'oia',
-        label: 'Leather Wrapped',
-        // 48 by 51 cm, 85 cm tall.
-        params: { width: 0.48, depth: 0.51, height: 0.85 },
-        colors: { shell: '#45403d', legs: '#45403d' },
-        materials: { shell: 'matte', legs: 'matte' },
-      },
+      CHAIR_SLAB,
       {
         id: 'sura',
         label: 'Cord Seat Teak',
