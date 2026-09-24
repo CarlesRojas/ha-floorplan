@@ -8,6 +8,7 @@ import {
 } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import Shower from '#/scene/decor/Shower.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -666,64 +667,18 @@ export default function ApplianceModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'shower': {
-      // A low stone tray, two framed glass panels, a square rain head and a
-      // slim riser with a hand shower.
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const glassH = h - 0.06
+    case 'shower':
       return (
-        <group>
-          <Slab size={[w, 0.05, d]} radius={0.02} bevel={0.012} position={[0, 0, 0]}>
-            {M('tray')}
-          </Slab>
-          <mesh position={[w * 0.18, 0.055, d * 0.18]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.045, 0.045, 0.008, SEG]} />
-            {M('tap')}
-          </mesh>
-          {/* Glass, with a slim upright at each free edge. */}
-          {[
-            { pos: [0, -d / 2] as [number, number], size: [w, 0.012] as [number, number], rot: 0 },
-            { pos: [-w / 2, 0] as [number, number], size: [d, 0.012] as [number, number], rot: Math.PI / 2 },
-          ].map((panel, i) => (
-            <group key={i} position={[panel.pos[0], 0.05, panel.pos[1]]} rotation={[0, panel.rot, 0]}>
-              <mesh position={[0, glassH / 2, 0]}>
-                <boxGeometry args={[panel.size[0], glassH, panel.size[1]]} />
-                <meshPhysicalMaterial color={c('glass')} transparent opacity={0.22} roughness={0.05} metalness={0} />
-              </mesh>
-              {[-1, 1].map(s => (
-                <mesh key={s} position={[(s * panel.size[0]) / 2, glassH / 2, 0]}>
-                  <boxGeometry args={[0.022, glassH, 0.03]} />
-                  {M('frame')}
-                </mesh>
-              ))}
-              <mesh position={[0, glassH, 0]}>
-                <boxGeometry args={[panel.size[0], 0.022, 0.03]} />
-                {M('frame')}
-              </mesh>
-            </group>
-          ))}
-          {/* Riser rail against the back panel, with the hand shower on it. */}
-          <mesh position={[-w * 0.3, h * 0.55, -d / 2 + 0.05]}>
-            <boxGeometry args={[0.03, h * 0.5, 0.022]} />
-            {M('tap')}
-          </mesh>
-          <mesh position={[-w * 0.3, h * 0.6, -d / 2 + 0.09]} rotation={[0.5, 0, 0]}>
-            <cylinderGeometry args={[0.018, 0.022, 0.12, 20]} />
-            {M('tap')}
-          </mesh>
-          {/* The arm and the square rain head. */}
-          <mesh position={[0, h - 0.12, -d / 2 + 0.16]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.014, 0.014, 0.26, 20]} />
-            {M('tap')}
-          </mesh>
-          <Slab size={[0.24, 0.018, 0.24]} radius={0.02} bevel={0.006} position={[0, h - 0.15, -d / 2 + 0.28]}>
-            {M('tap')}
-          </Slab>
-        </group>
+        <Shower
+          w={p('width')}
+          d={p('depth')}
+          h={p('height')}
+          glass={p('glass')}
+          flip={p('flip') > 0.5}
+          colors={{ glass: c('glass') }}
+          M={M}
+        />
       )
-    }
     case 'towel_rail': {
       // A heated ladder rail: two uprights and evenly spaced bars, with a
       // towel folded over one of them.
