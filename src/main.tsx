@@ -21,6 +21,8 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   armchair: { kind: 'sofa', variant: 'dresde', params: { width: 0.78, depth: 0.8 } },
   // The island became a style of the counter.
   kitchen_island: { kind: 'kitchen_counter', variant: 'island' },
+  // The crib was dropped, and a saved one becomes the narrowest bed.
+  crib: { kind: 'bed_double', params: { width: 0.9, length: 1.8 } },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose

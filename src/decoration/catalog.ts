@@ -837,15 +837,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { frame: SCANDI.oak, bedding: SCANDI.offWhite, pillows: SCANDI.linen },
     { frame: 'wood', bedding: 'fabric', pillows: 'fabric' },
   ),
-  kind(
-    'crib',
-    'bed',
-    'Crib',
-    'floor',
-    [width(0.7, 0.55, 0.9), length(1.25, 1, 1.5, 0.05)],
-    { frame: SCANDI.oak, bedding: SCANDI.offWhite },
-    { frame: 'wood', bedding: 'fabric' },
-  ),
 
   // Kitchen
   kind(

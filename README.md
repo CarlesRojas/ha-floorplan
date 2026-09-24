@@ -116,7 +116,7 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Seating | Sofa, armchair, dining chair, office chair, stool, bench, pouf |
 | Tables | Dining table, coffee table, side table, desk (writing desk or office table), nightstand |
 | Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |
-| Beds | Bed, crib |
+| Beds | Bed |
 | Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle |
 | Laundry | Washing machine, dryer |
 | Bathroom | Toilet, basin, bathtub, shower, towel rail |
