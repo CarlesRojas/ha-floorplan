@@ -9,6 +9,7 @@ import {
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import CameraRig from '#/scene/CameraRig.tsx'
+import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
@@ -98,6 +99,7 @@ export default function Scene({
       {/* Everything solid casts and receives, so a lamp throws the things
           around it onto the floor. */}
       <Shadows />
+      <Cleanup />
       <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
       <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
       {/* A press that misses everything looks around itself for something

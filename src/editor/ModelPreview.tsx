@@ -1,4 +1,5 @@
 import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
+import Cleanup from '#/scene/cleanup.tsx'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { CEILING_HEIGHT_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -29,6 +30,7 @@ export default function ModelPreview({ item, className, style, boxRef }: Props) 
   return (
     <div ref={boxRef} className={className} style={style}>
       <Canvas dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ fov: 35, position: [3, 2.4, 3] }}>
+        <Cleanup />
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 6, 4]} intensity={1.2} />
         <Bounds fit clip observe margin={1.3} maxDuration={0}>
