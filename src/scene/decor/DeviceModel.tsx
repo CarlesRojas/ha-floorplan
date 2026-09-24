@@ -781,7 +781,8 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             const left = !hingeRight && i < leaves / 2
             const edge = -inner.w / 2 + i * leafW
             const hinge = left ? edge : edge + leafW
-            const open = (left ? 0.85 : -0.85) * coverLevel
+            // Fully open is square to the wall.
+            const open = (left ? 1 : -1) * (Math.PI / 2) * coverLevel
             return (
               <group key={i} position={[hinge, f, 0.02]} rotation={[0, open, 0]}>
                 {/* Tilt and turn: the top leans in when a tilt percentage
@@ -853,8 +854,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           <Slab size={[w + jamb * 2, jamb, lining]} radius={0.006} bevel={0.004} position={[0, h, leaf / 2]}>
             {M('frame')}
           </Slab>
-          {/* The leaf, hinged on whichever edge the switch picks. */}
-          <group position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * 1.1 * coverLevel, 0]}>
+          {/* The leaf, hinged on whichever edge the switch picks, and square
+              to the wall when fully open. */}
+          <group position={[(-side * w) / 2, 0, 0]} rotation={[0, -side * (Math.PI / 2) * coverLevel, 0]}>
             <Slab
               size={[w - 0.008, h - 0.006, leaf]}
               radius={0.004}
