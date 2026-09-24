@@ -986,9 +986,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Microwave',
     'floor',
-    [width(0.5, 0.35, 0.7), depth(0.38, 0.3, 0.5), lift(1.2)],
-    { body: SCANDI.offWhite, glass: '#3c4144', handle: SCANDI.slate, knobs: SCANDI.slate },
-    { body: 'ceramic', glass: 'ceramic', handle: 'metal', knobs: 'metal' },
+    [width(0.44, 0.35, 0.7), depth(0.35, 0.3, 0.5), height(0.26, 0.2, 0.45), lift(1.2)],
+    { body: '#c4c7c8', door: '#1c1f21', glass: '#111416', knobs: '#8f9497' },
+    { body: 'metal', door: 'ceramic', glass: 'ceramic', knobs: 'metal' },
     TOGGLE,
   ),
   kind(

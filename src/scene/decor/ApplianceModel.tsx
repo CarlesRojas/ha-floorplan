@@ -9,7 +9,7 @@ import {
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import Shower from '#/scene/decor/Shower.tsx'
-import { Fridge, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
+import { Fridge, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -162,11 +162,12 @@ export default function ApplianceModel({ kind, item, state }: Props) {
     case 'oven':
       return <Oven w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'microwave':
+      return <Microwave w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'dishwasher': {
       const w = p('width')
       const d = p('depth')
-      const h = kind.id === 'microwave' ? p('height') || 0.3 : p('height')
-      const glassH = kind.id === 'dishwasher' ? 0 : h * 0.55
+      const h = p('height')
+      const glassH = 0
       return (
         <group>
           <Slab size={[w, h, d]} radius={0.025} position={[0, 0, 0]}>

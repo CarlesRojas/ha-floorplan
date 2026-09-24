@@ -174,3 +174,52 @@ export function Oven({ w, d, h, fit }: { w: number; d: number; h: number; fit: F
     </group>
   )
 }
+
+// A countertop microwave after the Bosch Serie 2 FFL023MS2B, 44 by 35 by 26
+// cm: a black glass door across most of the front with the window in it,
+// and a steel column on the right with a small display, a dial and the
+// button that opens the door.
+export function Microwave({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const front = d / 2
+  const face = 0.02
+  const column = Math.min(w * 0.26, 0.12)
+  const doorW = w - column - 0.004
+  const doorX = -w / 2 + doorW / 2
+  const colX = w / 2 - column / 2
+  return (
+    <group>
+      <Slab size={[w, h, d - face]} radius={0.012} bevel={0.006} position={[0, 0, -face / 2]}>
+        {M('body')}
+      </Slab>
+      <Panel size={[doorW, h - 0.006, face]} position={[doorX, 0.003, front - face / 2]} radius={0.008}>
+        {M('door')}
+      </Panel>
+      <Window
+        size={[doorW * 0.74, (h - 0.006) * 0.66]}
+        position={[doorX - doorW * 0.04, h / 2, front + 0.0005]}
+        fit={fit}
+        glow={0.9}
+      />
+      <Panel size={[column, h - 0.006, face]} position={[colX, 0.003, front - face / 2]} radius={0.008}>
+        {M('body')}
+      </Panel>
+      <mesh position={[colX, h * 0.8, front + 0.0005]}>
+        <planeGeometry args={[column * 0.6, h * 0.1]} />
+        <Material color="#16191b" material="ceramic" emissive={[0.6, 1, 0.7]} emissiveIntensity={0.9 * fit.lit} />
+      </mesh>
+      <mesh position={[colX, h * 0.5, front + 0.008]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[column * 0.26, column * 0.28, 0.016, 32]} />
+        {M('knobs')}
+      </mesh>
+      <Slab
+        size={[column * 0.55, h * 0.1, 0.008]}
+        radius={0.004}
+        bevel={0.002}
+        position={[colX, h * 0.14, front + 0.004]}
+      >
+        {M('knobs')}
+      </Slab>
+    </group>
+  )
+}

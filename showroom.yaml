@@ -249,8 +249,8 @@ rooms:
     name: "Microwave"
     points:
       - [14.5, 11.45]
-      - [16, 11.45]
-      - [16, 12.85]
+      - [15.94, 11.45]
+      - [15.94, 12.85]
       - [14.5, 12.85]
   - id: coffee_machine
     name: "Coffee machine"
@@ -898,7 +898,7 @@ decorations:
   - id: microwave
     kind: microwave
     room: microwave
-    position: [15.25, 12.15]
+    position: [15.22, 12.15]
   - id: coffee_machine
     kind: coffee_machine
     room: coffee_machine
