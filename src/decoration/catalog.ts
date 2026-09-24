@@ -1,3 +1,4 @@
+import { SOFA_CHAISE_WIDTH, SOFA_DEPTH, SOFA_REACH, SOFA_WIDTH } from '#/scene/decor/sofaSpecs.ts'
 import type { Signal } from '#/signals.ts'
 import {
   CEILING_HEIGHT_M,
@@ -20,6 +21,8 @@ export type DecorationParam = {
   unit?: string
   // A two state parameter, stored as 0 or 1 and edited as a switch.
   toggle?: boolean
+  // The styles it means something on. Every style when missing.
+  variants?: string[]
 }
 
 // One style of a kind. A pendant is a pendant whichever one it is, so the
@@ -148,6 +151,15 @@ const flag = (id: string, label: string, d = 0): DecorationParam => ({
   toggle: true,
 })
 
+// A parameter only some of the kind's styles have.
+const only = (param: DecorationParam, variants: string[]): DecorationParam => ({ ...param, variants })
+
+// The parameters the editor shows for a style.
+export function styleParams(kind: DecorationKind, variant?: string) {
+  const style = decorationVariant(kind, variant)?.id
+  return kind.params.filter(p => !p.variants || (style !== undefined && p.variants.includes(style)))
+}
+
 // Signal sets.
 const NONE: Signal[] = []
 const TOGGLE: Signal[] = ['toggle']
@@ -219,6 +231,11 @@ const DINING_VIOK: DecorationVariant = {
 
 // The dining chair's first style, which keeps the kind's old shell and
 // legs slots, so a saved color still lands on it.
+// The sofa, after Pilma's Dresde in its natural fabric, on
+// legs painted mocha.
+const SOFA_FABRIC_COLOR = '#e4ded4'
+const SOFA_LEG_COLOR = '#3d3530'
+
 const CHAIR_JIN: DecorationVariant = {
   id: 'jin',
   label: 'Padded Shell',
@@ -492,18 +509,21 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Sofa',
     'floor',
-    [width(2.1, 1.2, 3.4), depth(0.88, 0.7, 1.1)],
-    { frame: SCANDI.oak, upholstery: SCANDI.linen, cushions: SCANDI.linen },
-    { frame: 'wood', upholstery: 'fabric', cushions: 'fabric' },
-  ),
-  kind(
-    'armchair',
-    'seating',
-    'Armchair',
-    'floor',
-    [width(0.78, 0.6, 1.1), depth(0.8, 0.6, 1)],
-    { frame: SCANDI.oak, upholstery: SCANDI.linen, cushions: SCANDI.linen },
-    { frame: 'wood', upholstery: 'fabric', cushions: 'fabric' },
+    // The seats share out the width, and a narrow one is an armchair. The
+    // chaise's length and side only mean anything on the chaise style.
+    [
+      width(SOFA_WIDTH, 0.6, 4),
+      depth(SOFA_DEPTH, 0.6, 1.3),
+      only(p('reach', 'Chaise length', SOFA_REACH, 1.2, 2.2), ['dresde_chaise']),
+      only(flag('flip', 'Chaise left'), ['dresde_chaise']),
+    ],
+    { upholstery: SOFA_FABRIC_COLOR, cushions: SOFA_FABRIC_COLOR, legs: SOFA_LEG_COLOR },
+    { upholstery: 'fabric', cushions: 'fabric', legs: 'matte' },
+    NONE,
+    [
+      { id: 'dresde', label: 'Pillow Arm', params: { width: SOFA_WIDTH } },
+      { id: 'dresde_chaise', label: 'Pillow Arm Chaise', params: { width: SOFA_CHAISE_WIDTH } },
+    ],
   ),
   kind(
     'dining_chair',
@@ -1549,6 +1569,7 @@ export function footprint(
     ? screenSize(paramValue(kind, params, 'inches', variant))[0]
     : paramValue(kind, params, 'width', variant) || paramValue(kind, params, 'size', variant) || 0.3
   const d =
+    (styleParams(kind, variant).some(p => p.id === 'reach') ? paramValue(kind, params, 'reach', variant) : 0) ||
     paramValue(kind, params, 'depth', variant) ||
     paramValue(kind, params, 'length', variant) ||
     (kind.params.some(p => p.id === 'size') ? w : 0.3)

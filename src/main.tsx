@@ -10,12 +10,15 @@ const EDITOR_TYPE = `${CARD_TYPE}-editor`
 // Kinds that were renamed or folded into another one. A plan written
 // before the change still names the old one, and without this the piece
 // would quietly vanish from the plan: the catalog would not know it.
-const RENAMED: Record<string, { kind: string; variant?: string }> = {
+const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<string, number> }> = {
   // The Globo Cesta was its own kind for a moment, then became a style of
   // the pendant, since swapped for the smaller Globo Cestita.
   light_globe: { kind: 'light_pendant', variant: 'globo_cestita' },
   // The office table became a style of the desk.
   office_table: { kind: 'desk', variant: 'office_table' },
+  // The armchair became a narrow sofa, at the armchair's old size unless it
+  // had one of its own.
+  armchair: { kind: 'sofa', variant: 'dresde', params: { width: 0.78, depth: 0.8 } },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose
@@ -39,7 +42,9 @@ function migrate(config: CardConfig): CardConfig {
       .filter(d => known.has(d.room))
       .map(d => {
         const now = RENAMED[d.kind]
-        return now ? { ...d, kind: now.kind, variant: d.variant ?? now.variant } : d
+        if (!now) return d
+        const params = now.params ? { ...now.params, ...d.params } : d.params
+        return { ...d, kind: now.kind, variant: d.variant ?? now.variant, params }
       })
       .map(d => {
         const style = d.variant ? RESTYLED[d.kind]?.[d.variant] : undefined

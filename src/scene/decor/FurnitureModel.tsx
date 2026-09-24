@@ -3,6 +3,7 @@ import Bench from '#/scene/decor/Benches.tsx'
 import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
 import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
+import { Sofa } from '#/scene/decor/Sofas.tsx'
 import Stool from '#/scene/decor/Stools.tsx'
 import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
@@ -25,114 +26,16 @@ export default function FurnitureModel({ kind, item }: Props) {
   switch (kind.id) {
     // Seating
     case 'sofa': {
-      // Low and long, with track arms, a plinth clear of the floor and
-      // tapered dowel legs under it. The cushions follow the width, and a
-      // long one grows a middle pair of legs.
-      const w = p('width')
-      const d = p('depth')
-      const legH = 0.15
-      const plinth = 0.1
-      const seatY = legH + plinth
-      const armW = 0.14
-      const armH = 0.6
-      const backH = 0.66
-      const inner = w - armW * 2
-      const seats = Math.max(2, Math.round(inner / 0.72))
-      const cushionW = inner / seats
+      const style = decorationVariant(kind, item.variant)?.id ?? 'dresde'
       return (
-        <group>
-          <Legs
-            width={w - 0.1}
-            depth={d - 0.12}
-            height={legH}
-            inset={0.06}
-            top={0.028}
-            bottom={0.018}
-            columns={w > 2.4 ? 3 : 2}
-            splay={0.09}
-          >
-            {M('frame')}
-          </Legs>
-          <Slab size={[w, plinth, d]} radius={0.03} position={[0, legH, 0]}>
-            {M('frame')}
-          </Slab>
-          {/* The upholstered shell: a back and two arms around the seat. */}
-          <Slab size={[w, backH - plinth, 0.12]} radius={0.05} position={[0, seatY, -d / 2 + 0.06]}>
-            {M('upholstery')}
-          </Slab>
-          {[-1, 1].map(s => (
-            <Slab
-              key={s}
-              size={[armW, armH - plinth, d]}
-              radius={armW / 2.2}
-              position={[(s * (w - armW)) / 2, seatY, 0]}
-            >
-              {M('upholstery')}
-            </Slab>
-          ))}
-          {Array.from({ length: seats }).map((_, i) => (
-            <Cushion
-              key={i}
-              size={[cushionW - 0.02, 0.17, d - 0.22]}
-              position={[-inner / 2 + cushionW * (i + 0.5), seatY, 0.05]}
-            >
-              {M('cushions')}
-            </Cushion>
-          ))}
-          {Array.from({ length: seats }).map((_, i) => (
-            <Cushion
-              key={i}
-              size={[cushionW - 0.03, 0.36, 0.16]}
-              rotation={[-0.2, 0, 0]}
-              position={[-inner / 2 + cushionW * (i + 0.5), seatY + 0.16, -d / 2 + 0.19]}
-            >
-              {M('cushions')}
-            </Cushion>
-          ))}
-        </group>
-      )
-    }
-    case 'armchair': {
-      // A lounge chair: a deep cushion in a low shell, on four splayed
-      // dowel legs, the back leaning away from the seat.
-      const w = p('width')
-      const d = p('depth')
-      const legH = 0.24
-      const armH = 0.56
-      const backH = 0.78
-      return (
-        <group>
-          <Legs width={w - 0.1} depth={d - 0.12} height={legH} inset={0.05} top={0.026} bottom={0.016} splay={0.12}>
-            {M('frame')}
-          </Legs>
-          <Slab size={[w, 0.09, d]} radius={0.03} position={[0, legH, 0]}>
-            {M('frame')}
-          </Slab>
-          <Slab
-            size={[w, backH - legH - 0.09, 0.13]}
-            radius={0.06}
-            position={[0, legH + 0.09, -d / 2 + 0.07]}
-            rotation={[-0.13, 0, 0]}
-          >
-            {M('upholstery')}
-          </Slab>
-          {[-1, 1].map(s => (
-            <Slab
-              key={s}
-              size={[0.11, armH - legH - 0.09, d - 0.04]}
-              radius={0.055}
-              position={[(s * (w - 0.11)) / 2, legH + 0.09, 0.02]}
-            >
-              {M('upholstery')}
-            </Slab>
-          ))}
-          <Cushion size={[w - 0.24, 0.17, d - 0.16]} position={[0, legH + 0.09, 0.03]}>
-            {M('cushions')}
-          </Cushion>
-          <Cushion size={[w - 0.26, 0.3, 0.15]} rotation={[-0.22, 0, 0]} position={[0, legH + 0.24, -d / 2 + 0.2]}>
-            {M('cushions')}
-          </Cushion>
-        </group>
+        <Sofa
+          w={p('width')}
+          d={p('depth')}
+          reach={p('reach')}
+          chaise={style === 'dresde_chaise'}
+          flip={p('flip') > 0.5}
+          M={M}
+        />
       )
     }
     case 'dining_chair': {

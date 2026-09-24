@@ -7,6 +7,7 @@ import {
   itemLevels,
   kindColors,
   paramValue,
+  styleParams,
   withoutStyleDefaults,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
@@ -163,7 +164,7 @@ export default function DecorationPanel({
           </label>
         )}
 
-        {kind.params.map(p => {
+        {styleParams(kind, item.variant).map(p => {
           // Read through the catalog, so a size saved before this slider's
           // steps changed shows on a stop rather than between two of them.
           const value = paramValue(kind, item.params, p.id, item.variant)
