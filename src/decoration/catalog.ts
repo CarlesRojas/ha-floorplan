@@ -231,7 +231,7 @@ const DINING_VIOK: DecorationVariant = {
 
 // The dining chair's first style, which keeps the kind's old shell and
 // legs slots, so a saved color still lands on it.
-// The sofa, after Pilma's Dresde in its natural fabric, on
+// The sofa and the pouf, after Pilma's Dresde in its natural fabric, on
 // legs painted mocha.
 const SOFA_FABRIC_COLOR = '#e4ded4'
 const SOFA_LEG_COLOR = '#3d3530'
@@ -659,9 +659,10 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Pouf',
     'floor',
-    [size(0.5, 0.3, 0.8), height(0.4, 0.25, 0.55)],
-    { cover: SCANDI.clay },
-    { cover: 'fabric' },
+    // The sofa's base alone, square, on the sofa's legs.
+    [size(0.8, 0.3, 1.2), height(0.42, 0.25, 0.55)],
+    { cover: SOFA_FABRIC_COLOR, legs: SOFA_LEG_COLOR },
+    { cover: 'fabric', legs: 'matte' },
   ),
 
   // Tables

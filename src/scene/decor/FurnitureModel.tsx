@@ -3,9 +3,9 @@ import Bench from '#/scene/decor/Benches.tsx'
 import DiningChair from '#/scene/decor/DiningChairs.tsx'
 import DiningTable from '#/scene/decor/DiningTables.tsx'
 import OfficeChair from '#/scene/decor/OfficeChairs.tsx'
-import { Sofa } from '#/scene/decor/Sofas.tsx'
+import { Pouf, Sofa } from '#/scene/decor/Sofas.tsx'
 import Stool from '#/scene/decor/Stools.tsx'
-import { Bar, Cushion, Knob, Legs, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Cushion, Knob, Legs, Material, Panel, Slab } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
 import type { ReactNode } from 'react'
 
@@ -54,34 +54,8 @@ export default function FurnitureModel({ kind, item }: Props) {
       const style = decorationVariant(kind, item.variant)?.id ?? 'lauta'
       return <Bench style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
-    case 'pouf': {
-      // A knitted pouf: a barrelled drum with a seam around the middle and
-      // a dimple where the cord is tied in the top.
-      const r = p('size') / 2
-      const h = p('height')
-      return (
-        <group>
-          <mesh position={[0, h * 0.48, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.93, r * 0.86, h * 0.96, SEG * 2]} />
-            <Material color={c('cover')} material={m('cover')} />
-          </mesh>
-          <mesh position={[0, h * 0.52, 0]} scale={[r, h * 0.42, r]}>
-            <sphereGeometry args={[1, SEG * 2, SEG]} />
-            <Material color={c('cover')} material={m('cover')} />
-          </mesh>
-          {/* The seam, a soft cord right around the widest point. */}
-          <mesh position={[0, h * 0.52, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.99, r * 0.045, 12, SEG * 2]} />
-            <Material color={c('cover')} material={m('cover')} />
-          </mesh>
-          {/* Top dimple. */}
-          <mesh position={[0, h * 0.99, 0]} scale={[r * 0.4, h * 0.08, r * 0.4]}>
-            <sphereGeometry args={[1, SEG, SEG]} />
-            <Material color={c('cover')} material={m('cover')} />
-          </mesh>
-        </group>
-      )
-    }
+    case 'pouf':
+      return <Pouf size={p('size')} h={p('height')} M={M} />
     // Tables
     case 'dining_table': {
       // Each style is a real table, laid out again at the size the sliders

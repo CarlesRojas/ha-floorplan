@@ -19,7 +19,8 @@ import { useMemo, type ReactNode } from 'react'
 import { SphereGeometry } from 'three'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
-// The sofa, after Pilma's Dresde. It is upholstered all over, so every part is a soft block: a box with its edges
+// The sofa, after Pilma's Dresde, and the pouf made from its base. Both are
+// upholstered all over, so every part is a soft block: a box with its edges
 // rounded off and its faces a little full, the way a filled cover sits.
 
 type Vec3 = [number, number, number]
@@ -238,6 +239,28 @@ export function Sofa({
           </group>
         )
       })}
+    </group>
+  )
+}
+
+// The pouf: the sofa's base alone, square, with no arms, back or loose
+// cushions, as one upholstered block on the sofa's legs.
+export function Pouf({ size, h, M }: { size: number; h: number; M: Slot }) {
+  const legH = Math.min(SOFA_LEG_H, h * 0.45)
+  const edge = size / 2 - SOFA_LEG_INSET * 0.8
+  const legs: LegAt[] = [-1, 1].flatMap(sx => [-1, 1].map(sz => ({ x: sx * edge, z: sz * edge, out: [sx, sz] as [number, number] })))
+  const blockH = h - legH
+  return (
+    <group>
+      <SofaLegs legs={legs} height={legH} M={M} />
+      <Soft
+        size={[size, blockH, size]}
+        round={[0.05, Math.min(0.06, blockH / 3), 0.05]}
+        puff={[0.006, 0.01, 0.006]}
+        position={[0, legH + blockH / 2, 0]}
+      >
+        {M('cover')}
+      </Soft>
     </group>
   )
 }
