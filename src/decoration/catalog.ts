@@ -1871,19 +1871,18 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Blind',
     'wall',
     [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2)],
-    { slats: SCANDI.linen, rail: SCANDI.slate },
-    { slats: 'fabric', rail: 'metal' },
+    { slats: SCANDI.linen, rail: SCANDI.slate, ladder: SCANDI.linen },
+    { slats: 'fabric', rail: 'metal', ladder: 'fabric' },
     TOGGLE_LEVEL,
-  ),
-  kind(
-    'roller_shutter',
-    'cover',
-    'Roller shutter',
-    'wall',
-    [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2)],
-    { slats: SCANDI.mist, rail: SCANDI.slate },
-    { slats: 'metal', rail: 'metal' },
-    TOGGLE_LEVEL,
+    [
+      { id: 'venetian', label: 'Ladder Slat' },
+      {
+        id: 'shutter',
+        label: 'Roll Guard',
+        colors: { slats: SCANDI.mist, rail: SCANDI.slate },
+        materials: { slats: 'metal', rail: 'metal' },
+      },
+    ],
   ),
   kind(
     'window',
@@ -1904,26 +1903,41 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { frame: SCANDI.offWhite, panel: SCANDI.offWhite, handle: SCANDI.charcoal },
     { frame: 'matte', panel: 'matte', handle: 'metal' },
     TOGGLE,
+    [
+      { id: 'flush', label: 'Plain Leaf' },
+      {
+        id: 'panel',
+        label: 'Regent Four',
+        colors: { frame: '#f1ede4', panel: '#f1ede4', handle: '#b08d57' },
+        materials: { frame: 'matte', panel: 'matte', handle: 'metal' },
+      },
+      {
+        id: 'glazed',
+        label: 'Garden Lite',
+        colors: { frame: SCANDI.offWhite, panel: SCANDI.offWhite, handle: '#b4b8bb', glass: SCANDI.mist },
+        materials: { frame: 'matte', panel: 'matte', handle: 'metal', glass: 'ceramic' },
+      },
+    ],
   ),
   kind(
     'sliding_door',
     'cover',
     'Sliding door',
     'wall',
-    [width(1.8, 0.9, 5), height(2.1, 1.8, 2.5), panels(), flag('flip', 'Slide left')],
+    [width(1.8, 0.9, 6), height(2.1, 1.8, 2.6), panels(), flag('flip', 'Slide left')],
     { frame: SCANDI.slate, panel: SCANDI.offWhite },
     { frame: 'metal', panel: 'matte' },
     TOGGLE_LEVEL,
-  ),
-  kind(
-    'sliding_glass',
-    'cover',
-    'Sliding glass door',
-    'wall',
-    [width(2.4, 1.2, 6), height(2.2, 1.8, 2.6), panels(), flag('flip', 'Slide left')],
-    { frame: SCANDI.slate, glass: SCANDI.mist },
-    { frame: 'metal', glass: 'ceramic' },
-    TOGGLE_LEVEL,
+    [
+      { id: 'panel', label: 'Panel Track' },
+      {
+        id: 'glass',
+        label: 'Glass Track',
+        params: { width: 2.4, height: 2.2 },
+        colors: { frame: SCANDI.slate, glass: SCANDI.mist },
+        materials: { frame: 'metal', glass: 'ceramic' },
+      },
+    ],
   ),
   kind(
     'garage_door',
@@ -2139,7 +2153,7 @@ export function footprint(
 
 // Items that hang on a wall but stand on the floor, so their height
 // parameter is their own size and not how high they are mounted.
-const FLOOR_STANDING = new Set(['door', 'sliding_door', 'sliding_glass', 'garage_door', 'radiator'])
+const FLOOR_STANDING = new Set(['door', 'sliding_door', 'garage_door', 'radiator'])
 
 // How high above the floor an item's own origin sits. Lights build
 // themselves at full height, ceiling items hang from the ceiling, a window

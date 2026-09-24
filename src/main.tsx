@@ -28,6 +28,10 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   // The standing fan and the tower fan became styles of the floor fan.
   fan_standing: { kind: 'fan_floor', variant: 'pedestal' },
   fan_tower: { kind: 'fan_floor', variant: 'tower' },
+  // The roller shutter became a style of the blind, and the sliding glass
+  // door a style of the sliding door.
+  roller_shutter: { kind: 'blind', variant: 'shutter' },
+  sliding_glass: { kind: 'sliding_door', variant: 'glass' },
 }
 
 // Kinds that were dropped with nothing to take their place. A saved one is

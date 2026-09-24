@@ -508,114 +508,100 @@ rooms:
     name: "Blind"
     points:
       - [33.25, 24.3]
-      - [35.45, 24.3]
-      - [35.45, 25.7]
+      - [37.15, 24.3]
+      - [37.15, 25.7]
       - [33.25, 25.7]
-  - id: roller_shutter
-    name: "Roller shutter"
+  - id: window
+    name: "Window"
     points:
       - [33.25, 26.1]
       - [35.45, 26.1]
       - [35.45, 27.5]
       - [33.25, 27.5]
-  - id: window
-    name: "Window"
-    points:
-      - [33.25, 27.9]
-      - [35.45, 27.9]
-      - [35.45, 29.3]
-      - [33.25, 29.3]
   - id: door
     name: "Door"
     points:
-      - [39.95, 0]
-      - [41.8, 0]
-      - [41.8, 1.4]
-      - [39.95, 1.4]
+      - [33.25, 27.9]
+      - [37.8, 27.9]
+      - [37.8, 29.3]
+      - [33.25, 29.3]
   - id: sliding_door
     name: "Sliding door"
     points:
-      - [39.95, 1.8]
-      - [42.75, 1.8]
-      - [42.75, 3.2]
-      - [39.95, 3.2]
-  - id: sliding_glass
-    name: "Sliding glass door"
-    points:
-      - [39.95, 3.6]
-      - [43.35, 3.6]
-      - [43.35, 5]
-      - [39.95, 5]
+      - [39.95, 0]
+      - [45.65, 0]
+      - [45.65, 1.4]
+      - [39.95, 1.4]
   - id: garage_door
     name: "Garage door"
     points:
-      - [39.95, 5.4]
-      - [43.45, 5.4]
-      - [43.45, 6.8]
-      - [39.95, 6.8]
+      - [39.95, 1.8]
+      - [43.45, 1.8]
+      - [43.45, 3.2]
+      - [39.95, 3.2]
   - id: awning
     name: "Awning"
     points:
-      - [39.95, 7.2]
-      - [42.95, 7.2]
-      - [42.95, 8.6]
-      - [39.95, 8.6]
+      - [39.95, 3.6]
+      - [42.95, 3.6]
+      - [42.95, 5]
+      - [39.95, 5]
   - id: camera
     name: "Camera"
     points:
-      - [39.95, 9]
-      - [41.05, 9]
-      - [41.05, 10.4]
-      - [39.95, 10.4]
+      - [39.95, 5.4]
+      - [41.05, 5.4]
+      - [41.05, 6.8]
+      - [39.95, 6.8]
   - id: doorbell
     name: "Doorbell"
     points:
-      - [39.95, 10.8]
-      - [41.02, 10.8]
-      - [41.02, 12.2]
-      - [39.95, 12.2]
+      - [39.95, 7.2]
+      - [41.02, 7.2]
+      - [41.02, 8.6]
+      - [39.95, 8.6]
   - id: motion_sensor
     name: "Motion sensor"
     points:
-      - [39.95, 12.6]
-      - [41.02, 12.6]
-      - [41.02, 14]
-      - [39.95, 14]
+      - [39.95, 9]
+      - [41.02, 9]
+      - [41.02, 10.4]
+      - [39.95, 10.4]
   - id: smoke_detector
     name: "Smoke detector"
     points:
-      - [39.95, 14.4]
-      - [41.09, 14.4]
-      - [41.09, 15.8]
-      - [39.95, 15.8]
+      - [39.95, 10.8]
+      - [41.09, 10.8]
+      - [41.09, 12.2]
+      - [39.95, 12.2]
   - id: alarm_panel
     name: "Alarm panel"
     points:
-      - [39.95, 16.2]
-      - [41.11, 16.2]
-      - [41.11, 17.6]
-      - [39.95, 17.6]
+      - [39.95, 12.6]
+      - [41.11, 12.6]
+      - [41.11, 14]
+      - [39.95, 14]
   - id: smart_lock
     name: "Smart lock"
     points:
-      - [39.95, 18]
-      - [41.04, 18]
-      - [41.04, 19.4]
-      - [39.95, 19.4]
+      - [39.95, 14.4]
+      - [41.04, 14.4]
+      - [41.04, 15.8]
+      - [39.95, 15.8]
   - id: air_quality
     name: "Air quality sensor"
     points:
-      - [39.95, 19.8]
-      - [41.05, 19.8]
-      - [41.05, 21.2]
-      - [39.95, 21.2]
+      - [39.95, 16.2]
+      - [41.05, 16.2]
+      - [41.05, 17.6]
+      - [39.95, 17.6]
   - id: vacuum_robot
     name: "Robot vacuum"
     points:
-      - [39.95, 21.6]
-      - [41.3, 21.6]
-      - [41.3, 23]
-      - [39.95, 23]
+      - [39.95, 18]
+      - [41.3, 18]
+      - [41.3, 19.4]
+      - [39.95, 19.4]
 decorations:
   - id: light_ceiling
     kind: light_ceiling
@@ -1347,80 +1333,97 @@ decorations:
     room: thermostat
     position: [33.81, 22.5]
     rotation: 180
-  - id: blind
+  - id: blind_venetian
     kind: blind
     room: blind
     position: [34.35, 24.3]
     rotation: 180
-  - id: roller_shutter
-    kind: roller_shutter
-    room: roller_shutter
-    position: [34.35, 26.1]
+    variant: venetian
+  - id: blind_shutter
+    kind: blind
+    room: blind
+    position: [36.05, 24.3]
     rotation: 180
+    variant: shutter
   - id: window
     kind: window
     room: window
-    position: [34.35, 27.9]
+    position: [34.35, 26.1]
     rotation: 180
-  - id: door
+  - id: door_flush
     kind: door
     room: door
-    position: [40.88, 0]
+    position: [34.17, 27.9]
     rotation: 180
-  - id: sliding_door
+    variant: flush
+  - id: door_panel
+    kind: door
+    room: door
+    position: [35.53, 27.9]
+    rotation: 180
+    variant: panel
+  - id: door_glazed
+    kind: door
+    room: door
+    position: [36.88, 27.9]
+    rotation: 180
+    variant: glazed
+  - id: sliding_door_panel
     kind: sliding_door
     room: sliding_door
-    position: [41.35, 1.8]
+    position: [41.35, 0]
     rotation: 180
-  - id: sliding_glass
-    kind: sliding_glass
-    room: sliding_glass
-    position: [41.65, 3.6]
+    variant: panel
+  - id: sliding_door_glass
+    kind: sliding_door
+    room: sliding_door
+    position: [43.95, 0]
     rotation: 180
+    variant: glass
   - id: garage_door
     kind: garage_door
     room: garage_door
-    position: [41.7, 5.4]
+    position: [41.7, 1.8]
     rotation: 180
   - id: awning
     kind: awning
     room: awning
-    position: [41.45, 7.2]
+    position: [41.45, 3.6]
     rotation: 180
   - id: camera
     kind: camera
     room: camera
-    position: [40.5, 9]
+    position: [40.5, 5.4]
     rotation: 180
   - id: doorbell
     kind: doorbell
     room: doorbell
-    position: [40.49, 10.8]
+    position: [40.49, 7.2]
     rotation: 180
   - id: motion_sensor
     kind: motion_sensor
     room: motion_sensor
-    position: [40.49, 12.6]
+    position: [40.49, 9]
     rotation: 180
   - id: smoke_detector
     kind: smoke_detector
     room: smoke_detector
-    position: [40.52, 15.1]
+    position: [40.52, 11.5]
   - id: alarm_panel
     kind: alarm_panel
     room: alarm_panel
-    position: [40.53, 16.2]
+    position: [40.53, 12.6]
     rotation: 180
   - id: smart_lock
     kind: smart_lock
     room: smart_lock
-    position: [40.5, 18]
+    position: [40.5, 14.4]
     rotation: 180
   - id: air_quality
     kind: air_quality
     room: air_quality
-    position: [40.5, 20.5]
+    position: [40.5, 16.9]
   - id: vacuum_robot
     kind: vacuum_robot
     room: vacuum_robot
-    position: [40.63, 22.3]
+    position: [40.63, 18.7]
