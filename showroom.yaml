@@ -193,8 +193,8 @@ rooms:
     name: "Upper cabinets"
     points:
       - [8.4, 24.67]
-      - [11, 24.67]
-      - [11, 26.07]
+      - [11.2, 24.67]
+      - [11.2, 26.07]
       - [8.4, 26.07]
   - id: fridge
     name: "Fridge"
@@ -858,7 +858,7 @@ decorations:
   - id: upper_cabinets
     kind: upper_cabinets
     room: upper_cabinets
-    position: [9.7, 24.67]
+    position: [9.8, 24.67]
     rotation: 180
   - id: fridge
     kind: fridge

@@ -118,20 +118,25 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       )
     }
     case 'upper_cabinets': {
-      // Handleless wall units: a carcass, a door per bay with a shadow gap
-      // and a lip pull running under the bottom edge.
+      // Handleless wall units: a carcass, a door per unit with a shadow gap
+      // and a lip pull running under the bottom edge. The units are laid out
+      // as the counter's are, and one too narrow for a door is a filler.
       const w = p('width')
       const d = p('depth')
       const cabH = 0.7
-      const cols = Math.max(1, Math.round(w / 0.6))
-      const cw = w / cols
+      const modules = counterModules(w, p('wide') > 0.5, p('grow'))
+      const starts = modules.map((_, i) => modules.slice(0, i).reduce((a, b) => a + b, 0))
       return (
         <group position={[0, -cabH, 0]}>
           <Slab size={[w, cabH, d]} radius={0.02} position={[0, 0, d / 2]}>
             {M('cabinets')}
           </Slab>
-          {Array.from({ length: cols }).map((_, i) => (
-            <Panel key={i} size={[cw - 0.015, cabH - 0.025, 0.018]} position={[-w / 2 + cw * (i + 0.5), 0.015, d]}>
+          {modules.map((cw, i) => (
+            <Panel
+              key={i}
+              size={[Math.max(cw - 0.015, 0.004), cabH - 0.025, 0.018]}
+              position={[-w / 2 + starts[i] + cw / 2, 0.015, d]}
+            >
               {M('doors')}
             </Panel>
           ))}

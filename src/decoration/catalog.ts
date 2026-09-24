@@ -881,7 +881,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Upper cabinets',
     'wall',
-    [width(1.6, 0.6, 3.5), depth(0.35, 0.25, 0.45), height(1.5, 1.2, 2)],
+    // Built from 60 cm units the way the counter is, with the same wide
+    // switch and growing unit, so a run of them can line up over one.
+    [
+      width(1.8, 0.6, 4),
+      depth(0.35, 0.25, 0.45),
+      height(1.5, 1.2, 2),
+      flag('wide', 'Wide module'),
+      cycle('grow', 'Growing module'),
+    ],
     { cabinets: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
     { cabinets: 'matte', doors: 'matte', handles: 'metal' },
   ),
@@ -1646,7 +1654,7 @@ export function counterModules(width: number, wide: boolean, grow: number) {
 
 // How many places a cycle parameter steps through.
 export function cycleLength(kind: DecorationKind, params: Record<string, number> | undefined, variant?: string) {
-  if (kind.id !== 'kitchen_counter') return 1
+  if (kind.id !== 'kitchen_counter' && kind.id !== 'upper_cabinets') return 1
   const v = (id: string) => paramValue(kind, params, id, variant)
   return counterModules(v('width'), v('wide') > 0.5, 0).length
 }
