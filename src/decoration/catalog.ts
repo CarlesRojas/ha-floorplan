@@ -1,12 +1,6 @@
 import { SOFA_CHAISE_WIDTH, SOFA_DEPTH, SOFA_REACH, SOFA_WIDTH } from '#/scene/decor/sofaSpecs.ts'
 import type { Signal } from '#/signals.ts'
-import {
-  CEILING_HEIGHT_M,
-  LIGHT_BASE_COLOR,
-  LIGHT_SHADE_COLOR,
-  SCANDI,
-  SCREEN_OFF_COLOR,
-} from '#/theme.ts'
+import { CEILING_HEIGHT_M, LIGHT_BASE_COLOR, LIGHT_SHADE_COLOR, SCANDI, SCREEN_OFF_COLOR } from '#/theme.ts'
 
 export type Mount = 'floor' | 'wall' | 'ceiling'
 
@@ -268,6 +262,14 @@ const COUNTER_RUN: DecorationVariant = {
   label: 'Wall Run',
   colors: { worktop: SCANDI.oak, cabinets: SCANDI.offWhite, fronts: SCANDI.offWhite },
   materials: { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
+}
+
+// The bed's first style, which keeps the old bed's slots.
+const BED_HEADBOARD: DecorationVariant = {
+  id: 'headboard',
+  label: 'Headboard Bed',
+  colors: { frame: SCANDI.oak, bedding: SCANDI.offWhite, pillows: SCANDI.linen },
+  materials: { frame: 'wood', bedding: 'fabric', pillows: 'fabric' },
 }
 
 // The office chair's first style, which keeps the kind's old seat, back,
@@ -834,8 +836,12 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Bed',
     'floor',
     [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05)],
-    { frame: SCANDI.oak, bedding: SCANDI.offWhite, pillows: SCANDI.linen },
-    { frame: 'wood', bedding: 'fabric', pillows: 'fabric' },
+    BED_HEADBOARD.colors ?? {},
+    BED_HEADBOARD.materials ?? {},
+    undefined,
+    // The platform bed is the same bed with no board at its head, for one
+    // pushed against the wall.
+    [BED_HEADBOARD, { ...BED_HEADBOARD, id: 'platform', label: 'Platform Bed' }],
   ),
 
   // Kitchen
@@ -1635,9 +1641,7 @@ export function counterModules(width: number, wide: boolean, grow: number) {
   const growing = wide ? width - units * COUNTER_UNIT : rest
   const count = units + (growing > 0.005 ? 1 : 0)
   const at = ((grow % count) + count) % count
-  return Array.from({ length: count }, (_, i) =>
-    count > units && i === at ? growing : COUNTER_UNIT,
-  )
+  return Array.from({ length: count }, (_, i) => (count > units && i === at ? growing : COUNTER_UNIT))
 }
 
 // How many places a cycle parameter steps through.

@@ -80,8 +80,8 @@ export function Slab({
       bevelEnabled: b > 0.002,
       bevelThickness: b,
       bevelSize: b,
-      bevelSegments: 4,
-      curveSegments: 12,
+      bevelSegments: 8,
+      curveSegments: 24,
     })
     // The shape is drawn on XY and extruded along +z. Rotating -90 about x
     // turns that into +y spanning [-b, h - b], so lift it by b to sit on the

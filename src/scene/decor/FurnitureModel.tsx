@@ -385,15 +385,20 @@ export default function FurnitureModel({ kind, item }: Props) {
 
     // Beds
     case 'bed_double': {
-      // A low platform with a lip, an upright headboard and bedding folded
-      // back from the pillows. The pillows follow the width: one across a
-      // single bed, two on anything wider.
+      // A low platform with a lip, an upright headboard unless it is the
+      // platform style, and bedding folded back from the pillows. The pillows
+      // follow the width: one across a single bed, two on anything wider.
       const w = p('width')
       const l = p('length')
+      const headboard = decorationVariant(kind, item.variant)?.id !== 'platform'
       const legH = 0.14
       const frameH = legH + 0.1
       const mattress = 0.18
       const headH = 0.5
+      // The duvet's head edge, where the turned back band starts.
+      const duvetL = l * 0.62
+      const duvetZ = l / 2 - 0.02 - duvetL
+      const fold = l * 0.12
       const bedding = () => <Material color={c('bedding')} material={m('bedding')} />
       return (
         <group>
@@ -413,25 +418,27 @@ export default function FurnitureModel({ kind, item }: Props) {
             {M('frame')}
           </Slab>
           {/* Headboard, standing clear of the mattress. */}
-          <Slab size={[w + 0.08, headH + mattress, 0.055]} radius={0.025} position={[0, frameH, -l / 2 - 0.013]}>
-            {M('frame')}
-          </Slab>
-          <Slab size={[w, mattress, l]} radius={0.04} bevel={0.02} position={[0, frameH, 0]}>
+          {headboard && (
+            <Slab size={[w + 0.08, headH + mattress, 0.055]} radius={0.025} position={[0, frameH, -l / 2 - 0.013]}>
+              {M('frame')}
+            </Slab>
+          )}
+          <Slab size={[w, mattress, l]} radius={0.1} bevel={0.02} position={[0, frameH, 0]}>
             {bedding()}
           </Slab>
-          {/* Duvet over the foot, its top edge turned back on itself. */}
-          <Slab size={[w + 0.03, 0.08, l * 0.62]} radius={0.05} position={[0, frameH + mattress, l * 0.19 - 0.02]}>
+          {/* Duvet over the foot, its top edge turned back on itself: the
+              band lies on the duvet from its head edge toward the foot. */}
+          <Slab size={[w + 0.03, 0.08, duvetL]} radius={0.05} position={[0, frameH + mattress, duvetZ + duvetL / 2]}>
             {bedding()}
           </Slab>
-          <Slab size={[w + 0.03, 0.05, l * 0.12]} radius={0.03} position={[0, frameH + mattress + 0.06, -l * 0.12]}>
+          <Slab size={[w + 0.03, 0.05, fold]} radius={0.03} position={[0, frameH + mattress + 0.07, duvetZ + fold / 2]}>
             {bedding()}
           </Slab>
           {(w > 1.2 ? [-1, 1] : [0]).map(side => (
             <Cushion
               key={side}
               size={[w > 1.2 ? w / 2 - 0.08 : w - 0.18, 0.13, 0.36]}
-              rotation={[-0.12, 0, 0]}
-              position={[w > 1.2 ? (side * w) / 4 : 0, frameH + mattress, -l / 2 + 0.27]}
+              position={[w > 1.2 ? (side * w) / 4 : 0, frameH + mattress, -l / 2 + 0.25]}
             >
               <Material color={c('pillows')} material={m('pillows')} />
             </Cushion>
