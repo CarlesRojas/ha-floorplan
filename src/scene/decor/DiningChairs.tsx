@@ -66,8 +66,8 @@ function shellFace(kx: number, ky: number, kz: number) {
   )
   const length = curve.getLength()
   const [r0, r1] = JIN_CORNER
-  const rows = 72
-  const cols = 29
+  const rows = 120
+  const cols = 45
   // The rounding stops just short of square to the edge: the shell is thick,
   // and an edge row lying along its neighbours would leave it no normal.
   const corner = (r: number, from: number) => {

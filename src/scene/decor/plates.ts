@@ -124,7 +124,7 @@ export function thicken(grid: Vector3[][], thick: number, round = false) {
   for (let i = rows - 2; i > 0; i--) loop.push([i, 0])
   // Each place round the rim runs from the face to the back, straight across
   // or round in steps.
-  const steps = round ? 8 : 1
+  const steps = round ? 16 : 1
   const rim = loop.map(([i, j]) => {
     // Out is away from the neighbour inside the grid, along the face.
     const inner = at(i === 0 ? 1 : i === rows - 1 ? rows - 2 : i, j === 0 ? 1 : j === cols - 1 ? cols - 2 : j)
