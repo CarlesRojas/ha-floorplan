@@ -108,20 +108,64 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
   }
 }
 
+// How long the editor waits for a slider or a color to settle before telling
+// Home Assistant. Every change it is told of rebuilds the dialog's own copy
+// of the card, a second 3D view, so a drag that told it on every step drew
+// the flat twice over on every step.
+const SETTLE_MS = 250
+
 class Floorplan3DEditor extends ReactHost<CardConfig> {
+  private pending: CardConfig | null = null
+  private timer: ReturnType<typeof setTimeout> | undefined
+
   setConfig(config: CardConfig) {
     this._config = migrate(config)
     this.render()
   }
 
+  // The editor itself follows every change at once. Home Assistant hears of
+  // the last one once they settle, when the press or the key is let go, and
+  // before anything saves.
   private emit = (config: CardConfig) => {
     this._config = config
     this.render()
+    this.pending = config
+    clearTimeout(this.timer)
+    this.timer = setTimeout(this.flush, SETTLE_MS)
+  }
+
+  private flush = () => {
+    clearTimeout(this.timer)
+    const config = this.pending
+    if (!config) return
+    this.pending = null
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config }, bubbles: true, composed: true }))
   }
 
+  connectedCallback() {
+    super.connectedCallback()
+    window.addEventListener('pointerup', this.flush, true)
+    window.addEventListener('keyup', this.flush, true)
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('pointerup', this.flush, true)
+    window.removeEventListener('keyup', this.flush, true)
+    super.disconnectedCallback()
+  }
+
   protected view() {
-    return <Editor hass={this._hass} config={this._config!} onChange={this.emit} onSave={() => persistCard(this)} />
+    return (
+      <Editor
+        hass={this._hass}
+        config={this._config!}
+        onChange={this.emit}
+        onSave={() => {
+          this.flush()
+          return persistCard(this)
+        }}
+      />
+    )
   }
 }
 
