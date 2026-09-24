@@ -9,6 +9,7 @@ import {
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import Shower from '#/scene/decor/Shower.tsx'
+import { Fridge, type Fit } from '#/scene/decor/Kitchen.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -60,6 +61,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
   // than stepping.
   const level = useEased(state?.level ?? 1, 6)
   const lit = useEased(on ? 1 : 0, 9)
+
+  const fit: Fit = { M, c, m, on, lit, level }
 
   switch (kind.id) {
     case 'kitchen_counter': {
@@ -154,32 +157,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
         </group>
       )
     }
-    case 'fridge': {
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const split = h * 0.62
-      return (
-        <group>
-          <Slab size={[w, h, d]} radius={0.03} position={[0, 0, 0]}>
-            {M('body')}
-          </Slab>
-          {/* Two doors with a shadow gap and slim vertical pulls. */}
-          <Panel size={[w - 0.02, split - 0.012, 0.02]} position={[0, h - split, d / 2]}>
-            {M('doors')}
-          </Panel>
-          <Panel size={[w - 0.02, h - split - 0.012, 0.02]} position={[0, 0.006, d / 2]}>
-            {M('doors')}
-          </Panel>
-          {[split + 0.12, split - 0.24].map((y, i) => (
-            <Bar key={i} length={0.22} radius={0.009} position={[w / 2 - 0.06, y, d / 2 + 0.03]}>
-              {M('handles')}
-            </Bar>
-          ))}
-          <Led on={on} position={[-w / 2 + 0.07, h - 0.1, d / 2 + 0.022]} />
-        </group>
-      )
-    }
+    case 'fridge':
+      return <Fridge w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'oven':
     case 'microwave':
     case 'dishwasher': {

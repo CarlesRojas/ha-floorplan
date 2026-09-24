@@ -917,7 +917,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Fridge',
     'floor',
-    [width(0.6, 0.5, 0.95), depth(0.65, 0.5, 0.8), height(1.85, 0.8, 2.1), base()],
+    [width(0.6, 0.5, 0.95), depth(0.66, 0.5, 0.8), height(2.03, 0.8, 2.1), base()],
     { body: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
     { body: 'ceramic', doors: 'ceramic', handles: 'metal' },
     TOGGLE,
