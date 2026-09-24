@@ -41,6 +41,8 @@ type Props = {
   // States the editor tries on pieces with no device. The card passes none.
   tries?: TryStates
   onTry?: (id: string) => void
+  // Stops drawing and holds the last frame, for a card nobody can see.
+  paused?: boolean
 }
 
 export default function Scene({
@@ -53,6 +55,7 @@ export default function Scene({
   selected,
   tries,
   onTry,
+  paused = false,
 }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
@@ -80,6 +83,7 @@ export default function Scene({
       // This one filters across the map instead, so the edge comes out soft
       // and clean, and softness comes from how fine the map is.
       shadows={{ type: PCFSoftShadowMap }}
+      frameloop={paused ? 'never' : 'always'}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
