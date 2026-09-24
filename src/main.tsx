@@ -41,6 +41,7 @@ const SPLIT: Record<string, Record<string, string[]>> = {
 const RESTYLED: Record<string, Record<string, string>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
   dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
+  toilet: { back_to_wall: 'square' },
 }
 
 function migrate(config: CardConfig): CardConfig {

@@ -1257,18 +1257,17 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'bathroom',
     'Toilet',
     'floor',
-    [width(0.37, 0.3, 0.5), depth(0.72, 0.5, 0.9)],
-    { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#c4c7c8', box: BATH_TILE },
-    { pan: 'ceramic', seat: 'ceramic', flush: 'metal', box: 'matte' },
+    [width(0.37, 0.3, 0.5), depth(0.57, 0.45, 0.9)],
+    { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#c4c7c8' },
+    { pan: 'ceramic', seat: 'ceramic', flush: 'metal' },
     undefined,
     [
       {
         id: 'wall_hung',
         label: 'Vela Hung',
-        colors: { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#2b2c2d', box: BATH_TILE },
-        materials: { pan: 'ceramic', seat: 'ceramic', flush: 'matte', box: 'matte' },
+        colors: { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#2b2c2d' },
+        materials: { pan: 'ceramic', seat: 'ceramic', flush: 'matte' },
       },
-      { id: 'back_to_wall', label: 'Brune Flush', params: { depth: 0.7 } },
       {
         id: 'close_coupled',
         label: 'Oda Pair',
@@ -1276,6 +1275,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         materials: { pan: 'ceramic', seat: 'wood', flush: 'metal' },
         params: { depth: 0.65 },
       },
+      { id: 'square', label: 'Kant Pair', params: { width: 0.38, depth: 0.65 } },
     ],
   ),
   kind(

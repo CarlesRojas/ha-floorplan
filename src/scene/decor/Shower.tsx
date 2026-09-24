@@ -1,7 +1,8 @@
 import { Glass, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEased } from '#/scene/decor/ease.ts'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { CatmullRomCurve3, TubeGeometry, Vector3 } from 'three'
 
 // A walk in shower after a Hansgrohe Raindance showerpipe over a low stone
@@ -104,6 +105,11 @@ function Fittings({ span, reach, h, metal }: { span: number; reach: number; h: n
   const barY = TRAY + 1.05
   const off = 0.05
   const holder = barY + 0.5
+  // The hand shower leans its head out into the shower, and its hose
+  // comes into the foot of the handle along the handle's own line.
+  const tilt = 0.2
+  const hand = off + 0.07
+  const along = (t: number): Vec3 => [0, holder + t * Math.cos(tilt), hand + t * Math.sin(tilt)]
   return (
     <group>
       {/* The thermostat bar and its two dials. */}
@@ -142,30 +148,90 @@ function Fittings({ span, reach, h, metal }: { span: number; reach: number; h: n
       </mesh>
       {/* The holder on the riser, and the hand shower sitting in it: a
           slim handle and a round head facing into the shower. */}
-      <mesh position={[0, holder, off + 0.015]}>
-        <boxGeometry args={[0.035, 0.05, 0.03]} />
+      <mesh position={[0, holder, off + 0.03]}>
+        <boxGeometry args={[0.035, 0.05, 0.06]} />
         {metal}
       </mesh>
-      <group position={[0, holder, off + 0.04]} rotation={[-0.35, 0, 0]}>
-        <Dowel from={[0, -0.12, 0]} to={[0, 0.06, 0]} r={[0.013, 0.016]}>
+      <group position={[0, holder, hand]} rotation={[tilt, 0, 0]}>
+        <Dowel from={[0, -0.12, 0]} to={[0, 0.07, 0]} r={[0.012, 0.016]}>
           {metal}
         </Dowel>
-        <mesh position={[0, 0.1, 0.012]} rotation={[Math.PI / 2 - 0.3, 0, 0]} castShadow>
+        <mesh position={[0, 0.11, -0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.05, 0.05, 0.022, SEG]} />
           {metal}
         </mesh>
       </group>
+      {/* The hose from under the bar's end, looping down and back up into
+          the foot of the handle along its line. */}
       <Hose
         points={[
           [bar / 2 - 0.02, barY - 0.03, off],
           [bar / 2 + 0.02, barY - 0.35, off + 0.03],
           [0.08, barY - 0.55, off + 0.05],
-          [0.01, barY - 0.2, off + 0.07],
-          [0, holder - 0.17, off + 0.08],
+          [0.02, barY, off + 0.05],
+          along(-0.2),
+          along(-0.12),
         ]}
       >
         {metal}
       </Hose>
+    </group>
+  )
+}
+
+// The door, hung off the fixed pane's edge at `from` and closing against
+// `to`, standing just proud of the fixed pane. A click swings it out of the
+// shower and a second one shuts it again. A press that drags is the view
+// being turned, and leaves it be.
+function Door({
+  from,
+  to,
+  h,
+  near,
+  colors,
+  M,
+}: {
+  from: number
+  to: number
+  h: number
+  near: number
+  colors: { glass: string }
+  M: (slot: string) => ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const swing = useEased(open ? 1 : 0, 4)
+  const span = to - from
+  const way = Math.sign(span) || 1
+  return (
+    <group
+      position={[from, 0, -PANE * 1.8]}
+      rotation={[0, way * swing * 1.4, 0]}
+      onClick={e => {
+        if (e.delta > 8) return
+        setOpen(o => !o)
+      }}
+      onPointerOver={() => (document.body.style.cursor = 'pointer')}
+      onPointerOut={() => (document.body.style.cursor = '')}
+    >
+      <Pane from={0} to={span} h={h} color={colors.glass} />
+      {/* A pull near the free edge, on the outside face. */}
+      <Dowel
+        from={[span + near * 0.08, TRAY + 0.85, -0.035]}
+        to={[span + near * 0.08, TRAY + 1.15, -0.035]}
+        r={[0.009, 0.009]}
+      >
+        {M('frame')}
+      </Dowel>
+      {[0.85, 1.15].map(y => (
+        <Dowel
+          key={y}
+          from={[span + near * 0.08, TRAY + y, -0.035]}
+          to={[span + near * 0.08, TRAY + y, 0]}
+          r={[0.005, 0.005]}
+        >
+          {M('frame')}
+        </Dowel>
+      ))}
     </group>
   )
 }
@@ -211,7 +277,7 @@ export default function Shower({ w, d, h, glass: count, flip, colors, M }: Props
           return (
             <group key={side} position={f.position} rotation={[0, f.rotation, 0]}>
               <Pane from={edge} to={split} h={h} color={colors.glass} />
-              <Pane from={split} to={far} h={h} z={-PANE * 1.8} color={colors.glass} />
+              <Door from={split} to={far} h={h} near={near} colors={colors} M={M} />
               {/* The hinges on the fixed pane's edge. */}
               {[0.25, h - 0.25].map(y => (
                 <mesh key={y} position={[split, TRAY + y, -PANE]}>
@@ -219,14 +285,6 @@ export default function Shower({ w, d, h, glass: count, flip, colors, M }: Props
                   {M('frame')}
                 </mesh>
               ))}
-              {/* A pull on both faces near the door's free edge. */}
-              <Dowel
-                from={[far + near * 0.08, TRAY + 0.85, -PANE * 1.8 - 0.035]}
-                to={[far + near * 0.08, TRAY + 1.15, -PANE * 1.8 - 0.035]}
-                r={[0.009, 0.009]}
-              >
-                {M('frame')}
-              </Dowel>
               {!has(flip ? 'left' : 'right') && (
                 <Channel x={far} h={h}>
                   {M('frame')}

@@ -24,65 +24,77 @@ function seatHole(w: number, l: number) {
   return { w: hw, d: hd, z: 0.02, r: Math.min(hw, hd) / 2 - 0.002 }
 }
 
-// Three toilets. A wall hung pan after the Duravit ME by Starck, 37 by 57
-// cm, on a boxed in frame with a Geberit Sigma20 plate a meter up. A back
-// to wall pan after the Villeroy & Boch Subway 2.0, down to the floor in
-// front of a low panel hiding its cistern. A close coupled one after the
-// Duravit ME, with its cistern standing on the back of the pan. `d` is how
-// far it all comes out from the wall.
+// Three toilets, each with its own pan. A wall hung pan after the Duravit ME
+// by Starck, 37 by 57 cm, an oval shell hung off the wall with nothing
+// under it, and a Geberit Sigma20 plate a meter up the wall to flush it. A
+// close coupled one after the Duravit ME, round and soft, with its cistern
+// standing on the back of the pan. A square close coupled one after the
+// Duravit Vero Air, skirted down to the floor with a flat sided cistern and
+// a rectangular bowl. `d` is how far it all comes out from the wall.
 export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: number; fit: Fit }) {
   const { M } = fit
-  const kind = style === 'back_to_wall' || style === 'close_coupled' ? style : 'wall_hung'
-  // What stands between the pan and the wall.
-  const back = kind === 'wall_hung' ? 0.15 : kind === 'back_to_wall' ? 0.14 : 0
-  const wall = -d / 2 + back
-  const pl = d - back
-  const pz = wall + pl / 2
-  const top = 0.385
-  // The underside of the bowl's shell, and the narrower foot below it.
-  const shell = kind === 'wall_hung' ? 0.23 : 0.2
-  const foot = kind === 'wall_hung' ? 0.15 : 0
-  // A close coupled cistern takes the back of the pan, so its seat stops
-  // short of it.
-  const sl = Math.min(0.46, pl * 0.78, pl - (kind === 'close_coupled' ? 0.2 : 0.05))
+  const kind = style === 'close_coupled' || style === 'square' ? style : 'wall_hung'
+  const square = kind === 'square'
+  const cistern = kind !== 'wall_hung'
+  const wall = -d / 2
+  const pz = 0
+  const top = 0.4
+  // The underside of the bowl's shell, and the narrower foot below it. A
+  // square pan is skirted, one block down to the floor.
+  const shell = kind === 'wall_hung' ? 0.2 : square ? 0 : 0.2
+  const foot = kind === 'wall_hung' ? 0.14 : 0
+  // A cistern takes the back of the pan, so its seat stops short of it.
+  const sl = Math.min(0.46, d * 0.78, d - (cistern ? 0.2 : 0.05))
   const sz = d / 2 - 0.008 - sl / 2
   const hole = seatHole(w, sl)
-  const round = Math.min(w, pl) * 0.45
+  if (square) hole.r = Math.min(0.06, hole.r)
+  const round = square ? Math.min(0.04, w * 0.12) : Math.min(w, d) * 0.45
+  const seatR = square ? Math.min(0.05, w * 0.14) : w / 2
+  const deep = top - Math.max(shell, 0.2) - 0.01
   return (
     <group>
       <Slab
-        size={[w, top - shell, pl]}
+        size={[w, top - shell, d]}
         radius={round}
-        bevel={0.012}
+        bevel={square ? 0.006 : 0.012}
         position={[0, shell, pz]}
         holes={[{ x: 0, z: sz + hole.z - pz, w: hole.w, d: hole.d, r: hole.r }]}
       >
         {M('pan')}
       </Slab>
-      {/* The bowl, the glaze curving down inside the opening. */}
-      <mesh position={[0, top - 0.004, sz + hole.z]} scale={[hole.w / 2, top - shell - 0.01, hole.d / 2]}>
-        <sphereGeometry args={[1, SEG, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
-        {M('pan')}
-      </mesh>
-      <Slab
-        size={[w * 0.64, shell - foot + 0.002, pl * 0.76]}
-        radius={Math.min(0.1, w * 0.3)}
-        bevel={0.01}
-        position={[0, foot, wall + pl * 0.38]}
-      >
-        {M('pan')}
-      </Slab>
+      {/* The bowl, the glaze curving down inside the opening, or in a
+          square pan falling straight. */}
+      {square ? (
+        <Hollow size={[hole.w, deep, hole.d]} wall={0.008} radius={hole.r} position={[0, top - deep, sz + hole.z]}>
+          {M('pan')}
+        </Hollow>
+      ) : (
+        <mesh position={[0, top - 0.004, sz + hole.z]} scale={[hole.w / 2, deep, hole.d / 2]}>
+          <sphereGeometry args={[1, SEG, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+          {M('pan')}
+        </mesh>
+      )}
+      {!square && (
+        <Slab
+          size={[w * 0.64, shell - foot + 0.002, d * 0.76]}
+          radius={Math.min(0.1, w * 0.3)}
+          bevel={0.01}
+          position={[0, foot, wall + d * 0.38]}
+        >
+          {M('pan')}
+        </Slab>
+      )}
       {/* The seat and the lid down over it, and their hinges. */}
       <Slab
         size={[w, 0.018, sl]}
-        radius={w / 2}
+        radius={seatR}
         bevel={0.006}
         position={[0, top, sz]}
         holes={[{ x: 0, z: hole.z, w: hole.w, d: hole.d, r: hole.r }]}
       >
         {M('seat')}
       </Slab>
-      <Slab size={[w - 0.006, 0.02, sl - 0.006]} radius={w / 2} bevel={0.008} position={[0, top + 0.018, sz]}>
+      <Slab size={[w - 0.006, 0.02, sl - 0.006]} radius={seatR} bevel={0.008} position={[0, top + 0.018, sz]}>
         {M('seat')}
       </Slab>
       {[-1, 1].map(s => (
@@ -91,21 +103,31 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
           {M('seat')}
         </mesh>
       ))}
-      {kind === 'wall_hung' && <WallFrame w={w} d={d} back={back} fit={fit} />}
-      {kind === 'back_to_wall' && (
+      {kind === 'wall_hung' && <FlushPlate z={wall} fit={fit} />}
+      {cistern && (
         <group>
-          <Slab size={[w + 0.12, 0.82, back]} radius={0.008} bevel={0.003} position={[0, 0, -d / 2 + back / 2]}>
-            {M('box')}
-          </Slab>
-          <FlushButtons y={0.82} z={-d / 2 + back / 2} fit={fit} />
-        </group>
-      )}
-      {kind === 'close_coupled' && (
-        <group>
-          <Slab size={[w, 0.77 - top, 0.17]} radius={0.03} bevel={0.012} position={[0, top, -d / 2 + 0.085]}>
+          <Slab
+            size={[w, 0.78 - top, 0.17]}
+            radius={square ? 0.012 : 0.06}
+            bevel={square ? 0.004 : 0.03}
+            position={[0, top, wall + 0.085]}
+          >
             {M('pan')}
           </Slab>
-          <FlushButtons y={0.77} z={-d / 2 + 0.085} fit={fit} />
+          {square ? (
+            <group position={[0, 0.78, wall + 0.085]}>
+              {[
+                [-0.021, 0.04],
+                [0.024, 0.026],
+              ].map(([x, bw]) => (
+                <Slab key={x} size={[bw, 0.005, 0.05]} radius={0.004} bevel={0.0015} position={[x, 0, 0]}>
+                  {M('flush')}
+                </Slab>
+              ))}
+            </group>
+          ) : (
+            <FlushButtons y={0.78} z={wall + 0.085} fit={fit} />
+          )}
         </group>
       )}
     </group>
@@ -129,26 +151,21 @@ function FlushButtons({ y, z, fit }: { y: number; z: number; fit: Fit }) {
   )
 }
 
-// The boxed in frame a wall hung pan hangs from, a little wider than the pan
-// and 1.12 m tall, with a Sigma20 plate, 24.6 by 16.4 cm, a meter up: a
-// large and a small button side by side in a frame.
-function WallFrame({ w, d, back, fit }: { w: number; d: number; back: number; fit: Fit }) {
+// The flush plate of a wall hung pan, set flat in the wall a meter up: a
+// Sigma20, 24.6 by 16.4 cm, a large and a small button side by side in a
+// frame.
+function FlushPlate({ z, fit }: { z: number; fit: Fit }) {
   const { M } = fit
-  const bw = Math.max(w + 0.25, 0.6)
-  const face = -d / 2 + back
   return (
     <group>
-      <Slab size={[bw, 1.12, back]} radius={0.008} bevel={0.003} position={[0, 0, -d / 2 + back / 2]}>
-        {M('box')}
-      </Slab>
-      <Slab size={[0.246, 0.164, 0.008]} radius={0.01} bevel={0.002} position={[0, 0.918, face + 0.004]}>
+      <Slab size={[0.246, 0.164, 0.008]} radius={0.01} bevel={0.002} position={[0, 0.918, z + 0.004]}>
         {M('flush')}
       </Slab>
       {[
         [-0.03, 0.13],
         [0.068, 0.056],
-      ].map(([x, bwid]) => (
-        <Slab key={x} size={[bwid, 0.124, 0.006]} radius={0.006} bevel={0.002} position={[x, 0.938, face + 0.009]}>
+      ].map(([x, bw]) => (
+        <Slab key={x} size={[bw, 0.124, 0.006]} radius={0.006} bevel={0.002} position={[x, 0.938, z + 0.009]}>
           {M('flush')}
         </Slab>
       ))}
@@ -355,32 +372,49 @@ export function Bathtub({ style, w, l, fit }: { style?: string; w: number; l: nu
           {M('tub')}
         </Hollow>
         <Waste y={h - deep + 0.012} z={-tl / 2 + 0.15} r={0.03} fit={fit} />
-        {/* The mixer on the end wall, its spout reaching over the rim. */}
-        <group position={[0, h + 0.2, -l / 2]}>
-          <mesh position={[0, 0, 0.04]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.026, 0.026, 0.16, SEG]} />
-            {M('tap')}
-          </mesh>
+        {/* An exposed wall mixer on the end wall, after the Hansgrohe
+            Logis bath mixer: two rosettes on the wall, a slim body held
+            off it on their elbows, a single lever on top and a short spout
+            under the middle reaching over the rim. */}
+        <group position={[0, h + 0.16, -l / 2]}>
           {[-1, 1].map(s => (
-            <mesh key={s} position={[s * 0.09, 0, 0.04]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.03, 0.03, 0.03, SEG]} />
-              {M('tap')}
-            </mesh>
+            <group key={s} position={[s * 0.075, 0, 0]}>
+              <mesh position={[0, 0, 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.028, 0.028, 0.012, SEG]} />
+                {M('tap')}
+              </mesh>
+              <mesh position={[0, 0, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.011, 0.011, 0.04, 16]} />
+                {M('tap')}
+              </mesh>
+            </group>
           ))}
-          <mesh position={[0, 0, 0.018]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.014, 0.014, 0.04, 16]} />
+          <mesh position={[0, 0, 0.055]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.022, 0.022, 0.22, SEG]} />
             {M('tap')}
           </mesh>
+          {/* The lever, on a short round cap. */}
+          <mesh position={[0, 0.03, 0.055]}>
+            <cylinderGeometry args={[0.018, 0.02, 0.02, SEG]} />
+            {M('tap')}
+          </mesh>
+          <Slab size={[0.018, 0.01, 0.08]} radius={0.006} bevel={0.002} position={[0, 0.036, 0.085]}>
+            {M('tap')}
+          </Slab>
           <Tube
-            radius={0.014}
+            radius={0.012}
             points={[
-              [0, -0.03, 0.04],
-              [0, -0.05, 0.1],
-              [0, -0.07, 0.16],
+              [0, -0.012, 0.06],
+              [0, -0.025, 0.1],
+              [0, -0.03, 0.15],
             ]}
           >
             {M('tap')}
           </Tube>
+          <mesh position={[0, -0.036, 0.15]}>
+            <cylinderGeometry args={[0.013, 0.013, 0.014, 20]} />
+            {M('tap')}
+          </mesh>
         </group>
       </group>
     )
