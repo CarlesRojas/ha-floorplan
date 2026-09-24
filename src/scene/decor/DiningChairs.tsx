@@ -98,7 +98,7 @@ function Jin({ w, d, h, M }: Size) {
   const [kx, ky, kz] = [w / spec.width, h / spec.height, d / spec.depth]
   const { face, geometry } = useMemo(() => {
     const face = shellFace(kx, ky, kz)
-    return { face, geometry: thicken(face, JIN_THICK) }
+    return { face, geometry: thicken(face, JIN_THICK, true) }
   }, [kx, ky, kz])
   // The underside of the seat over the frame's middle, which the frame and
   // the legs hang from.

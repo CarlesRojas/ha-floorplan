@@ -72,10 +72,11 @@ export function plate(outline: (inset: number) => Shape, thick: number, bend?: n
 
 // A molded shell from a grid of points on its face: rows run along the
 // shell and columns across it. The face is the side the columns and rows
-// turn to the left of, and the shell is `thick` deep behind it, with a
-// square rim all round, so thickness stays the same however the grid is
-// laid out.
-export function thicken(grid: Vector3[][], thick: number) {
+// turn to the left of, and the shell is `thick` deep behind it, so
+// thickness stays the same however the grid is laid out. Its rim is square,
+// or with `round` a half round that stands out past the grid by half the
+// thickness, the way a padded edge does.
+export function thicken(grid: Vector3[][], thick: number, round = false) {
   const rows = grid.length
   const cols = grid[0].length
   const at = (i: number, j: number) => grid[Math.min(Math.max(i, 0), rows - 1)][Math.min(Math.max(j, 0), cols - 1)]
@@ -121,19 +122,30 @@ export function thicken(grid: Vector3[][], thick: number) {
   for (let i = 1; i < rows; i++) loop.push([i, cols - 1])
   for (let j = cols - 2; j >= 0; j--) loop.push([rows - 1, j])
   for (let i = rows - 2; i > 0; i--) loop.push([i, 0])
+  // Each place round the rim runs from the face to the back, straight across
+  // or round in steps.
+  const steps = round ? 8 : 1
   const rim = loop.map(([i, j]) => {
     // Out is away from the neighbour inside the grid, along the face.
     const inner = at(i === 0 ? 1 : i === rows - 1 ? rows - 2 : i, j === 0 ? 1 : j === cols - 1 ? cols - 2 : j)
     const n = normals[i][j]
     const out = grid[i][j].clone().sub(inner)
     out.addScaledVector(n, -out.dot(n)).normalize()
-    return { top: add(grid[i][j], out), bottom: add(behind(i, j), out), out }
+    const middle = grid[i][j].clone().addScaledVector(n, -thick / 2)
+    return Array.from({ length: steps + 1 }, (_, k) => {
+      if (!round) return add(k === 0 ? grid[i][j] : behind(i, j), out)
+      const a = (Math.PI * k) / steps
+      const toward = n.clone().multiplyScalar(Math.cos(a)).addScaledVector(out, Math.sin(a))
+      return add(middle.clone().addScaledVector(toward, thick / 2), toward)
+    })
   })
   rim.forEach((a, k) => {
     const b = rim[(k + 1) % rim.length]
-    const out = a.out.clone().add(b.out)
-    face(a.top, b.top, b.bottom, out)
-    face(a.top, b.bottom, a.bottom, out)
+    for (let m = 0; m < steps; m++) {
+      const facing = shading[a[m]].clone().add(shading[b[m + 1]])
+      face(a[m], b[m], b[m + 1], facing)
+      face(a[m], b[m + 1], a[m + 1], facing)
+    }
   })
   const geo = new BufferGeometry()
   geo.setAttribute('position', new Float32BufferAttribute(points.flatMap(p => [p.x, p.y, p.z]), 3))
