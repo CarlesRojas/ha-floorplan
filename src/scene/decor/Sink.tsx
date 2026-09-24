@@ -22,6 +22,26 @@ function Waste({ x, y, z, fit }: { x: number; y: number; z: number; fit: Fit }) 
   )
 }
 
+// The lever of a single lever mixer, on the column's right: a round
+// cartridge hub let into its side and a slim flat lever rising from it,
+// leaning a little away from the column, the way the Grohe Minta's does.
+function SideLever({ y, r, fit }: { y: number; r: number; fit: Fit }) {
+  const metal = fit.M('tap')
+  return (
+    <group position={[r, y, 0]}>
+      <mesh position={[0.008, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.017, 0.017, 0.022, SEG]} />
+        {metal}
+      </mesh>
+      <group position={[0.019, 0, 0]} rotation={[0, 0, -0.22]}>
+        <Slab size={[0.009, 0.075, 0.014]} radius={0.004} bevel={0.002} position={[0, 0, 0]}>
+          {metal}
+        </Slab>
+      </group>
+    </group>
+  )
+}
+
 // A single lever mixer after the Grohe Essence: a slim column turning over
 // in a tight U, 30 cm tall and reaching 22 cm, a lever on its side.
 function LeverTap({ fit }: { fit: Fit }) {
@@ -45,10 +65,7 @@ function LeverTap({ fit }: { fit: Fit }) {
       >
         {metal}
       </Tube>
-      <mesh position={[0.03, 0.12, 0]} rotation={[0, 0, Math.PI / 2 - 0.25]}>
-        <cylinderGeometry args={[0.007, 0.009, 0.07, 16]} />
-        {metal}
-      </mesh>
+      <SideLever y={0.1} r={0.014} fit={fit} />
     </group>
   )
 }
@@ -127,10 +144,7 @@ function PullOutTap({ fit }: { fit: Fit }) {
         <cylinderGeometry args={[0.02, 0.018, 0.08, SEG]} />
         {metal}
       </mesh>
-      <mesh position={[0.03, 0.1, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.008, 0.008, 0.06, 16]} />
-        {metal}
-      </mesh>
+      <SideLever y={0.1} r={0.015} fit={fit} />
     </group>
   )
 }

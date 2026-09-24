@@ -28,8 +28,8 @@ import {
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
-import { useRef } from 'react'
-import type { Group } from 'three'
+import { useMemo, useRef } from 'react'
+import { Shape, type Group, type Mesh } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null; all: DecorationConfig[] }
 
@@ -90,8 +90,19 @@ function Led({ on, position, color = LED_ON }: { on: boolean; position: [number,
   )
 }
 
-// A drum that turns while the machine runs.
-function Drum({ running, position, radius }: { running: boolean; position: [number, number, number]; radius: number }) {
+// A drum that turns while the machine runs. A dryer's is loaded with
+// laundry, which tumbles with it.
+function Drum({
+  running,
+  load,
+  position,
+  radius,
+}: {
+  running: boolean
+  load: boolean
+  position: [number, number, number]
+  radius: number
+}) {
   const ref = useRef<Group>(null)
   useFrame((_, delta) => {
     if (running && ref.current) ref.current.rotation.z += delta * 2.2
@@ -105,13 +116,63 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
       {/* The three paddles inside it, which show it turning. */}
       {[0, 1, 2].map(i => (
         <group key={i} rotation={[0, 0, (i * Math.PI * 2) / 3]}>
-          <mesh position={[0, radius * 0.76, -0.01]}>
-            <boxGeometry args={[radius * 0.28, radius * 0.2, 0.02]} />
+          <mesh position={[0, radius * 0.76, 0.002]}>
+            <boxGeometry args={[radius * 0.28, radius * 0.2, 0.004]} />
             <meshStandardMaterial color="#b9c2c6" roughness={0.5} />
           </mesh>
         </group>
       ))}
+      {load &&
+        LAUNDRY.map(([a, s, color], i) => (
+          <Cushion
+            key={i}
+            size={[radius * s, 0.008, radius * s * 0.55]}
+            rotation={[Math.PI / 2, a + 0.4, 0]}
+            position={[Math.cos(a) * radius * 0.5, Math.sin(a) * radius * 0.5, 0.004]}
+          >
+            <meshStandardMaterial color={color} roughness={0.95} />
+          </Cushion>
+        ))}
     </group>
+  )
+}
+
+// The laundry in a dryer: the angle each piece lies at round the drum, its
+// size as a share of the drum, and its color.
+const LAUNDRY: [number, number, string][] = [
+  [-1.9, 0.7, '#7d93ad'],
+  [-1.2, 0.6, '#e8e3d8'],
+  [-0.4, 0.55, '#b26b5a'],
+  [2.6, 0.5, '#d9cfb4'],
+]
+
+// The water in a washer's drum, the lower part of it seen through the
+// glass, which rocks while it runs.
+function Water({
+  radius,
+  running,
+  position,
+}: {
+  radius: number
+  running: boolean
+  position: [number, number, number]
+}) {
+  const ref = useRef<Mesh>(null)
+  const shape = useMemo(() => {
+    const s = new Shape()
+    const a = 0.45
+    s.absarc(0, 0, radius, -Math.PI + a, -a, false)
+    s.closePath()
+    return s
+  }, [radius])
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.z = running ? Math.sin(clock.elapsedTime * 2.2) * 0.12 : 0
+  })
+  return (
+    <mesh ref={ref} position={position}>
+      <shapeGeometry args={[shape, SEG]} />
+      <meshStandardMaterial color="#7fb2c8" transparent opacity={0.55} roughness={0.2} />
+    </mesh>
   )
 }
 
@@ -236,7 +297,7 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       )
     }
     case 'fridge':
-      return <Fridge w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
+      return <Fridge w={p('width')} d={p('depth')} h={p('height')} flip={p('flip') > 0.5} fit={fit} />
     case 'oven':
       return <Oven w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'microwave':
@@ -254,42 +315,62 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
         <Sink style={sinkStyle(decorationVariant(kind, item.variant)?.id)} w={p('width')} d={p('depth')} fit={fit} />
       )
     case 'coffee_machine':
-      return <CoffeeMachine w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
+      return <CoffeeMachine style={style} w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'kettle':
-      return <Kettle size={p('size')} fit={fit} />
+      return <Kettle style={style} size={p('size')} fit={fit} />
     // Laundry
     case 'washing_machine':
     case 'dryer': {
       // A front loader after the Bosch Serie 8 WGB256090, and the heat pump
-      // dryer made to stand on it, the WQB246C9GB: a white box with a round
-      // door ringed in chrome, tinted glass over the drum, a strip along the
-      // top with the detergent drawer or the water tank on its left, a
-      // display in the middle and the program dial on its right. The door
-      // grows with the front, and stays clear of the strip and the plinth.
+      // dryer made to stand on it, the WQB246C9GB. Both are a white box with
+      // a round door, a strip along the top with a display in the middle and
+      // the program dial on its right. The washer's door is a chrome ring
+      // round a deep glass bowl, with water in the drum below it and the
+      // detergent drawer on the left of the strip. The dryer's is a dark ring
+      // round flat smoked glass with the laundry tumbling behind it, the
+      // water tank on the left of the strip, and the louvred flap over its
+      // heat pump across the foot. The door grows with the front, and stays
+      // clear of the strip and the plinth.
+      const dryer = kind.id === 'dryer'
       const w = p('width')
       const d = p('depth')
       const h = p('height')
       const strip = 0.12
-      const plinth = 0.08
+      const plinth = dryer ? 0.13 : 0.08
       const r = Math.min(w * 0.3, (h - strip - plinth) / 2 - 0.03)
       const cy = plinth + (h - strip - plinth) / 2
       const front = d / 2
+      const louvres = Math.max(3, Math.floor((plinth - 0.04) / 0.014))
       return (
         <group>
           <Slab size={[w, h, d]} radius={0.02} bevel={0.008}>
             {M('body')}
           </Slab>
-          {/* The door: a chrome ring, the tinted glass inside it, and the
-              drum turning behind. */}
+          {/* The door ring, the glass inside it, and the drum turning
+              behind. */}
           <mesh position={[0, cy, front + 0.02]}>
-            <torusGeometry args={[r, 0.022, 16, SEG * 2]} />
+            <torusGeometry args={[r, dryer ? 0.03 : 0.022, 16, SEG * 2]} />
             {M('door')}
           </mesh>
-          <mesh position={[0, cy, front + 0.012]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[r, r, 0.024, SEG * 2]} />
-            <meshStandardMaterial color="#1e2528" roughness={0.15} metalness={0.2} transparent opacity={0.55} />
+          {dryer ? (
+            <mesh position={[0, cy, front + 0.018]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[r, r, 0.012, SEG * 2]} />
+              <meshStandardMaterial color="#1a1d1f" roughness={0.12} metalness={0.2} transparent opacity={0.5} />
+            </mesh>
+          ) : (
+            <mesh position={[0, cy, front + 0.004]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 0.45, 1]}>
+              <sphereGeometry args={[r * 0.97, SEG * 2, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <meshPhysicalMaterial color="#2c3a42" roughness={0.05} transparent opacity={0.28} />
+            </mesh>
+          )}
+          {/* The drum is drawn flat on the front, over a dark disc, since
+              the body is solid behind it. */}
+          <mesh position={[0, cy, front + 0.002]}>
+            <circleGeometry args={[r, SEG * 2]} />
+            <meshStandardMaterial color="#2a2e31" roughness={0.6} />
           </mesh>
-          <Drum running={on} position={[0, cy, front - 0.02]} radius={r} />
+          <Drum running={on} load={dryer} position={[0, cy, front + 0.004]} radius={r} />
+          {!dryer && <Water radius={r * 0.86} running={on} position={[0, cy, front + 0.012]} />}
           {/* The hinge side is the left, the handle recess on the right. */}
           <Slab size={[0.02, 0.07, 0.012]} radius={0.006} bevel={0.002} position={[r + 0.03, cy - 0.035, front]}>
             {M('door')}
@@ -303,6 +384,8 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
           >
             {M('controls')}
           </Slab>
+          {/* The detergent drawer or the water tank, on the left of it,
+              with a grip along its lower edge. */}
           <Slab
             size={[w * 0.36, strip - 0.05, 0.012]}
             radius={0.006}
@@ -311,6 +394,17 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
           >
             {M('body')}
           </Slab>
+          <mesh position={[-w / 2 + 0.02 + w * 0.18, h - strip + 0.026, front + 0.0165]}>
+            <boxGeometry args={[w * 0.2, 0.008, 0.004]} />
+            <meshStandardMaterial color="#8f9497" roughness={0.5} />
+          </mesh>
+          {dryer && (
+            // A window in the tank showing how full it is.
+            <mesh position={[-w / 2 + 0.02 + w * 0.3, h - strip + 0.045, front + 0.0165]}>
+              <planeGeometry args={[w * 0.06, 0.03]} />
+              <meshStandardMaterial color="#9fc3d3" roughness={0.2} />
+            </mesh>
+          )}
           <mesh position={[w * 0.06, h - strip / 2 + 0.005, front + 0.0105]}>
             <planeGeometry args={[w * 0.18, 0.03]} />
             <meshStandardMaterial color="#101315" emissive="#d9f2ff" emissiveIntensity={0.25 * lit} />
@@ -320,6 +414,20 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
             {M('door')}
           </mesh>
           <Led on={on} position={[w * 0.06 + w * 0.12, h - strip / 2 + 0.005, front + 0.012]} />
+          {dryer && (
+            // The flap over the heat pump, with its louvres.
+            <group>
+              <Slab size={[w - 0.04, plinth - 0.03, 0.008]} radius={0.008} bevel={0.002} position={[0, 0.015, front]}>
+                {M('controls')}
+              </Slab>
+              {Array.from({ length: louvres }, (_, i) => (
+                <mesh key={i} position={[0, 0.03 + i * 0.014, front + 0.009]}>
+                  <boxGeometry args={[w * 0.6, 0.004, 0.003]} />
+                  <meshStandardMaterial color="#6d7275" roughness={0.6} />
+                </mesh>
+              ))}
+            </group>
+          )}
         </group>
       )
     }

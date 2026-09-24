@@ -487,13 +487,14 @@ export default function FurnitureModel({ kind, item }: Props) {
       const frameH = legH + 0.1
       const mattress = 0.18
       const headH = 0.5
-      // The duvet's head edge, where the turned back band starts.
-      const duvetL = l * 0.62
-      const duvetZ = l / 2 - 0.02 - duvetL
-      const fold = l * 0.12
       const pillows = Math.max(1, Math.round(w / 0.8))
       const pillowW = Math.min(0.7, (w - 0.1) / pillows - 0.06)
       const pillowD = Math.min(0.36, l * 0.18)
+      // The duvet's head edge, where the turned back band starts, a hand
+      // below the pillows.
+      const duvetZ = -l / 2 + 0.07 + pillowD + 0.04
+      const duvetL = l / 2 - 0.02 - duvetZ
+      const fold = l * 0.12
       const bedding = () => <Material color={c('bedding')} material={m('bedding')} />
       return (
         <group>

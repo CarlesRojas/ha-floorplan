@@ -37,9 +37,11 @@ function Pocket({
 // 203 cm: two flat doors, the fridge over the freezer about 1.3 m to 0.7 m,
 // a pocket grip cut into the edge of each door where they meet, and a toe
 // grille under the lower door. Below 1.2 m it is an under counter fridge
-// with one door and its grip at the top.
-export function Fridge({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+// with one door and its grip at the top. The doors hinge on the left, or on
+// the right when `flip` is set, and the grips move to the other edge.
+export function Fridge({ w, d, h, flip, fit }: { w: number; d: number; h: number; flip: boolean; fit: Fit }) {
   const { M } = fit
+  const side = flip ? -1 : 1
   const door = 0.05
   const toe = Math.min(0.06, h * 0.04)
   const gap = 0.006
@@ -74,7 +76,7 @@ export function Fridge({ w, d, h, fit }: { w: number; d: number; h: number; fit:
           <Pocket
             size={[0.018, grip, door * 0.7]}
             position={[
-              w / 2 - 0.008,
+              side * (w / 2 - 0.008),
               dr.grip === 'top' ? dr.y + dr.h - grip / 2 - 0.01 : dr.y + grip / 2 + 0.01,
               front - door * 0.35 + 0.001,
             ]}
@@ -83,7 +85,7 @@ export function Fridge({ w, d, h, fit }: { w: number; d: number; h: number; fit:
           </Pocket>
         </group>
       ))}
-      <Led on={fit.on} radius={0.006} position={[-w / 2 + 0.05, h - 0.04, front + 0.001]} />
+      <Led on={fit.on} radius={0.006} position={[-side * (w / 2 - 0.05), h - 0.04, front + 0.001]} />
     </group>
   )
 }
@@ -628,12 +630,171 @@ export function CeilingExtractor({ w, d, fit }: { w: number; d: number; fit: Fit
   )
 }
 
+// A coffee machine in one of three styles, from the big espresso machine
+// down to a pod machine a hand wide.
+export function CoffeeMachine({ style, w, d, h, fit }: { style?: string; w: number; d: number; h: number; fit: Fit }) {
+  if (style === 'bambino') return <CompactEspresso w={w} d={d} h={h} fit={fit} />
+  if (style === 'pod') return <PodMachine w={w} d={d} h={h} fit={fit} />
+  return <LineaEspresso w={w} d={d} h={h} fit={fit} />
+}
+
+// A compact espresso machine after the Sage Bambino, 19.5 by 32 by 31 cm: a
+// brushed steel box with a head over the cup recess, a portafilter with a
+// black handle, four round buttons across the head's front, a steam wand on
+// its right and a drip tray at the foot of the recess.
+function CompactEspresso({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const recess = d * 0.28
+  const headY = Math.min(h * 0.42, 0.14)
+  const group = Math.min(0.029, w * 0.15)
+  const buttons = 4
+  const pitch = Math.min(0.03, (w - 0.04) / buttons)
+  return (
+    <group>
+      <Slab size={[w, h, d - recess]} radius={0.02} bevel={0.006} position={[0, 0, -recess / 2]}>
+        {M('body')}
+      </Slab>
+      <Slab size={[w, h - headY, recess]} radius={0.02} bevel={0.006} position={[0, headY, d / 2 - recess / 2]}>
+        {M('body')}
+      </Slab>
+      {/* The drip tray, and its grate. */}
+      <Slab size={[w - 0.01, 0.028, recess]} radius={0.01} bevel={0.003} position={[0, 0, d / 2 - recess / 2]}>
+        {M('steel')}
+      </Slab>
+      <mesh position={[0, 0.0285, d / 2 - recess / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[w - 0.04, recess - 0.03]} />
+        <meshStandardMaterial color="#1c1f21" roughness={0.6} />
+      </mesh>
+      {/* The group head and the portafilter locked in under it. */}
+      <group position={[0, headY, d / 2 - recess * 0.5]}>
+        <mesh position={[0, -0.01, 0]}>
+          <cylinderGeometry args={[group, group, 0.02, SEG]} />
+          {M('steel')}
+        </mesh>
+        <mesh position={[0, -0.034, 0]}>
+          <cylinderGeometry args={[group * 1.05, group * 0.85, 0.028, SEG]} />
+          {M('steel')}
+        </mesh>
+        <Tube
+          radius={0.011}
+          points={[
+            [0, -0.034, group * 0.8],
+            [0, -0.038, group + 0.04],
+            [0, -0.046, group + 0.1],
+          ]}
+        >
+          {M('handle')}
+        </Tube>
+      </group>
+      {/* The buttons across the head's front, lit while it is on. */}
+      {Array.from({ length: buttons }, (_, i) => (
+        <group key={i} position={[(i - (buttons - 1) / 2) * pitch, h - 0.045, d / 2 + 0.002]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.009, 0.009, 0.006, 24]} />
+            {M('handle')}
+          </mesh>
+          <Led on={fit.on} radius={0.003} color="#f2f5f7" position={[0, 0, 0.004]} />
+        </group>
+      ))}
+      {/* The steam wand, out of the right of the head and down. */}
+      <Tube
+        radius={0.005}
+        points={[
+          [w / 2 - 0.02, headY + 0.02, d / 2 - 0.01],
+          [w / 2 + 0.01, headY - 0.005, d / 2 + 0.005],
+          [w / 2 + 0.015, headY - 0.1, d / 2 + 0.01],
+        ]}
+      >
+        {M('steel')}
+      </Tube>
+    </group>
+  )
+}
+
+// A pod machine after the Nespresso Essenza Mini, 8.4 by 33 by 20.4 cm: a
+// narrow body rounded over the top, the brewing head overhanging its front
+// with a lever to load the capsule, a spout under it, a cup grid at the
+// foot, and a clear water tank on its back. Two buttons on top glow while
+// it is on.
+function PodMachine({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const tank = d * 0.3
+  const over = d * 0.34
+  const headH = h * 0.36
+  const r = Math.min(w / 2 - 0.002, 0.03)
+  return (
+    <group>
+      {/* The base, the full length of the machine. */}
+      <Slab size={[w, 0.02, d]} radius={Math.min(0.015, r)} bevel={0.004}>
+        {M('body')}
+      </Slab>
+      {/* The body between the tank and the cup. */}
+      <Slab
+        size={[w, h, d - tank - over]}
+        radius={r}
+        bevel={0.006}
+        position={[0, 0, -d / 2 + tank + (d - tank - over) / 2]}
+      >
+        {M('body')}
+      </Slab>
+      {/* The head over the cup, with the lever lying along its top. */}
+      <Slab size={[w, headH, over]} radius={r} bevel={0.006} position={[0, h - headH, d / 2 - over / 2]}>
+        {M('body')}
+      </Slab>
+      <Slab
+        size={[w * 0.5, 0.012, over * 0.85]}
+        radius={0.005}
+        bevel={0.002}
+        position={[0, h, d / 2 - over / 2 - 0.01]}
+      >
+        {M('accent')}
+      </Slab>
+      {/* The spout under the head. */}
+      <mesh position={[0, h - headH - 0.008, d / 2 - over * 0.45]}>
+        <cylinderGeometry args={[0.009, 0.007, 0.016, 20]} />
+        {M('accent')}
+      </mesh>
+      {/* The cup grid, over a drip tray at the foot. */}
+      <Slab size={[w - 0.008, 0.012, over - 0.01]} radius={0.004} bevel={0.002} position={[0, 0.02, d / 2 - over / 2]}>
+        {M('accent')}
+      </Slab>
+      {/* The water tank, clear, with the water in it. */}
+      <Slab
+        size={[w - 0.006, h * 0.86, tank]}
+        radius={Math.min(r, 0.02)}
+        bevel={0.004}
+        position={[0, 0.02, -d / 2 + tank / 2]}
+      >
+        <meshPhysicalMaterial color="#d7e3e8" transparent opacity={0.35} roughness={0.08} />
+      </Slab>
+      <Slab
+        size={[w - 0.02, h * 0.5, tank - 0.02]}
+        radius={0.01}
+        bevel={0.002}
+        position={[0, 0.025, -d / 2 + tank / 2]}
+      >
+        <meshStandardMaterial color="#a9c6d2" transparent opacity={0.4} roughness={0.1} />
+      </Slab>
+      {/* The two buttons on top of the body, behind the lever. */}
+      {[0, 1].map(i => (
+        <group key={i} position={[0, h + 0.002, -d / 2 + tank + 0.025 + i * 0.03]}>
+          <mesh>
+            <cylinderGeometry args={[0.01, 0.01, 0.006, 24]} />
+            {M('accent')}
+          </mesh>
+          <Led on={fit.on} radius={0.004} color="#f2f5f7" position={[0, 0.003, 0]} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
 // An espresso machine after the La Marzocco Linea Mini, 36 by 45 by 38 cm:
 // a steel box on short feet with colored side panels, the group head under
 // its front, a portafilter with a wooden handle and a paddle over it, a
 // steam wand on the right and a hot water tap on the left, a drip tray in
 // the recess below and a rail round the cup tray on top.
-export function CoffeeMachine({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+function LineaEspresso({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
   const { M } = fit
   const feet = 0.015
   const body = h - feet
@@ -766,11 +927,73 @@ export function CoffeeMachine({ w, d, h, fit }: { w: number; d: number; h: numbe
   )
 }
 
+// A kettle, the modern jug by default or the pour over gooseneck.
+export function Kettle({ style, size, fit }: { style?: string; size: number; fit: Fit }) {
+  if (style === 'gooseneck') return <Gooseneck size={size} fit={fit} />
+  return <JugKettle size={size} fit={fit} />
+}
+
+// A jug kettle after the Xiaomi Mi Smart Kettle Pro: a plain upright
+// cylinder narrowing a touch to the top, a flat lid with a round release
+// button, a small pouring lip at the front and a D handle behind, on a
+// round power base with a ring that glows while it boils. `size` is the
+// jug's width.
+function JugKettle({ size, fit }: { size: number; fit: Fit }) {
+  const { M, c, lit } = fit
+  const r = size / 2
+  const base = r * 0.2
+  const h = r * 2.5
+  const top = base + h
+  return (
+    <group>
+      <mesh position={[0, base / 2, 0]}>
+        <cylinderGeometry args={[r * 1.04, r * 1.06, base, SEG * 2]} />
+        {M('fittings')}
+      </mesh>
+      <mesh position={[0, base + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[r * 0.98, r * 1.04, SEG * 2]} />
+        <meshStandardMaterial color={c('fittings')} emissive="#8fd0ff" emissiveIntensity={1.4 * lit} />
+      </mesh>
+      <mesh position={[0, base + h / 2, 0]} castShadow>
+        <cylinderGeometry args={[r * 0.94, r, h, SEG * 2]} />
+        {M('body')}
+      </mesh>
+      {/* The lid, flush with the rim, and its release button. */}
+      <mesh position={[0, top + r * 0.02, 0]}>
+        <cylinderGeometry args={[r * 0.9, r * 0.94, r * 0.04, SEG * 2]} />
+        {M('fittings')}
+      </mesh>
+      <mesh position={[-r * 0.45, top + r * 0.05, 0]}>
+        <cylinderGeometry args={[r * 0.14, r * 0.14, r * 0.04, 24]} />
+        {M('body')}
+      </mesh>
+      {/* The pouring lip, a short flared beak at the front of the rim. */}
+      <mesh position={[r * 0.97, top - r * 0.06, 0]} rotation={[0, 0, -Math.PI / 2 - 0.5]} scale={[1, 1, 1.4]}>
+        <coneGeometry args={[r * 0.14, r * 0.3, 3, 1, true]} />
+        <meshStandardMaterial color={c('body')} side={2} roughness={0.5} />
+      </mesh>
+      {/* The D handle off the back. */}
+      <Tube
+        radius={r * 0.11}
+        points={[
+          [-r * 0.9, top - r * 0.15, 0],
+          [-r * 1.35, top - r * 0.2, 0],
+          [-r * 1.5, base + h * 0.55, 0],
+          [-r * 1.4, base + h * 0.2, 0],
+          [-r * 0.92, base + h * 0.12, 0],
+        ]}
+      >
+        {M('fittings')}
+      </Tube>
+    </group>
+  )
+}
+
 // A pour over kettle after the Fellow Stagg EKG: a squat drum with a flat
 // lid and a tall knob, a thin gooseneck spout rising from low on its front,
 // a tall hoop handle behind, on a round base with a dial. `size` is the
 // drum's width, and everything else follows it.
-export function Kettle({ size, fit }: { size: number; fit: Fit }) {
+function Gooseneck({ size, fit }: { size: number; fit: Fit }) {
   const { M, c, m, lit } = fit
   const r = size / 2
   const base = r * 0.22
