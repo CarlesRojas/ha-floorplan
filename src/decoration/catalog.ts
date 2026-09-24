@@ -1051,8 +1051,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Washing machine',
     'floor',
     [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), base()],
-    { body: SCANDI.offWhite, door: SCANDI.slate, controls: SCANDI.slate },
-    { body: 'ceramic', door: 'metal', controls: 'metal' },
+    { body: '#f4f4f2', door: '#c4c7c8', controls: '#e6e7e6' },
+    { body: 'ceramic', door: 'metal', controls: 'ceramic' },
     TOGGLE_LEVEL,
   ),
   kind(
@@ -1061,8 +1061,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Dryer',
     'floor',
     [width(0.6, 0.5, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 1), base()],
-    { body: SCANDI.offWhite, door: SCANDI.slate, controls: SCANDI.slate },
-    { body: 'ceramic', door: 'metal', controls: 'metal' },
+    { body: '#f4f4f2', door: '#c4c7c8', controls: '#e6e7e6' },
+    { body: 'ceramic', door: 'metal', controls: 'ceramic' },
     TOGGLE_LEVEL,
   ),
 

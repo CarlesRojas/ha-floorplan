@@ -98,10 +98,19 @@ function Drum({ running, position, radius }: { running: boolean; position: [numb
   })
   return (
     <group ref={ref} position={position}>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[radius * 0.62, radius * 0.1, 16, SEG]} />
+      <mesh>
+        <torusGeometry args={[radius * 0.9, radius * 0.05, 12, SEG]} />
         <meshStandardMaterial color="#b9c2c6" roughness={0.5} />
       </mesh>
+      {/* The three paddles inside it, which show it turning. */}
+      {[0, 1, 2].map(i => (
+        <group key={i} rotation={[0, 0, (i * Math.PI * 2) / 3]}>
+          <mesh position={[0, radius * 0.76, -0.01]}>
+            <boxGeometry args={[radius * 0.28, radius * 0.2, 0.02]} />
+            <meshStandardMaterial color="#b9c2c6" roughness={0.5} />
+          </mesh>
+        </group>
+      ))}
     </group>
   )
 }
@@ -247,54 +256,66 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
     // Laundry
     case 'washing_machine':
     case 'dryer': {
+      // A front loader after the Bosch Serie 8 WGB256090, and the heat pump
+      // dryer made to stand on it, the WQB246C9GB: a white box with a round
+      // door ringed in chrome, tinted glass over the drum, a strip along the
+      // top with the detergent drawer or the water tank on its left, a
+      // display in the middle and the program dial on its right. The door
+      // grows with the front, and stays clear of the strip and the plinth.
       const w = p('width')
       const d = p('depth')
       const h = p('height')
+      const strip = 0.12
+      const plinth = 0.08
+      const r = Math.min(w * 0.3, (h - strip - plinth) / 2 - 0.03)
+      const cy = plinth + (h - strip - plinth) / 2
+      const front = d / 2
       return (
         <group>
-          <Slab size={[w, h, d]} radius={0.03} position={[0, 0, 0]}>
+          <Slab size={[w, h, d]} radius={0.02} bevel={0.008}>
             {M('body')}
           </Slab>
-          {/* Round porthole with a rim, and the drum behind it. */}
-          <mesh position={[0, h * 0.48, d / 2 + 0.005]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[w * 0.28, 0.022, 16, SEG]} />
+          {/* The door: a chrome ring, the tinted glass inside it, and the
+              drum turning behind. */}
+          <mesh position={[0, cy, front + 0.02]}>
+            <torusGeometry args={[r, 0.022, 16, SEG * 2]} />
             {M('door')}
           </mesh>
-          <mesh position={[0, h * 0.48, d / 2 - 0.01]}>
-            <cylinderGeometry args={[w * 0.27, w * 0.27, 0.02, SEG]} />
-            <meshStandardMaterial color="#2f3336" roughness={0.3} />
+          <mesh position={[0, cy, front + 0.012]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[r, r, 0.024, SEG * 2]} />
+            <meshStandardMaterial color="#1e2528" roughness={0.15} metalness={0.2} transparent opacity={0.55} />
           </mesh>
-          {kind.id === 'washing_machine' ? (
-            <Drum running={on} position={[0, h * 0.48, d / 2 - 0.03]} radius={w * 0.27} />
-          ) : (
-            // A dryer shows a vent grille instead of a drum.
-            [0, 1, 2].map(i => (
-              <Slab
-                key={i}
-                size={[w * 0.34, 0.012, 0.012]}
-                radius={0.005}
-                bevel={0.003}
-                position={[0, h * 0.4 + i * 0.05, d / 2 + 0.005]}
-              >
-                {M('door')}
-              </Slab>
-            ))
-          )}
-          {/* Control strip along the top, with a dial and, on the washer,
-              the detergent drawer beside it. */}
-          <Slab size={[w - 0.05, 0.055, 0.015]} radius={0.01} position={[0, h - 0.11, d / 2]}>
+          <Drum running={on} position={[0, cy, front - 0.02]} radius={r} />
+          {/* The hinge side is the left, the handle recess on the right. */}
+          <Slab size={[0.02, 0.07, 0.012]} radius={0.006} bevel={0.002} position={[r + 0.03, cy - 0.035, front]}>
+            {M('door')}
+          </Slab>
+          {/* The control strip, a panel across the top of the front. */}
+          <Slab
+            size={[w - 0.02, strip - 0.03, 0.01]}
+            radius={0.01}
+            bevel={0.002}
+            position={[0, h - strip + 0.01, front]}
+          >
             {M('controls')}
           </Slab>
-          <mesh position={[w / 2 - 0.09, h - 0.082, d / 2 + 0.018]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.026, 0.028, 0.02, 24]} />
-            {M('controls')}
+          <Slab
+            size={[w * 0.36, strip - 0.05, 0.012]}
+            radius={0.006}
+            bevel={0.002}
+            position={[-w / 2 + 0.01 + w * 0.18 + 0.01, h - strip + 0.02, front + 0.004]}
+          >
+            {M('body')}
+          </Slab>
+          <mesh position={[w * 0.06, h - strip / 2 + 0.005, front + 0.0105]}>
+            <planeGeometry args={[w * 0.18, 0.03]} />
+            <meshStandardMaterial color="#101315" emissive="#d9f2ff" emissiveIntensity={0.25 * lit} />
           </mesh>
-          {kind.id === 'washing_machine' && (
-            <Slab size={[w * 0.34, 0.07, 0.016]} radius={0.008} position={[-w * 0.24, h - 0.2, d / 2]}>
-              {M('controls')}
-            </Slab>
-          )}
-          <Led on={on} position={[-w / 2 + 0.07, h - 0.085, d / 2 + 0.02]} />
+          <mesh position={[w / 2 - 0.08, h - strip / 2 + 0.005, front + 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.028, 0.03, 0.022, SEG]} />
+            {M('door')}
+          </mesh>
+          <Led on={on} position={[w * 0.06 + w * 0.12, h - strip / 2 + 0.005, front + 0.012]} />
         </group>
       )
     }
