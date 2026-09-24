@@ -1,4 +1,11 @@
-import { colorValue, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
+import {
+  colorValue,
+  counterModules,
+  decorationVariant,
+  materialValue,
+  paramValue,
+  type DecorationKind,
+} from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
@@ -54,15 +61,19 @@ export default function ApplianceModel({ kind, item, state }: Props) {
   const lit = useEased(on ? 1 : 0, 9)
 
   switch (kind.id) {
-    case 'kitchen_counter':
-    case 'kitchen_island': {
+    case 'kitchen_counter': {
       const w = p('width')
       const d = p('depth')
       const h = p('height')
       const topH = 0.04
       const plinth = 0.1
-      const cols = Math.max(1, Math.round(w / 0.6))
-      const island = kind.id === 'kitchen_island'
+      const island = decorationVariant(kind, item.variant)?.id === 'island'
+      const modules = counterModules(w, p('wide') > 0.5, p('grow'))
+      const frontH = h - topH - plinth - 0.02
+      const drawerH = Math.min(0.16, frontH * 0.3)
+      const gap = 0.015
+      // Each unit's left edge, from the run's left end.
+      const starts = modules.map((_, i) => modules.slice(0, i).reduce((a, b) => a + b, 0))
       return (
         <group>
           <Slab size={[w - 0.1, plinth, d - 0.08]} radius={0.01} position={[0, 0, island ? 0 : -0.04]}>
@@ -71,25 +82,39 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           <Slab size={[w, h - topH - plinth, d]} radius={0.02} position={[0, plinth, 0]}>
             {M('cabinets')}
           </Slab>
-          {/* Handleless fronts with a shadow gap between them, each bay a
-              drawer over a door the way a run of base units is built. */}
-          {Array.from({ length: cols }).map((_, i) => {
-            const cw = w / cols
-            const x = -w / 2 + cw * (i + 0.5)
-            const frontH = h - topH - plinth - 0.02
-            const drawerH = Math.min(0.16, frontH * 0.3)
+          {/* Handleless fronts with a shadow gap between them, each unit a
+              drawer over a door the way a run of base units is built. A unit
+              too narrow for that is a single filler front, and one much
+              wider than a unit has a pair of doors. */}
+          {modules.map((cw, i) => {
+            const x = -w / 2 + starts[i] + cw / 2
+            if (cw < 0.25)
+              return (
+                <Panel key={i} size={[Math.max(cw - gap, 0.004), frontH, 0.018]} position={[x, plinth + 0.01, d / 2]}>
+                  {M('fronts')}
+                </Panel>
+              )
+            const doors = cw > 0.9 ? 2 : 1
+            const dw = cw / doors
             return (
               <group key={i}>
-                <Panel size={[cw - 0.015, drawerH, 0.018]} position={[x, plinth + frontH - drawerH + 0.01, d / 2]}>
+                <Panel size={[cw - gap, drawerH, 0.018]} position={[x, plinth + frontH - drawerH + 0.01, d / 2]}>
                   {M('fronts')}
                 </Panel>
-                <Panel size={[cw - 0.015, frontH - drawerH - 0.012, 0.018]} position={[x, plinth + 0.01, d / 2]}>
-                  {M('fronts')}
-                </Panel>
+                {Array.from({ length: doors }, (_, k) => (
+                  <Panel
+                    key={k}
+                    size={[dw - gap, frontH - drawerH - 0.012, 0.018]}
+                    position={[x - cw / 2 + dw * (k + 0.5), plinth + 0.01, d / 2]}
+                  >
+                    {M('fronts')}
+                  </Panel>
+                ))}
               </group>
             )
           })}
-          {/* Oak worktop with a slight overhang. */}
+          {/* Oak worktop with a slight overhang, and a deep one at the back of
+              an island for stools. */}
           <Slab
             size={[w + 0.03, topH, d + (island ? 0.16 : 0.03)]}
             radius={0.015}

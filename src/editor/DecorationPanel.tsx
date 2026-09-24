@@ -1,5 +1,6 @@
 import {
   canRide,
+  cycleLength,
   DECORATION_KINDS,
   decorationKind,
   decorationVariant,
@@ -32,7 +33,7 @@ import { deviceSignals, levelChannels } from '#/signals.ts'
 import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
-import { faPlus, faRotateLeft, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsRotate, faPlus, faRotateLeft, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
 
@@ -182,6 +183,26 @@ export default function DecorationPanel({
                 />
               </label>
             )
+          // A place in a row is stepped through with a button, and wraps
+          // round however many places there are now.
+          if (p.cycle) {
+            const count = cycleLength(kind, item.params, item.variant)
+            const at = ((Math.round(value) % count) + count) % count
+            return (
+              <div key={p.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                {p.label}
+                <button
+                  type="button"
+                  disabled={count < 2}
+                  onClick={() => onUpdate(item.id, { params: { ...item.params, [p.id]: (at + 1) % count } })}
+                  className="flex items-center justify-self-start gap-2 rounded-md border border-(--divider-color) px-2 py-1 text-xs hover:bg-(--secondary-background-color) disabled:opacity-50"
+                >
+                  <FontAwesomeIcon icon={faArrowsRotate} className="size-3" />
+                  {at + 1} of {count}
+                </button>
+              </div>
+            )
+          }
           // What the slider starts at for this style: a pendant's real size.
           const initial = paramValue(kind, undefined, p.id, item.variant)
           const { [p.id]: _, ...rest } = item.params ?? {}

@@ -21,6 +21,9 @@ export type DecorationParam = {
   unit?: string
   // A two state parameter, stored as 0 or 1 and edited as a switch.
   toggle?: boolean
+  // A place in a row of parts, which a button steps through. How many places
+  // there are is cycleLength's to say, and the value wraps round it.
+  cycle?: boolean
   // The styles it means something on. Every style when missing.
   variants?: string[]
 }
@@ -151,6 +154,19 @@ const flag = (id: string, label: string, d = 0): DecorationParam => ({
   toggle: true,
 })
 
+// A place in a row of parts, stepped through with a button rather than a
+// slider, since how many places there are depends on the other parameters.
+const cycle = (id: string, label: string): DecorationParam => ({
+  id,
+  label,
+  default: 0,
+  min: 0,
+  max: 99,
+  step: 1,
+  unit: '',
+  cycle: true,
+})
+
 // A parameter only some of the kind's styles have.
 const only = (param: DecorationParam, variants: string[]): DecorationParam => ({ ...param, variants })
 
@@ -243,6 +259,15 @@ const CHAIR_SLAB: DecorationVariant = {
   params: { width: 0.48, depth: 0.51, height: 0.85 },
   colors: { shell: '#45403d', legs: '#45403d' },
   materials: { shell: 'matte', legs: 'matte' },
+}
+
+// The counter's first style, a run against the wall, which keeps the old
+// counter's slots.
+const COUNTER_RUN: DecorationVariant = {
+  id: 'run',
+  label: 'Wall Run',
+  colors: { worktop: SCANDI.oak, cabinets: SCANDI.offWhite, fronts: SCANDI.offWhite },
+  materials: { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
 }
 
 // The office chair's first style, which keeps the kind's old seat, back,
@@ -828,18 +853,31 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Counter',
     'floor',
-    [width(1.8, 0.6, 4), depth(0.62, 0.5, 0.8), height(0.9, 0.8, 1)],
-    { worktop: SCANDI.oak, cabinets: SCANDI.offWhite, fronts: SCANDI.offWhite },
-    { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
-  ),
-  kind(
-    'kitchen_island',
-    'kitchen',
-    'Island',
-    'floor',
-    [width(1.8, 1, 3), depth(0.9, 0.7, 1.2), height(0.92, 0.8, 1.1)],
-    { worktop: SCANDI.oak, cabinets: SCANDI.sage, fronts: SCANDI.sage },
-    { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
+    // A run of 60 cm base units and one that takes up the rest of the
+    // width. By default that one grows from nothing to a full unit. The wide
+    // switch has it grow from one unit to just short of two instead, so no
+    // unit is ever narrower than a full one. The growing unit can stand at
+    // any place in the run.
+    [
+      width(1.8, 0.6, 4),
+      depth(0.62, 0.5, 1.2),
+      height(0.9, 0.8, 1.1),
+      flag('wide', 'Wide module'),
+      cycle('grow', 'Growing module'),
+    ],
+    COUNTER_RUN.colors ?? {},
+    COUNTER_RUN.materials ?? {},
+    undefined,
+    [
+      COUNTER_RUN,
+      {
+        id: 'island',
+        label: 'Island',
+        // Deeper, with the worktop overhanging at the back for stools.
+        params: { depth: 0.9, height: 0.92 },
+        colors: { worktop: SCANDI.oak, cabinets: SCANDI.sage, fronts: SCANDI.sage },
+      },
+    ],
   ),
   kind(
     'upper_cabinets',
@@ -1593,6 +1631,31 @@ export function leafCount(width: number, min = 0.5, max = 1) {
   return Math.min(Math.max(Math.round(width / 0.75), fewest), Math.max(fewest, most))
 }
 
+// The base units of a counter run, left to right, as widths. All are a full
+// unit but one, which takes up what is left and stands at place `grow`. It
+// runs from nothing to a unit, or with `wide` from a unit to just short of
+// two, so the run adds a unit each time that one reaches its limit.
+export const COUNTER_UNIT = 0.6
+
+export function counterModules(width: number, wide: boolean, grow: number) {
+  const full = Math.floor(width / COUNTER_UNIT + 1e-6)
+  const rest = Math.max(0, width - full * COUNTER_UNIT)
+  const units = wide ? Math.max(full - 1, 0) : full
+  const growing = wide ? width - units * COUNTER_UNIT : rest
+  const count = units + (growing > 0.005 ? 1 : 0)
+  const at = ((grow % count) + count) % count
+  return Array.from({ length: count }, (_, i) =>
+    count > units && i === at ? growing : COUNTER_UNIT,
+  )
+}
+
+// How many places a cycle parameter steps through.
+export function cycleLength(kind: DecorationKind, params: Record<string, number> | undefined, variant?: string) {
+  if (kind.id !== 'kitchen_counter') return 1
+  const v = (id: string) => paramValue(kind, params, id, variant)
+  return counterModules(v('width'), v('wide') > 0.5, 0).length
+}
+
 // Items with a flat top that other things can stand on, and how high that
 // top is: their own height parameter, or a fixed height when they have none.
 const SURFACE_TOPS: Record<string, string | number> = {
@@ -1607,7 +1670,6 @@ const SURFACE_TOPS: Record<string, string | number> = {
   bookshelf: 'height',
   stool: 'height',
   kitchen_counter: 'height',
-  kitchen_island: 'height',
   washing_machine: 'height',
   dryer: 'height',
   half_wall: 'height',

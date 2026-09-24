@@ -19,6 +19,8 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   // The armchair became a narrow sofa, at the armchair's old size unless it
   // had one of its own.
   armchair: { kind: 'sofa', variant: 'dresde', params: { width: 0.78, depth: 0.8 } },
+  // The island became a style of the counter.
+  kitchen_island: { kind: 'kitchen_counter', variant: 'island' },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose
