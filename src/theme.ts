@@ -66,7 +66,10 @@ export const LIGHT_CORD_COLOR = '#8f877b'
 // with no color temperature to read sits around 3000 K: warm white, not the
 // amber of a candle.
 export const LIGHT_GLOW_COLOR = '#ffe3bd'
-export const LIGHT_POINT_INTENSITY = 3.6
+// How much light a lamp at full brightness puts into the room. Kept low, so
+// a lamp lights the things around it and a few of them together still
+// leave the room its shadows.
+export const LIGHT_POINT_INTENSITY = 1.5
 // How a lamp's light divides: the part that leaves the shade and casts
 // shadows, and the part that comes through the shade itself and casts none.
 export const LAMP_KEY_SHARE = 0.7
