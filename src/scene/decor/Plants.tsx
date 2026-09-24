@@ -1,8 +1,8 @@
-import { Foliage, arch, bladeTip, heading, outline, place, random, roll, type Blade } from '#/scene/decor/foliage.ts'
-import { Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Foliage, arch, heading, outline, place, random, roll, type Blade } from '#/scene/decor/foliage.ts'
+import { SEG } from '#/scene/decor/parts.tsx'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { useEffect, useMemo, type ReactNode } from 'react'
-import { BufferGeometry, IcosahedronGeometry, LatheGeometry, Matrix4, PlaneGeometry, Vector2, Vector3 } from 'three'
+import { BufferGeometry, CatmullRomCurve3, IcosahedronGeometry, LatheGeometry, Matrix4, Vector2, Vector3 } from 'three'
 
 // Houseplants, each after a real one at its usual size indoors. The leaves
 // are real outlines bent along the midrib, and every part is built for the
@@ -16,7 +16,6 @@ type Parts = Record<string, Foliage>
 type Grown = Record<string, BufferGeometry>
 
 const UP = new Vector3(0, 1, 0)
-const OUT = new Vector3(0, 0, 1)
 const clamp = (x: number, lo: number, hi: number) => Math.min(Math.max(x, lo), hi)
 
 function grow(parts: Parts): Grown {
@@ -137,6 +136,22 @@ const SWORD = outline([
   [0.5, 1],
   [0.78, 0.78],
   [0.94, 0.3],
+  [1, 0],
+])
+const OVAL = outline([
+  [0, 0.3],
+  [0.25, 0.9],
+  [0.55, 1],
+  [0.85, 0.7],
+  [0.97, 0.25],
+  [1, 0],
+])
+const PADDLE = outline([
+  [0, 0.3],
+  [0.12, 0.85],
+  [0.3, 1],
+  [0.8, 0.95],
+  [0.95, 0.55],
   [1, 0],
 ])
 const ROUND = (t: number) => Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2)) * (t > 0.92 ? 1 - (t - 0.92) * 2 : 1)
@@ -347,6 +362,76 @@ function kentia(size: number, height: number, potH: number): Parts {
   return f
 }
 
+// A pothos vine from `from` up over the rim at `rim`, heading `a`, then
+// hanging `long` below it with a leaf at every node, alternating sides.
+function vine(
+  f: Parts,
+  put: (length: number, m: Matrix4, seed: number) => void,
+  L: number,
+  from: Vector3,
+  rim: Vector3,
+  a: number,
+  long: number,
+  v: number,
+) {
+  const out = heading(a, 0)
+  const side = heading(a + Math.PI / 2, 0)
+  const points: Vec3[] = [
+    from.toArray() as Vec3,
+    rim.toArray() as Vec3,
+    [rim.x + out.x * 0.03, rim.y - 0.045, rim.z + out.z * 0.03],
+  ]
+  const steps = Math.max(2, Math.round(long / 0.12))
+  for (let s = 1; s <= steps; s++) {
+    const sway = Math.sin(s * 1.7 + v) * 0.03
+    points.push([
+      rim.x + out.x * (0.035 + s * 0.01) + side.x * sway,
+      rim.y - 0.045 - (long * s) / steps,
+      rim.z + out.z * (0.035 + s * 0.01) + side.z * sway,
+    ])
+  }
+  f.stems.stem(points, 0.0025)
+  const nodes = Math.max(2, Math.round(long / 0.05))
+  for (let n = 0; n < nodes; n++) {
+    const i = Math.min(points.length - 1, 2 + Math.floor(((points.length - 3) * n) / nodes))
+    const at = new Vector3(...points[i]).lerp(
+      new Vector3(...points[Math.min(points.length - 1, i + 1)]),
+      (((points.length - 3) * n) / nodes) % 1,
+    )
+    const alt = n % 2 ? 1 : -1
+    const toward = out
+      .clone()
+      .multiplyScalar(0.6)
+      .addScaledVector(UP, 0.45)
+      .addScaledVector(side, alt * 0.55)
+      .normalize()
+    const face = out.clone().addScaledVector(UP, 0.6).normalize()
+    const at2 = at.clone().addScaledVector(toward, L * 0.3)
+    f.stems.stem([at.toArray() as Vec3, at2.toArray() as Vec3], 0.0018)
+    put(L * (0.7 + 0.3 * (1 - n / nodes)), place(at2, toward, face), v * 10 + n)
+  }
+}
+
+// A pothos leaf, heart shaped and streaked with gold, placed by `m`.
+function pothosLeaf(f: Parts) {
+  const streaks = (seed: number) => (u: number, t: number) =>
+    Math.sin(u * 7 + t * 11 + seed) * Math.sin(t * 23 + u * 3 + seed * 2) > 0.45
+  return (length: number, m: Matrix4, seed: number) => {
+    const b: Blade = {
+      length,
+      width: length * 0.68,
+      outline: HEART,
+      sinus: 0.1,
+      fold: 0.25,
+      droop: length * 0.1,
+      rows: 14,
+      cols: 5,
+    }
+    f.leaves.blade(b, m)
+    f.markings.blade({ ...b, lift: 0.0008, keep: streaks(seed) }, m)
+  }
+}
+
 // Golden pothos, Epipremnum aureum: a mound of heart shaped leaves over the
 // pot and vines trailing down over its rim, the leaves streaked with gold.
 function pothos(size: number, height: number, trail: number, potR: number, potH: number): Parts {
@@ -354,23 +439,7 @@ function pothos(size: number, height: number, trail: number, potR: number, potH:
   const rnd = random(3)
   const soil = potH * 0.9
   const L = clamp(size * 0.22, 0.04, 0.09)
-  const blade = (length: number): Blade => ({
-    length,
-    width: length * 0.68,
-    outline: HEART,
-    sinus: 0.1,
-    fold: 0.25,
-    droop: length * 0.1,
-    rows: 14,
-    cols: 5,
-  })
-  const streaks = (seed: number) => (u: number, t: number) =>
-    Math.sin(u * 7 + t * 11 + seed) * Math.sin(t * 23 + u * 3 + seed * 2) > 0.45
-  const put = (length: number, m: Matrix4, seed: number) => {
-    const b = blade(length)
-    f.leaves.blade(b, m)
-    f.markings.blade({ ...b, lift: 0.0008, keep: streaks(seed) }, m)
-  }
+  const put = pothosLeaf(f)
   // The mound over the pot.
   const mound = Math.max(0.03, height - potH)
   for (let i = 0; i < 12; i++) {
@@ -385,45 +454,10 @@ function pothos(size: number, height: number, trail: number, potR: number, potH:
   const vines = 5
   for (let v = 0; v < vines; v++) {
     const a = v * ((Math.PI * 2) / vines) + rnd() * 0.5
-    const out = heading(a, 0)
-    const side = heading(a + Math.PI / 2, 0)
-    const long = trail * (0.55 + 0.45 * rnd())
-    const rim = new Vector3(out.x * potR * 1.05, potH + 0.015, out.z * potR * 1.05)
-    const points: Vec3[] = [
-      [out.x * potR * 0.5, soil, out.z * potR * 0.5],
-      rim.toArray() as Vec3,
-      [rim.x + out.x * 0.03, potH - 0.03, rim.z + out.z * 0.03],
-    ]
-    const steps = Math.max(2, Math.round(long / 0.12))
-    for (let s = 1; s <= steps; s++) {
-      const sway = Math.sin(s * 1.7 + v) * 0.03
-      points.push([
-        rim.x + out.x * (0.035 + s * 0.01) + side.x * sway,
-        potH - 0.03 - (long * s) / steps,
-        rim.z + out.z * (0.035 + s * 0.01) + side.z * sway,
-      ])
-    }
-    f.stems.stem(points, 0.0025)
-    // A leaf at every node, alternating either side of the vine.
-    const nodes = Math.max(2, Math.round(long / 0.05))
-    for (let n = 0; n < nodes; n++) {
-      const i = Math.min(points.length - 1, 2 + Math.floor(((points.length - 3) * n) / nodes))
-      const at = new Vector3(...points[i]).lerp(
-        new Vector3(...points[Math.min(points.length - 1, i + 1)]),
-        (((points.length - 3) * n) / nodes) % 1,
-      )
-      const alt = n % 2 ? 1 : -1
-      const toward = out
-        .clone()
-        .multiplyScalar(0.6)
-        .addScaledVector(UP, 0.45)
-        .addScaledVector(side, alt * 0.55)
-        .normalize()
-      const face = out.clone().addScaledVector(UP, 0.6).normalize()
-      const at2 = at.clone().addScaledVector(toward, L * 0.3)
-      f.stems.stem([at.toArray() as Vec3, at2.toArray() as Vec3], 0.0018)
-      put(L * (0.7 + 0.3 * (1 - n / nodes)), place(at2, toward, face), v * 10 + n)
-    }
+    const rim = heading(a, 0)
+      .multiplyScalar(potR * 1.05)
+      .setY(potH + 0.015)
+    vine(f, put, L, new Vector3(0, soil, 0).lerp(rim, 0.5).setY(soil), rim, a, trail * (0.55 + 0.45 * rnd()), v)
   }
   return f
 }
@@ -511,85 +545,10 @@ function snake(size: number, height: number, potR: number, potH: number): Parts 
   return f
 }
 
-// Staghorn fern, Platycerium bifurcatum, mounted on a board: shield fronds
-// pressed flat round a moss pad, and forked antler fronds reaching out.
-function staghorn(width: number): Parts {
-  const f: Parts = { leaves: new Foliage(), accent: new Foliage() }
-  const rnd = random(21)
-  // Shields, the older ones behind, their top edges flaring off the board.
-  for (let i = 0; i < 4; i++) {
-    const d = width * (0.72 - i * 0.07)
-    f.accent.blade(
-      {
-        length: d * 0.8,
-        width: d,
-        outline: t => ROUND(t) * (1 + 0.06 * Math.sin(t * 20)),
-        centered: true,
-        droop: -d * 0.12,
-        wave: d * 0.02,
-        rows: 12,
-        cols: 6,
-      },
-      place(
-        [(i - 1.5) * width * 0.05, width * (0.02 + i * 0.03), 0.028 + i * 0.006],
-        new Vector3((i - 1.5) * 0.2, 1, 0),
-        OUT,
-      ),
-    )
-  }
-  // Antler fronds: a wedge that forks twice into strap ends.
-  const frond = (m: Matrix4, length: number, w0: number, w1: number, forks: number) => {
-    const b: Blade = {
-      length,
-      width: Math.max(w0, w1),
-      outline:
-        forks > 0
-          ? t => (w0 + (w1 - w0) * t) / Math.max(w0, w1)
-          : outline([
-              [0, 1],
-              [0.6, 1.05],
-              [0.9, 0.75],
-              [1, 0.2],
-            ]),
-      droop: -length * 0.12,
-      rows: 9,
-      cols: 3,
-      twist: (rnd() - 0.5) * 0.3,
-    }
-    f.leaves.blade(b, m)
-    if (forks === 0) return
-    const tip = m.clone().multiply(bladeTip(b))
-    for (const sign of [-1, 1]) {
-      const spread = sign * (0.3 + rnd() * 0.15)
-      frond(
-        tip.clone().multiply(new Matrix4().makeRotationY(spread)),
-        length * (0.75 + rnd() * 0.2),
-        w1 * 0.5,
-        forks === 1 ? w1 * 0.5 : w1 * 0.7,
-        forks - 1,
-      )
-    }
-  }
-  const angles = [150, 120, 60, 30, -55, -90, -125]
-  angles.forEach(deg => {
-    const a = (deg * Math.PI) / 180
-    const scale = deg < 0 ? 1.15 : 0.85
-    const toward = new Vector3(Math.cos(a), Math.sin(a), 0.5).normalize()
-    frond(
-      place([0, width * 0.05, 0.05], toward, OUT),
-      width * 0.3 * scale * (0.85 + rnd() * 0.3),
-      width * 0.04,
-      width * 0.16,
-      2,
-    )
-  })
-  return f
-}
-
 // Boston fern, Nephrolepis exaltata, in a wall pocket: a crown of fronds
 // that rise, arch over and hang, each with rows of small leaflets.
 function boston(width: number, top: number, reach: number): Parts {
-  const f: Parts = { leaves: new Foliage(), accent: new Foliage() }
+  const f: Parts = { leaves: new Foliage(), stems: new Foliage() }
   const rnd = random(17)
   const count = 28
   const crown = new Vector3(0, top, reach)
@@ -600,7 +559,7 @@ function boston(width: number, top: number, reach: number): Parts {
     const length = width * (1.3 + rnd() * 0.9)
     const start = crown.clone().add(new Vector3((rnd() - 0.5) * width * 0.35, 0, (rnd() - 0.5) * reach * 0.5))
     const frond = arch(start, a, from, to, length, 1.1)
-    f.accent.stem(
+    f.stems.stem(
       frond.points.map(p => p.toArray() as Vec3),
       0.0022,
       0.001,
@@ -633,49 +592,156 @@ function boston(width: number, top: number, reach: number): Parts {
   return f
 }
 
-// A framed panel of preserved moss: flat sheet moss, cushions of ball moss
-// and pale tufts of reindeer moss.
-function moss(w: number, h: number): Parts {
-  const f: Parts = { moss: new Foliage(), leaves: new Foliage(), accent: new Foliage() }
-  const rnd = random(31)
-  const ph = [rnd() * 6, rnd() * 6, rnd() * 6]
-  const bump = (x: number, y: number) =>
-    0.004 * Math.sin(x * 41 + ph[0]) * Math.sin(y * 37 + ph[1]) + 0.003 * Math.sin(x * 97 + y * 83 + ph[2])
-  const cols = clamp(Math.round(w / 0.01), 8, 90)
-  const rows = clamp(Math.round(h / 0.01), 8, 120)
-  const sheet = new PlaneGeometry(w, h, cols, rows)
-  const pos = sheet.getAttribute('position')
-  for (let i = 0; i < pos.count; i++) pos.setZ(i, 0.008 + bump(pos.getX(i), pos.getY(i)))
-  f.moss.add(sheet)
-  const lump = (r: number, squash: number, at: Vec3, detail: number, slot: Foliage) => {
-    const g = new IcosahedronGeometry(1, detail)
-    const p = g.getAttribute('position')
-    const seed = rnd() * 10
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i)
-      const y = p.getY(i)
-      const z = p.getZ(i)
-      const k = 1 + 0.18 * Math.sin(x * 5 + seed) * Math.sin(y * 6 + seed) * Math.sin(z * 4 + seed)
-      p.setXYZ(i, x * r * k, y * r * k, Math.max(z, -0.2) * r * squash * k)
-    }
-    slot.add(g, new Matrix4().makeTranslation(...at))
+// A pothos in a wall pocket: a mound of leaves over the rim, and vines
+// spilling over the front and sides and hanging `trail` below it.
+function hangingPothos(width: number, top: number, reach: number, trail: number): Parts {
+  const f: Parts = { stems: new Foliage(), leaves: new Foliage(), markings: new Foliage() }
+  const rnd = random(23)
+  const L = clamp(width * 0.2, 0.045, 0.085)
+  const put = pothosLeaf(f)
+  const crown = new Vector3(0, top - 0.02, reach * 0.5)
+  for (let i = 0; i < 10; i++) {
+    const a = (rnd() - 0.5) * Math.PI * 0.9
+    const from = crown.clone().add(new Vector3((rnd() - 0.5) * width * 0.4, 0, (rnd() - 0.5) * reach * 0.4))
+    const end = from.clone().addScaledVector(heading(a, 0.5 + rnd() * 0.7), L * (0.8 + rnd() * 0.6))
+    f.stems.stem([from.toArray() as Vec3, end.toArray() as Vec3], 0.003)
+    put(L * (0.8 + rnd() * 0.3), place(end, heading(a + (rnd() - 0.5) * 0.6, 0.1 + rnd() * 0.4)), i)
   }
-  const area = w * h
-  const cushions = clamp(Math.round(area / 0.02) + 3, 3, 16)
-  for (let i = 0; i < cushions; i++) {
-    const r = clamp(Math.min(w, h) * (0.06 + rnd() * 0.06), 0.02, 0.075)
-    lump(r, 0.55, [(rnd() - 0.5) * (w - r * 2), (rnd() - 0.5) * (h - r * 2), 0.008], 3, f.leaves)
+  const vines = 7
+  for (let v = 0; v < vines; v++) {
+    const a = (v / (vines - 1) - 0.5) * 2.5 + (rnd() - 0.5) * 0.2
+    const rim = new Vector3(Math.sin(a) * width * 0.5, top + 0.01, Math.cos(a) * reach)
+    vine(f, put, L, crown, rim, a, trail * (0.45 + 0.55 * rnd()), v)
   }
-  const tufts = clamp(Math.round(area / 0.03) + 2, 2, 12)
-  for (let i = 0; i < tufts; i++) {
-    const cx = (rnd() - 0.5) * (w - 0.08)
-    const cy = (rnd() - 0.5) * (h - 0.08)
-    const spread = clamp(Math.min(w, h) * 0.07, 0.02, 0.045)
-    for (let j = 0; j < 24; j++) {
-      const a = rnd() * Math.PI * 2
-      const d = Math.sqrt(rnd()) * spread
-      lump(0.005 + rnd() * 0.005, 1, [cx + Math.cos(a) * d, cy + Math.sin(a) * d, 0.012 + rnd() * 0.02], 0, f.accent)
+  return f
+}
+
+// String of pearls, Curio rowleyanus, in a wall pocket: thread thin stems
+// strung with round green beads, spilling over the rim and hanging straight
+// down, a few shorter ones still lying on top.
+function pearls(width: number, top: number, reach: number, trail: number): Parts {
+  const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
+  const rnd = random(29)
+  const bead = 0.0048
+  const strands = 16
+  for (let v = 0; v < strands; v++) {
+    const a = (v / (strands - 1) - 0.5) * 2.6 + (rnd() - 0.5) * 0.15
+    const out = heading(a, 0)
+    const side = heading(a + Math.PI / 2, 0)
+    const from = new Vector3((rnd() - 0.5) * width * 0.5, top - 0.01, reach * (0.3 + rnd() * 0.3))
+    const rim = new Vector3(Math.sin(a) * width * 0.48, top + 0.006, Math.cos(a) * reach * 0.98)
+    const long = v % 4 === 3 ? 0.04 : trail * (0.35 + 0.65 * rnd())
+    const points: Vec3[] = [from.toArray() as Vec3, rim.toArray() as Vec3]
+    const steps = Math.max(2, Math.round(long / 0.08))
+    for (let s = 1; s <= steps; s++) {
+      const sway = Math.sin(s * 1.3 + v * 2) * 0.012
+      points.push([
+        rim.x + out.x * 0.012 + side.x * sway,
+        rim.y - 0.01 - (long * s) / steps,
+        rim.z + out.z * 0.012 + side.z * sway,
+      ])
     }
+    f.stems.stem(points, 0.0012, 0.0012, undefined, 4)
+    const curve = new CatmullRomCurve3(points.map(p => new Vector3(...p)))
+    const count = Math.max(3, Math.round(curve.getLength() / 0.012))
+    const at = new Vector3()
+    for (let k = 1; k <= count; k++) {
+      curve.getPointAt(k / count, at)
+      const off = (k % 2 ? 1 : -1) * bead * 0.9
+      const r = bead * (k > count - 3 ? 0.75 : 0.9 + rnd() * 0.2)
+      f.leaves.add(
+        new IcosahedronGeometry(r, 1),
+        new Matrix4().makeTranslation(at.x + side.x * off, at.y, at.z + side.z * off),
+      )
+    }
+  }
+  return f
+}
+
+// Rubber plant, Ficus elastica: two upright stems from the pot, the big
+// glossy oval leaves alternating up them on short stalks, held out and up.
+function rubber(size: number, height: number, potH: number): Parts {
+  const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
+  const rnd = random(37)
+  const soil = potH * 0.9
+  const L = clamp(height * 0.15, 0.1, 0.3)
+  const tops = [new Vector3(0.03, height - L * 0.3, 0.01), new Vector3(-size * 0.12, height * 0.82 - L * 0.3, -0.02)]
+  let k = 0
+  tops.forEach((tip, n) => {
+    const base = new Vector3(n ? -0.02 : 0.015, soil - 0.03, n ? -0.01 : 0.01)
+    const r = clamp(height * 0.01, 0.008, 0.02) * (n ? 0.85 : 1)
+    const bend = base
+      .clone()
+      .lerp(tip, 0.5)
+      .add(new Vector3(n ? -0.02 : 0.02, 0, 0))
+    f.stems.stem([base.toArray() as Vec3, bend.toArray() as Vec3, tip.toArray() as Vec3], r, r * 0.6)
+    const curve = new CatmullRomCurve3([base, bend, tip])
+    const count = Math.max(5, Math.round((tip.y - soil) / 0.08))
+    for (let i = 0; i < count; i++) {
+      const s = 0.2 + (0.8 * (i + 1)) / count
+      const at = curve.getPointAt(s)
+      const young = s > 0.92 ? 0.6 : 1 - s * 0.15
+      const length = L * young * (0.9 + rnd() * 0.2)
+      const reach = Math.min(1, (size / 2 - Math.hypot(at.x, at.z)) / (length * 1.1))
+      leaf(
+        f,
+        {
+          length,
+          width: length * 0.52,
+          outline: OVAL,
+          fold: 0.12,
+          droop: length * (0.18 - s * 0.1),
+          curl: length * 0.03,
+          rows: 14,
+          cols: 4,
+        },
+        at,
+        heading(k++ * 2.4 + rnd() * 0.3, 0.1 + s * 0.8 - (1 - Math.max(reach, 0)) * 0.3),
+        0.03,
+        UP,
+        (rnd() - 0.5) * 0.3,
+      )
+    }
+    // The red sheath the new leaf unrolls from, at the tip.
+    f.stems.stem([tip.toArray() as Vec3, [tip.x, tip.y + L * 0.3, tip.z]], r * 0.6, r * 0.2)
+  })
+  return f
+}
+
+// Bird of paradise, Strelitzia nicolai: long upright stalks from the soil in
+// a loose fan, each ending in a big paddle shaped leaf.
+function bird(size: number, height: number, potH: number): Parts {
+  const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
+  const rnd = random(41)
+  const soil = potH * 0.9
+  const L = clamp(height * 0.34, 0.2, 0.7)
+  const count = 9
+  for (let i = 0; i < count; i++) {
+    // A fan, mostly along x, the way a clump spreads.
+    const a = (i % 2 ? Math.PI / 2 : -Math.PI / 2) + (rnd() - 0.5) * 1.2
+    const rise = 1.5 - (i / count) * 0.45 - rnd() * 0.1
+    const base = new Vector3((rnd() - 0.5) * 0.06, soil - 0.02, (rnd() - 0.5) * 0.06)
+    const tall = (height - soil - L * 0.85) / Math.sin(rise)
+    const wide = (size / 2 - L * 0.35) / Math.max(Math.cos(rise), 0.05)
+    const stalk = Math.max(0.15, Math.min(tall, wide) * (0.7 + (0.3 * ((i * 5) % count)) / count))
+    const toward = heading(a, rise)
+    const end = base.clone().addScaledVector(toward, stalk)
+    f.stems.stem([base.toArray() as Vec3, end.toArray() as Vec3], 0.011, 0.007)
+    const long = L * (0.8 + rnd() * 0.25)
+    f.leaves.blade(
+      {
+        length: long,
+        width: long * 0.42,
+        outline: PADDLE,
+        fold: 0.1,
+        droop: long * (0.05 + (1.5 - rise) * 0.2),
+        curl: long * 0.03,
+        rows: 16,
+        cols: 5,
+        twist: (rnd() - 0.5) * 0.4,
+      },
+      place(end, heading(a + (rnd() - 0.5) * 0.3, Math.min(rise + 0.05, 1.45)), heading(a, 0).negate()),
+    )
   }
   return f
 }
@@ -691,7 +757,7 @@ export function FloorPlant({
   height: number
   paint: Paint
 }) {
-  const kind = style === 'monstera' || style === 'kentia' ? style : 'fiddle'
+  const kind = style === 'monstera' || style === 'kentia' || style === 'rubber' || style === 'bird' ? style : 'fiddle'
   const potR = kind === 'kentia' ? clamp(size * 0.16, 0.14, 0.22) : clamp(size * 0.2, 0.1, 0.2)
   const potH = kind === 'kentia' ? clamp(height * 0.2, 0.2, 0.38) : clamp(height * 0.2, 0.16, 0.34)
   const grown = useMemo(
@@ -701,7 +767,11 @@ export function FloorPlant({
           ? monstera(size, height, potH)
           : kind === 'kentia'
             ? kentia(size, height, potH)
-            : fiddle(size, height, potH),
+            : kind === 'rubber'
+              ? rubber(size, height, potH)
+              : kind === 'bird'
+                ? bird(size, height, potH)
+                : fiddle(size, height, potH),
       ),
     [kind, size, height, potH],
   )
@@ -748,102 +818,56 @@ export function ShelfPlant({
   )
 }
 
-// Wall plants hang from their middle at the height set, off the wall at z 0.
+// Wall plants hang from their middle at the height set, off the wall at z 0,
+// each in a half round pocket open at the top.
 export function WallPlant({
   style,
   width,
-  ratio,
+  trail,
   paint,
 }: {
   style: string
   width: number
-  ratio: number
+  trail: number
   paint: Paint
 }) {
-  const kind = style === 'boston' || style === 'moss' ? style : 'staghorn'
-  const tall = kind === 'moss' ? width * ratio : kind === 'staghorn' ? width * 1.25 : width * 0.6
+  const kind = style === 'boston' || style === 'pearls' ? style : 'pothos'
+  const tall = width * 0.6
   const reach = width * 0.5
+  const top = tall / 2 - 0.02
   const grown = useMemo(
     () =>
       grow(
-        kind === 'moss'
-          ? moss(width - 2 * clamp(width * 0.05, 0.02, 0.04), tall - 2 * clamp(width * 0.05, 0.02, 0.04))
-          : kind === 'boston'
-            ? boston(width, tall / 2 - 0.02, reach * 0.45)
-            : staghorn(width),
+        kind === 'boston'
+          ? boston(width, top, reach * 0.45)
+          : kind === 'pearls'
+            ? pearls(width, top, reach, trail)
+            : hangingPothos(width, top, reach, trail),
       ),
-    [kind, width, tall, reach],
+    [kind, width, top, reach, trail],
   )
-  if (kind === 'moss') {
-    const bar = clamp(width * 0.05, 0.02, 0.04)
-    return (
-      <group>
-        <mesh position={[0, 0, 0.004]}>
-          <planeGeometry args={[width - bar, tall - bar]} />
-          {paint('moss')}
-        </mesh>
-        {/* A slab stands on its base, so each rail is dropped by half its height. */}
-        {[-1, 1].map(s => (
-          <Panel
-            key={`h${s}`}
-            size={[width, bar, 0.05]}
-            position={[0, (s * (tall - bar)) / 2 - bar / 2, 0.025]}
-            radius={0.004}
-          >
-            {paint('mount')}
-          </Panel>
-        ))}
-        {[-1, 1].map(s => (
-          <Panel
-            key={`v${s}`}
-            size={[bar, tall - bar * 2, 0.05]}
-            position={[(s * (width - bar)) / 2, -(tall - bar * 2) / 2, 0.025]}
-            radius={0.004}
-          >
-            {paint('mount')}
-          </Panel>
-        ))}
-        <Growth grown={grown} paint={paint} flat={['moss', 'leaves', 'accent']} />
-      </group>
-    )
-  }
-  if (kind === 'boston') {
-    // A half round pocket against the wall, open at the top.
-    return (
-      <group>
-        <group scale={[1, 1, reach / (width / 2)]}>
-          <mesh position={[0, 0, 0]}>
-            <cylinderGeometry args={[width / 2, width * 0.42, tall, SEG, 1, true, -Math.PI / 2, Math.PI]} />
-            {paint('mount', true)}
-          </mesh>
-          <mesh position={[0, -tall / 2 + 0.003, 0]}>
-            <cylinderGeometry args={[width * 0.42, width * 0.42, 0.006, SEG, 1, false, -Math.PI / 2, Math.PI]} />
-            {paint('mount')}
-          </mesh>
-          <mesh position={[0, tall / 2 - 0.025, 0]}>
-            <cylinderGeometry args={[width * 0.49, width * 0.49, 0.01, SEG, 1, false, -Math.PI / 2, Math.PI]} />
-            {paint('moss')}
-          </mesh>
-        </group>
-        {/* The flat back plate it hangs by. */}
-        <mesh position={[0, 0, 0.002]}>
-          <boxGeometry args={[width, tall, 0.004]} />
-          {paint('mount')}
-        </mesh>
-        <Growth grown={grown} paint={paint} flat={['accent']} />
-      </group>
-    )
-  }
   return (
     <group>
-      <Slab size={[width, 0.02, tall]} radius={0.01} bevel={0.003} rotation={[Math.PI / 2, 0, 0]}>
-        {paint('mount')}
-      </Slab>
-      <mesh position={[0, width * 0.02, 0.03]} scale={[width * 0.24, width * 0.22, 0.02]}>
-        <sphereGeometry args={[1, 20, 14]} />
-        {paint('moss')}
+      <group scale={[1, 1, reach / (width / 2)]}>
+        <mesh position={[0, 0, 0]}>
+          <cylinderGeometry args={[width / 2, width * 0.42, tall, SEG, 1, true, -Math.PI / 2, Math.PI]} />
+          {paint('pot', true)}
+        </mesh>
+        <mesh position={[0, -tall / 2 + 0.003, 0]}>
+          <cylinderGeometry args={[width * 0.42, width * 0.42, 0.006, SEG, 1, false, -Math.PI / 2, Math.PI]} />
+          {paint('pot')}
+        </mesh>
+        <mesh position={[0, tall / 2 - 0.025, 0]}>
+          <cylinderGeometry args={[width * 0.49, width * 0.49, 0.01, SEG, 1, false, -Math.PI / 2, Math.PI]} />
+          {paint('soil')}
+        </mesh>
+      </group>
+      {/* The flat back plate it hangs by. */}
+      <mesh position={[0, 0, 0.002]}>
+        <boxGeometry args={[width, tall, 0.004]} />
+        {paint('pot')}
       </mesh>
-      <Growth grown={grown} paint={paint} />
+      <Growth grown={grown} paint={paint} flat={kind === 'pearls' ? ['stems', 'leaves'] : ['stems']} />
     </group>
   )
 }

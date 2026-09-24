@@ -326,8 +326,8 @@ rooms:
     name: "Floor plant"
     points:
       - [21.85, 4.8]
-      - [27.05, 4.8]
-      - [27.05, 7.1]
+      - [29.85, 4.8]
+      - [29.85, 7.1]
       - [21.85, 7.1]
   - id: plant_small
     name: "Shelf plant"
@@ -340,8 +340,8 @@ rooms:
     name: "Wall plant"
     points:
       - [21.85, 9.3]
-      - [24.98, 9.3]
-      - [24.98, 10.7]
+      - [24.67, 9.3]
+      - [24.67, 10.7]
       - [21.85, 10.7]
   - id: wall_mirror
     name: "Wall mirror"
@@ -1114,6 +1114,16 @@ decorations:
     room: plant_large
     position: [25.9, 5.95]
     variant: kentia
+  - id: plant_large_rubber
+    kind: plant_large
+    room: plant_large
+    position: [27.4, 5.95]
+    variant: rubber
+  - id: plant_large_bird
+    kind: plant_large
+    room: plant_large
+    position: [28.8, 5.95]
+    variant: bird
   - id: plant_small_pothos
     kind: plant_small
     room: plant_small
@@ -1129,24 +1139,24 @@ decorations:
     room: plant_small
     position: [24.05, 8.2]
     variant: snake
-  - id: plant_wall_staghorn
+  - id: plant_wall_pothos
     kind: plant_wall
     room: plant_wall
-    position: [22.53, 9.3]
+    position: [22.5, 9.3]
     rotation: 180
-    variant: staghorn
+    variant: pothos
+  - id: plant_wall_pearls
+    kind: plant_wall
+    room: plant_wall
+    position: [23.27, 9.3]
+    rotation: 180
+    variant: pearls
   - id: plant_wall_boston
     kind: plant_wall
     room: plant_wall
-    position: [23.34, 9.3]
+    position: [24.03, 9.3]
     rotation: 180
     variant: boston
-  - id: plant_wall_moss
-    kind: plant_wall
-    room: plant_wall
-    position: [24.23, 9.3]
-    rotation: 180
-    variant: moss
   - id: wall_mirror_round
     kind: wall_mirror
     room: wall_mirror

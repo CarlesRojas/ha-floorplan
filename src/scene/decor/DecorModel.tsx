@@ -140,7 +140,7 @@ export default function DecorModel({ kind, item, state }: Props) {
     case 'plant_small':
       return <ShelfPlant style={style} size={p('size')} height={p('height')} trail={p('trail')} paint={paint} />
     case 'plant_wall':
-      return <WallPlant style={style} width={p('width')} ratio={p('ratio')} paint={paint} />
+      return <WallPlant style={style} width={p('width')} trail={p('trail')} paint={paint} />
     case 'wall_mirror': {
       const s = p('size')
       return (
