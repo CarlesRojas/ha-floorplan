@@ -83,9 +83,9 @@ export default function ApplianceModel({ kind, item, state }: Props) {
             {M('cabinets')}
           </Slab>
           {/* Handleless fronts with a shadow gap between them, each unit a
-              drawer over a door the way a run of base units is built. A unit
-              too narrow for that is a single filler front, and one much
-              wider than a unit has a pair of doors. */}
+              drawer over a door the way a run of base units is built, a
+              wide unit too. A unit too narrow for that is a single filler
+              front. */}
           {modules.map((cw, i) => {
             const x = -w / 2 + starts[i] + cw / 2
             if (cw < 0.25)
@@ -94,22 +94,14 @@ export default function ApplianceModel({ kind, item, state }: Props) {
                   {M('fronts')}
                 </Panel>
               )
-            const doors = cw > 0.9 ? 2 : 1
-            const dw = cw / doors
             return (
               <group key={i}>
                 <Panel size={[cw - gap, drawerH, 0.018]} position={[x, plinth + frontH - drawerH + 0.01, d / 2]}>
                   {M('fronts')}
                 </Panel>
-                {Array.from({ length: doors }, (_, k) => (
-                  <Panel
-                    key={k}
-                    size={[dw - gap, frontH - drawerH - 0.012, 0.018]}
-                    position={[x - cw / 2 + dw * (k + 0.5), plinth + 0.01, d / 2]}
-                  >
-                    {M('fronts')}
-                  </Panel>
-                ))}
+                <Panel size={[cw - gap, frontH - drawerH - 0.012, 0.018]} position={[x, plinth + 0.01, d / 2]}>
+                  {M('fronts')}
+                </Panel>
               </group>
             )
           })}
