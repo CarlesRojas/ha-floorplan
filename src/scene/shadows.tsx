@@ -6,13 +6,26 @@ import {
   Mesh,
   OrthographicCamera,
   PointLight,
+  type BufferAttribute,
+  type InterleavedBufferAttribute,
+  type PerspectiveCamera,
   Vector3,
   type DirectionalLight,
-  type Light,
+  type Light as BaseLight,
+  type LightShadow,
   type Material,
   type Object3D,
   type Scene,
 } from 'three'
+
+// A light that may cast a shadow. Three types the shadow on each kind only.
+type Light = BaseLight & { shadow?: LightShadow }
+
+// How many times the positions were edited, wherever they are kept.
+function edits(position?: BufferAttribute | InterleavedBufferAttribute) {
+  if (!position) return 0
+  return 'isInterleavedBufferAttribute' in position ? position.data.version : position.version
+}
 
 // Every solid thing in the room casts and receives, so a lamp throws the
 // chair beside it onto the floor and the floor takes the sun. Models are
@@ -76,7 +89,7 @@ function watcher(scene: Scene) {
     const geometry = mesh.geometry
     const instanced = mesh instanceof InstancedMesh
     const version =
-      (geometry.attributes.position?.version ?? 0) + (instanced ? mesh.instanceMatrix.version * 1e6 + mesh.count : 0)
+      edits(geometry.attributes.position) + (instanced ? mesh.instanceMatrix.version * 1e6 + mesh.count : 0)
     const m = mesh.matrixWorld.elements
     let c = casters.get(mesh)
     if (c && c.geometry === geometry.id && c.version === version) {
@@ -165,7 +178,7 @@ function watcher(scene: Scene) {
         continue
       }
       l.getWorldPosition(at)
-      const reach = shadow.camera.far
+      const reach = (shadow.camera as PerspectiveCamera).far
       for (let i = 0; i < changed.length; i += 4) {
         const dx = changed[i] - at.x
         const dy = changed[i + 1] - at.y
