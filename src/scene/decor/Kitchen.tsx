@@ -1,4 +1,4 @@
-import { Led, Panel, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Led, Material, Panel, Slab } from '#/scene/decor/parts.tsx'
 import type { ReactNode } from 'react'
 
 // What every kitchen fitting draws with: its slots as materials and colors,
@@ -83,6 +83,94 @@ export function Fridge({ w, d, h, fit }: { w: number; d: number; h: number; fit:
         </group>
       ))}
       <Led on={fit.on} radius={0.006} position={[-w / 2 + 0.05, h - 0.04, front + 0.001]} />
+    </group>
+  )
+}
+
+// A lit window in a door: dark glass that glows warm while it runs.
+function Window({
+  size,
+  position,
+  fit,
+  glow = 0.6,
+}: {
+  size: [number, number]
+  position: [number, number, number]
+  fit: Fit
+  glow?: number
+}) {
+  return (
+    <mesh position={position}>
+      <planeGeometry args={size} />
+      <Material
+        color={fit.c('glass')}
+        material={fit.m('glass')}
+        emissive={[1, 0.72, 0.35]}
+        emissiveIntensity={glow * fit.lit}
+      />
+    </mesh>
+  )
+}
+
+// A bar handle standing off a door on two posts.
+function BarHandle({ length, y, z, fit }: { length: number; y: number; z: number; fit: Fit }) {
+  const off = 0.04
+  return (
+    <group>
+      <Bar length={length} radius={0.01} rotation={[0, 0, Math.PI / 2]} position={[0, y, z + off]}>
+        {fit.M('handle')}
+      </Bar>
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[(s * length) / 2 - s * 0.03, y, z + off / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.007, 0.007, off, 12]} />
+          {fit.M('handle')}
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+// A built in oven after the Bosch Series 8 HBG7741B1, 59.4 by 54.8 by 59.5
+// cm: a front all in black glass, a 10 cm control strip across the top with
+// a display in the middle and touch keys either side, and a door with a
+// long bar handle and a window that glows while it bakes.
+export function Oven({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const front = d / 2
+  const strip = Math.min(0.1, h * 0.17)
+  const doorH = h - strip - 0.004
+  const face = 0.03
+  return (
+    <group>
+      <Slab size={[w - 0.01, h - 0.01, d - face]} radius={0.01} bevel={0.004} position={[0, 0.005, -face / 2]}>
+        {M('body')}
+      </Slab>
+      <Panel size={[w, strip, face]} position={[0, h - strip, front - face / 2]} radius={0.006}>
+        {M('body')}
+      </Panel>
+      {/* The display, and a row of touch keys either side of it. */}
+      <mesh position={[0, h - strip / 2, front + 0.0005]}>
+        <planeGeometry args={[Math.min(0.11, w * 0.2), strip * 0.45]} />
+        <Material
+          color={fit.c('display')}
+          material="ceramic"
+          emissive={[1, 0.62, 0.3]}
+          emissiveIntensity={0.9 * fit.lit}
+        />
+      </mesh>
+      {[-1, 1].flatMap(s =>
+        [0, 1, 2].map(i => (
+          <mesh key={`${s}${i}`} position={[s * (w * 0.16 + i * w * 0.07), h - strip / 2, front + 0.0005]}>
+            <circleGeometry args={[0.005, 16]} />
+            <meshStandardMaterial color="#8a8f92" />
+          </mesh>
+        )),
+      )}
+      <Panel size={[w, doorH, face]} position={[0, 0, front - face / 2]} radius={0.006}>
+        {M('body')}
+      </Panel>
+      <Window size={[w * 0.7, doorH * 0.52]} position={[0, doorH * 0.42, front + 0.0005]} fit={fit} />
+      <BarHandle length={w * 0.8} y={doorH - 0.05} z={front} fit={fit} />
     </group>
   )
 }

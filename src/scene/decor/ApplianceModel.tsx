@@ -9,7 +9,7 @@ import {
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import Shower from '#/scene/decor/Shower.tsx'
-import { Fridge, type Fit } from '#/scene/decor/Kitchen.tsx'
+import { Fridge, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -160,6 +160,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
     case 'fridge':
       return <Fridge w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'oven':
+      return <Oven w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'microwave':
     case 'dishwasher': {
       const w = p('width')
@@ -189,19 +190,7 @@ export default function ApplianceModel({ kind, item, state }: Props) {
           <Bar length={w - 0.12} radius={0.011} rotation={[0, 0, Math.PI / 2]} position={[0, h - 0.07, d / 2 + 0.035]}>
             {M('handle')}
           </Bar>
-          {/* Control knobs either side of the panel above the door. */}
-          {kind.id === 'oven' &&
-            [-1, 1].map(side => (
-              <mesh
-                key={side}
-                position={[side * (w / 2 - 0.07), h - 0.035, d / 2 + 0.012]}
-                rotation={[Math.PI / 2, 0, 0]}
-              >
-                <cylinderGeometry args={[0.018, 0.02, 0.022, 24]} />
-                {M('knobs')}
-              </mesh>
-            ))}
-          <Led on={on} position={[kind.id === 'oven' ? 0 : w / 2 - 0.06, h - 0.035, d / 2 + 0.012]} />
+          <Led on={on} position={[w / 2 - 0.06, h - 0.035, d / 2 + 0.012]} />
         </group>
       )
     }

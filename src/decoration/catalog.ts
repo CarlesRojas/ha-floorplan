@@ -927,9 +927,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Oven',
     'floor',
-    [width(0.6, 0.5, 0.9), depth(0.6, 0.5, 0.7), height(0.88, 0.6, 1), base()],
-    { body: SCANDI.offWhite, glass: '#3c4144', handle: SCANDI.slate, knobs: SCANDI.slate },
-    { body: 'ceramic', glass: 'ceramic', handle: 'metal', knobs: 'metal' },
+    [width(0.6, 0.45, 0.9), depth(0.55, 0.5, 0.7), height(0.6, 0.45, 0.9), base()],
+    { body: '#34383b', glass: '#111416', handle: '#b9bdbf', display: '#16191b' },
+    { body: 'ceramic', glass: 'ceramic', handle: 'metal', display: 'ceramic' },
     TOGGLE,
   ),
   kind(
