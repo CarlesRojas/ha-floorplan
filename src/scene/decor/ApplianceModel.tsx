@@ -9,7 +9,7 @@ import {
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import Shower from '#/scene/decor/Shower.tsx'
-import { Fridge, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
+import { Dishwasher, Fridge, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -163,38 +163,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       return <Oven w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'microwave':
       return <Microwave w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
-    case 'dishwasher': {
-      const w = p('width')
-      const d = p('depth')
-      const h = p('height')
-      const glassH = 0
-      return (
-        <group>
-          <Slab size={[w, h, d]} radius={0.025} position={[0, 0, 0]}>
-            {M('body')}
-          </Slab>
-          {glassH > 0 && (
-            <Panel size={[w - 0.09, glassH, 0.02]} position={[0, h * 0.18, d / 2]} radius={0.015}>
-              <Material
-                color={c('glass')}
-                material={m('glass')}
-                emissive={[1, 0.72, 0.35]}
-                emissiveIntensity={0.6 * lit}
-              />
-            </Panel>
-          )}
-          {kind.id === 'dishwasher' && (
-            <Panel size={[w - 0.02, h - 0.02, 0.02]} position={[0, 0.01, d / 2]}>
-              {M('door')}
-            </Panel>
-          )}
-          <Bar length={w - 0.12} radius={0.011} rotation={[0, 0, Math.PI / 2]} position={[0, h - 0.07, d / 2 + 0.035]}>
-            {M('handle')}
-          </Bar>
-          <Led on={on} position={[w / 2 - 0.06, h - 0.035, d / 2 + 0.012]} />
-        </group>
-      )
-    }
+    case 'dishwasher':
+      return <Dishwasher w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'hob': {
       // A black glass induction panel, flush in the worktop: four rings and
       // a touch strip along the front edge.

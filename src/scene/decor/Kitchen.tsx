@@ -223,3 +223,57 @@ export function Microwave({ w, d, h, fit }: { w: number; d: number; h: number; f
     </group>
   )
 }
+
+// A freestanding dishwasher after the Bosch Serie 6 SMS6ZCI00G, 60 by 60 by
+// 84.5 cm: a worktop on a steel cabinet, a 7 cm control fascia along the top
+// of the door with a display and keys, the grip cut in under it, and a
+// plinth set back at the toe.
+export function Dishwasher({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const front = d / 2
+  const top = 0.025
+  const face = 0.03
+  const toe = Math.min(0.08, h * 0.1)
+  const fascia = Math.min(0.07, h * 0.09)
+  const doorTop = h - top - 0.004
+  return (
+    <group>
+      <Slab size={[w - 0.004, h - top, d - face]} radius={0.006} bevel={0.003} position={[0, 0, -face / 2]}>
+        {M('body')}
+      </Slab>
+      <Slab size={[w, top, d]} radius={0.01} bevel={0.004} position={[0, h - top, 0]}>
+        {M('top')}
+      </Slab>
+      {/* The plinth, set back under the door. */}
+      <mesh position={[0, toe / 2, front - face + 0.008]}>
+        <boxGeometry args={[w - 0.01, toe, 0.016]} />
+        {M('controls')}
+      </mesh>
+      <Panel size={[w - 0.004, fascia, face]} position={[0, doorTop - fascia, front - face / 2]} radius={0.004}>
+        {M('door')}
+      </Panel>
+      <mesh position={[0, doorTop - fascia / 2, front + 0.0005]}>
+        <planeGeometry args={[Math.min(0.12, w * 0.2), fascia * 0.4]} />
+        <Material color={fit.c('controls')} material="ceramic" emissive={[1, 1, 1]} emissiveIntensity={0.7 * fit.lit} />
+      </mesh>
+      {[-3, -2, -1, 1, 2, 3].map(i => (
+        <mesh key={i} position={[i * w * 0.07 + Math.sign(i) * w * 0.05, doorTop - fascia / 2, front + 0.0005]}>
+          <circleGeometry args={[0.005, 16]} />
+          {M('controls')}
+        </mesh>
+      ))}
+      {/* The grip: a dark slot the width of the door under the fascia. */}
+      <mesh position={[0, doorTop - fascia - 0.012, front - face / 2]}>
+        <boxGeometry args={[w * 0.7, 0.024, face + 0.002]} />
+        {M('controls')}
+      </mesh>
+      <Panel
+        size={[w - 0.004, doorTop - fascia - 0.024 - toe, face]}
+        position={[0, toe, front - face / 2]}
+        radius={0.004}
+      >
+        {M('door')}
+      </Panel>
+    </group>
+  )
+}

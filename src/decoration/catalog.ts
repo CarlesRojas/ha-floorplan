@@ -967,9 +967,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Dishwasher',
     'floor',
-    [width(0.6, 0.45, 0.8), depth(0.6, 0.5, 0.7), height(0.85, 0.7, 0.95), base()],
-    { body: SCANDI.offWhite, door: SCANDI.offWhite, glass: '#3c4144', handle: SCANDI.slate, knobs: SCANDI.slate },
-    { body: 'ceramic', door: 'ceramic', glass: 'ceramic', handle: 'metal', knobs: 'metal' },
+    [width(0.6, 0.45, 0.8), depth(0.6, 0.5, 0.7), height(0.845, 0.7, 0.95), base()],
+    { body: '#b9bdbf', top: '#3a3d40', door: '#c9cccd', controls: '#1c1f21' },
+    { body: 'metal', top: 'matte', door: 'metal', controls: 'ceramic' },
     TOGGLE,
   ),
   kind(
