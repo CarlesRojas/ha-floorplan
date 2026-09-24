@@ -305,17 +305,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       PENDANT_NAGOYA,
       {
-        id: 'globo_cesta',
-        label: 'Wicker Globe',
-        params: { size: 0.27 },
+        id: 'globo_cestita',
+        label: 'Opal Lantern',
+        params: { size: 0.17 },
         colors: {
           globe: PENDANT_OPAL_COLOR,
           cap: PENDANT_BLACK_COLOR,
           canopy: PENDANT_BLACK_COLOR,
           cord: PENDANT_BLACK_COLOR,
-          wires: PENDANT_STEEL_COLOR,
         },
-        materials: { globe: 'matte', cap: 'metal', canopy: 'metal', cord: 'fabric', wires: 'metal' },
+        materials: { globe: 'matte', cap: 'metal', canopy: 'metal', cord: 'fabric' },
       },
       {
         id: 'headhat_bowl',

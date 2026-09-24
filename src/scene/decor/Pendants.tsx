@@ -1,3 +1,4 @@
+import { cestitaGlobeProfile } from '#/scene/decor/cestitaGlobe.ts'
 import { BaseMaterial, ShadeMaterial, type LightState } from '#/scene/decor/lightMaterials.tsx'
 import { Material, Rod, SEG } from '#/scene/decor/parts.tsx'
 import {
@@ -5,19 +6,15 @@ import {
   CAPSULE_FINS,
   CAPSULE_H,
   CAPSULE_R,
+  CESTITA_PENDANT_CANOPY,
+  CESTITA_PENDANT_CAP,
+  CESTITA_PENDANT_GRIP,
+  CESTITA_PENDANT_H,
+  CESTITA_PENDANT_LIP,
+  CESTITA_PENDANT_R,
   CIRIO_H,
   CIRIO_R,
   CIRIO_WALL,
-  GLOBO_A,
-  GLOBO_CANOPY,
-  GLOBO_CAP_H,
-  GLOBO_CAP_R,
-  GLOBO_GRIP_H,
-  GLOBO_N,
-  GLOBO_NECK_H,
-  GLOBO_NECK_R,
-  GLOBO_TOTAL_H,
-  GLOBO_WIRE_X,
   HEADHAT_H,
   HEADHAT_R,
   HEADHAT_SHOULDER,
@@ -28,12 +25,12 @@ import {
   NAGOYA_R,
   NAGOYA_SLATS,
   NAGOYA_THREADS,
-  STEEL_WIRE_R,
   TEXTILE_CORD_R,
 } from '#/scene/decor/pendantSpecs.ts'
+import { CESTITA_GLOBE, CESTITA_GLOBE_R } from '#/scene/decor/tableLampSpecs.ts'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
-import { CatmullRomCurve3, InstancedMesh, Matrix4, Quaternion, Vector2, Vector3 } from 'three'
+import { InstancedMesh, Matrix4, Quaternion, Vector2, Vector3 } from 'three'
 
 // The pendant styles, each one a Santa & Cole lamp drawn from its technical
 // drawing. Every part is in real meters, measured down from the top of the
@@ -189,88 +186,57 @@ function Nagoya({ k, top, c, m, state }: ModelProps) {
   )
 }
 
-// Globo Cesta: a pillow shaped opal glass, Ø27 by 34 cm, under a small black
-// cap. The glass narrows at the bottom into an open neck. It hangs from two
-// steel wires, with the cord waving loose between them, under a Ø11 by 3 cm
-// canopy.
+// Globo Cestita: the Cestita's opal globe, Ø17 cm, hanging from its cord
+// under a flat black cap. A thin glass lip, barely there, rounds off the
+// bottom. Ø10.8 cm canopy.
 
-function globoProfile(): [number, number][] {
-  // The body runs from the cap down to where the neck starts.
-  const yTop = -GLOBO_CAP_H
-  const yBottom = -(GLOBO_TOTAL_H - GLOBO_NECK_H)
-  const yc = (yTop + yBottom) / 2
-  const e = 2 / GLOBO_N
-  // A superellipse whose ends are cut off by the cap and the neck, so its
-  // half height reaches a little past them.
-  const cut = (r: number) => Math.pow(1 - Math.pow(r / GLOBO_A, GLOBO_N), 1 / GLOBO_N)
-  const b = (yTop - yBottom) / (cut(GLOBO_CAP_R) + cut(GLOBO_NECK_R))
-  const points: [number, number][] = [
-    [GLOBO_NECK_R, -GLOBO_TOTAL_H],
-    [GLOBO_NECK_R, yBottom],
-  ]
-  const steps = SEG * 2
-  for (let i = 0; i <= steps; i++) {
-    const t = -Math.PI / 2 + (i / steps) * Math.PI
-    const x = GLOBO_A * Math.pow(Math.cos(t), e)
-    const y = yc + b * Math.sign(Math.sin(t)) * Math.pow(Math.abs(Math.sin(t)), e)
-    if (y <= yBottom || y >= yTop) continue
-    if (y < yc && x < GLOBO_NECK_R) continue
-    if (y > yc && x < GLOBO_CAP_R) continue
-    points.push([x, y])
-  }
-  points.push([GLOBO_CAP_R, yTop])
-  return points
-}
+// The table globe's profile, moved so its top is at zero and fitted between
+// the cap and the lip.
+const CESTITA_PENDANT_GLASS_H = CESTITA_PENDANT_H - CESTITA_PENDANT_CAP[1] - CESTITA_PENDANT_LIP[1]
+const CESTITA_PENDANT_SCALE: [number, number, number] = [
+  CESTITA_PENDANT_R / CESTITA_GLOBE_R,
+  CESTITA_PENDANT_GLASS_H / (CESTITA_GLOBE[1] - CESTITA_GLOBE[0]),
+  CESTITA_PENDANT_R / CESTITA_GLOBE_R,
+]
+const CESTITA_PENDANT_PROFILE = lathe(cestitaGlobeProfile().map(([x, y]) => [x, y - CESTITA_GLOBE[1]]))
 
-const GLOBO_PROFILE = lathe(globoProfile())
-
-function GloboCesta({ k, top, c, m, state }: ModelProps) {
-  const canopyBottom = CEILING_HEIGHT_M - GLOBO_CANOPY[1]
-  const gripTop = top + GLOBO_GRIP_H * k
-  // The cord hangs slack between the wires, in a gentle wave.
-  const cord = useMemo(() => {
-    const length = canopyBottom - gripTop
-    const sway = Math.min(0.03, length * 0.05)
-    const points = [0, 0.2, 0.45, 0.7, 0.9, 1].map((t, i) => {
-      const x = i === 0 || i === 5 ? 0 : sway * Math.sin(t * Math.PI * 2.2)
-      return new Vector3(x, gripTop + length * t, 0)
-    })
-    return new CatmullRomCurve3(points)
-  }, [canopyBottom, gripTop])
-  const wires = useMemo(
-    () =>
-      [-1, 1].map(s => [
-        new Vector3(s * GLOBO_WIRE_X * k, top, 0),
-        new Vector3(s * GLOBO_WIRE_X * 1.6, canopyBottom, 0),
-      ]),
-    [k, top, canopyBottom],
-  )
+function GloboCestita({ k, top, c, m, state }: ModelProps) {
+  const [capR, capH] = CESTITA_PENDANT_CAP
+  const [gripR, gripH] = CESTITA_PENDANT_GRIP
+  const [lipR, lipH] = CESTITA_PENDANT_LIP
   return (
     <>
       <group position={[0, top, 0]} scale={k}>
-        <mesh userData={{ transmits: true }}>
-          <latheGeometry args={[GLOBO_PROFILE, SEG * 2]} />
+        <mesh position={[0, -capH, 0]} scale={CESTITA_PENDANT_SCALE} userData={{ transmits: true }}>
+          <latheGeometry args={[CESTITA_PENDANT_PROFILE, SEG * 4]} />
           <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
         </mesh>
-        <mesh position={[0, -GLOBO_CAP_H / 2, 0]}>
-          <cylinderGeometry args={[GLOBO_CAP_R, GLOBO_CAP_R, GLOBO_CAP_H, SEG * 2]} />
+        <mesh position={[0, -CESTITA_PENDANT_H + lipH / 2, 0]} userData={{ transmits: true }}>
+          <cylinderGeometry args={[lipR, lipR * 0.97, lipH, SEG * 2]} />
+          <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
+        </mesh>
+        <mesh position={[0, -capH / 2, 0]}>
+          <cylinderGeometry args={[capR, capR, capH, SEG * 2]} />
           <BaseMaterial color={c('cap')} material={m('cap')} />
         </mesh>
-        <mesh position={[0, GLOBO_GRIP_H / 2, 0]}>
-          <cylinderGeometry args={[0.0045, 0.0045, GLOBO_GRIP_H, SEG]} />
+        <mesh position={[0, gripH / 2, 0]}>
+          <cylinderGeometry args={[gripR, gripR, gripH, SEG]} />
           <BaseMaterial color={c('cap')} material={m('cap')} />
         </mesh>
       </group>
-      {wires.map(([a, b], i) => (
-        <Rod key={i} from={a} to={b} r={STEEL_WIRE_R}>
-          <BaseMaterial color={c('wires')} material={m('wires')} />
-        </Rod>
-      ))}
-      <mesh>
-        <tubeGeometry args={[cord, SEG * 2, TEXTILE_CORD_R, 8, false]} />
-        <BaseMaterial color={c('cord')} material={m('cord')} />
-      </mesh>
-      <Canopy diameter={GLOBO_CANOPY[0]} height={GLOBO_CANOPY[1]} c={c('canopy')} m={m('canopy')} />
+      <Cord
+        from={top + CESTITA_PENDANT_GRIP[1] * k}
+        to={CEILING_HEIGHT_M - CESTITA_PENDANT_CANOPY[1]}
+        r={TEXTILE_CORD_R}
+        c={c('cord')}
+        m={m('cord')}
+      />
+      <Canopy
+        diameter={CESTITA_PENDANT_CANOPY[0]}
+        height={CESTITA_PENDANT_CANOPY[1]}
+        c={c('canopy')}
+        m={m('canopy')}
+      />
     </>
   )
 }
@@ -357,7 +323,7 @@ function CirioSimple({ k, top, c, m, state }: ModelProps) {
 
 const MODELS: Record<string, (props: ModelProps) => ReactNode> = {
   nagoya: Nagoya,
-  globo_cesta: GloboCesta,
+  globo_cestita: GloboCestita,
   headhat_bowl: HeadhatBowl,
   cirio_simple: CirioSimple,
 }

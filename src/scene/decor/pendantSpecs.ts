@@ -10,11 +10,9 @@ export type PendantSpec = {
 }
 
 // Cables are not in the drawings. These are the usual thicknesses: the flat
-// LED cable of the capsule lamps, a textile covered mains cord and the thin
-// steel wires the Globo Cesta hangs from.
+// LED cable of the capsule lamps and a textile covered mains cord.
 export const LED_CABLE_R = 0.002
 export const TEXTILE_CORD_R = 0.003
-export const STEEL_WIRE_R = 0.0008
 // The HeadLed capsule: the HeadHat and the Cirio drawings are each a
 // centimeter taller than their shade, which is its heat sink.
 export const CAPSULE_H = 0.01
@@ -29,21 +27,16 @@ export const NAGOYA_H = 0.25
 export const NAGOYA_SLATS = 110
 export const NAGOYA_THREADS = 7
 
-// Globo Cesta: Ø27 by 34 cm under a Ø11 by 3 cm canopy. The cap, the grip,
-// the bottom neck and where the wires sit are measured off the photos.
-export const GLOBO_A = 0.135
-export const GLOBO_CAP_R = 0.0375
-export const GLOBO_CAP_H = 0.012
-export const GLOBO_TOTAL_H = 0.34
-// The glass is squarer than an ellipse and rounder than a box.
-export const GLOBO_NECK_R = 0.0445
-// The glass is squarer than an ellipse and rounder than a box.
-export const GLOBO_NECK_H = 0.015
-export const GLOBO_GRIP_H = 0.02
-// The glass is squarer than an ellipse and rounder than a box.
-export const GLOBO_N = 2.8
-export const GLOBO_CANOPY: [number, number] = [0.11, 0.03]
-export const GLOBO_WIRE_X = 0.0155
+// Globo Cestita: Ø17 by 21 cm from the top of the cap to the bottom of the
+// lip. The glass is the table Cestita's opal globe, fitted to the drawing.
+// The cap on the glass, the thin lip under it and the canopy are measured
+// off the drawing and the photos against the 17 cm.
+export const CESTITA_PENDANT_R = 0.085
+export const CESTITA_PENDANT_H = 0.21
+export const CESTITA_PENDANT_CAP: [number, number] = [0.032, 0.01]
+export const CESTITA_PENDANT_GRIP: [number, number] = [0.0055, 0.012]
+export const CESTITA_PENDANT_LIP: [number, number] = [0.034, 0.005]
+export const CESTITA_PENDANT_CANOPY: [number, number] = [0.108, 0.02]
 
 // HeadHat Bowl L: Ø20 by 12 cm with the capsule. The drawing gives the
 // outline only, so the flat top, the shoulder (across by down) and the wall
@@ -63,7 +56,7 @@ export const CIRIO_WALL = 0.003
 
 export const PENDANTS: Record<string, PendantSpec> = {
   nagoya: { diameter: NAGOYA_R * 2, glow: 0.09 },
-  globo_cesta: { diameter: GLOBO_A * 2, glow: GLOBO_TOTAL_H / 2 },
+  globo_cestita: { diameter: CESTITA_PENDANT_R * 2, glow: CESTITA_PENDANT_H / 2 },
   // Low in the bowl, far enough from the ceramic that its shadow holds.
   headhat_bowl: { diameter: HEADHAT_R * 2, glow: 0.065 },
   cirio_simple: { diameter: CIRIO_R * 2, glow: CAPSULE_H + CIRIO_H / 2 },

@@ -12,17 +12,18 @@ const EDITOR_TYPE = `${CARD_TYPE}-editor`
 // would quietly vanish from the plan: the catalog would not know it.
 const RENAMED: Record<string, { kind: string; variant?: string }> = {
   // The Globo Cesta was its own kind for a moment, then became a style of
-  // the pendant.
-  light_globe: { kind: 'light_pendant', variant: 'globo_cesta' },
+  // the pendant, since swapped for the smaller Globo Cestita.
+  light_globe: { kind: 'light_pendant', variant: 'globo_cestita' },
   // The office table became a style of the desk.
   office_table: { kind: 'desk', variant: 'office_table' },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose
-// takes on the Nagoya and the Globo Cesta, then became those lamps. The
+// takes on the Nagoya and the Globo Cesta, then became those lamps, and the
+// Globo Cesta gave way to the smaller Globo Cestita. The
 // dining chair's first style was a Pilma chair, then a molded shell.
 const RESTYLED: Record<string, Record<string, string>> = {
-  light_pendant: { slatted: 'nagoya', globe: 'globo_cesta' },
+  light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
   dining_chair: { aix: 'molded' },
 }
 
