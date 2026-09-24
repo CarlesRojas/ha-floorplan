@@ -1,4 +1,5 @@
 import { Bar, Led, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ReactNode } from 'react'
 
 // What every kitchen fitting draws with: its slots as materials and colors,
@@ -528,6 +529,101 @@ function GasHob({ w, d, fit }: { w: number; d: number; fit: Fit }) {
           </group>
         )
       })}
+    </group>
+  )
+}
+
+// A box hood after the Bosch DWB66DM50: a thin steel canopy 5.3 cm deep
+// with a chimney about 25 by 20 cm up to the ceiling, set against the wall
+// behind. Underneath, steel grease filters side by side and two LED spots at
+// the front. A ceiling item hangs from nothing, so the canopy is placed by
+// how far below the ceiling it sits: its underside is 1.55 m off the floor,
+// about 65 cm over a hob.
+export function Hood({ w, d, fit }: { w: number; d: number; fit: Fit }) {
+  const { M, c, lit, level } = fit
+  const canopy = 0.053
+  const y = -(CEILING_HEIGHT_M - 1.55)
+  const chimney: [number, number] = [Math.min(0.25, w * 0.45), Math.min(0.2, d * 0.45)]
+  const filters = Math.max(1, Math.round((w - 0.06) / 0.28))
+  const fw = (w - 0.06) / filters
+  return (
+    <group>
+      <Slab size={[w, canopy, d]} radius={0.006} bevel={0.003} position={[0, y, 0]}>
+        {M('canopy')}
+      </Slab>
+      <Slab
+        size={[chimney[0], -y - canopy, chimney[1]]}
+        radius={0.004}
+        bevel={0.002}
+        position={[0, y + canopy, -d / 2 + chimney[1] / 2]}
+      >
+        {M('chimney')}
+      </Slab>
+      {/* The grease filters, a little proud of the underside. */}
+      {Array.from({ length: filters }, (_, i) => (
+        <Slab
+          key={i}
+          size={[fw - 0.006, 0.004, d - 0.1]}
+          radius={0.004}
+          bevel={0.001}
+          position={[-w / 2 + 0.03 + fw * (i + 0.5), y - 0.004, -0.02]}
+        >
+          {M('filter')}
+        </Slab>
+      ))}
+      {/* Two LED spots in the front strip, lit with the fan. */}
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[s * w * 0.3, y - 0.001, d / 2 - 0.035]} rotation={[Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.018, SEG]} />
+          <meshStandardMaterial color={c('filter')} emissive="#ffe2b8" emissiveIntensity={2 * level * lit} />
+        </mesh>
+      ))}
+      {/* The touch keys along the right of the front edge. */}
+      {[0, 1, 2, 3].map(i => (
+        <mesh key={i} position={[w / 2 - 0.05 - i * 0.03, y + canopy / 2, d / 2 + 0.0005]}>
+          <circleGeometry args={[0.006, 20]} />
+          {M('controls')}
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+// A flush ceiling extractor after the Novy Pureline 6830, 86.8 by 50.8 cm:
+// a flat panel in the ceiling with a slot all the way round it that the air
+// is drawn through, and an LED strip along each long side that comes up
+// with the fan.
+export function CeilingExtractor({ w, d, fit }: { w: number; d: number; fit: Fit }) {
+  const { M, c, lit, level } = fit
+  const frame = 0.012
+  const edge = Math.min(0.03, w * 0.05, d * 0.05)
+  const slot = 0.012
+  const inner: [number, number] = [w - (edge + slot) * 2, d - (edge + slot) * 2]
+  return (
+    <group>
+      <Slab size={[w, frame, d]} radius={0.006} bevel={0.002} position={[0, -frame, 0]}>
+        {M('panel')}
+      </Slab>
+      {/* The slot, a dark ring just under the frame's face. */}
+      <Slab
+        size={[w - edge * 2, 0.002, d - edge * 2]}
+        radius={0.004}
+        bevel={0}
+        position={[0, -frame - 0.001, 0]}
+        holes={[{ x: 0, z: 0, w: inner[0], d: inner[1], r: 0.003 }]}
+      >
+        {M('grille')}
+      </Slab>
+      {/* The middle panel, the part that lifts off to reach the filters. */}
+      <Slab size={[inner[0], 0.004, inner[1]]} radius={0.003} bevel={0.001} position={[0, -frame - 0.003, 0]}>
+        {M('panel')}
+      </Slab>
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[0, -frame - 0.0035, s * (inner[1] / 2 - 0.025)]} rotation={[Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[inner[0] - 0.08, 0.012]} />
+          <meshStandardMaterial color={c('panel')} emissive="#ffe2b8" emissiveIntensity={1.8 * level * lit} />
+        </mesh>
+      ))}
     </group>
   )
 }

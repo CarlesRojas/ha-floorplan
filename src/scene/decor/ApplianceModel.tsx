@@ -12,8 +12,7 @@ import { Bar, Cushion, Material, Panel, SEG, Slab, type Hole } from '#/scene/dec
 import { Sink } from '#/scene/decor/Sink.tsx'
 import { sinkPlan, sinkStyle } from '#/scene/decor/sinkSpecs.ts'
 import Shower from '#/scene/decor/Shower.tsx'
-import { Dishwasher, Fridge, Hob, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
-import { CEILING_HEIGHT_M } from '#/theme.ts'
+import { CeilingExtractor, Dishwasher, Fridge, Hob, Hood, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
@@ -220,82 +219,10 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       return <Dishwasher w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'hob':
       return <Hob style={decorationVariant(kind, item.variant)?.id ?? ''} w={p('width')} d={p('depth')} fit={fit} />
-    case 'ceiling_extractor': {
-      // A flush ceiling extractor: a shallow panel let into the ceiling
-      // rather than a canopy hanging over the hob, with a perimeter grille
-      // it draws through and a lit face that comes up with the fan.
-      const w = p('width')
-      const d = p('depth')
-      // A ceiling item is already lifted to the ceiling, so the model hangs
-      // down from nothing.
-      const panel = 0.03
-      const edge = 0.05
-      return (
-        <group>
-          <Slab size={[w, panel, d]} radius={0.012} bevel={0.005} position={[0, -panel, 0]}>
-            {M('panel')}
-          </Slab>
-          {/* The slot it draws through, all the way round the panel. */}
-          <Slab size={[w - edge, 0.006, d - edge]} radius={0.01} bevel={0.002} position={[0, -panel - 0.006, 0]}>
-            {M('grille')}
-          </Slab>
-          {/* The lit face, inset from the slot, which is all that shows from
-              below when it is off. */}
-          <mesh position={[0, -panel - 0.008, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[w - edge * 2.4, d - edge * 2.4]} />
-            <meshStandardMaterial
-              color={c('panel')}
-              emissive={'#ffd9a0'}
-              emissiveIntensity={1.1 * level * lit}
-              roughness={0.5}
-            />
-          </mesh>
-        </group>
-      )
-    }
-    case 'extractor_hood': {
-      // A box canopy with a slim chimney, a grease filter panel underneath
-      // and two task lights in it.
-      const w = p('width')
-      const d = p('depth')
-      // A ceiling item hangs from nothing, so the canopy is placed by how
-      // far below the ceiling it sits rather than how high off the floor.
-      const canopy = 0.14
-      const hoodY = -(CEILING_HEIGHT_M - 1.55)
-      return (
-        <group>
-          <Slab size={[w, canopy, d]} radius={0.015} bevel={0.01} position={[0, hoodY, 0]}>
-            {M('canopy')}
-          </Slab>
-          {/* The chimney, narrower than the canopy, up to the ceiling. */}
-          <Slab
-            size={[w * 0.36, -hoodY - canopy, d * 0.36]}
-            radius={0.012}
-            bevel={0.006}
-            position={[0, hoodY + canopy, -d * 0.08]}
-          >
-            {M('chimney')}
-          </Slab>
-          {/* Filter panel, recessed into the underside. */}
-          <Slab size={[w - 0.06, 0.014, d - 0.06]} radius={0.01} bevel={0.004} position={[0, hoodY - 0.012, 0]}>
-            {M('filter')}
-          </Slab>
-          {[-1, 1].map(side => (
-            <mesh key={side} position={[side * w * 0.28, hoodY - 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <circleGeometry args={[Math.min(0.05, w * 0.09), SEG]} />
-              <meshStandardMaterial color={c('filter')} emissive={'#ffd9a0'} emissiveIntensity={1.4 * level * lit} />
-            </mesh>
-          ))}
-          {/* Control buttons on the front lip. */}
-          {[-1, 0, 1].map(i => (
-            <mesh key={i} position={[w * 0.3 + i * 0.035, hoodY + canopy * 0.4, d / 2 + 0.002]}>
-              <cylinderGeometry args={[0.008, 0.008, 0.004, 20]} />
-              {M('controls')}
-            </mesh>
-          ))}
-        </group>
-      )
-    }
+    case 'ceiling_extractor':
+      return <CeilingExtractor w={p('width')} d={p('depth')} fit={fit} />
+    case 'extractor_hood':
+      return <Hood w={p('width')} d={p('depth')} fit={fit} />
     case 'kitchen_sink':
       return (
         <Sink style={sinkStyle(decorationVariant(kind, item.variant)?.id)} w={p('width')} d={p('depth')} fit={fit} />
