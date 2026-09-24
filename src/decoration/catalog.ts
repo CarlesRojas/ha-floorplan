@@ -937,10 +937,20 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Hob',
     'floor',
-    [width(0.6, 0.4, 0.9), depth(0.52, 0.4, 0.7), lift(0.9)],
-    { glass: SCANDI.charcoal, zones: '#6c7175' },
+    [width(0.6, 0.3, 0.9), depth(0.52, 0.4, 0.7), lift(0.9)],
+    { glass: '#15181a', zones: '#6c7175' },
     { glass: 'ceramic', zones: 'metal' },
     TOGGLE,
+    [
+      { id: 'induction', label: 'Black Flux' },
+      {
+        id: 'gas',
+        label: 'Iron Crown',
+        colors: { top: '#c3c6c7', grids: '#26282a', burners: '#b08d57', knobs: '#2e3133' },
+        materials: { top: 'metal', grids: 'matte', burners: 'metal', knobs: 'metal' },
+        params: { width: 0.58 },
+      },
+    ],
   ),
   kind(
     'extractor_hood',

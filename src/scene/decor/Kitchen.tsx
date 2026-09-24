@@ -1,4 +1,4 @@
-import { Bar, Led, Material, Panel, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Led, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { ReactNode } from 'react'
 
 // What every kitchen fitting draws with: its slots as materials and colors,
@@ -274,6 +274,260 @@ export function Dishwasher({ w, d, h, fit }: { w: number; d: number; h: number; 
       >
         {M('door')}
       </Panel>
+    </group>
+  )
+}
+
+// Where the zones or burners of a hob go: one column on a narrow domino,
+// two on a standard 60 cm hob and a third, in the middle, from 75 cm. Each
+// place has a radius fitted to its share of the top, scaled by the size the
+// reference gives it.
+function hobPlaces(w: number, d: number, sizes: number[][]) {
+  const cols = w < 0.45 ? 1 : w < 0.75 ? 2 : 3
+  const cellW = w / cols
+  const cellD = d / 2
+  const places: { x: number; z: number; r: number; i: number }[] = []
+  for (let col = 0; col < cols; col++) {
+    const x = -w / 2 + cellW * (col + 0.5)
+    // The middle column holds one big zone rather than two.
+    if (cols === 3 && col === 1) {
+      places.push({ x, z: 0, r: Math.min(cellW, d) * 0.4, i: places.length })
+      continue
+    }
+    const pair = sizes[Math.min(col === 0 ? 0 : 1, sizes.length - 1)]
+    for (let row = 0; row < 2; row++) {
+      const z = -d / 2 + cellD * (row + 0.5)
+      places.push({ x, z, r: Math.min(cellW, cellD) * 0.5 * pair[row], i: places.length })
+    }
+  }
+  return places
+}
+
+// A hob. The induction style is after the Bosch Serie 6 PIE631FB1E: a
+// frameless black glass top, 59.2 by 52.2 cm, with four printed zones of
+// 18, 21, 14.5 and 18 cm and a touch strip along the front that glow red
+// while it cooks. The gas style is after the Bosch Serie 6 PGH6B5B90: a
+// brushed steel top, 58.2 by 52 cm, four burners under two cast iron grids
+// and a row of knobs along the front, the flames blue while it runs.
+export function Hob({ style, w, d, fit }: { style: string; w: number; d: number; fit: Fit }) {
+  return style === 'gas' ? <GasHob w={w} d={d} fit={fit} /> : <InductionHob w={w} d={d} fit={fit} />
+}
+
+function InductionHob({ w, d, fit }: { w: number; d: number; fit: Fit }) {
+  const { M, c, lit, level } = fit
+  const glass = 0.006
+  const strip = Math.min(0.07, d * 0.14)
+  // Back and front zone on each side, as a share of their cell: the left
+  // pair 18 and 21 cm, the right 14.5 and 18 cm.
+  const places = hobPlaces(w - 0.04, d - strip - 0.02, [
+    [0.72, 0.84],
+    [0.58, 0.72],
+  ])
+  const zoneZ = -strip / 2
+  const glow = 1.6 * level * lit
+  return (
+    <group>
+      <Slab size={[w, glass, d]} radius={0.006} bevel={0.002} position={[0, 0, 0]}>
+        {M('glass')}
+      </Slab>
+      {places.map(z => (
+        <group key={z.i} position={[z.x, glass + 0.0004, z.z + zoneZ]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh>
+            <ringGeometry args={[z.r - 0.003, z.r, SEG * 2]} />
+            <meshStandardMaterial color={c('zones')} emissive="#ff4a1a" emissiveIntensity={glow} />
+          </mesh>
+          {/* The coil under the glass shows through as a red disc when on. */}
+          <mesh position={[0, 0, -0.0002]}>
+            <circleGeometry args={[z.r * 0.92, SEG * 2]} />
+            <meshStandardMaterial
+              color={c('glass')}
+              emissive="#ff3a10"
+              emissiveIntensity={0.9 * glow}
+              transparent
+              opacity={lit}
+            />
+          </mesh>
+        </group>
+      ))}
+      {/* The touch strip: a slider in the middle and keys either side. */}
+      <group position={[0, glass + 0.0004, d / 2 - strip / 2 - 0.005]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh>
+          <planeGeometry args={[Math.min(0.2, w * 0.34), 0.008]} />
+          <meshStandardMaterial color={c('zones')} emissive="#ff4a1a" emissiveIntensity={0.6 * lit} />
+        </mesh>
+        {[-3, -2, -1, 1, 2, 3].map(i => (
+          <mesh key={i} position={[Math.sign(i) * Math.min(0.12, w * 0.2) + i * 0.022, 0, 0]}>
+            <ringGeometry args={[0.004, 0.0055, 20]} />
+            <meshStandardMaterial color={c('zones')} emissive="#ff4a1a" emissiveIntensity={0.4 * lit} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  )
+}
+
+// A bar of the cast iron grid, laid flat from one point to another.
+function Rail({ from, to, y, fit }: { from: [number, number]; to: [number, number]; y: number; fit: Fit }) {
+  const dx = to[0] - from[0]
+  const dz = to[1] - from[1]
+  const length = Math.hypot(dx, dz)
+  return (
+    <mesh position={[(from[0] + to[0]) / 2, y, (from[1] + to[1]) / 2]} rotation={[0, -Math.atan2(dz, dx), 0]}>
+      <boxGeometry args={[length, 0.012, 0.008]} />
+      {fit.M('grids')}
+    </mesh>
+  )
+}
+
+function GasHob({ w, d, fit }: { w: number; d: number; fit: Fit }) {
+  const { M, lit, level } = fit
+  const top = 0.01
+  const band = Math.min(0.08, d * 0.16)
+  const field = d - band
+  const fieldZ = -band / 2
+  // Standard burners on the left, the wok behind and the small economy
+  // burner in front on the right.
+  const places = hobPlaces(w - 0.02, field - 0.02, [
+    [0.6, 0.6],
+    [0.8, 0.45],
+  ])
+  const cols = w < 0.45 ? 1 : w < 0.75 ? 2 : 3
+  const cellW = (w - 0.02) / cols
+  const gridY = top + 0.03
+  const flame = level * lit
+  return (
+    <group>
+      <Slab size={[w, top, d]} radius={0.01} bevel={0.003} position={[0, 0, 0]}>
+        {M('top')}
+      </Slab>
+      {places.map(b => {
+        const wok = b.r > 0.8 * Math.min(cellW, (field - 0.02) / 2) * 0.5
+        const crown = b.r * 0.55
+        return (
+          <group key={b.i} position={[b.x, top, b.z + fieldZ]}>
+            {/* The drip bowl, the brass crown and its black cap. */}
+            <mesh position={[0, 0.002, 0]}>
+              <cylinderGeometry args={[crown * 1.25, crown * 1.35, 0.004, SEG]} />
+              {M('top')}
+            </mesh>
+            <mesh position={[0, 0.012, 0]}>
+              <cylinderGeometry args={[crown, crown * 1.05, 0.016, SEG]} />
+              {M('burners')}
+            </mesh>
+            <mesh position={[0, 0.022, 0]}>
+              <cylinderGeometry args={[crown * 0.85, crown * 0.95, 0.006, SEG]} />
+              {M('grids')}
+            </mesh>
+            {wok && (
+              <mesh position={[0, 0.026, 0]}>
+                <cylinderGeometry args={[crown * 0.4, crown * 0.45, 0.008, SEG]} />
+                {M('burners')}
+              </mesh>
+            )}
+            {/* The ring of blue flame round the crown while it burns. */}
+            <mesh position={[0, 0.018, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.5 + flame]}>
+              <torusGeometry args={[crown * 1.08, 0.004, 8, SEG]} />
+              <meshStandardMaterial
+                color="#3a6dff"
+                emissive="#3a7dff"
+                emissiveIntensity={2.4 * flame}
+                transparent
+                opacity={flame}
+              />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* Cast iron grids, one per column: a frame round each cell and a
+          finger from each side of it reaching in to hold the pan. */}
+      {Array.from({ length: cols }).map((_, col) => {
+        const x0 = -(w - 0.02) / 2 + cellW * col + 0.006
+        const x1 = x0 + cellW - 0.012
+        const z0 = fieldZ - (field - 0.02) / 2
+        const z1 = fieldZ + (field - 0.02) / 2
+        const mid = (z0 + z1) / 2
+        const rails: [[number, number], [number, number]][] = [
+          [
+            [x0, z0],
+            [x1, z0],
+          ],
+          [
+            [x0, z1],
+            [x1, z1],
+          ],
+          [
+            [x0, z0],
+            [x0, z1],
+          ],
+          [
+            [x1, z0],
+            [x1, z1],
+          ],
+        ]
+        if (!(cols === 3 && col === 1))
+          rails.push([
+            [x0, mid],
+            [x1, mid],
+          ])
+        const cells = places.filter(b => Math.abs(b.x - (x0 + x1) / 2) < cellW / 2)
+        for (const b of cells) {
+          const bz = b.z + fieldZ
+          const inner = b.r * 0.62
+          const halfZ = cols === 3 && col === 1 ? (z1 - z0) / 2 : (z1 - z0) / 4
+          const cx = b.x
+          rails.push([
+            [x0, bz],
+            [cx - inner, bz],
+          ])
+          rails.push([
+            [cx + inner, bz],
+            [x1, bz],
+          ])
+          rails.push([
+            [cx, bz - halfZ],
+            [cx, bz - inner],
+          ])
+          rails.push([
+            [cx, bz + inner],
+            [cx, bz + halfZ],
+          ])
+        }
+        return (
+          <group key={col}>
+            {rails.map(([a, b], i) => (
+              <Rail key={i} from={a} to={b} y={gridY} fit={fit} />
+            ))}
+            {/* Rubber feet at the corners. */}
+            {[
+              [x0, z0],
+              [x1, z0],
+              [x0, z1],
+              [x1, z1],
+            ].map(([fx, fz], i) => (
+              <mesh key={`f${i}`} position={[fx, top + (gridY - top) / 2, fz]}>
+                <boxGeometry args={[0.012, gridY - top, 0.012]} />
+                {M('grids')}
+              </mesh>
+            ))}
+          </group>
+        )
+      })}
+      {/* Knobs along the front, one per burner. */}
+      {places.map((_, i) => {
+        const x = -w / 2 + (w * (i + 1)) / (places.length + 1)
+        return (
+          <group key={`k${i}`} position={[x, top, d / 2 - band / 2]}>
+            <mesh position={[0, 0.012, 0]}>
+              <cylinderGeometry args={[0.019, 0.021, 0.024, 32]} />
+              {M('knobs')}
+            </mesh>
+            <mesh position={[0, 0.0245, -0.008]}>
+              <boxGeometry args={[0.004, 0.002, 0.014]} />
+              {M('top')}
+            </mesh>
+          </group>
+        )
+      })}
     </group>
   )
 }

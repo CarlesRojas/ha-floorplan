@@ -9,7 +9,7 @@ import {
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, Cushion, Material, Panel, SEG, Slab } from '#/scene/decor/parts.tsx'
 import Shower from '#/scene/decor/Shower.tsx'
-import { Dishwasher, Fridge, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
+import { Dishwasher, Fridge, Hob, Microwave, Oven, type Fit } from '#/scene/decor/Kitchen.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -165,53 +165,8 @@ export default function ApplianceModel({ kind, item, state }: Props) {
       return <Microwave w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'dishwasher':
       return <Dishwasher w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
-    case 'hob': {
-      // A black glass induction panel, flush in the worktop: four rings and
-      // a touch strip along the front edge.
-      const w = p('width')
-      const d = p('depth')
-      const slider = Math.min(w * 0.4, 0.26)
-      return (
-        <group>
-          <Slab size={[w, 0.02, d]} radius={0.012} bevel={0.005} position={[0, 0, 0]}>
-            {M('glass')}
-          </Slab>
-          {[
-            [-0.25, -0.2, 0.13],
-            [0.25, -0.2, 0.11],
-            [-0.25, 0.18, 0.11],
-            [0.25, 0.18, 0.13],
-          ].map(([fx, fz, size], i) => (
-            <group key={i}>
-              <mesh position={[fx * w, 0.021, fz * d]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[w * (size - 0.05), w * size, SEG * 2]} />
-                <meshStandardMaterial
-                  color={on ? '#d96a3c' : c('zones')}
-                  emissive={'#ff6a2a'}
-                  emissiveIntensity={1.6 * level * lit}
-                />
-              </mesh>
-              {/* A short cross mark in the middle of each zone. */}
-              <mesh position={[fx * w, 0.021, fz * d]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[w * 0.012, w * 0.02, 20]} />
-                <meshStandardMaterial color={c('zones')} />
-              </mesh>
-            </group>
-          ))}
-          {/* Touch slider and power dots, printed on the front edge. */}
-          <mesh position={[0, 0.021, d * 0.41]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[slider, 0.012]} />
-            <meshStandardMaterial color={c('zones')} emissive="#ff6a2a" emissiveIntensity={0.8 * level * lit} />
-          </mesh>
-          {[-1, 1].map(side => (
-            <mesh key={side} position={[side * (slider / 2 + 0.035), 0.021, d * 0.41]} rotation={[-Math.PI / 2, 0, 0]}>
-              <circleGeometry args={[0.008, 20]} />
-              <meshStandardMaterial color={c('zones')} emissive="#ff6a2a" emissiveIntensity={1.2 * lit} />
-            </mesh>
-          ))}
-        </group>
-      )
-    }
+    case 'hob':
+      return <Hob style={decorationVariant(kind, item.variant)?.id ?? ''} w={p('width')} d={p('depth')} fit={fit} />
     case 'ceiling_extractor': {
       // A flush ceiling extractor: a shallow panel let into the ceiling
       // rather than a canopy hanging over the hob, with a perimeter grille
