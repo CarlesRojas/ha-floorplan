@@ -326,8 +326,8 @@ rooms:
     name: "Floor plant"
     points:
       - [23.5, 4.8]
-      - [32.65, 4.8]
-      - [32.65, 7.1]
+      - [31.45, 4.8]
+      - [31.45, 7.1]
       - [23.5, 7.1]
   - id: plant_small
     name: "Shelf plant"
@@ -1135,20 +1135,15 @@ decorations:
     room: plant_large
     position: [27.55, 5.95]
     variant: kentia
-  - id: plant_large_rubber
+  - id: plant_large_mango
     kind: plant_large
     room: plant_large
-    position: [29.05, 5.95]
-    variant: rubber
-  - id: plant_large_rubber_full
-    kind: plant_large
-    room: plant_large
-    position: [30.33, 5.95]
-    variant: rubber_full
+    position: [29.13, 5.95]
+    variant: mango
   - id: plant_large_bird
     kind: plant_large
     room: plant_large
-    position: [31.7, 5.95]
+    position: [30.5, 5.95]
     variant: bird
   - id: plant_small_pothos
     kind: plant_small
@@ -1221,18 +1216,18 @@ decorations:
     kind: books
     room: books
     position: [24.13, 17.5]
-  - id: curtain_wave
+  - id: curtain_eyelet
     kind: curtain
     room: curtain
     position: [24.7, 18.6]
     rotation: 180
-    variant: wave
-  - id: curtain_eyelet
+    variant: eyelet
+  - id: curtain_wave
     kind: curtain
     room: curtain
     position: [26.6, 18.6]
     rotation: 180
-    variant: eyelet
+    variant: wave
   - id: tv
     kind: tv
     room: tv

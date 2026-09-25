@@ -658,30 +658,24 @@ function pearls(width: number, top: number, reach: number, trail: number): Parts
   return f
 }
 
-// Rubber plant, Ficus elastica: two upright stems from the pot, the big
-// glossy oval leaves alternating up them on short stalks, held out and up.
-// A full one is a bushier plant of five stems at different heights, leaning
-// out a little, their leaves closer together and held up more eagerly,
-// all the way down to the pot.
-function rubber(size: number, height: number, potH: number, full = false): Parts {
+// Mango plant, Mangifera indica, young in a pot: five stems at different
+// heights from the pot, leaning out a little, the big glossy leaves close
+// together up them on short stalks and held up, all the way down to the pot.
+function mango(size: number, height: number, potH: number): Parts {
   const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
-  const rnd = random(full ? 53 : 37)
+  const rnd = random(53)
   const soil = potH * 0.9
-  const L = clamp(height * (full ? 0.13 : 0.15), 0.1, 0.3)
-  const tops = full
-    ? [
-        new Vector3(0.02, height - L * 0.3, 0.01),
-        new Vector3(-size * 0.28, height * 0.84 - L * 0.3, -size * 0.05),
-        new Vector3(size * 0.27, height * 0.76 - L * 0.3, -size * 0.08),
-        new Vector3(size * 0.06, height * 0.64 - L * 0.3, size * 0.28),
-        new Vector3(-size * 0.16, height * 0.56 - L * 0.3, size * 0.2),
-      ]
-    : [new Vector3(0.03, height - L * 0.3, 0.01), new Vector3(-size * 0.12, height * 0.82 - L * 0.3, -0.02)]
+  const L = clamp(height * 0.13, 0.1, 0.3)
+  const tops = [
+    new Vector3(0.02, height - L * 0.3, 0.01),
+    new Vector3(-size * 0.28, height * 0.84 - L * 0.3, -size * 0.05),
+    new Vector3(size * 0.27, height * 0.76 - L * 0.3, -size * 0.08),
+    new Vector3(size * 0.06, height * 0.64 - L * 0.3, size * 0.28),
+    new Vector3(-size * 0.16, height * 0.56 - L * 0.3, size * 0.2),
+  ]
   let k = 0
   tops.forEach((tip, n) => {
-    const base = full
-      ? new Vector3(tip.x * 0.1, soil - 0.03, tip.z * 0.1)
-      : new Vector3(n ? -0.02 : 0.015, soil - 0.03, n ? -0.01 : 0.01)
+    const base = new Vector3(tip.x * 0.1, soil - 0.03, tip.z * 0.1)
     const r = clamp(height * 0.01, 0.008, 0.02) * (n ? 0.85 : 1)
     const bend = base
       .clone()
@@ -689,8 +683,8 @@ function rubber(size: number, height: number, potH: number, full = false): Parts
       .add(new Vector3(n ? -0.02 : 0.02, 0, 0))
     f.stems.stem([base.toArray() as Vec3, bend.toArray() as Vec3, tip.toArray() as Vec3], r, r * 0.6)
     const curve = new CatmullRomCurve3([base, bend, tip])
-    const count = Math.max(5, Math.round((tip.y - soil) / (full ? 0.055 : 0.08)))
-    const from = full ? 0.08 : 0.2
+    const count = Math.max(5, Math.round((tip.y - soil) / 0.055))
+    const from = 0.08
     for (let i = 0; i < count; i++) {
       const s = from + ((1 - from) * (i + 1)) / count
       const at = curve.getPointAt(Math.min(s, 1))
@@ -710,13 +704,13 @@ function rubber(size: number, height: number, potH: number, full = false): Parts
           cols: 4,
         },
         at,
-        heading(k++ * 2.4 + rnd() * 0.3, (full ? 0.3 : 0.1) + s * 0.8 - (1 - Math.max(reach, 0)) * 0.3),
+        heading(k++ * 2.4 + rnd() * 0.3, 0.3 + s * 0.8 - (1 - Math.max(reach, 0)) * 0.3),
         0.03,
         UP,
         (rnd() - 0.5) * 0.3,
       )
     }
-    // The red sheath the new leaf unrolls from, at the tip.
+    // The bud the next leaves open from, at the tip.
     f.stems.stem([tip.toArray() as Vec3, [tip.x, tip.y + L * 0.3, tip.z]], r * 0.6, r * 0.2)
   })
   return f
@@ -772,10 +766,7 @@ export function FloorPlant({
   height: number
   paint: Paint
 }) {
-  const kind =
-    style === 'monstera' || style === 'kentia' || style === 'rubber' || style === 'rubber_full' || style === 'bird'
-      ? style
-      : 'fiddle'
+  const kind = style === 'monstera' || style === 'kentia' || style === 'mango' || style === 'bird' ? style : 'fiddle'
   const potR = kind === 'kentia' ? clamp(size * 0.16, 0.14, 0.22) : clamp(size * 0.2, 0.1, 0.2)
   const potH = kind === 'kentia' ? clamp(height * 0.2, 0.2, 0.38) : clamp(height * 0.2, 0.16, 0.34)
   const grown = useMemo(
@@ -785,8 +776,8 @@ export function FloorPlant({
           ? monstera(size, height, potH)
           : kind === 'kentia'
             ? kentia(size, height, potH)
-            : kind === 'rubber' || kind === 'rubber_full'
-              ? rubber(size, height, potH, kind === 'rubber_full')
+            : kind === 'mango'
+              ? mango(size, height, potH)
               : kind === 'bird'
                 ? bird(size, height, potH)
                 : fiddle(size, height, potH),

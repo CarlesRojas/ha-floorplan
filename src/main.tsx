@@ -53,7 +53,7 @@ const SPLIT: Record<string, Record<string, string[]>> = {
 // The sofa's chaise was a style of its own before every style could have
 // one, and a saved one keeps its chaise and its old width. The curtain's
 // linen pleat was dropped for the sheer wave, and the station clock for a
-// digital one. A style can
+// digital one. Both rubber plants gave way to the mango plant. A style can
 // bring parameters that the item's own saved ones override.
 type Restyle = string | { variant: string; params: Record<string, number> }
 const RESTYLED: Record<string, Record<string, Restyle>> = {
@@ -66,6 +66,7 @@ const RESTYLED: Record<string, Record<string, Restyle>> = {
   wall_clock: { station: 'digital' },
   sideboard: { usm: 'credenza' },
   bed_double: { platform: { variant: 'headboard', params: { headboard: 0 } } },
+  plant_large: { rubber: 'mango', rubber_full: 'mango' },
 }
 
 function migrate(config: CardConfig): CardConfig {

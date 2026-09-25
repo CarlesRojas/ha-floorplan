@@ -1512,15 +1512,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
         params: { size: 1.3, height: 1.8 },
       },
       {
-        id: 'rubber',
-        label: 'Rubber plant',
-        colors: { pot: '#d9d4ca', soil: '#3c332b', stems: '#8a4a3a', leaves: '#2c4430' },
-        materials: { pot: 'concrete', soil: 'matte', stems: 'matte', leaves: 'ceramic' },
-        params: { size: 0.7, height: 1.4 },
-      },
-      {
-        id: 'rubber_full',
-        label: 'Rubber bush',
+        id: 'mango',
+        label: 'Mango plant',
         colors: { pot: '#c9b79c', soil: '#3c332b', stems: '#9a5a44', leaves: '#3a6a3a' },
         materials: { pot: 'ceramic', soil: 'matte', stems: 'matte', leaves: 'ceramic' },
         params: { size: 0.85, height: 1.5 },
@@ -1668,12 +1661,17 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { fabric: 'fabric', rail: 'matte' },
     TOGGLE_LEVEL,
     [
-      { id: 'wave', label: 'Sheer Wave' },
       {
         id: 'eyelet',
         label: 'Velvet Eyelet',
         colors: { fabric: '#c9c9c6', rail: '#2b2c2d' },
         materials: { fabric: 'fabric', rail: 'metal' },
+      },
+      {
+        id: 'wave',
+        label: 'Sheer Wave',
+        colors: { fabric: '#f4f1ea', rail: '#e9e7e2' },
+        materials: { fabric: 'fabric', rail: 'matte' },
       },
     ],
   ),
