@@ -33,7 +33,7 @@ import {
   TulipCoffeeTable,
   WirePocket,
 } from '#/scene/decor/Storage.tsx'
-import { Bar, Cushion, Knob, Legs, Material, Panel, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Knob, Legs, Material, Panel, Slab, Soft } from '#/scene/decor/parts.tsx'
 import type { DecorationConfig } from '#/types.ts'
 import type { ReactNode } from 'react'
 
@@ -490,7 +490,8 @@ export default function FurnitureModel({ kind, item, state }: Props) {
       // The duvet's head edge, where the turned back band starts, a hand
       // below the pillows.
       const duvetZ = -l / 2 + 0.07 + pillowD + 0.04
-      const duvetL = l / 2 - 0.02 - duvetZ
+      const duvetL = l / 2 - duvetZ
+      const duvetT = 0.03
       const fold = l * 0.12
       const bedding = () => <Material color={c('bedding')} material={m('bedding')} />
       return (
@@ -529,26 +530,46 @@ export default function FurnitureModel({ kind, item, state }: Props) {
           <Slab size={[w, mattress, l]} radius={0.1} bevel={0.02} position={[0, frameH, 0]}>
             {bedding()}
           </Slab>
-          {/* Duvet over the foot, its top edge turned back on itself: the
-              band lies on the duvet from its head edge toward the foot. */}
-          <Slab size={[w + 0.03, 0.08, duvetL]} radius={0.05} position={[0, frameH + mattress, duvetZ + duvetL / 2]}>
+          {/* A thin duvet down to the foot of the mattress, its top edge
+              turned back on itself: the band lies on the duvet from its
+              head edge toward the foot. Both are soft and a little rucked,
+              the way a made bed is. */}
+          <Soft
+            size={[w + 0.03, duvetT, duvetL]}
+            round={[0.015, duvetT / 2, 0.015]}
+            puff={[0, 0.008, 0]}
+            wrinkle={0.005}
+            position={[0, frameH + mattress + duvetT / 2, duvetZ + duvetL / 2]}
+          >
             {bedding()}
-          </Slab>
-          <Slab size={[w + 0.03, 0.05, fold]} radius={0.03} position={[0, frameH + mattress + 0.07, duvetZ + fold / 2]}>
+          </Soft>
+          <Soft
+            size={[w + 0.03, 0.022, fold]}
+            round={[0.012, 0.011, 0.011]}
+            puff={[0, 0.006, 0]}
+            wrinkle={0.003}
+            position={[0, frameH + mattress + duvetT + 0.011, duvetZ + fold / 2]}
+          >
             {bedding()}
-          </Slab>
+          </Soft>
+          {/* Pillows thin at the seams and full in the middle, leaning back
+              against the head of the bed. */}
           {Array.from({ length: pillows }).map((_, i) => (
-            <Cushion
+            <Soft
               key={i}
-              size={[pillowW, 0.13, pillowD]}
+              size={[pillowW, 0.05, pillowD]}
+              round={[0.05, 0.025, 0.05]}
+              puff={[0.012, 0.055, 0.012]}
+              wrinkle={0.004}
+              rotation={[-0.22, 0, 0]}
               position={[
                 -w / 2 + 0.05 + ((w - 0.1) / pillows) * (i + 0.5),
-                frameH + mattress,
+                frameH + mattress + 0.07,
                 -l / 2 + 0.07 + pillowD / 2,
               ]}
             >
               <Material color={c('pillows')} material={m('pillows')} />
-            </Cushion>
+            </Soft>
           ))}
         </group>
       )

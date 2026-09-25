@@ -2,6 +2,7 @@ import { roundedShape } from '#/geometry/polygon.ts'
 import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { useFrame } from '@react-three/fiber'
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useMemo, useRef, type ReactNode } from 'react'
 import {
   CatmullRomCurve3,
@@ -9,6 +10,7 @@ import {
   ExtrudeGeometry,
   Quaternion,
   Shape,
+  SphereGeometry,
   TubeGeometry,
   Object3D,
   Vector3,
@@ -358,6 +360,77 @@ export function Cushion({
   )
 }
 
+// A box `size` across whose edges round off by `round` along each axis,
+// and whose faces swell out by `puff` along each axis in their middle. It is
+// a sphere pushed out to the box, so every rounded edge comes in as many
+// steps as a quarter of the sphere has. `wrinkle` ruffles the faces by that
+// much, the loose creases of a cover that has been sat on, so no two parts
+// of it catch the light quite the same.
+function softBox([w, h, d]: Vec3, [rx, ry, rz]: Vec3, [px, py, pz]: Vec3, wrinkle = 0) {
+  const sphere = new SphereGeometry(1, SEG * 4, SEG * 2)
+  sphere.deleteAttribute('uv')
+  sphere.deleteAttribute('normal')
+  const geometry = mergeVertices(sphere)
+  sphere.dispose()
+  const pos = geometry.attributes.position
+  const [hx, hy, hz] = [w / 2, h / 2, d / 2]
+  const [cx, cy, cz] = [Math.max(hx - rx, 0), Math.max(hy - ry, 0), Math.max(hz - rz, 0)]
+  // Which side of the middle a point is on. The sphere's own seams fall on
+  // the middle, and those stay there, in the middle of a flat face.
+  const side = (v: number) => (Math.abs(v) < 1e-6 ? 0 : Math.sign(v))
+  for (let i = 0; i < pos.count; i++) {
+    const [nx, ny, nz] = [pos.getX(i), pos.getY(i), pos.getZ(i)]
+    let x = side(nx) * cx + rx * nx
+    let y = side(ny) * cy + ry * ny
+    let z = side(nz) * cz + rz * nz
+    const [u, v, t] = [x / hx, y / hy, z / hz]
+    x += nx * px * (1 - v * v) * (1 - t * t)
+    y += ny * py * (1 - u * u) * (1 - t * t)
+    z += nz * pz * (1 - u * u) * (1 - v * v)
+    if (wrinkle > 0) {
+      // Low waves across the faces, fading out toward the edges so the
+      // outline stays clean.
+      const ruck =
+        Math.sin(x * 23 + z * 7 + y * 3) * Math.sin(y * 17 - x * 5) * 0.6 + Math.sin(z * 29 + y * 11 - x * 4) * 0.4
+      const face = (1 - u * u * v * v * t * t) * wrinkle * ruck
+      x += nx * face
+      y += ny * face
+      z += nz * face
+    }
+    pos.setXYZ(i, x, y, z)
+  }
+  geometry.computeVertexNormals()
+  return geometry
+}
+
+// A soft block centered on `position`, as softBox shapes it.
+export function Soft({
+  size,
+  round,
+  puff = [0, 0, 0],
+  wrinkle = 0,
+  position,
+  rotation,
+  children,
+}: {
+  size: Vec3
+  round: Vec3
+  puff?: Vec3
+  wrinkle?: number
+  position: Vec3
+  rotation?: Vec3
+  children: ReactNode
+}) {
+  const key = [...size, ...round, ...puff, wrinkle].join()
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- the key is the sizes
+  const geometry = useMemo(() => softBox(size, round, puff, wrinkle), [key])
+  return (
+    <mesh geometry={geometry} position={position} rotation={rotation} castShadow receiveShadow>
+      {children}
+    </mesh>
+  )
+}
+
 // A squashed sphere, the soft volume used for shades, pots and pebbles.
 export function Blob({
   radius,
@@ -566,6 +639,7 @@ export function Steam({
   drift = [0, 0],
   color = '#eef3f5',
   phase = 0,
+  glow = 0.25,
 }: {
   on: boolean
   position: [number, number, number]
@@ -579,6 +653,8 @@ export function Steam({
   // Where in its cycle this plume starts, so plumes side by side do not
   // puff in step.
   phase?: number
+  // How much the puffs light themselves, so tinted air still shows its tint.
+  glow?: number
 }) {
   const lit = useEased(on ? 1 : 0, 3)
   const puffs = useRef<(Mesh | null)[]>([])
@@ -617,7 +693,7 @@ export function Steam({
             depthWrite={false}
             roughness={1}
             emissive={color}
-            emissiveIntensity={0.25}
+            emissiveIntensity={glow}
           />
         </mesh>
       ))}

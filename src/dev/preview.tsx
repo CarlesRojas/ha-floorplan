@@ -9,7 +9,7 @@
 // &yaw=90 looks at it from its right side, and pitch raises the view by that
 // many degrees. stand puts it on a piece of that kind at its defaults, so
 // &stand=kitchen_counter shows a sink let into a counter, and at moves it
-// that far along the piece. Drag to turn it, scroll to zoom.
+// that far along the piece. text is the state in words, as &text=heat. Drag to turn it, scroll to zoom.
 import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
 import { deskRise } from '#/scene/decor/state.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -33,7 +33,8 @@ const params: Record<string, number> = {}
 // dark model.
 const colors: Record<string, string> = {}
 for (const [key, value] of query) {
-  if (['kind', 'variant', 'on', 'dark', 'compare', 'spread', 'yaw', 'pitch', 'stand', 'at'].includes(key)) continue
+  if (['kind', 'variant', 'on', 'dark', 'compare', 'spread', 'yaw', 'pitch', 'stand', 'at', 'text'].includes(key))
+    continue
   if (value.startsWith('#')) colors[key] = value
   else if (Number.isFinite(Number(value))) params[key] = Number(value)
 }
@@ -92,6 +93,7 @@ createRoot(root).render(
                   level: state ? 1 : 0,
                   levels: { open: Number(query.get('open') ?? 1), tilt: Number(query.get('tilt') ?? 0) },
                   glow: [glow.r, glow.g, glow.b],
+                  text: query.get('text') ?? undefined,
                 }}
                 // Whatever stands on a standing desk goes up with it.
                 raise={

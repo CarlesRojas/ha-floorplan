@@ -755,6 +755,145 @@ function bird(size: number, height: number, potH: number): Parts {
   return f
 }
 
+// Golden bamboo, Phyllostachys aurea, a clump of canes in a tall pot: straight
+// canes ringed at every node, thin branches from the upper nodes, and sprays
+// of narrow leaves hanging off them.
+function bamboo(size: number, height: number, potH: number): Parts {
+  const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
+  const rnd = random(61)
+  const soil = potH * 0.9
+  const canes = 7
+  const r = clamp(height * 0.006, 0.006, 0.013)
+  const L = clamp(height * 0.08, 0.08, 0.16)
+  for (let i = 0; i < canes; i++) {
+    const a = i * 2.4 + rnd() * 0.3
+    const lean = 0.03 + rnd() * 0.07
+    const tall = (height - soil - L * 0.3) * (0.72 + (0.28 * ((i * 3) % canes)) / (canes - 1))
+    const base = new Vector3(Math.sin(a) * 0.045 * rnd(), soil - 0.03, Math.cos(a) * 0.045 * rnd())
+    const up = heading(a, Math.PI / 2 - lean)
+    const top = base.clone().addScaledVector(up, tall)
+    f.stems.stem([base.toArray() as Vec3, top.toArray() as Vec3], r, r * 0.65)
+    const nodes = Math.max(5, Math.round(tall / 0.15))
+    for (let j = 1; j <= nodes; j++) {
+      const s = j / nodes
+      const at = base.clone().addScaledVector(up, tall * s)
+      // The ring each node makes on the cane.
+      if (j < nodes) {
+        const below = at.clone().addScaledVector(up, -0.004)
+        const above = at.clone().addScaledVector(up, 0.004)
+        f.stems.stem([below.toArray() as Vec3, above.toArray() as Vec3], r * (1.2 - s * 0.3), r * (1.2 - s * 0.3))
+      }
+      if (s < 0.4) continue
+      const out = heading(a + (j % 2 ? 1 : -1) * (0.9 + rnd() * 0.6), 0.25 + rnd() * 0.35)
+      const room = size / 2 - Math.hypot(at.x, at.z)
+      const long = clamp(room * 0.7, 0.05, 0.22) * (1.15 - s * 0.45)
+      const end = at.clone().addScaledVector(out, long)
+      f.stems.stem([at.toArray() as Vec3, end.toArray() as Vec3], r * 0.3, r * 0.15)
+      const leaves = 3 + Math.floor(rnd() * 3)
+      for (let q = 0; q < leaves; q++) {
+        const from = at.clone().lerp(end, 0.35 + (0.65 * q) / Math.max(leaves - 1, 1))
+        const length = L * (0.75 + rnd() * 0.4)
+        f.leaves.blade(
+          {
+            length,
+            width: length * 0.13,
+            outline: LANCE,
+            fold: 0.25,
+            droop: length * 0.22,
+            rows: 8,
+            cols: 1,
+          },
+          place(from, heading(a + (rnd() - 0.5) * 2.4, -0.2 - rnd() * 0.6)),
+        )
+      }
+    }
+  }
+  return f
+}
+
+// Weeping fig, Ficus benjamina, grown as a small standard: a slim trunk that
+// splits low into arching branches, hung all over with small pointed glossy
+// leaves that droop toward their tips.
+function ficus(size: number, height: number, potH: number): Parts {
+  const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
+  const rnd = random(67)
+  const soil = potH * 0.9
+  const trunkR = clamp(height * 0.01, 0.01, 0.022)
+  const fork = soil + (height - soil) * 0.28
+  f.stems.stem(
+    [
+      [0, soil - 0.03, 0],
+      [0.012, (soil + fork) / 2, -0.006],
+      [0, fork, 0],
+    ],
+    trunkR,
+    trunkR * 0.8,
+  )
+  const top = new Vector3(0, fork, 0)
+  const L = clamp(height * 0.04, 0.045, 0.08)
+  const ficusLeaf = (at: Vector3, toward: Vector3, scale: number) => {
+    const length = L * (0.8 + rnd() * 0.35) * scale
+    leaf(
+      f,
+      {
+        length,
+        width: length * 0.42,
+        outline: OVAL,
+        fold: 0.15,
+        droop: length * 0.2,
+        curl: length * 0.03,
+        rows: 7,
+        cols: 2,
+      },
+      at,
+      toward,
+      0.01,
+      UP,
+      (rnd() - 0.5) * 0.5,
+    )
+  }
+  const branches = 13
+  let k = 0
+  for (let i = 0; i < branches; i++) {
+    const a = i * 2.4 + rnd() * 0.4
+    // The first branches rise steeply to make the top of the crown, the
+    // later ones spread wider and weep lower.
+    const from = 1.4 - (i / branches) * 0.8 - rnd() * 0.1
+    const to = from - 1.5
+    // Fit the arch to the height and spread asked, measured on a unit one.
+    const unit = arch(new Vector3(), a, from, to, 1, 1.4)
+    const peak = Math.max(...unit.points.map(q => q.y))
+    const out = Math.max(...unit.points.map(q => Math.hypot(q.x, q.z)))
+    const length =
+      Math.min((height - fork - L) / Math.max(peak, 0.2), (size / 2 - L * 1.5) / Math.max(out, 0.1)) *
+      (0.75 + (0.25 * ((i * 3) % branches)) / branches)
+    const branch = arch(top, a, from, to, length, 1.4)
+    f.stems.stem(
+      branch.points.map(q => q.toArray() as Vec3),
+      trunkR * 0.45,
+      trunkR * 0.12,
+    )
+    // Short twigs hang off the branch, each leafy along its length, which
+    // fills the crown out into the soft weeping mass the tree is.
+    const twigs = Math.max(4, Math.round(length / 0.05))
+    for (let j = 0; j < twigs; j++) {
+      const s = 0.25 + (0.75 * (j + 0.5)) / twigs
+      const { at } = branch.sample(s)
+      const out = heading(a + (j % 2 ? 1 : -1) * (0.6 + rnd() * 0.6), -0.3 - rnd() * 0.7)
+      const long = L * (1.2 + rnd() * 0.8)
+      const end = at.clone().addScaledVector(out, long)
+      f.stems.stem([at.toArray() as Vec3, end.toArray() as Vec3], 0.0025, 0.0015)
+      const count = 3 + Math.floor(rnd() * 3)
+      for (let n = 0; n < count; n++) {
+        const along = at.clone().lerp(end, (n + 1) / count)
+        ficusLeaf(along, heading(k++ * 2.4 + rnd() * 0.5, -0.2 - rnd() * 0.8), n === count - 1 ? 0.75 : 1)
+      }
+      ficusLeaf(at, heading(k++ * 2.4, 0.1 - rnd() * 0.5), 1)
+    }
+  }
+  return f
+}
+
 export function FloorPlant({
   style,
   size,
@@ -766,7 +905,7 @@ export function FloorPlant({
   height: number
   paint: Paint
 }) {
-  const kind = style === 'monstera' || style === 'kentia' || style === 'mango' || style === 'bird' ? style : 'fiddle'
+  const kind = (['monstera', 'kentia', 'mango', 'bird', 'bamboo', 'ficus'] as const).find(k => k === style) ?? 'fiddle'
   const potR = kind === 'kentia' ? clamp(size * 0.16, 0.14, 0.22) : clamp(size * 0.2, 0.1, 0.2)
   const potH = kind === 'kentia' ? clamp(height * 0.2, 0.2, 0.38) : clamp(height * 0.2, 0.16, 0.34)
   const grown = useMemo(
@@ -780,7 +919,11 @@ export function FloorPlant({
               ? mango(size, height, potH)
               : kind === 'bird'
                 ? bird(size, height, potH)
-                : fiddle(size, height, potH),
+                : kind === 'bamboo'
+                  ? bamboo(size, height, potH)
+                  : kind === 'ficus'
+                    ? ficus(size, height, potH)
+                    : fiddle(size, height, potH),
       ),
     [kind, size, height, potH],
   )

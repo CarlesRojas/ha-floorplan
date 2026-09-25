@@ -91,7 +91,9 @@ export function deviceSignals(hass: HomeAssistant, entityId: string): Signal[] {
       // A vacuum is started and sent home, which is a switch as far as the
       // models are concerned: running or not.
       return ['toggle']
+    // A climate device runs or not, and says in words what it runs as.
     case 'climate':
+      return ['toggle', 'enum']
     case 'select':
     case 'input_select':
       return ['enum']
@@ -142,6 +144,13 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
     // of them means it is out on the floor.
     case 'vacuum':
       return { on: state === 'cleaning', state }
+    // Its mode is the setting, heat or cool. What it is doing right now,
+    // heating or cooling, says more when the device reports it.
+    case 'climate': {
+      const action = attrs.hvac_action
+      const doing = action === 'heating' || action === 'cooling' ? action : undefined
+      return { on: !['off', 'unavailable', 'unknown'].includes(state), state: doing ?? state }
+    }
     case 'sensor':
     case 'number':
     case 'input_number':

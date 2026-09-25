@@ -1,4 +1,4 @@
-import { Panel, SEG } from '#/scene/decor/parts.tsx'
+import { Panel, Soft } from '#/scene/decor/parts.tsx'
 import {
   BLOCK_ARM_TOP,
   BLOCK_ARM_W,
@@ -26,9 +26,7 @@ import {
   SOFA_SEAT_H,
   SOFA_SEAT_MIN,
 } from '#/scene/decor/sofaSpecs.ts'
-import { useMemo, type ReactNode } from 'react'
-import { SphereGeometry } from 'three'
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { type ReactNode } from 'react'
 
 // The sofas, and a pouf to go with each. The upholstered parts are soft
 // blocks: a box with its edges rounded off and its faces a little full, the
@@ -36,60 +34,6 @@ import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 type Vec3 = [number, number, number]
 type Slot = (slot: string) => ReactNode
-
-// A box `size` across whose edges round off by `round` along each axis,
-// and whose faces swell out by `puff` along each axis in their middle. It is
-// a sphere pushed out to the box, so every rounded edge comes in as many
-// steps as a quarter of the sphere has.
-function softBox([w, h, d]: Vec3, [rx, ry, rz]: Vec3, [px, py, pz]: Vec3) {
-  const sphere = new SphereGeometry(1, SEG * 4, SEG * 2)
-  sphere.deleteAttribute('uv')
-  sphere.deleteAttribute('normal')
-  const geometry = mergeVertices(sphere)
-  sphere.dispose()
-  const pos = geometry.attributes.position
-  const [hx, hy, hz] = [w / 2, h / 2, d / 2]
-  const [cx, cy, cz] = [Math.max(hx - rx, 0), Math.max(hy - ry, 0), Math.max(hz - rz, 0)]
-  // Which side of the middle a point is on. The sphere's own seams fall on
-  // the middle, and those stay there, in the middle of a flat face.
-  const side = (v: number) => (Math.abs(v) < 1e-6 ? 0 : Math.sign(v))
-  for (let i = 0; i < pos.count; i++) {
-    const [nx, ny, nz] = [pos.getX(i), pos.getY(i), pos.getZ(i)]
-    let x = side(nx) * cx + rx * nx
-    let y = side(ny) * cy + ry * ny
-    let z = side(nz) * cz + rz * nz
-    const [u, v, t] = [x / hx, y / hy, z / hz]
-    x += nx * px * (1 - v * v) * (1 - t * t)
-    y += ny * py * (1 - u * u) * (1 - t * t)
-    z += nz * pz * (1 - u * u) * (1 - v * v)
-    pos.setXYZ(i, x, y, z)
-  }
-  geometry.computeVertexNormals()
-  return geometry
-}
-
-function Soft({
-  size,
-  round,
-  puff = [0, 0, 0],
-  position,
-  children,
-}: {
-  size: Vec3
-  round: Vec3
-  puff?: Vec3
-  position: Vec3
-  children: ReactNode
-}) {
-  const key = [...size, ...round, ...puff].join()
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- the key is the sizes
-  const geometry = useMemo(() => softBox(size, round, puff), [key])
-  return (
-    <mesh geometry={geometry} position={position} castShadow receiveShadow>
-      {children}
-    </mesh>
-  )
-}
 
 type LegAt = { x: number; z: number; out: [number, number] }
 
@@ -203,7 +147,13 @@ function BackCushion({
 }) {
   return (
     <group position={[x, y, z]} rotation={[-lean, 0, 0]}>
-      <Soft size={[w, h, t]} round={[0.07, 0.07, 0.07]} puff={[0, 0, 0.02]} position={[0, h / 2, -t / 2]}>
+      <Soft
+        size={[w, h, t]}
+        round={[0.07, 0.07, 0.07]}
+        puff={[0.01, 0.015, 0.035]}
+        wrinkle={0.003}
+        position={[0, h / 2, -t / 2]}
+      >
         {M('cushions')}
       </Soft>
     </group>
@@ -295,7 +245,8 @@ function PillowSofa({ w, d, reach, chaise, flip, M }: SofaProps) {
             <Soft
               size={[seatW - 0.012, SOFA_SEAT_H, to - seatBack]}
               round={[0.06, 0.07, 0.06]}
-              puff={[0, 0.012, 0]}
+              puff={[0.008, 0.028, 0.008]}
+              wrinkle={0.003}
               position={[seatX(i), seatY + SOFA_SEAT_H / 2, (seatBack + to) / 2]}
             >
               {M('cushions')}
@@ -317,7 +268,8 @@ function PillowSofa({ w, d, reach, chaise, flip, M }: SofaProps) {
               <Soft
                 size={[Math.min(lumbarW, seatW * 0.62), lumbarH, lumbarT]}
                 round={[0.05, 0.06, 0.05]}
-                puff={[0, 0, 0.03]}
+                puff={[0.01, 0.01, 0.04]}
+                wrinkle={0.003}
                 position={[0, lumbarH / 2, -lumbarT / 2]}
               >
                 {M('cushions')}

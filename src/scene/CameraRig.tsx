@@ -29,6 +29,28 @@ export default function CameraRig({ rooms, decorations }: Props) {
     return () => controls.removeEventListener('start', onStart)
   }, [controls])
 
+  // A drag let go outside the window never hears its button come up, which
+  // the right and middle buttons miss in some browsers, and the pan or zoom
+  // it started would carry on with no button held. A move with no button
+  // down ends it, as the release would have.
+  useEffect(() => {
+    if (!controls) return
+    const element = controls.domElement as HTMLElement | null
+    if (!element) return
+    // The controls' own release handler and the pointers they hold down.
+    const inner = controls as unknown as { _onPointerUp: (event: PointerEvent) => void; _pointers: number[] }
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' && event.buttons === 0 && inner._pointers.includes(event.pointerId))
+        inner._onPointerUp(event)
+    }
+    // The controls follow a drag on the whole document, and once the pointer
+    // comes back it may be over anything, so the check listens there too and
+    // runs ahead of them.
+    const page = element.ownerDocument
+    page.addEventListener('pointermove', onMove, { capture: true })
+    return () => page.removeEventListener('pointermove', onMove, { capture: true })
+  }, [controls])
+
   useLayoutEffect(() => {
     if (moved.current) return
     const { position, target } = frameRooms(rooms, size.width / size.height, sceneHeight(decorations))

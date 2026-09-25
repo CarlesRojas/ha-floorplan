@@ -1,5 +1,5 @@
 import type { Fit } from '#/scene/decor/Kitchen.tsx'
-import { Hollow, SEG, Slab, Stream, Tube } from '#/scene/decor/parts.tsx'
+import { Fill, Hollow, SEG, Slab, Stream, Tube } from '#/scene/decor/parts.tsx'
 import { sinkPlan, type SinkStyle } from '#/scene/decor/sinkSpecs.ts'
 
 // A kitchen sink in one of three styles, with the tap that goes with it. Its
@@ -164,6 +164,8 @@ export function Sink({ style, w, d, fit }: { style: SinkStyle; w: number; d: num
           {M('bowl')}
         </Hollow>
         <Waste x={0} y={top - b.depth} z={0} fit={fit} />
+        {/* A little water stands in the bowl while the tap runs. */}
+        <Fill on={fit.on} share={0.25} rate={0.8} floor={top - b.depth} top={top} w={b.w} l={b.d} r={b.r} />
         <group position={[tx, 0, tz]}>
           <BridgeTap fit={fit} />
         </group>
@@ -199,6 +201,9 @@ export function Sink({ style, w, d, fit }: { style: SinkStyle; w: number; d: num
           {M('bowl')}
         </Hollow>
         <Waste x={b.x} y={-b.depth + 0.012} z={b.z} fit={fit} />
+        <group position={[b.x, 0, b.z]}>
+          <Fill on={fit.on} share={0.25} rate={0.8} floor={-b.depth + 0.012} top={0} w={b.w} l={b.d} r={b.r} />
+        </group>
         {Array.from({ length: ribs }, (_, i) => (
           <mesh key={i} position={[from + 0.014 + i * 0.028, rim + 0.001, b.z]}>
             <boxGeometry args={[0.01, 0.002, b.d * 0.8]} />
@@ -231,6 +236,21 @@ export function Sink({ style, w, d, fit }: { style: SinkStyle; w: number; d: num
             {M('bowl')}
           </Hollow>
           <Waste x={b.x} y={-0.004 - b.depth + 0.01} z={b.z} fit={fit} />
+          {/* Only the bowl under the tap holds water. */}
+          {i === 0 && (
+            <group position={[b.x, 0, b.z]}>
+              <Fill
+                on={fit.on}
+                share={0.25}
+                rate={0.8}
+                floor={-0.004 - b.depth + 0.01}
+                top={-0.004}
+                w={b.w}
+                l={b.d}
+                r={b.r}
+              />
+            </group>
+          )}
         </group>
       ))}
       <group position={[tx, 0, tz]}>

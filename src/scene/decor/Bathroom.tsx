@@ -285,6 +285,19 @@ export function Basin({ style, w, d, h, fit }: { style?: string; w: number; d: n
         {M('bowl')}
       </Hollow>
       <Waste y={h - bh + wall} z={bz} fit={fit} />
+      {/* A little water stands in the bowl while the tap runs. */}
+      <group position={[0, 0, bz]}>
+        <Fill
+          on={fit.on}
+          share={0.3}
+          rate={0.8}
+          floor={h - bh + wall}
+          top={h}
+          w={bw - wall * 2}
+          l={bd - wall * 2}
+          r={Math.max(br - wall, 0.01)}
+        />
+      </group>
       {kind === 'vanity' && <Vanity w={w} d={d} top={h - t} opening={opening} fit={fit} />}
       {kind === 'wall_hung' && (
         // The bottle trap, down from the waste and back into the wall.

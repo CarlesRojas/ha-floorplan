@@ -227,6 +227,7 @@ function Stove({ p, c, M, on }: Look) {
         height={doorH * 0.6}
         count={9}
         position={[0, doorY + 0.04, front - box * 0.45]}
+        sparks
       />
       {/* The door: an iron frame round a clear pane. */}
       <mesh position={[0, doorY + doorH / 2, front + 0.01]}>
@@ -259,13 +260,19 @@ function Stove({ p, c, M, on }: Look) {
 // pencil pine, set round a little from the whorl below and every one a
 // slightly different length and shade. Warm white fairy lights are
 // scattered over it, thicker lower down where there is more tree, and run
-// through their patterns while it is on.
+// through their patterns while it is on. It stands in a woven basket, rows
+// of rattan round a core with a thick rim at the top.
 function ChristmasTree({ p, M, style, on }: Look) {
   const size = p('size')
   const h = p('height')
   const R = size / 2
   const slim = style === 'slim'
   const potH = Math.min(0.24, h * 0.13)
+  const basketTop = R * 0.36
+  const basketBottom = R * 0.3
+  const rows = Math.max(5, Math.round(potH / 0.03))
+  const stakes = Math.max(12, Math.round(basketTop * 60))
+  const lean = Math.atan2(basketTop - basketBottom, potH)
   // The lowest whorl, a little clear of the pot.
   const y0 = potH + Math.min(0.1, h * 0.05)
   const crown = h - y0
@@ -300,7 +307,7 @@ function ChristmasTree({ p, M, style, on }: Look) {
       }
     }
     // The leader, standing up out of the last whorl.
-    shoot([0, h - 0.22, 0], 0, Math.PI / 2, 0.22, 0.05, 1)
+    shoot([0, h - 0.26, 0], 0, Math.PI / 2, 0.26, 0.05, 1)
     return out
   }, [R, y0, crown, h, slim])
   const bulbs = useMemo(
@@ -335,16 +342,58 @@ function ChristmasTree({ p, M, style, on }: Look) {
   return (
     <group>
       <mesh position={[0, potH / 2, 0]} castShadow>
-        <cylinderGeometry args={[R * 0.32, R * 0.26, potH, SEG]} />
+        <cylinderGeometry args={[basketTop - 0.008, basketBottom - 0.008, potH, SEG]} />
         {M('stand')}
       </mesh>
-      <mesh position={[0, potH + (h - potH) * 0.4, 0]}>
-        <cylinderGeometry args={[0.012, 0.035, (h - potH) * 0.8, 10]} />
+      {/* The weave, rows of cane round it, each a little out of line. */}
+      {Array.from({ length: rows }, (_, k) => {
+        const t = (k + 0.5) / rows
+        const r = basketBottom + (basketTop - basketBottom) * t
+        return (
+          <mesh
+            key={k}
+            position={[0, t * potH, 0]}
+            rotation={[Math.PI / 2 + (scatter(k, 38) - 0.5) * 0.03, 0, k * 0.7]}
+            castShadow
+          >
+            <torusGeometry args={[r, potH / rows / 2, 6, SEG]} />
+            {M('stand')}
+          </mesh>
+        )
+      })}
+      {/* The canes the rows are woven through, up the outside. */}
+      {Array.from({ length: stakes }, (_, k) => {
+        const a = (k / stakes) * Math.PI * 2
+        const r = (basketTop + basketBottom) / 2 + potH / rows / 2
+        return (
+          <mesh
+            key={k}
+            position={[Math.cos(a) * r, potH / 2, Math.sin(a) * r]}
+            rotation={[Math.sin(a) * lean, 0, -Math.cos(a) * lean]}
+          >
+            <cylinderGeometry args={[0.005, 0.005, potH, 5]} />
+            {M('stand')}
+          </mesh>
+        )
+      })}
+      <mesh position={[0, potH, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <torusGeometry args={[basketTop + 0.004, 0.016, 8, SEG]} />
+        {M('stand')}
+      </mesh>
+      {/* Bark mulch over the top, round the foot of the trunk. */}
+      <mesh position={[0, potH - 0.01, 0]}>
+        <cylinderGeometry args={[basketTop - 0.01, basketTop - 0.01, 0.01, SEG]} />
         {M('trunk')}
       </mesh>
-      {/* A dark core, so no light shows through between the branches. */}
-      <mesh position={[0, y0 + crown * 0.4, 0]}>
-        <coneGeometry args={[R * 0.45, crown * 0.8, 12]} />
+      {/* The trunk, all the way up into the leader. */}
+      <mesh position={[0, (potH + h - 0.2) / 2, 0]}>
+        <cylinderGeometry args={[0.012, 0.035, h - 0.2 - potH, 10]} />
+        {M('trunk')}
+      </mesh>
+      {/* A dark core, so no light shows through between the branches, and
+          narrowing right up to the top whorls so none of them hang loose. */}
+      <mesh position={[0, y0 + crown * 0.47, 0]}>
+        <coneGeometry args={[R * 0.45, crown * 0.94, 12]} />
         {M('needles')}
       </mesh>
       <instancedMesh key={branches.length} ref={needles} args={[undefined, undefined, branches.length]} castShadow>
@@ -688,8 +737,9 @@ function CombiBoiler({ p, M, on }: Look) {
         height={0.035}
         count={3}
         position={[0, bodyH * 0.42 - 0.02, d + 0.004]}
-        outer="#3d7dff"
-        inner="#9fd0ff"
+        outer="#2a5cff"
+        mid="#3d8dff"
+        inner="#bfe4ff"
       />
       {[-0.3, -0.1, 0.1, 0.3].map((x, i) => (
         <mesh key={i} position={[x * w, -0.12, d * 0.45]}>

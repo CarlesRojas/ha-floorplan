@@ -398,15 +398,20 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
                     </group>
                   )}
                 </group>
-                <group position={[x + (side * dw) / 2, plinth + 0.01, fz]} rotation={[0, side * open * 1.9, 0]}>
-                  <Panel size={[dw, doorH, 0.018]} position={[(-side * dw) / 2, 0, 0]}>
+                {/* Hinged on the front corner of its edge, so at a right
+                    angle it stands clear of its neighbor's door. */}
+                <group
+                  position={[x + (side * dw) / 2, plinth + 0.01, fz + 0.009]}
+                  rotation={[0, (side * open * Math.PI) / 2, 0]}
+                >
+                  <Panel size={[dw, doorH, 0.018]} position={[(-side * dw) / 2, 0, -0.009]}>
                     {M('fronts')}
                   </Panel>
                 </group>
               </group>
             )
           })}
-          {/* Oak worktop with a slight overhang, and a deep one at the back of
+          {/* The worktop, with a slight overhang, and a deep one at the back of
               an island for stools. */}
           <Slab
             size={[w + 0.03, topH, d + (island ? 0.16 : 0.03)]}
@@ -487,14 +492,14 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
             // Units pair off, the first of a pair hung on its left edge and
             // the second on its right, so each pair opens from the middle.
             const side = i % 2 === 0 ? -1 : 1
-            const swing = cw >= 0.25 ? open * 1.9 : 0
+            const swing = cw >= 0.25 ? (open * Math.PI) / 2 : 0
             return (
               <group
                 key={i}
-                position={[-w / 2 + starts[i] + cw / 2 + (side * dw) / 2, 0.015, d]}
+                position={[-w / 2 + starts[i] + cw / 2 + (side * dw) / 2, 0.015, d + 0.009]}
                 rotation={[0, side * swing, 0]}
               >
-                <Panel size={[dw, cabH - 0.025, 0.018]} position={[(-side * dw) / 2, 0, 0]}>
+                <Panel size={[dw, cabH - 0.025, 0.018]} position={[(-side * dw) / 2, 0, -0.009]}>
                   {M('doors')}
                 </Panel>
               </group>

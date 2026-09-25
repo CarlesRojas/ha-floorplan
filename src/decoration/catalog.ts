@@ -281,8 +281,9 @@ const CHAIR_SLAB: DecorationVariant = {
 const COUNTER_RUN: DecorationVariant = {
   id: 'run',
   label: 'Wall Run',
-  colors: { worktop: SCANDI.oak, cabinets: SCANDI.offWhite, fronts: SCANDI.offWhite },
-  materials: { worktop: 'wood', cabinets: 'matte', fronts: 'matte' },
+  // A broken white stone worktop on oak units.
+  colors: { worktop: '#ece6da', cabinets: SCANDI.oak, fronts: SCANDI.oak },
+  materials: { worktop: 'ceramic', cabinets: 'wood', fronts: 'wood' },
 }
 
 // The bed's first style, which keeps the old bed's slots.
@@ -1131,7 +1132,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         label: 'Island',
         // Deeper, with the worktop overhanging at the back for stools.
         params: { depth: 0.9, height: 0.92 },
-        colors: { worktop: SCANDI.oak, cabinets: SCANDI.sage, fronts: SCANDI.sage },
+        colors: { worktop: '#ece6da', cabinets: SCANDI.oak, fronts: SCANDI.oak },
       },
     ],
   ),
@@ -1151,8 +1152,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
       flag('wide', 'Wide module'),
       cycle('grow', 'Growing module'),
     ],
-    { cabinets: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
-    { cabinets: 'matte', doors: 'matte', handles: 'metal' },
+    { cabinets: SCANDI.oak, doors: SCANDI.oak, handles: SCANDI.slate },
+    { cabinets: 'wood', doors: 'wood', handles: 'metal' },
     TOGGLE,
   ),
   kind(
@@ -1292,7 +1293,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         id: 'bambino',
         label: 'Compact Bambu',
         params: { width: 0.195, depth: 0.32, height: 0.31 },
-        colors: { body: '#c9cccd', steel: '#aeb3b5', handle: '#1c1f21' },
+        colors: { body: '#3a3d40', steel: '#aeb3b5', handle: '#1c1f21' },
         materials: { body: 'metal', steel: 'metal', handle: 'matte' },
       },
       { id: 'linea', label: 'Steel Lineo' },
@@ -1321,6 +1322,72 @@ export const DECORATION_KINDS: DecorationKind[] = [
         label: 'Matte Swan',
         colors: { body: '#2b2c2d', fittings: SCANDI.walnut },
         materials: { body: 'matte', fittings: 'wood' },
+      },
+    ],
+  ),
+  kind(
+    'toaster',
+    'kitchen',
+    'Toaster',
+    'floor',
+    [width(0.31, 0.2, 0.45), lift(0.92)],
+    { body: '#e8e3d8', trim: '#c4c7c8' },
+    { body: 'ceramic', trim: 'metal' },
+    TOGGLE,
+    [
+      // Two slots in a rounded body, 31 cm long.
+      { id: 'retro', label: 'Twin Loaf' },
+      {
+        id: 'long',
+        label: 'Long Slot',
+        // Two long slots side by side, 42 cm long.
+        params: { width: 0.42 },
+        colors: { body: '#c4c7c8', trim: '#2b2e31' },
+        materials: { body: 'metal', trim: 'matte' },
+      },
+    ],
+  ),
+  kind(
+    'cooking_robot',
+    'kitchen',
+    'Cooking robot',
+    'floor',
+    [width(0.33, 0.25, 0.45), lift(0.92)],
+    { body: SCANDI.offWhite, jug: '#c4c7c8', lid: '#8a8f92', display: '#16191b' },
+    { body: 'ceramic', jug: 'metal', lid: 'matte', display: 'ceramic' },
+    TOGGLE,
+    [
+      // A tall jug set into a base with a screen on its front.
+      { id: 'jug', label: 'Mix Chef' },
+      {
+        id: 'bowl',
+        label: 'Dome Cook',
+        // A wide bowl on a squat round base, under a domed lid.
+        params: { width: 0.36 },
+        colors: { body: '#2b2e31', jug: '#c4c7c8', lid: '#c4c7c8', display: '#16191b' },
+        materials: { body: 'matte', jug: 'metal', lid: 'metal', display: 'ceramic' },
+      },
+    ],
+  ),
+  kind(
+    'air_fryer',
+    'kitchen',
+    'Air fryer',
+    'floor',
+    [width(0.28, 0.2, 0.45), lift(0.92)],
+    { body: '#2b2e31', handle: '#1c1d1f', display: '#16191b' },
+    { body: 'matte', handle: 'matte', display: 'ceramic' },
+    TOGGLE,
+    [
+      // One drawer in a rounded cube.
+      { id: 'basket', label: 'Crisp Cube' },
+      {
+        id: 'dual',
+        label: 'Twin Drawer',
+        // Two drawers side by side, 40 cm wide.
+        params: { width: 0.4 },
+        colors: { body: '#e8e6e1', handle: '#2b2e31', display: '#16191b' },
+        materials: { body: 'matte', handle: 'matte', display: 'ceramic' },
       },
     ],
   ),
@@ -1543,7 +1610,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       {
         id: 'mango',
         label: 'Mango plant',
-        colors: { pot: '#c9b79c', soil: '#3c332b', stems: '#9a5a44', leaves: '#3a6a3a' },
+        colors: { pot: '#c9b79c', soil: '#3c332b', stems: '#6e5a48', leaves: '#3a6a3a' },
         materials: { pot: 'ceramic', soil: 'matte', stems: 'matte', leaves: 'ceramic' },
         params: { size: 0.85, height: 1.5 },
       },
@@ -1553,6 +1620,20 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { pot: '#2b2c2d', soil: '#3c332b', stems: '#6f8a4a', leaves: '#4e7a44' },
         materials: { pot: 'ceramic', soil: 'matte', stems: 'matte', leaves: 'wood' },
         params: { size: 0.9, height: 1.9 },
+      },
+      {
+        id: 'bamboo',
+        label: 'Golden bamboo',
+        colors: { pot: '#2f3133', soil: '#3c332b', stems: '#9fa35a', leaves: '#5d8a3e' },
+        materials: { pot: 'ceramic', soil: 'matte', stems: 'ceramic', leaves: 'wood' },
+        params: { size: 0.7, height: 1.9 },
+      },
+      {
+        id: 'ficus',
+        label: 'Weeping fig',
+        colors: { pot: '#b5704a', soil: '#3c332b', stems: '#7a6a58', leaves: '#3f6e34' },
+        materials: { pot: 'matte', soil: 'matte', stems: 'matte', leaves: 'ceramic' },
+        params: { size: 1, height: 1.6 },
       },
     ],
   ),
@@ -1735,6 +1816,17 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { grille: SCANDI.linen, caps: SCANDI.charcoal },
     { grille: 'fabric', caps: 'matte' },
     TOGGLE_LEVEL,
+    [
+      { id: 'bar', label: 'Linen Bar' },
+      {
+        id: 'arc',
+        label: 'Pebble Arc',
+        // A long black capsule, 114 cm long, with a light across its top.
+        params: { width: 1.14, height: 0.087 },
+        colors: { grille: '#2b2e31', caps: '#1c1d1f' },
+        materials: { grille: 'matte', caps: 'matte' },
+      },
+    ],
   ),
   kind(
     'speaker',
@@ -1820,6 +1912,86 @@ export const DECORATION_KINDS: DecorationKind[] = [
     ],
   ),
   kind(
+    'pc_tower',
+    'media',
+    'PC tower',
+    'floor',
+    [width(0.23, 0.15, 0.35), depth(0.46, 0.25, 0.6), height(0.48, 0.3, 0.65), lift(0)],
+    { case: '#1c1d1f', glass: '#3a4046', accent: '#5b7cff' },
+    { case: 'matte', glass: 'ceramic', accent: 'ceramic' },
+    TOGGLE,
+    [
+      // A black case with a glass side onto three lit fans.
+      { id: 'glass', label: 'Prism Tower' },
+      {
+        id: 'lattice',
+        label: 'Lattice Tower',
+        // An aluminium case with a pierced front, the light behind it.
+        params: { width: 0.22, depth: 0.45, height: 0.53 },
+        colors: { case: '#c9ccce', glass: '#c9ccce', accent: '#ffffff' },
+        materials: { case: 'metal', glass: 'metal', accent: 'ceramic' },
+      },
+    ],
+  ),
+  kind(
+    'laptop',
+    'media',
+    'Laptop',
+    'floor',
+    [width(0.31, 0.25, 0.42), lift(0.75)],
+    { body: '#c9ccce', keys: '#2b2e31', screen: SCREEN_OFF_COLOR },
+    { body: 'metal', keys: 'matte', screen: 'ceramic' },
+    TOGGLE,
+    [
+      // A thin aluminium wedge, open.
+      { id: 'slim', label: 'Slate Air' },
+      {
+        id: 'gaming',
+        label: 'Raptor Pro',
+        // A thicker black one, its keys lit when it runs.
+        params: { width: 0.36 },
+        colors: { body: '#1c1d1f', keys: '#141517', screen: SCREEN_OFF_COLOR, accent: '#ff3b5c' },
+        materials: { body: 'matte', keys: 'matte', screen: 'ceramic', accent: 'ceramic' },
+      },
+    ],
+  ),
+  kind(
+    'wireless_charger',
+    'media',
+    'Wireless charger',
+    'floor',
+    [size(0.1, 0.05, 0.3), lift(0.75)],
+    { pad: '#2b2e31', device: '#1c1d1f', ring: '#ffffff' },
+    { pad: 'fabric', device: 'ceramic', ring: 'ceramic' },
+    TOGGLE,
+    [
+      // A round pad, a phone lying on it while it charges.
+      { id: 'phone', label: 'Halo Pad' },
+      {
+        id: 'watch',
+        label: 'Watch Puck',
+        params: { size: 0.06 },
+        colors: { pad: '#f2efe9', device: '#1c1d1f', ring: '#ffffff' },
+        materials: { pad: 'ceramic', device: 'ceramic', ring: 'ceramic' },
+      },
+      {
+        id: 'earbuds',
+        label: 'Bud Dock',
+        params: { size: 0.08 },
+        colors: { pad: '#2b2e31', device: '#f4f4f2', ring: '#ffffff' },
+        materials: { pad: 'fabric', device: 'ceramic', ring: 'ceramic' },
+      },
+      {
+        id: 'tablet',
+        label: 'Tablet Easel',
+        // A stand the tablet leans back on.
+        params: { size: 0.2 },
+        colors: { pad: '#c9ccce', device: '#1c1d1f', ring: '#ffffff' },
+        materials: { pad: 'metal', device: 'ceramic', ring: 'ceramic' },
+      },
+    ],
+  ),
+  kind(
     'projector',
     'media',
     'Projector',
@@ -1838,6 +2010,26 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: '#e9e8e4', cradle: '#b9bab8', lens: '#2f3336' },
     { body: 'matte', cradle: 'matte', lens: 'ceramic' },
     TOGGLE,
+  ),
+  kind(
+    'projector_ust',
+    'media',
+    'Short throw projector',
+    'floor',
+    [inches(100, 70, 150), lift(0.45)],
+    { body: '#e9e8e4', grille: '#b9bab8', lens: '#2f3336' },
+    { body: 'matte', grille: 'fabric', lens: 'ceramic' },
+    TOGGLE,
+    [
+      // A low box set close to the wall, throwing the picture up it.
+      { id: 'box', label: 'Wall Beam' },
+      {
+        id: 'dark',
+        label: 'Shadow Beam',
+        colors: { body: '#2b2e31', grille: '#3a3d40', lens: '#1c1d1f' },
+        materials: { body: 'matte', grille: 'fabric', lens: 'ceramic' },
+      },
+    ],
   ),
   kind(
     'projector_screen',
@@ -1887,6 +2079,17 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: SCANDI.offWhite, grille: SCANDI.mist, display: '#20262a' },
     { body: 'matte', grille: 'ceramic', display: 'matte' },
     TOGGLE_LEVEL,
+    [
+      { id: 'split', label: 'Cloud Split' },
+      // Ducted air, where all that shows is the grille it blows through.
+      {
+        id: 'duct',
+        label: 'Slot Vent',
+        params: { width: 0.8, height: 2.3 },
+        colors: { body: SCANDI.offWhite, grille: '#3a3d40', display: '#20262a' },
+        materials: { body: 'matte', grille: 'matte', display: 'matte' },
+      },
+    ],
   ),
   kind(
     'fan_ceiling',
@@ -2120,8 +2323,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Christmas tree',
     'floor',
     [size(1.1, 0.4, 1.8), height(1.9, 0.6, 3)],
-    { needles: '#2f5a3a', trunk: '#6b4a32', stand: '#8a2a22' },
-    { needles: 'matte', trunk: 'wood', stand: 'ceramic' },
+    { needles: '#2f5a3a', trunk: '#6b4a32', stand: '#b0864f' },
+    { needles: 'matte', trunk: 'wood', stand: 'wood' },
     TOGGLE,
     [
       { id: 'fir', label: 'Nordic Fir' },
@@ -2183,8 +2386,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Motion sensor',
     'wall',
     [size(0.07, 0.04, 0.14), height(2.3, 1.2, 2.5)],
-    { body: SCANDI.offWhite, dome: SCANDI.offWhite, lens: SCANDI.charcoal },
-    { body: 'matte', dome: 'ceramic', lens: 'ceramic' },
+    // The ball's accent color, which glows red while it sees someone.
+    { body: SCANDI.offWhite, accent: '#3d7fd6' },
+    { body: 'matte', accent: 'ceramic' },
     TOGGLE,
   ),
   kind(
@@ -2247,7 +2451,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Pet feeder',
     'floor',
     [size(0.22, 0.12, 0.4), height(0.38, 0.1, 0.6)],
-    { body: SCANDI.offWhite, food: '#9a6a3c', bowl: '#c9ced2' },
+    { body: '#3c3f42', food: '#9a6a3c', bowl: '#c9ced2' },
     { body: 'matte', food: 'matte', bowl: 'metal' },
     TOGGLE,
     [
@@ -2256,7 +2460,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         id: 'fountain',
         label: 'Flow Bowl',
         params: { size: 0.22, height: 0.16 },
-        colors: { body: SCANDI.offWhite, bowl: SCANDI.offWhite },
+        colors: { body: '#3c3f42', bowl: '#3c3f42' },
         materials: { body: 'matte', bowl: 'ceramic' },
       },
     ],
@@ -2301,6 +2505,48 @@ export const DECORATION_KINDS: DecorationKind[] = [
         params: { size: 1.8, height: 1 },
         colors: { cabinet: '#b98a5e', shell: '#9b7452' },
         materials: { cabinet: 'wood', shell: 'wood' },
+      },
+    ],
+  ),
+  kind(
+    'louvred_pergola',
+    'outdoor',
+    'Louvred pergola',
+    'floor',
+    [width(3.5, 2, 6), depth(3, 2, 5), height(2.5, 2.2, 3)],
+    { frame: '#3a3d40', louvres: '#3a3d40' },
+    { frame: 'metal', louvres: 'metal' },
+    TOGGLE_LEVEL,
+    [
+      // Four aluminium posts and a roof of blades that turn open.
+      { id: 'alu', label: 'Slat Roof' },
+      {
+        id: 'timber',
+        label: 'Cedar Slat',
+        colors: { frame: '#9a7350', louvres: '#b88a5e' },
+        materials: { frame: 'wood', louvres: 'wood' },
+      },
+    ],
+  ),
+  kind(
+    'sauna',
+    'outdoor',
+    'Sauna',
+    'floor',
+    [width(2, 1.5, 3), depth(2.2, 1.5, 3), height(2.1, 1.9, 2.6)],
+    { wood: '#b88a5e', roof: '#3a3d40', glass: '#8a9aa0' },
+    { wood: 'wood', roof: 'matte', glass: 'ceramic' },
+    TOGGLE,
+    [
+      // A cedar barrel on its cradles, a glass door in one end.
+      { id: 'barrel', label: 'Cedar Cask' },
+      {
+        id: 'cabin',
+        label: 'Nordic Cabin',
+        // A square cabin with a pent roof and a glass front.
+        params: { width: 2.2, depth: 2, height: 2.3 },
+        colors: { wood: '#5a4636', roof: '#2b2e31', glass: '#8a9aa0' },
+        materials: { wood: 'wood', roof: 'matte', glass: 'ceramic' },
       },
     ],
   ),

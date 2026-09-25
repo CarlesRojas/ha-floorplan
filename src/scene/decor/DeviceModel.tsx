@@ -18,8 +18,9 @@ import PergolaAwning from '#/scene/decor/Pergola.tsx'
 import { CeilingFan, FloorFan, Radiator } from '#/scene/decor/Climate.tsx'
 import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene/decor/Media.tsx'
 import type { RoomConfig } from '#/types.ts'
-import { useMemo, type ReactNode } from 'react'
-import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3 } from 'three'
+import { useMemo, useRef, type ReactNode } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3, type MeshStandardMaterial, type PointLight } from 'three'
 
 type Props = {
   kind: DecorationKind
@@ -81,6 +82,27 @@ function Rod({ from, to, radius, children }: { from: Vec3; to: Vec3; radius: num
       <cylinderGeometry args={[radius, radius, 1, 12]} />
       {children}
     </mesh>
+  )
+}
+
+// A smoke alarm going off: its ring and a red light on the ceiling below
+// flash twice a second, bright enough to see across the room.
+function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
+  const ring = useRef<MeshStandardMaterial>(null)
+  const light = useRef<PointLight>(null)
+  useFrame(({ clock }) => {
+    const flash = on && clock.elapsedTime % 0.5 < 0.25 ? 1 : 0
+    if (ring.current) ring.current.emissiveIntensity = 3.5 * flash
+    if (light.current) light.current.intensity = 0.6 * flash
+  })
+  return (
+    <group>
+      <mesh position={[0, y - 0.001, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[s * 0.13, s * 0.018, 10, SEG * 2]} />
+        <meshStandardMaterial ref={ring} color="#f2d0cc" emissive="#ff2a1a" emissiveIntensity={0} />
+      </mesh>
+      <pointLight ref={light} position={[0, y - 0.15, 0]} color="#ff3020" intensity={0} distance={2.5} decay={1} />
+    </group>
   )
 }
 
@@ -221,9 +243,46 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
     }
     case 'soundbar': {
       // A fabric wrapped bar with hard end caps and a control strip on top.
+      // The sound spreads in rings from a driver near each end.
       const w = p('width')
       const h = p('height')
       const d = 0.1
+      const sound = (
+        <>
+          {[-1, 1].map(side => (
+            <Waves
+              key={side}
+              on={on}
+              position={[side * (w / 2 - Math.min(0.12, w * 0.15)), h / 2, d / 2 + 0.02]}
+              from={h * 0.5}
+              reach={Math.max(0.18, h * 2.4)}
+            />
+          ))}
+        </>
+      )
+      if (style === 'arc') {
+        // A capsule laid along the bar, oval in section, with a light
+        // strip across the middle of its top.
+        const dd = Math.max(d, h * 1.3)
+        return (
+          <group>
+            <mesh position={[0, h / 2, 0]} rotation={[0, 0, Math.PI / 2]} scale={[1, 1, dd / h]} castShadow>
+              <capsuleGeometry args={[h / 2, Math.max(w - h, 0.01), 12, SEG]} />
+              <Material color={c('grille')} material={m('grille')} />
+            </mesh>
+            {/* The feet it rests on. */}
+            <mesh position={[0, 0.004, 0]}>
+              <boxGeometry args={[w * 0.8, 0.008, dd * 0.4]} />
+              {M('caps')}
+            </mesh>
+            <mesh position={[0, h + 0.0005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[w * 0.16, 0.004]} />
+              <meshStandardMaterial color={c('caps')} emissive="#ffffff" emissiveIntensity={1.4 * lit} />
+            </mesh>
+            {sound}
+          </group>
+        )
+      }
       return (
         <group>
           <Slab size={[w, h, d]} radius={h / 2.4} bevel={0.008} position={[0, 0, 0]}>
@@ -252,13 +311,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             </mesh>
           ))}
           <Led on={on} position={[0, h * 0.4, d / 2 + 0.002]} radius={0.007} />
-          <Waves
-            on={on}
-            position={[0, h / 2, d / 2 + 0.02]}
-            from={h * 0.7}
-            reach={h * 1.6}
-            stretch={[w / h / 2.4, 1]}
-          />
+          {sound}
         </group>
       )
     }
@@ -339,6 +392,64 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // top, a louvre that tips open underneath and a small display. Its
       // height and depth follow its width, within what real units come in.
       const w = p('width')
+      // Warm air out orange and cool air out blue, by what the device says
+      // it is doing, and pale when it only moves the air.
+      const mode = state?.text ?? ''
+      const air = /heat/.test(mode) ? '#ff7a2e' : /cool/.test(mode) ? '#3f93ff' : '#d6ecff'
+      const tinted = air !== '#d6ecff'
+      if (style === 'duct') {
+        // A grille let into the wall, a frame round a dark slot of blades
+        // angled down, with the air coming out through them.
+        const gh = 0.14
+        const blades = 5
+        return (
+          <group position={[0, -gh, 0]}>
+            {(
+              [
+                [0, gh - 0.01, w, 0.02],
+                [0, 0.01, w, 0.02],
+                [-w / 2 + 0.01, gh / 2, 0.02, gh],
+                [w / 2 - 0.01, gh / 2, 0.02, gh],
+              ] as const
+            ).map(([x, y, fw, fh], i) => (
+              <mesh key={i} position={[x, y, 0.007]} castShadow>
+                <boxGeometry args={[fw, fh, 0.014]} />
+                {M('body')}
+              </mesh>
+            ))}
+            <mesh position={[0, gh / 2, 0.002]}>
+              <planeGeometry args={[w - 0.04, gh - 0.04]} />
+              <Material color="#1d2022" material="matte" />
+            </mesh>
+            {Array.from({ length: blades }).map((_, i) => (
+              <mesh
+                key={i}
+                position={[0, 0.02 + ((i + 0.5) * (gh - 0.04)) / blades, 0.008]}
+                rotation={[0.5 + 0.3 * swing, 0, 0]}
+              >
+                <boxGeometry args={[w - 0.045, 0.003, 0.018]} />
+                {M('grille')}
+              </mesh>
+            ))}
+            {[-0.3, 0, 0.3].map(k => (
+              <Steam
+                key={k}
+                on={on}
+                position={[k * w, gh * 0.4, 0.02]}
+                radius={Math.min(0.05, w * 0.05)}
+                rise={-0.4}
+                drift={[0, 0.35]}
+                count={6}
+                strength={tinted ? 0.22 : 0.14}
+                speed={0.5}
+                color={air}
+                glow={tinted ? 0.9 : 0.25}
+                phase={k}
+              />
+            ))}
+          </group>
+        )
+      }
       const h = Math.min(Math.max(w * 0.33, 0.12), 0.34)
       const d = Math.min(Math.max(w * 0.22, 0.1), 0.24)
       const vents = Math.max(8, Math.round(w / 0.06))
@@ -389,9 +500,10 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
               rise={-0.4}
               drift={[0, 0.3]}
               count={6}
-              strength={0.14}
+              strength={tinted ? 0.22 : 0.14}
               speed={0.5}
-              color="#d6ecff"
+              color={air}
+              glow={tinted ? 0.9 : 0.25}
             />
           ))}
         </group>
@@ -1163,26 +1275,24 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         )
       }
       // A sectional door: the panels run up side tracks and round a bend at
-      // the top, and once flat under the ceiling each slides into a stack
-      // just past the bend, tucking in under the ones before it, so the
-      // open door takes a single panel's length of ceiling. The panels are
+      // the top, and once flat under the ceiling each stops just past the
+      // bend, sliding into the same place as the ones before it, so the open
+      // door takes a single panel's length of ceiling. The panels are
       // placed along that path every frame and never rebuilt.
       const panels = Math.max(1, Math.round(h / 0.45))
       const panelH = h / panels
       const zf = 0.07
       const r = 0.3
       const bend = (r * Math.PI) / 2
-      // `tuck` is how far under the flat this panel lies once stacked.
-      const at = (s: number, tuck: number): { y: number; z: number; a: number } => {
+      const at = (s: number): { y: number; z: number; a: number } => {
         if (s <= h) return { y: s, z: zf, a: 0 }
         if (s <= h + bend) {
           const a = (s - h) / r
           return { y: h + r * Math.sin(a), z: zf + r - r * Math.cos(a), a }
         }
-        // How far it has run along the flat, up to where the stack stands,
-        // and how far down into the stack it has tucked.
+        // How far it has run along the flat, up to where the panels stop.
         const flat = Math.min(s - h - bend, panelH / 2)
-        return { y: h + r - tuck * (flat / (panelH / 2)), z: zf + r + flat, a: Math.PI / 2 }
+        return { y: h + r, z: zf + r + flat, a: Math.PI / 2 }
       }
       const run = panelH + 0.1
       // Open, the bottom panel has come all the way round the bend too, so
@@ -1191,8 +1301,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       return (
         <group>
           {Array.from({ length: panels }).map((_, i) => {
-            // Each panel stacks a panel's thickness under the one ahead of it.
-            const { y, z, a } = at(panelH * (i + 0.5) + lift, (panels - 1 - i) * 0.045)
+            const { y, z, a } = at(panelH * (i + 0.5) + lift)
             return (
               <group key={i} position={[0, y, z]} rotation={[a, 0, 0]}>
                 <Slab size={[w, panelH - 0.01, 0.04]} radius={0.012} position={[0, -(panelH - 0.01) / 2, 0]}>
@@ -1361,19 +1470,18 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <sphereGeometry args={[s * 0.2, SEG, SEG]} />
             {M('body')}
           </mesh>
-          <mesh position={[0, s * 0.1, t + s * 0.58]} rotation={[0.35, 0, 0]}>
-            <sphereGeometry args={[s * 0.52, SEG, SEG, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-            {M('dome')}
+          {/* The whole ball glows red while it sees someone, so the alert
+              reads from every angle. */}
+          <mesh position={[0, 0, t + s * 0.62]}>
+            <sphereGeometry args={[s * 0.5, SEG, SEG]} />
+            <meshStandardMaterial
+              color={c('accent')}
+              roughness={0.35}
+              emissive="#ff3a2a"
+              emissiveIntensity={1.6 * lit}
+            />
           </mesh>
-          <mesh position={[0, s * 0.02, t + s * 0.6]} rotation={[0.35, 0, 0]}>
-            <sphereGeometry args={[s * 0.5, SEG, SEG, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.2]} />
-            {/* The lens band glows red while it sees someone, the flash the
-                real ones give, since the LED under the dome is hidden from
-                most angles. */}
-            <meshStandardMaterial color={c('lens')} roughness={0.4} emissive="#ff4a3a" emissiveIntensity={1.4 * lit} />
-          </mesh>
-          <Led on={on} position={[0, -s * 0.3, t + s * 0.1]} radius={s * 0.07} />
-          <Halo on={on} position={[0, s * 0.02, t + s * 1.2]} color="#ff6a50" />
+          <Halo on={on} position={[0, 0, t + s * 1.3]} color="#ff5040" intensity={0.08} />
         </group>
       )
     }
@@ -1400,12 +1508,8 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
               <meshStandardMaterial color={c('vents')} roughness={0.8} />
             </mesh>
           ))}
-          {/* The light ring round the button. */}
-          <mesh position={[0, -t - 0.001, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[s * 0.13, s * 0.012, 10, SEG * 2]} />
-            <meshStandardMaterial color="#cfe8f5" emissive="#7fd6a0" emissiveIntensity={2.6 * lit} />
-          </mesh>
-          <Halo on={on} position={[0, -t - 0.06, 0]} color="#7fd6a0" />
+          {/* The light ring round the button, flashing red while it alarms. */}
+          <Alarm on={on} s={s} y={-t} />
         </group>
       )
     }

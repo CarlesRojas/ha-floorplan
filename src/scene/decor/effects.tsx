@@ -5,7 +5,9 @@ import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import {
   AdditiveBlending,
   Color,
+  LatheGeometry,
   Object3D,
+  Vector2,
   type Group,
   type InstancedMesh,
   type Mesh,
@@ -19,10 +21,27 @@ import {
 
 type Vec3 = [number, number, number]
 
+// A flame's outline turned round its axis: a rounded foot, widest a
+// quarter of the way up, and a long thin tip. Its base is at the origin, so
+// it leans from the burner rather than from its middle.
+function flameGeometry() {
+  const points: Vector2[] = []
+  const steps = 14
+  for (let k = 0; k <= steps; k++) {
+    const y = k / steps
+    const r = y < 0.25 ? 0.5 * Math.sqrt(y / 0.25) : 0.5 * ((1 - y) / 0.75) ** 1.4
+    points.push(new Vector2(Math.max(r, 0.0001), y))
+  }
+  return new LatheGeometry(points, 12)
+}
+
 /**
- * A row of flames along x, `width` wide and up to `height` tall, each a
- * tongue of orange with a yellow core that flickers on its own beat. They
- * add their light to what is behind them, so they glow against a dark
+ * A row of flames along x, `width` wide and up to `height` tall. Each
+ * tongue is three nested layers, a deep orange outside, orange within and a
+ * pale yellow heart low down, and it stretches, shrinks and leans on its own
+ * uneven beat, in two staggered rows so the fire has some depth. A glow
+ * breathes along the bed under them, and a wood fire throws the odd spark.
+ * They add their light to what is behind them, so they glow against a dark
  * firebox, and they sink away when the fire is turned off.
  */
 export function Flames({
@@ -31,8 +50,10 @@ export function Flames({
   height,
   count,
   position = [0, 0, 0],
-  outer = '#ff6a1a',
-  inner = '#ffd36b',
+  outer = '#ff4a0a',
+  mid = '#ff8a1e',
+  inner = '#fff0b0',
+  sparks = false,
 }: {
   on: boolean
   width: number
@@ -40,44 +61,111 @@ export function Flames({
   count: number
   position?: Vec3
   outer?: string
+  mid?: string
   inner?: string
+  sparks?: boolean
 }) {
   const lit = useEased(on ? 1 : 0, 1.8)
   const tongues = useRef<(Mesh | null)[]>([])
+  const bed = useRef<Mesh>(null)
+  const embers = useRef<(Mesh | null)[]>([])
+  const geometry = useMemo(() => flameGeometry(), [])
   const step = width / count
+  const layers = [
+    { color: outer, opacity: 0.5, wide: 1, tall: 1 },
+    { color: mid, opacity: 0.65, wide: 0.66, tall: 0.78 },
+    { color: inner, opacity: 0.85, wide: 0.36, tall: 0.42 },
+  ]
+  const sparkCount = sparks ? Math.max(3, Math.round(count * 0.7)) : 0
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     tongues.current.forEach((m, j) => {
       if (!m) return
-      const i = j >> 1
-      const core = j % 2 === 1
-      const beat = 0.72 + 0.2 * Math.sin(t * (6 + scatter(i) * 4) + i * 1.7) + 0.1 * Math.sin(t * 13.3 + i * 3.1)
-      const tall = height * beat * lit * (0.65 + 0.35 * scatter(i, 1)) * (core ? 0.55 : 1)
-      const r = step * (core ? 0.28 : 0.55)
+      const i = Math.floor(j / 3)
+      const layer = layers[j % 3]
+      const back = i % 2 === 1
+      // A few sines at unrelated rates, so no two tongues and no two
+      // seconds look the same, with a sharp lick up now and then.
+      const lick = Math.max(0, Math.sin(t * (2.3 + scatter(i, 4)) + i * 5.1)) ** 8 * 0.35
+      const beat =
+        0.7 +
+        0.16 * Math.sin(t * (7 + scatter(i) * 5) + i * 1.7) +
+        0.09 * Math.sin(t * 15.7 + i * 3.1) +
+        0.05 * Math.sin(t * 23.1 + i * 0.9) +
+        lick
+      const tall = height * beat * lit * (0.55 + 0.45 * scatter(i, 1)) * (back ? 1.25 : 0.95) * layer.tall
+      const r = step * 1.7 * layer.wide * (0.8 + 0.3 * scatter(i, 2))
       m.visible = lit > 0.01
-      m.scale.set(r, Math.max(tall, 0.001), r * 0.6)
-      m.position.set(-width / 2 + step * (i + 0.5) + Math.sin(t * 5 + i) * step * 0.08, tall / 2, core ? 0.004 : 0)
+      m.scale.set(r, Math.max(tall, 0.001), r * 0.7)
+      m.rotation.z = 0.14 * Math.sin(t * 3.1 + i * 2.3) + 0.06 * Math.sin(t * 8.7 + i)
+      m.rotation.x = 0.08 * Math.sin(t * 2.7 + i * 1.3)
+      m.position.set(
+        -width / 2 + step * (i + 0.5) + (scatter(i, 3) - 0.5) * step * 0.5,
+        0,
+        (back ? -1 : 1) * step * 0.18 + (j % 3) * 0.002,
+      )
+    })
+    if (bed.current) {
+      bed.current.visible = lit > 0.01
+      ;(bed.current.material as MeshBasicMaterial).opacity =
+        lit * (0.55 + 0.15 * Math.sin(t * 1.9) + 0.1 * Math.sin(t * 4.3))
+    }
+    embers.current.forEach((m, i) => {
+      if (!m) return
+      // Each spark rises and dies, then starts again somewhere else.
+      const u = t * (0.5 + scatter(i, 6) * 0.4) + scatter(i, 7)
+      const f = u % 1
+      m.visible = lit > 0.5
+      m.position.set(
+        -width / 2 + width * scatter(i * 31 + Math.floor(u), 8) + Math.sin(t * 6 + i) * 0.01,
+        height * (0.3 + f * 1.3),
+        Math.sin(t * 4 + i * 2) * step * 0.2,
+      )
+      m.scale.setScalar(0.004 * (1 - f))
     })
   })
   return (
     <group position={position}>
-      {Array.from({ length: count * 2 }, (_, j) => (
+      <mesh ref={bed} position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[width / 2, step * 0.9, 1]}>
+        <circleGeometry args={[1, 24]} />
+        <meshBasicMaterial
+          color={mid}
+          transparent
+          opacity={0}
+          blending={AdditiveBlending}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      {Array.from({ length: count * 3 }, (_, j) => (
         <mesh
           key={j}
+          geometry={geometry}
           visible={false}
           ref={el => {
             tongues.current[j] = el
           }}
         >
-          <coneGeometry args={[1, 1, 10, 1, true]} />
           <meshBasicMaterial
-            color={j % 2 === 1 ? inner : outer}
+            color={layers[j % 3].color}
             transparent
-            opacity={j % 2 === 1 ? 0.9 : 0.75}
+            opacity={layers[j % 3].opacity}
             blending={AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
           />
+        </mesh>
+      ))}
+      {Array.from({ length: sparkCount }, (_, i) => (
+        <mesh
+          key={i}
+          visible={false}
+          ref={el => {
+            embers.current[i] = el
+          }}
+        >
+          <sphereGeometry args={[1, 6, 4]} />
+          <meshBasicMaterial color="#ffb347" blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
         </mesh>
       ))}
     </group>

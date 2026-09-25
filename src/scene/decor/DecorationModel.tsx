@@ -6,6 +6,9 @@ import DecorModel from '#/scene/decor/DecorModel.tsx'
 import DeviceModel from '#/scene/decor/DeviceModel.tsx'
 import FurnitureModel from '#/scene/decor/FurnitureModel.tsx'
 import HearthModel from '#/scene/decor/Hearth.tsx'
+import GadgetModel from '#/scene/decor/Gadgets.tsx'
+import CountertopModel from '#/scene/decor/Countertop.tsx'
+import GardenModel from '#/scene/decor/Garden.tsx'
 import LightModel from '#/scene/decor/LightModel.tsx'
 import OutdoorModel from '#/scene/decor/Outdoor.tsx'
 import { sameState, type ItemState } from '#/scene/decor/state.ts'
@@ -60,13 +63,23 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 
 // Kinds drawn by a model other than their family's: the pieces that come
 // alive when they are on, a fire, a tree's lights, a tank, a feeder and a
-// boiler, all live together.
+// boiler, all live together, as do the desk gadgets, the small kitchen
+// appliances and the garden buildings.
 const KIND_MODELS: Record<string, FamilyModel> = {
   fireplace: HearthModel,
   christmas_tree: HearthModel,
   aquarium: HearthModel,
   pet_feeder: HearthModel,
   water_heater: HearthModel,
+  pc_tower: GadgetModel,
+  laptop: GadgetModel,
+  wireless_charger: GadgetModel,
+  projector_ust: GadgetModel,
+  toaster: CountertopModel,
+  cooking_robot: CountertopModel,
+  air_fryer: CountertopModel,
+  louvred_pergola: GardenModel,
+  sauna: GardenModel,
 }
 
 // The models that read the rest of the plan, not just the piece they stand
