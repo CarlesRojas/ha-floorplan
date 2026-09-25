@@ -27,7 +27,7 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
   nightstand: { kind: 'side_table', variant: 'nightstand' },
   // The standing fan and the tower fan became styles of the floor fan.
   fan_standing: { kind: 'fan_floor', variant: 'pedestal' },
-  fan_tower: { kind: 'fan_floor', variant: 'tower' },
+  fan_tower: { kind: 'fan_floor', variant: 'disc' },
   // The roller shutter became a style of the blind, and the sliding glass
   // door a style of the sliding door.
   roller_shutter: { kind: 'blind', variant: 'shutter' },
@@ -53,14 +53,16 @@ const SPLIT: Record<string, Record<string, string[]>> = {
 // The sofa's chaise was a style of its own before every style could have
 // one, and a saved one keeps its chaise and its old width. The curtain's
 // linen pleat was dropped for the sheer wave, and the station clock for a
-// digital one. Both rubber plants gave way to the mango plant. A style can
-// bring parameters that the item's own saved ones override.
+// digital one. Both rubber plants gave way to the mango plant, the tower
+// fan to the disc fan, the Dutch hood awning to the pergola, and the
+// swivel shell office chair to the racer. A style can bring parameters that
+// the item's own saved ones override.
 type Restyle = string | { variant: string; params: Record<string, number> }
 const RESTYLED: Record<string, Record<string, Restyle>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
   dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
   toilet: { back_to_wall: 'square' },
-  awning: { drop_arm: 'hood' },
+  awning: { drop_arm: 'pergola', hood: 'pergola' },
   plant_wall: { staghorn: 'pothos', moss: 'pearls' },
   sofa: { dresde_chaise: { variant: 'dresde', params: { chaise: 1, width: 2.98 } } },
   curtain: { pleat: 'wave' },
@@ -68,6 +70,8 @@ const RESTYLED: Record<string, Record<string, Restyle>> = {
   sideboard: { usm: 'credenza' },
   bed_double: { platform: { variant: 'headboard', params: { headboard: 0 } } },
   plant_large: { rubber: 'mango', rubber_full: 'mango' },
+  fan_floor: { tower: 'disc' },
+  office_chair: { shell: 'racer' },
 }
 
 function migrate(config: CardConfig): CardConfig {

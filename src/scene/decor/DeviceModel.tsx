@@ -14,7 +14,7 @@ import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
 import Vacuum from '#/scene/decor/Vacuum.tsx'
-import HoodAwning from '#/scene/decor/Hood.tsx'
+import PergolaAwning from '#/scene/decor/Pergola.tsx'
 import { CeilingFan, FloorFan, Radiator } from '#/scene/decor/Climate.tsx'
 import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene/decor/Media.tsx'
 import type { RoomConfig } from '#/types.ts'
@@ -406,7 +406,6 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           h={p('height')}
           on={on}
           speed={(3 + runLevel * 12) * lit}
-          glow={level * lit}
           look={look}
         />
       )
@@ -545,12 +544,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // A blind's slats turn with its second percentage: flat lets the light
       // through, upright shuts it out.
       const slatAngle = (1 - tiltAmount) * 1.2
-      if (awning && style === 'hood') {
+      if (awning && style === 'pergola') {
         return (
-          <HoodAwning
+          <PergolaAwning
             w={w}
-            rise={full}
-            out={awning ? coverLevel : 0}
+            reach={full}
+            floor={p('height')}
+            out={coverLevel}
             canopy={<Material color={c(cloth)} material={m(cloth)} doubleSide />}
             frame={<Material color={c(head)} material={m(head)} />}
           />
@@ -736,12 +736,83 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       const w = p('width')
       const h = p('height')
       const hingeRight = p('flip') > 0.5
-      const f = 0.05
+      // Steel frames are slimmer than timber or uPVC ones.
+      const f = style === 'steel' ? 0.035 : 0.05
       const d = 0.05
       const frame = <Material color={c('frame')} material={m('frame')} />
       const inner = { w: w - f * 2, h: h - f * 2 }
       const leaves = leafCount(inner.w)
       const leafW = inner.w / leaves
+      // Glazing bars across a leaf, laid on its glass. They move with the
+      // leaf, so they are drawn inside whatever group swings or slides it.
+      const bars = (cx: number, lw: number, lh: number, cols: number, rows: number, t: number) => (
+        <group position={[cx, 0, t / 2]}>
+          {Array.from({ length: cols - 1 }).map((_, i) => (
+            <mesh key={`c${i}`} position={[-lw / 2 + (lw * (i + 1)) / cols, lh / 2, 0]}>
+              <boxGeometry args={[0.012, lh - t * 2, 0.012]} />
+              {frame}
+            </mesh>
+          ))}
+          {Array.from({ length: rows - 1 }).map((_, j) => (
+            <mesh key={`r${j}`} position={[0, (lh * (j + 1)) / rows, 0]}>
+              <boxGeometry args={[lw - t * 2, 0.012, 0.012]} />
+              {frame}
+            </mesh>
+          ))}
+        </group>
+      )
+      const glass = c('glass')
+      // The ways a window can open other than on side hinges. Each keeps the
+      // outer frame and puts its own leaves inside it.
+      let leavesDrawn: ReactNode = null
+      if (style === 'sash') {
+        // A box sash: two halves, the lower one sliding up in front of the
+        // upper one as the window opens, each split by a glazing bar.
+        const sh = inner.h / 2 + 0.015
+        const rise = coverLevel * inner.h * 0.45
+        leavesDrawn = (
+          <>
+            <group position={[0, f + inner.h - sh, 0.005]}>
+              {sash(0, inner.w, sh, frame, glass)}
+              {bars(0, inner.w, sh, 2, 1, 0.03)}
+            </group>
+            <group position={[0, f + rise, 0.04]}>
+              {sash(0, inner.w, sh, frame, glass)}
+              {bars(0, inner.w, sh, 2, 1, 0.03)}
+            </group>
+          </>
+        )
+      } else if (style === 'awning') {
+        // Top hung: every leaf hangs from its head and its foot swings out.
+        leavesDrawn = Array.from({ length: leaves }).map((_, i) => (
+          <group
+            key={i}
+            position={[-inner.w / 2 + (i + 0.5) * leafW, f + inner.h, 0.02]}
+            rotation={[-0.6 * coverLevel, 0, 0]}
+          >
+            <group position={[0, -inner.h, 0]}>{sash(0, leafW, inner.h, frame, glass)}</group>
+          </group>
+        ))
+      } else if (style === 'slider') {
+        // Two panes on two tracks. The back one slides over the fixed one,
+        // from the right unless the hinge is flipped.
+        const side = hingeRight ? -1 : 1
+        const pw = inner.w / 2 + 0.015
+        const travel = coverLevel * (inner.w / 2 - 0.03)
+        leavesDrawn = (
+          <>
+            <group position={[0, f, 0.04]}>{sash((-side * inner.w) / 4, pw, inner.h, frame, glass)}</group>
+            <group position={[(side * inner.w) / 4 - side * travel, f, 0.005]}>
+              {sash(0, pw, inner.h, frame, glass)}
+            </group>
+          </>
+        )
+      }
+      // Steel casements are the side hung ones again, only slimmer and
+      // divided into small panes.
+      const steel = style === 'steel'
+      const t = steel ? 0.022 : 0.03
+      const rows = Math.max(2, Math.round(inner.h / 0.3))
       return (
         <group>
           <Slab size={[w, f, d]} radius={0.012} position={[0, 0, d / 2 - 0.02]}>
@@ -756,22 +827,24 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           <Slab size={[f, inner.h, d]} radius={0.012} position={[(w - f) / 2, f, d / 2 - 0.02]}>
             {frame}
           </Slab>
-          {Array.from({ length: leaves }).map((_, i) => {
-            const left = !hingeRight && i < leaves / 2
-            const edge = -inner.w / 2 + i * leafW
-            const hinge = left ? edge : edge + leafW
-            // Fully open is square to the wall.
-            const open = (left ? 1 : -1) * (Math.PI / 2) * coverLevel
-            return (
-              <group key={i} position={[hinge, f, 0.02]} rotation={[0, open, 0]}>
-                {/* Tilt and turn: the top leans in when a tilt percentage
+          {leavesDrawn ??
+            Array.from({ length: leaves }).map((_, i) => {
+              const left = !hingeRight && i < leaves / 2
+              const edge = -inner.w / 2 + i * leafW
+              const hinge = left ? edge : edge + leafW
+              // Fully open is square to the wall.
+              const open = (left ? 1 : -1) * (Math.PI / 2) * coverLevel
+              return (
+                <group key={i} position={[hinge, f, 0.02]} rotation={[0, open, 0]}>
+                  {/* Tilt and turn: the top leans in when a tilt percentage
                     feeds it, on top of whatever the swing is doing. */}
-                <group rotation={[-tiltAmount * 0.3, 0, 0]}>
-                  {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, c('glass'))}
+                  <group rotation={[-tiltAmount * 0.3, 0, 0]}>
+                    {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, glass, t)}
+                    {steel && bars((left ? 1 : -1) * (leafW / 2), leafW, inner.h, 2, rows, t)}
+                  </group>
                 </group>
-              </group>
-            )
-          })}
+              )
+            })}
         </group>
       )
     }

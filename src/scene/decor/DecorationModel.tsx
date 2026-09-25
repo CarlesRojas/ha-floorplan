@@ -5,12 +5,15 @@ import ApplianceModel from '#/scene/decor/ApplianceModel.tsx'
 import DecorModel from '#/scene/decor/DecorModel.tsx'
 import DeviceModel from '#/scene/decor/DeviceModel.tsx'
 import FurnitureModel from '#/scene/decor/FurnitureModel.tsx'
+import HearthModel from '#/scene/decor/Hearth.tsx'
 import LightModel from '#/scene/decor/LightModel.tsx'
+import OutdoorModel from '#/scene/decor/Outdoor.tsx'
 import { sameState, type ItemState } from '#/scene/decor/state.ts'
 import type { DecorationKind } from '#/decoration/catalog.ts'
 import { memo, type ReactNode } from 'react'
 import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils } from 'three'
+import { useEased } from '#/scene/decor/ease.ts'
 
 type Props = {
   item: DecorationConfig
@@ -20,6 +23,8 @@ type Props = {
   // are on. Absent in the sidebar's preview, where there is no room.
   room?: RoomConfig
   state: ItemState | null
+  // How far the standing desks under it have carried it up.
+  raise?: number
   onClick?: () => void
   // A right click, or a long press, asks Home Assistant for the entity's own
   // dialog, where everything a click cannot do lives: brightness, color,
@@ -50,25 +55,38 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
   security: DeviceModel,
   utility: DeviceModel,
   decor: DecorModel,
+  outdoor: OutdoorModel,
+}
+
+// Kinds drawn by a model other than their family's: the pieces that come
+// alive when they are on, a fire, a tree's lights, a tank, a feeder and a
+// boiler, all live together.
+const KIND_MODELS: Record<string, FamilyModel> = {
+  fireplace: HearthModel,
+  christmas_tree: HearthModel,
+  aquarium: HearthModel,
+  pet_feeder: HearthModel,
+  water_heater: HearthModel,
 }
 
 // The models that read the rest of the plan, not just the piece they stand
-// on: the vacuum finds its way round everything on the floor, and a counter
+// on: the vacuum and the mower find their way round everything on the floor, and a counter
 // cuts holes for the sinks standing on it.
-const READS_PLAN = new Set(['vacuum_robot', 'kitchen_counter'])
+const READS_PLAN = new Set(['vacuum_robot', 'lawn_mower', 'kitchen_counter'])
 
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-function DecorationModel({ item, all, room, state, onClick, onOpen }: Props) {
+function DecorationModel({ item, all, room, state, raise = 0, onClick, onOpen }: Props) {
   const interactive = usePressActions(onClick, onOpen)
+  const rise = useEased(raise, 2)
   const kind = decorationKind(item.kind)
   if (!kind) return null
-  const Model = FAMILY_MODELS[kind.family]
+  const Model = KIND_MODELS[kind.id] ?? FAMILY_MODELS[kind.family]
   if (!Model) return null
 
   const rotation = MathUtils.degToRad(item.rotation ?? 0)
-  const lift = standHeight(item, all)
+  const lift = standHeight(item, all) + rise
 
   return (
     <group
@@ -90,6 +108,7 @@ function DecorationModel({ item, all, room, state, onClick, onOpen }: Props) {
 // every model in the flat, and the plan a piece stands in changes with every
 // edit, so it only counts through the height it lifts the piece to.
 function unchanged(a: Props, b: Props) {
+  if (a.raise !== b.raise) return false
   if (a.item !== b.item || a.room !== b.room || a.onClick !== b.onClick || a.onOpen !== b.onOpen) return false
   if (!sameState(a.state, b.state)) return false
   if (a.all === b.all) return true

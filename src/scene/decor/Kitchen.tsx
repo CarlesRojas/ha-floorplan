@@ -13,6 +13,132 @@ export type Fit = {
   on: boolean
   lit: number
   level: number
+  // How far a door stands open while it is on, 0 to 1, eased.
+  open: number
+}
+
+// The white liner inside a fridge or a dishwasher.
+const LINER = '#eef0f0'
+
+// A box open at the front, so a door swung back shows inside it: a back,
+// two ends, a top and a bottom, `t` thick, from y 0 to `h` and `d` deep
+// back from `z`. The outside is `skin`, and a white liner covers the back.
+function Carcass({
+  w,
+  h,
+  d,
+  z,
+  t = 0.02,
+  skin,
+}: {
+  w: number
+  h: number
+  d: number
+  z: number
+  t?: number
+  skin: ReactNode
+}) {
+  const back = z - d
+  return (
+    <group>
+      <mesh position={[0, h / 2, back + t / 2]}>
+        <boxGeometry args={[w, h, t]} />
+        {skin}
+      </mesh>
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[(s * (w - t)) / 2, h / 2, back + d / 2]}>
+          <boxGeometry args={[t, h, d]} />
+          {skin}
+        </mesh>
+      ))}
+      {[t / 2, h - t / 2].map(y => (
+        <mesh key={y} position={[0, y, back + d / 2]}>
+          <boxGeometry args={[w - 2 * t, t, d]} />
+          {skin}
+        </mesh>
+      ))}
+      <mesh position={[0, h / 2, back + t + 0.001]}>
+        <planeGeometry args={[w - 2 * t, h - 2 * t]} />
+        <meshStandardMaterial color={LINER} roughness={0.5} />
+      </mesh>
+    </group>
+  )
+}
+
+// A compartment's inside: glass shelves, and a few things standing on
+// them, with a light at the top that comes on as the door opens.
+function Larder({
+  w,
+  y0,
+  y1,
+  z,
+  d,
+  shelves,
+  open,
+  drawers = false,
+}: {
+  w: number
+  y0: number
+  y1: number
+  z: number
+  d: number
+  shelves: number
+  open: number
+  drawers?: boolean
+}) {
+  const step = (y1 - y0) / (shelves + 1)
+  const mid = z - d / 2
+  const food = ['#d8503c', '#f2d25c', '#7fae5a', '#f4f1e8']
+  return (
+    <group>
+      {Array.from({ length: shelves }, (_, i) => {
+        const y = y0 + step * (i + 1)
+        return drawers ? (
+          <mesh key={i} position={[0, y - step / 2, mid + 0.02]}>
+            <boxGeometry args={[w - 0.02, step - 0.02, d - 0.06]} />
+            <meshStandardMaterial color="#dfe8ec" roughness={0.3} transparent opacity={0.7} />
+          </mesh>
+        ) : (
+          <mesh key={i} position={[0, y, mid]}>
+            <boxGeometry args={[w, 0.006, d - 0.02]} />
+            <meshStandardMaterial color="#cfe3e8" roughness={0.1} transparent opacity={0.45} />
+          </mesh>
+        )
+      })}
+      {!drawers &&
+        Array.from({ length: shelves }, (_, i) => {
+          const y = y0 + step * (i + 1) + 0.003
+          return food.slice(i % 2, (i % 2) + 2).map((color, k) => (
+            <mesh key={`${i}:${k}`} position={[(k - 0.5) * w * 0.4 + (i % 2) * 0.04, y + 0.05, mid - d * 0.1]}>
+              {k === 0 ? <boxGeometry args={[0.1, 0.1, 0.08]} /> : <cylinderGeometry args={[0.035, 0.035, 0.1, 20]} />}
+              <meshStandardMaterial color={color} roughness={0.6} />
+            </mesh>
+          ))
+        })}
+      {/* The lamp in the roof of the compartment. */}
+      <mesh position={[0, y1 - 0.004, mid]}>
+        <boxGeometry args={[w * 0.3, 0.006, 0.04]} />
+        <meshStandardMaterial color="#f5f3ee" emissive="#fff4df" emissiveIntensity={2 * open} />
+      </mesh>
+      <Halo on={open > 0.5} position={[0, (y0 + y1) / 2, z + 0.05]} color="#fff1d8" intensity={0.25} />
+    </group>
+  )
+}
+
+// Door bins on the inside of a fridge door, `h` tall from `y`, in the
+// door's own frame with its inner face at z 0.
+function Bins({ w, y, h }: { w: number; y: number; h: number }) {
+  const n = Math.max(1, Math.floor(h / 0.35))
+  return (
+    <group>
+      {Array.from({ length: n }, (_, i) => (
+        <mesh key={i} position={[0, y + (h / n) * (i + 0.3), -0.035]}>
+          <boxGeometry args={[w * 0.8, 0.06, 0.07]} />
+          <meshStandardMaterial color="#dfe8ec" roughness={0.3} transparent opacity={0.75} />
+        </mesh>
+      ))}
+    </group>
+  )
 }
 
 // A dark recess cut into a door, the pocket a handleless front is pulled
@@ -42,7 +168,7 @@ function Pocket({
 // with one door and its grip at the top. The doors hinge on the left, or on
 // the right when `flip` is set, and the grips move to the other edge.
 export function Fridge({ w, d, h, flip, fit }: { w: number; d: number; h: number; flip: boolean; fit: Fit }) {
-  const { M } = fit
+  const { M, open } = fit
   const side = flip ? -1 : 1
   const door = 0.05
   const toe = Math.min(0.06, h * 0.04)
@@ -59,45 +185,61 @@ export function Fridge({ w, d, h, flip, fit }: { w: number; d: number; h: number
       ]
     : [{ y: toe, h: h - toe, grip: 'top' as const }]
   const grip = Math.min(0.32, h * 0.16)
+  const dw = w - 0.004
+  const inside = w - 0.04
+  const mouth = front - door
+  // While it is on the doors stand open, swung out on their hinges.
+  const swing = open * 1.75
   return (
     <group>
-      <Slab size={[w, h, body]} radius={0.012} bevel={0.006} position={[0, 0, -door / 2]}>
-        {M('body')}
-      </Slab>
+      <Carcass w={w} h={h} d={body} z={mouth} skin={M('body')} />
+      {/* The shelf between the freezer and the fridge. */}
+      {tall && (
+        <mesh position={[0, toe + low, mouth - body / 2]}>
+          <boxGeometry args={[inside, 0.04, body - 0.02]} />
+          {M('body')}
+        </mesh>
+      )}
+      <Larder
+        w={inside}
+        y0={tall ? toe + low + 0.02 : 0.02}
+        y1={h - 0.02}
+        z={mouth}
+        d={body - 0.02}
+        shelves={tall ? 3 : 2}
+        open={open}
+      />
+      {tall && (
+        <Larder w={inside} y0={0.02} y1={toe + low - 0.02} z={mouth} d={body - 0.02} shelves={2} open={0} drawers />
+      )}
       {/* The toe grille, set back under the lower door. */}
-      <mesh position={[0, toe / 2, front - door + 0.004]}>
+      <mesh position={[0, toe / 2, mouth + 0.004]}>
         <boxGeometry args={[w - 0.03, toe - 0.008, 0.02]} />
         {M('handles')}
       </mesh>
       {doors.map((dr, i) => (
-        <group key={i}>
-          <Panel size={[w - 0.004, dr.h, door]} position={[0, dr.y, front - door / 2]} radius={0.01}>
+        // Each door turns about its hinge, at the front of the edge away
+        // from its grip.
+        <group key={i} position={[(-side * w) / 2 + side * 0.002, 0, front]} rotation={[0, -side * swing, 0]}>
+          <Panel size={[dw, dr.h, door]} position={[(side * dw) / 2, dr.y, -door / 2]} radius={0.01}>
             {M('doors')}
           </Panel>
+          <group position={[(side * dw) / 2, 0, -door]}>
+            <Bins w={inside} y={dr.y + 0.05} h={dr.h - 0.1} />
+          </group>
           {/* The pocket grip, in the door's outer edge by the split. */}
           <Pocket
             size={[0.018, grip, door * 0.7]}
             position={[
-              side * (w / 2 - 0.008),
+              side * (dw - 0.006),
               dr.grip === 'top' ? dr.y + dr.h - grip / 2 - 0.01 : dr.y + grip / 2 + 0.01,
-              front - door * 0.35 + 0.001,
+              -door * 0.35 + 0.001,
             ]}
           >
             {M('handles')}
           </Pocket>
         </group>
       ))}
-      {/* The door display, dark glass that lights with the fridge's
-          temperature while it runs. */}
-      <mesh position={[-side * (w / 2 - 0.11), h - 0.14, front + 0.0015]}>
-        <planeGeometry args={[0.1, 0.045]} />
-        <meshStandardMaterial color="#15181a" emissive="#d9f2ff" emissiveIntensity={1.1 * fit.lit} roughness={0.3} />
-      </mesh>
-      <mesh position={[-side * (w / 2 - 0.11), h - 0.14, front + 0.002]}>
-        <planeGeometry args={[0.05, 0.016]} />
-        <meshBasicMaterial color="#7fd0ff" transparent opacity={fit.lit} />
-      </mesh>
-      <Halo on={fit.on} position={[-side * (w / 2 - 0.11), h - 0.14, front + 0.06]} color="#bfe6ff" intensity={0.08} />
     </group>
   )
 }
@@ -108,11 +250,13 @@ export function Fridge({ w, d, h, flip, fit }: { w: number; d: number; h: number
 // side of the split, an ice and water dispenser let into the freezer door
 // and a toe grille under both.
 export function SideBySide({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
-  const { M } = fit
+  const { M, open } = fit
   const door = 0.06
   const toe = Math.min(0.06, h * 0.04)
   const gap = 0.006
   const front = d / 2
+  const mouth = front - door
+  const body = d - door
   const split = -w / 2 + w * 0.44
   const leaves: [number, number][] = [
     [-w / 2, split - gap / 2],
@@ -124,56 +268,85 @@ export function SideBySide({ w, d, h, fit }: { w: number; d: number; h: number; 
   // The dispenser, a dark recess at chest height in the middle of the
   // freezer door.
   const disp: [number, number] = [Math.min(0.2, w * 0.24), Math.min(0.32, h * 0.18)]
-  const dispX = (leaves[0][0] + leaves[0][1]) / 2 - 0.02
   const dispY = Math.min(h - disp[1] / 2 - 0.25, 1.1)
+  // While it is on both doors stand open, each on its outer edge.
+  const swing = open * 1.75
   return (
     <group>
-      <Slab size={[w, h, d - door]} radius={0.012} bevel={0.006} position={[0, 0, -door / 2]}>
+      <Carcass w={w} h={h} d={body} z={mouth} skin={M('body')} />
+      {/* The wall between the freezer and the fridge. */}
+      <mesh position={[split, h / 2, mouth - body / 2]}>
+        <boxGeometry args={[0.04, h - 0.04, body - 0.02]} />
         {M('body')}
-      </Slab>
-      <mesh position={[0, toe / 2, front - door + 0.004]}>
+      </mesh>
+      <group position={[(-w / 2 + split) / 2, 0, 0]}>
+        <Larder
+          w={split + w / 2 - 0.06}
+          y0={0.02}
+          y1={h - 0.02}
+          z={mouth}
+          d={body - 0.02}
+          shelves={4}
+          open={0}
+          drawers
+        />
+      </group>
+      <group position={[(split + w / 2) / 2, 0, 0]}>
+        <Larder w={w / 2 - split - 0.06} y0={0.02} y1={h - 0.02} z={mouth} d={body - 0.02} shelves={4} open={open} />
+      </group>
+      <mesh position={[0, toe / 2, mouth + 0.004]}>
         <boxGeometry args={[w - 0.03, toe - 0.008, 0.02]} />
         {M('handles')}
       </mesh>
-      {leaves.map(([a, b], i) => (
-        <group key={i}>
-          <Panel size={[b - a - 0.002, h - toe, door]} position={[(a + b) / 2, toe, front - door / 2]} radius={0.01}>
-            {M('doors')}
-          </Panel>
-          {/* The bar handle, on two posts, by the split. */}
-          <Bar length={handle} radius={0.012} position={[split + (i ? 1 : -1) * 0.045, handleY, front + stand]}>
-            {M('handles')}
-          </Bar>
-          {[-1, 1].map(s => (
-            <mesh
-              key={s}
-              position={[split + (i ? 1 : -1) * 0.045, handleY + s * (handle / 2 - 0.05), front + stand / 2]}
-              rotation={[Math.PI / 2, 0, 0]}
-            >
-              <cylinderGeometry args={[0.009, 0.009, stand, 12]} />
+      {leaves.map(([a, b], i) => {
+        // The freezer hangs on its left edge and the fridge on its right.
+        const hinge = i ? b : a
+        const dir = i ? -1 : 1
+        const lw = b - a - 0.002
+        // The handle by the split, in the leaf's own frame.
+        const hx = split + (i ? 1 : -1) * 0.045 - hinge
+        return (
+          <group key={i} position={[hinge, 0, front]} rotation={[0, -dir * swing, 0]}>
+            <Panel size={[lw, h - toe, door]} position={[(dir * lw) / 2, toe, -door / 2]} radius={0.01}>
+              {M('doors')}
+            </Panel>
+            <group position={[(dir * lw) / 2, 0, -door]}>
+              <Bins w={lw - 0.06} y={toe + 0.1} h={h - toe - 0.3} />
+            </group>
+            {/* The bar handle, on two posts, by the split. */}
+            <Bar length={handle} radius={0.012} position={[hx, handleY, stand]}>
               {M('handles')}
-            </mesh>
-          ))}
-        </group>
-      ))}
-      <mesh position={[dispX, dispY, front + 0.001]}>
-        <boxGeometry args={[disp[0], disp[1], 0.03]} />
-        <meshStandardMaterial color="#1c1f21" roughness={0.5} />
-      </mesh>
-      {/* Its lit panel above it, and the spout in its top. */}
-      <mesh position={[dispX, dispY + disp[1] / 2 + 0.04, front + 0.0015]}>
-        <planeGeometry args={[disp[0], 0.05]} />
-        <meshStandardMaterial color="#15181a" emissive="#d9f2ff" emissiveIntensity={0.4 * fit.lit} />
-      </mesh>
-      <mesh position={[dispX, dispY + disp[1] / 2 - 0.03, front + 0.004]}>
-        <boxGeometry args={[0.03, 0.04, 0.03]} />
-        {M('handles')}
-      </mesh>
-      <Led
-        on={fit.on}
-        radius={0.006}
-        position={[dispX + disp[0] / 2 - 0.02, dispY + disp[1] / 2 + 0.04, front + 0.002]}
-      />
+            </Bar>
+            {[-1, 1].map(s => (
+              <mesh
+                key={s}
+                position={[hx, handleY + s * (handle / 2 - 0.05), stand / 2]}
+                rotation={[Math.PI / 2, 0, 0]}
+              >
+                <cylinderGeometry args={[0.009, 0.009, stand, 12]} />
+                {M('handles')}
+              </mesh>
+            ))}
+            {i === 0 && (
+              <group position={[(dir * lw) / 2 - 0.02, 0, 0]}>
+                <mesh position={[0, dispY, 0.001]}>
+                  <boxGeometry args={[disp[0], disp[1], 0.03]} />
+                  <meshStandardMaterial color="#1c1f21" roughness={0.5} />
+                </mesh>
+                {/* Its panel above it, and the spout in its top. */}
+                <mesh position={[0, dispY + disp[1] / 2 + 0.04, 0.0015]}>
+                  <planeGeometry args={[disp[0], 0.05]} />
+                  <meshStandardMaterial color="#15181a" />
+                </mesh>
+                <mesh position={[0, dispY + disp[1] / 2 - 0.03, 0.004]}>
+                  <boxGeometry args={[0.03, 0.04, 0.03]} />
+                  {M('handles')}
+                </mesh>
+              </group>
+            )}
+          </group>
+        )
+      })}
     </group>
   )
 }
@@ -320,18 +493,58 @@ export function Microwave({ w, d, h, fit }: { w: number; d: number; h: number; f
 // of the door with a display and keys, the grip cut in under it, and a
 // plinth set back at the toe.
 export function Dishwasher({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
-  const { M } = fit
+  const { M, open } = fit
   const front = d / 2
   const top = 0.025
   const face = 0.03
   const toe = Math.min(0.08, h * 0.1)
   const fascia = Math.min(0.07, h * 0.09)
   const doorTop = h - top - 0.004
+  const mouth = front - face
+  const body = d - face
+  const tub = h - top - toe
+  const inside = w - 0.05
+  const racks = [toe + 0.06, toe + tub * 0.55]
   return (
     <group>
-      <Slab size={[w - 0.004, h - top, d - face]} radius={0.006} bevel={0.003} position={[0, 0, -face / 2]}>
-        {M('body')}
-      </Slab>
+      <group position={[0, toe, 0]}>
+        <Carcass w={w - 0.004} h={tub} d={body} z={mouth} skin={M('body')} />
+      </group>
+      {/* Two wire racks, plates standing in the lower one and cups in the
+          upper. */}
+      {racks.map((y, r) => (
+        <group key={r} position={[0, y, mouth - body / 2]}>
+          {[-1, 1].map(s => (
+            <mesh key={s} position={[(s * inside) / 2, 0.04, 0]}>
+              <boxGeometry args={[0.004, 0.08, body - 0.06]} />
+              <meshStandardMaterial color="#c3c9cc" metalness={0.2} roughness={0.4} />
+            </mesh>
+          ))}
+          {[-1, 1].map(s => (
+            <mesh key={s} position={[0, 0.04, (s * (body - 0.06)) / 2]}>
+              <boxGeometry args={[inside, 0.08, 0.004]} />
+              <meshStandardMaterial color="#c3c9cc" metalness={0.2} roughness={0.4} />
+            </mesh>
+          ))}
+          <mesh>
+            <boxGeometry args={[inside, 0.004, body - 0.06]} />
+            <meshStandardMaterial color="#c3c9cc" metalness={0.2} roughness={0.4} />
+          </mesh>
+          {r === 0
+            ? Array.from({ length: 7 }, (_, i) => (
+                <mesh key={i} position={[-inside * 0.36 + i * inside * 0.12, 0.1, 0]} rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.1, 0.1, 0.008, SEG]} />
+                  <meshStandardMaterial color="#f4f2ec" roughness={0.3} />
+                </mesh>
+              ))
+            : [-1, 0, 1].map(i => (
+                <mesh key={i} position={[i * inside * 0.28, 0.05, 0]} rotation={[Math.PI, 0, 0]}>
+                  <cylinderGeometry args={[0.04, 0.032, 0.09, 20]} />
+                  <meshStandardMaterial color="#f4f2ec" roughness={0.3} />
+                </mesh>
+              ))}
+        </group>
+      ))}
       <Slab size={[w, top, d]} radius={0.01} bevel={0.004} position={[0, h - top, 0]}>
         {M('top')}
       </Slab>
@@ -340,46 +553,42 @@ export function Dishwasher({ w, d, h, fit }: { w: number; d: number; h: number; 
         <boxGeometry args={[w - 0.01, toe, 0.016]} />
         {M('controls')}
       </mesh>
-      <Panel size={[w - 0.004, fascia, face]} position={[0, doorTop - fascia, front - face / 2]} radius={0.004}>
-        {M('door')}
-      </Panel>
-      <mesh position={[0, doorTop - fascia / 2, front + 0.0005]}>
-        <planeGeometry args={[Math.min(0.12, w * 0.2), fascia * 0.4]} />
-        <Material
-          color={fit.c('controls')}
-          material="ceramic"
-          emissive={[0.7, 0.85, 1]}
-          emissiveIntensity={1.6 * fit.lit}
-        />
-      </mesh>
-      {/* The spot it throws on the floor in front of the plinth while it
-          runs, the only sign of it with the door shut. */}
-      <mesh position={[0, 0.002, front + 0.09]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.045, 32]} />
-        <meshBasicMaterial color="#3d9bff" transparent opacity={0.85 * fit.lit} depthWrite={false} />
-      </mesh>
-      <mesh position={[0, 0.0015, front + 0.09]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.045, 0.09, 32]} />
-        <meshBasicMaterial color="#3d9bff" transparent opacity={0.18 * fit.lit} depthWrite={false} />
-      </mesh>
-      {[-3, -2, -1, 1, 2, 3].map(i => (
-        <mesh key={i} position={[i * w * 0.07 + Math.sign(i) * w * 0.05, doorTop - fascia / 2, front + 0.0005]}>
-          <circleGeometry args={[0.005, 16]} />
-          {M('controls')}
-        </mesh>
-      ))}
-      {/* The grip: a dark slot the width of the door under the fascia. */}
-      <mesh position={[0, doorTop - fascia - 0.012, front - face / 2]}>
-        <boxGeometry args={[w * 0.7, 0.024, face + 0.002]} />
-        {M('controls')}
-      </mesh>
-      <Panel
-        size={[w - 0.004, doorTop - fascia - 0.024 - toe, face]}
-        position={[0, toe, front - face / 2]}
-        radius={0.004}
-      >
-        {M('door')}
-      </Panel>
+      {/* The door, hinged along its foot, drops open while it is on. */}
+      <group position={[0, toe, front]} rotation={[open * 1.5, 0, 0]}>
+        <group position={[0, -toe, 0]}>
+          <Panel size={[w - 0.004, fascia, face]} position={[0, doorTop - fascia, -face / 2]} radius={0.004}>
+            {M('door')}
+          </Panel>
+          <mesh position={[0, doorTop - fascia / 2, 0.0005]}>
+            <planeGeometry args={[Math.min(0.12, w * 0.2), fascia * 0.4]} />
+            <Material
+              color={fit.c('controls')}
+              material="ceramic"
+              emissive={[0.7, 0.85, 1]}
+              emissiveIntensity={1.6 * fit.lit}
+            />
+          </mesh>
+          {[-3, -2, -1, 1, 2, 3].map(i => (
+            <mesh key={i} position={[i * w * 0.07 + Math.sign(i) * w * 0.05, doorTop - fascia / 2, 0.0005]}>
+              <circleGeometry args={[0.005, 16]} />
+              {M('controls')}
+            </mesh>
+          ))}
+          {/* The grip: a dark slot the width of the door under the fascia. */}
+          <mesh position={[0, doorTop - fascia - 0.012, -face / 2]}>
+            <boxGeometry args={[w * 0.7, 0.024, face + 0.002]} />
+            {M('controls')}
+          </mesh>
+          <Panel size={[w - 0.004, doorTop - fascia - 0.024 - toe, face]} position={[0, toe, -face / 2]} radius={0.004}>
+            {M('door')}
+          </Panel>
+          {/* The steel inner face of the door. */}
+          <mesh position={[0, (doorTop + toe) / 2, -face - 0.001]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[inside, doorTop - toe - 0.04]} />
+            <meshStandardMaterial color="#cdd2d4" metalness={0.2} roughness={0.35} />
+          </mesh>
+        </group>
+      </group>
     </group>
   )
 }

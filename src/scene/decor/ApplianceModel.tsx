@@ -8,7 +8,7 @@ import {
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
-import { Bar, Halo, Material, Panel, SEG, Slab, Tube, type Hole } from '#/scene/decor/parts.tsx'
+import { Bar, Material, Panel, SEG, Slab, Tube, type Hole } from '#/scene/decor/parts.tsx'
 import { Sink } from '#/scene/decor/Sink.tsx'
 import { sinkPlan, sinkStyle } from '#/scene/decor/sinkSpecs.ts'
 import Shower from '#/scene/decor/Shower.tsx'
@@ -255,8 +255,10 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
   // than stepping.
   const level = useEased(state?.level ?? 1, 6)
   const lit = useEased(on ? 1 : 0, 9)
+  // How far a door stands open, eased so it swings rather than jumps.
+  const open = useEased(on ? 1 : 0, 3)
 
-  const fit: Fit = { M, c, m, on, lit, level }
+  const fit: Fit = { M, c, m, on, lit, level, open }
   const style = decorationVariant(kind, item.variant)?.id
 
   switch (kind.id) {
@@ -323,9 +325,12 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       )
     }
     case 'upper_cabinets': {
-      // Handleless wall units: a carcass, a door per unit with a shadow gap
-      // and a lip pull running under the bottom edge. The units are laid out
-      // as the counter's are, and one too narrow for a door is a filler.
+      // Handleless wall units: an open carcass with a shelf in each unit, a
+      // door per unit with a shadow gap and a lip pull running under the
+      // bottom edge. The units are laid out as the counter's are, and one
+      // too narrow for a door is a filler. While it is on the doors stand
+      // open in pairs, on hinges at the outer edges, showing the plates and
+      // glasses inside.
       const w = p('width')
       const d = p('depth')
       // The height set is the top of the units. Set low, they shorten
@@ -335,22 +340,71 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       const up = Math.max(0, cabH - top)
       const modules = counterModules(w, p('wide') > 0.5, p('grow'))
       const starts = modules.map((_, i) => modules.slice(0, i).reduce((a, b) => a + b, 0))
-      // One light for every 70 cm or so of the strip, at most four.
-      const lamps = Math.min(4, Math.ceil(w / 0.7))
+      const t = 0.018
+      const shelf = cabH / 2
       return (
         <group position={[0, -cabH + up, 0]}>
-          <Slab size={[w, cabH, d]} radius={0.02} position={[0, 0, d / 2]}>
+          <Slab size={[w, cabH, t]} radius={0.004} position={[0, 0, t / 2]}>
             {M('cabinets')}
           </Slab>
-          {modules.map((cw, i) => (
-            <Panel
-              key={i}
-              size={[Math.max(cw - 0.015, 0.004), cabH - 0.025, 0.018]}
-              position={[-w / 2 + starts[i] + cw / 2, 0.015, d]}
-            >
-              {M('doors')}
-            </Panel>
+          {[0, cabH - t].map(y => (
+            <Slab key={y} size={[w, t, d]} radius={0.004} position={[0, y, d / 2]}>
+              {M('cabinets')}
+            </Slab>
           ))}
+          {[0, ...starts.slice(1), w].map(x => (
+            <Slab
+              key={x}
+              size={[t, cabH - 2 * t, d - t]}
+              radius={0.002}
+              position={[-w / 2 + Math.min(Math.max(x, t / 2), w - t / 2), t, (d + t) / 2]}
+            >
+              {M('cabinets')}
+            </Slab>
+          ))}
+          {modules.map((cw, i) => {
+            const x = -w / 2 + starts[i] + cw / 2
+            const plate = Math.min(0.11, cw * 0.3, d * 0.4)
+            return (
+              <group key={i}>
+                <Slab size={[cw - t, t, d - t - 0.02]} radius={0.002} position={[x, shelf, (d + t) / 2 - 0.01]}>
+                  {M('cabinets')}
+                </Slab>
+                {cw >= 0.25 && (
+                  <group>
+                    <mesh position={[x, t + 0.03, d / 2]}>
+                      <cylinderGeometry args={[plate, plate * 0.8, 0.06, SEG]} />
+                      <meshStandardMaterial color="#f2f1ec" roughness={0.4} />
+                    </mesh>
+                    {[-1, 0, 1].map(k => (
+                      <mesh key={k} position={[x + k * cw * 0.25, shelf + t + 0.05, d / 2]}>
+                        <cylinderGeometry args={[0.035, 0.03, 0.1, 20]} />
+                        <meshStandardMaterial color="#cfe0e4" roughness={0.1} transparent opacity={0.6} />
+                      </mesh>
+                    ))}
+                  </group>
+                )}
+              </group>
+            )
+          })}
+          {modules.map((cw, i) => {
+            const dw = Math.max(cw - 0.015, 0.004)
+            // Units pair off, the first of a pair hung on its left edge and
+            // the second on its right, so each pair opens from the middle.
+            const side = i % 2 === 0 ? -1 : 1
+            const swing = cw >= 0.25 ? open * 1.9 : 0
+            return (
+              <group
+                key={i}
+                position={[-w / 2 + starts[i] + cw / 2 + (side * dw) / 2, 0.015, d]}
+                rotation={[0, side * swing, 0]}
+              >
+                <Panel size={[dw, cabH - 0.025, 0.018]} position={[(-side * dw) / 2, 0, 0]}>
+                  {M('doors')}
+                </Panel>
+              </group>
+            )
+          })}
           {/* The pull, a rail set back under the doors. */}
           <mesh position={[0, 0.006, d - 0.012]}>
             <boxGeometry args={[w - 0.02, 0.012, 0.03]} />
@@ -361,22 +415,6 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
             <boxGeometry args={[w, 0.012, 0.02]} />
             {M('cabinets')}
           </mesh>
-          {/* The LED strip under the units, behind the pull, lighting the
-              worktop below while it is on. */}
-          <mesh position={[0, -0.002, d - 0.06]}>
-            <boxGeometry args={[w - 0.04, 0.004, 0.014]} />
-            <meshStandardMaterial color="#e9e6df" emissive="#ffe9c4" emissiveIntensity={2.4 * lit} />
-          </mesh>
-          {Array.from({ length: lamps }, (_, i) => (
-            <Halo
-              key={i}
-              on={on}
-              position={[-w / 2 + (w / lamps) * (i + 0.5), -0.06, d * 0.7]}
-              color="#ffe2b0"
-              intensity={0.35}
-              distance={1}
-            />
-          ))}
         </group>
       )
     }
@@ -523,7 +561,7 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
 
     // Bathroom
     case 'toilet':
-      return <Toilet style={style} w={p('width')} d={p('depth')} fit={fit} />
+      return <Toilet style={style} w={p('width')} d={p('depth')} on={on} fit={fit} />
     case 'basin':
       return <Basin style={style} w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'bathtub':

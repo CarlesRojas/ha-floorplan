@@ -37,19 +37,25 @@ import { Bar, Cushion, Knob, Legs, Material, Panel, Slab } from '#/scene/decor/p
 import type { DecorationConfig } from '#/types.ts'
 import type { ReactNode } from 'react'
 
-import type { ItemState } from '#/scene/decor/state.ts'
+import { deskRise, type ItemState } from '#/scene/decor/state.ts'
+import { useEased } from '#/scene/decor/ease.ts'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
 // Seating, tables, storage and beds. The references are mid century Nordic:
 // slim oak frames on splayed tapered legs, plump linen cushions, plain
 // fronts with small round pulls.
-export default function FurnitureModel({ kind, item }: Props) {
+export default function FurnitureModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   // Every part names itself, so a piece's colors read as its parts.
   const M = (slot: string) => <Material color={c(slot)} material={m(slot)} />
+  // A desk is a standing desk: on, or at a level, its top goes up.
+  const rise = useEased(kind.id === 'desk' ? deskRise(state) : 0, 2)
+  // A bed is motorized: on, or at a level, the head of the mattress tilts
+  // up, a little over fifty degrees at the top.
+  const incline = useEased(kind.id === 'bed_double' && state ? (state.level ?? (state.on ? 1 : 0)) : 0, 1.5) * 0.95
 
   switch (kind.id) {
     // Seating
@@ -97,10 +103,10 @@ export default function FurnitureModel({ kind, item }: Props) {
     case 'coffee_table': {
       const style = decorationVariant(kind, item.variant)?.id
       if (kind.id === 'desk' && style === 'office_table') {
-        return <OfficeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
+        return <OfficeTable w={p('width')} d={p('depth')} h={p('height') + rise} M={M} />
       }
       if (kind.id === 'desk' && style === 'pedestal') {
-        return <PedestalDesk w={p('width')} d={p('depth')} h={p('height')} M={M} />
+        return <PedestalDesk w={p('width')} d={p('depth')} h={p('height')} rise={rise} M={M} />
       }
       if (kind.id === 'coffee_table' && style === 'frame') {
         return <FrameCoffeeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
@@ -116,7 +122,7 @@ export default function FurnitureModel({ kind, item }: Props) {
       // the parts keep their proportions however small it is made.
       const w = p('width')
       const d = p('depth')
-      const h = p('height')
+      const h = p('height') + rise
       const coffee = kind.id === 'coffee_table'
       const top = Math.min(coffee ? 0.035 : 0.04, h * 0.1)
       const apron = Math.min(coffee ? 0.04 : 0.07, h * 0.12)
@@ -280,7 +286,7 @@ export default function FurnitureModel({ kind, item }: Props) {
       if (style === 'malm') return <PlainDresser {...size} />
       if (style === 'hemnes') return <PaintedDresser {...size} />
       if (style === 'sliding') return <SlidingWardrobe {...size} />
-      if (style === 'rail') return <OpenRail {...size} clothes={c('clothes')} />
+      if (style === 'rail') return <OpenRail {...size} />
       // One carcass, three ways of closing it: doors across the width for a
       // sideboard, drawers stacked by height for a dresser, tall doors and a
       // plinth for a wardrobe. All of them count their fronts from the size.
@@ -489,6 +495,9 @@ export default function FurnitureModel({ kind, item }: Props) {
       const duvetZ = -l / 2 + 0.07 + pillowD + 0.04
       const duvetL = l / 2 - 0.02 - duvetZ
       const fold = l * 0.12
+      // The head section runs from the head end to just short of the duvet.
+      const headL = duvetZ + l / 2 - 0.02
+      const hinge = -l / 2 + headL
       const bedding = () => <Material color={c('bedding')} material={m('bedding')} />
       return (
         <group>
@@ -523,9 +532,30 @@ export default function FurnitureModel({ kind, item }: Props) {
               )}
             </>
           )}
-          <Slab size={[w, mattress, l]} radius={0.1} bevel={0.02} position={[0, frameH, 0]}>
+          {/* The mattress in two, the foot lying on the frame and the head
+              hinged to it at its underside, just past the pillows. */}
+          <Slab
+            size={[w, mattress, l - headL]}
+            radius={0.03}
+            bevel={0.02}
+            position={[0, frameH, hinge + (l - headL) / 2]}
+          >
             {bedding()}
           </Slab>
+          <group position={[0, frameH, hinge]} rotation={[incline, 0, 0]}>
+            <Slab size={[w, mattress, headL]} radius={0.03} bevel={0.02} position={[0, 0, -headL / 2]}>
+              {bedding()}
+            </Slab>
+            {Array.from({ length: pillows }).map((_, i) => (
+              <Cushion
+                key={i}
+                size={[pillowW, 0.13, pillowD]}
+                position={[-w / 2 + 0.05 + ((w - 0.1) / pillows) * (i + 0.5), mattress, -headL + 0.07 + pillowD / 2]}
+              >
+                <Material color={c('pillows')} material={m('pillows')} />
+              </Cushion>
+            ))}
+          </group>
           {/* Duvet over the foot, its top edge turned back on itself: the
               band lies on the duvet from its head edge toward the foot. */}
           <Slab size={[w + 0.03, 0.08, duvetL]} radius={0.05} position={[0, frameH + mattress, duvetZ + duvetL / 2]}>
@@ -534,19 +564,6 @@ export default function FurnitureModel({ kind, item }: Props) {
           <Slab size={[w + 0.03, 0.05, fold]} radius={0.03} position={[0, frameH + mattress + 0.07, duvetZ + fold / 2]}>
             {bedding()}
           </Slab>
-          {Array.from({ length: pillows }).map((_, i) => (
-            <Cushion
-              key={i}
-              size={[pillowW, 0.13, pillowD]}
-              position={[
-                -w / 2 + 0.05 + ((w - 0.1) / pillows) * (i + 0.5),
-                frameH + mattress,
-                -l / 2 + 0.07 + pillowD / 2,
-              ]}
-            >
-              <Material color={c('pillows')} material={m('pillows')} />
-            </Cushion>
-          ))}
         </group>
       )
     }

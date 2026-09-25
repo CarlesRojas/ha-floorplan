@@ -1,7 +1,7 @@
 import { Bar, Knob, Legs, Panel, Slab } from '#/scene/decor/parts.tsx'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
 import { Fragment, useMemo, type ReactNode } from 'react'
-import { BufferGeometry, Color, Float32BufferAttribute, LatheGeometry, Vector2 } from 'three'
+import { LatheGeometry, Vector2 } from 'three'
 
 // The other styles of the tables and the storage: each a real piece, laid
 // out again at the size the sliders give it. The first style of each kind
@@ -382,8 +382,9 @@ export function StringShelf({ w, d, h, M, boards }: Size & { boards: number }) {
 
 // After the IKEA Micke: a plain top on a board at one end and a pedestal of
 // drawers at the other, a modesty panel across the back between them and
-// a round cable hole near the back edge.
-export function PedestalDesk({ w, d, h, M }: Size) {
+// a round cable hole near the back edge. Standing up, the top goes up on
+// the board and the panel, and the pedestal stays on the floor under it.
+export function PedestalDesk({ w, d, h, M, rise = 0 }: Size & { rise?: number }) {
   const top = 0.025
   const side = 0.02
   const pedW = Math.min(0.4, w * 0.3)
@@ -394,27 +395,33 @@ export function PedestalDesk({ w, d, h, M }: Size) {
   const pedX = w / 2 - pedW / 2
   return (
     <group>
-      <Slab size={[w, top, d]} radius={0.004} position={[0, under, 0]}>
+      <Slab size={[w, top, d]} radius={0.004} position={[0, under + rise, 0]}>
         {M('top')}
       </Slab>
       {/* The cable hole, a dark ring let into the top. */}
-      <mesh position={[-w / 2 + 0.2, h + 0.0005, -d / 2 + 0.08]} rotation={[0, 0, 0]}>
+      <mesh position={[-w / 2 + 0.2, h + rise + 0.0005, -d / 2 + 0.08]} rotation={[0, 0, 0]}>
         <cylinderGeometry args={[0.03, 0.03, 0.002, 28]} />
         {M('handle')}
       </mesh>
-      <Slab size={[side, under, d - 0.02]} radius={0.003} position={[-w / 2 + side / 2 + 0.005, 0, 0]}>
+      <Slab size={[side, under + rise, d - 0.02]} radius={0.003} position={[-w / 2 + side / 2 + 0.005, 0, 0]}>
         {M('legs')}
       </Slab>
       <Slab
         size={[w - pedW - side - 0.01, under * 0.45, side]}
         radius={0.003}
-        position={[-pedW / 2, under * 0.5, -d / 2 + 0.04]}
+        position={[-pedW / 2, under * 0.5 + rise, -d / 2 + 0.04]}
       >
         {M('legs')}
       </Slab>
       <Slab size={[pedW - 0.01, under, d - 0.04]} radius={0.003} position={[pedX, 0, -0.01]}>
         {M('legs')}
       </Slab>
+      {/* Raised, the top stands on a panel across the back of the pedestal. */}
+      {rise > 0.005 && (
+        <Slab size={[pedW - 0.01, rise, side]} radius={0.003} position={[pedX, under, -d / 2 + 0.03]}>
+          {M('legs')}
+        </Slab>
+      )}
       {range(drawers).map(i => {
         const y = 0.03 + drawerH * i + gap / 2
         return (
@@ -694,202 +701,52 @@ export function SlidingWardrobe({ w, d, h, M }: Size) {
   )
 }
 
-// The same color a little lighter or darker, for garments that do not
-// all match.
-function shade(color: string, by: number) {
-  const c = new Color(color)
-  c.offsetHSL(by * 0.35, 0, by * 0.6)
-  return `#${c.getHexString()}`
-}
-
-type GarmentKind = 'shirt' | 'coat' | 'dress' | 'trousers'
-
-// The outline of each kind of garment down its length, as the fraction of
-// the way down, its half width over half the hanger, and its thickness.
-const CUTS: Record<GarmentKind, [number, number, number][]> = {
-  shirt: [
-    [0, 0.12, 0.012],
-    [0.06, 0.98, 0.03],
-    [0.35, 0.9, 0.034],
-    [0.7, 0.86, 0.03],
-    [1, 0.9, 0.024],
-  ],
-  coat: [
-    [0, 0.16, 0.016],
-    [0.05, 1.02, 0.04],
-    [0.3, 0.96, 0.046],
-    [0.7, 0.98, 0.042],
-    [1, 1.04, 0.034],
-  ],
-  dress: [
-    [0, 0.3, 0.01],
-    [0.05, 0.74, 0.022],
-    [0.3, 0.62, 0.024],
-    [0.45, 0.72, 0.022],
-    [1, 1.2, 0.02],
-  ],
-  trousers: [
-    [0, 0.62, 0.02],
-    [0.08, 0.66, 0.03],
-    [1, 0.56, 0.022],
-  ],
-}
-
-// The outline at `v` of the way down, eased between the points of the cut.
-function cutAt(cut: [number, number, number][], v: number) {
-  const k = Math.max(
-    1,
-    cut.findIndex(([at]) => at >= v),
-  )
-  const [a0, w0, t0] = cut[k - 1]
-  const [a1, w1, t1] = cut[k]
-  const f = a1 === a0 ? 0 : (v - a0) / (a1 - a0)
-  const e = f * f * (3 - 2 * f)
-  return [w0 + (w1 - w0) * e, t0 + (t1 - t0) * e]
-}
-
-// A garment's body as a soft closed sleeve of cloth, edge on to the rail:
-// its width along z and its thickness along x, with folds that deepen and
-// a hem that waves toward the bottom, and closed flat at the hem.
-function clothGeometry(cut: [number, number, number][], long: number, half: number, seed: number) {
-  const rows = 28
-  const ring = 40
-  const positions: number[] = []
-  const index: number[] = []
-  for (let j = 0; j <= rows; j++) {
-    const v = j / rows
-    const [wk, t] = cutAt(cut, v)
-    const w = wk * half
-    for (let i = 0; i < ring; i++) {
-      const a = (i / ring) * Math.PI * 2
-      const c = Math.cos(a)
-      const z = w * Math.sign(c) * Math.abs(c) ** 0.5
-      const fold = Math.sin((z / half) * 7 + seed * 3 + Math.sin(a) * 0.4) * v * 0.45
-      const x = t * Math.sin(a) * (1 + fold)
-      const hem = j === rows ? 0.012 * Math.sin((z / half) * 5 + seed) : 0
-      positions.push(x, -v * long + hem, z)
-    }
-  }
-  const at = (i: number, j: number) => j * ring + (i % ring)
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < ring; i++) {
-      index.push(at(i, j), at(i + 1, j), at(i, j + 1), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1))
-    }
-  }
-  // The hem and the neck, each closed by a fan from its middle.
-  for (const [j, flip] of [
-    [rows, false],
-    [0, true],
-  ] as const) {
-    const centre = positions.length / 3
-    positions.push(0, j === rows ? -long : 0, 0)
-    for (let i = 0; i < ring; i++) {
-      if (flip) index.push(centre, at(i + 1, j), at(i, j))
-      else index.push(centre, at(i, j), at(i + 1, j))
-    }
-  }
-  const geo = new BufferGeometry()
-  geo.setAttribute('position', new Float32BufferAttribute(positions, 3))
-  geo.setIndex(index)
-  geo.computeVertexNormals()
-  return geo
-}
-
-// A garment on a wooden hanger, edge on from the rail: `across` wide along
-// z and its hem `long` below the hook. Shirts and coats have their sleeves
-// hanging down their sides, and trousers are folded over the hanger bar.
-function Garment({
-  kind,
-  long,
-  across,
-  color,
-  seed,
-  M,
-}: {
-  kind: GarmentKind
-  long: number
-  across: number
-  color: string
-  seed: number
-  M: Size['M']
-}) {
+// A wooden hanger edge on from the rail, `across` wide along z: the wire
+// hook over the rail, two shoulders sloping down from the middle, and the
+// bar across between their tips.
+function Hanger({ across, M }: { across: number; M: Size['M'] }) {
   const half = across / 2
-  const trousers = kind === 'trousers'
-  const drop = trousers ? 0.11 : 0.03
-  const body = trousers ? Math.min(long, 0.62) : long
-  const geometry = useMemo(() => clothGeometry(CUTS[kind], body, half, seed), [kind, body, half, seed])
-  const sleeves = kind === 'shirt' || kind === 'coat'
-  const cloth = <meshStandardMaterial color={color} roughness={0.95} />
+  const drop = 0.05
+  const wood = <meshStandardMaterial color="#b58a5c" roughness={0.6} />
+  const slope = Math.atan2(drop, half)
+  const arm = Math.hypot(half, drop)
   return (
     <group>
-      {/* The hanger: a bar across the shoulders, and the wire of its hook. */}
-      <Bar length={0.05} radius={0.0025} position={[0, 0.045, 0]}>
+      <Bar length={0.05} radius={0.0022} position={[0, 0.0, 0]}>
         {M('frame')}
       </Bar>
-      <Bar
-        length={half * 1.8}
-        radius={0.008}
-        rotation={[Math.PI / 2, 0, 0]}
-        position={[0, trousers ? -0.09 : -0.02, 0]}
-      >
-        <meshStandardMaterial color="#b58a5c" roughness={0.6} />
-      </Bar>
-      {trousers && (
-        <>
-          {[-1, 1].map(sz => (
-            <Bar
-              key={sz}
-              length={0.1}
-              radius={0.0025}
-              rotation={[sz * 0.5, 0, 0]}
-              position={[0, -0.035, sz * half * 0.45]}
-            >
-              {M('frame')}
-            </Bar>
-          ))}
-        </>
-      )}
-      <mesh geometry={geometry} position={[0, -drop + 0.03, 0]} castShadow>
-        {cloth}
+      <mesh position={[0, 0.025, 0.012]} rotation={[0, Math.PI / 2, 0]}>
+        <torusGeometry args={[0.013, 0.0022, 6, 16, Math.PI * 1.3]} />
+        {M('frame')}
       </mesh>
-      {sleeves &&
-        [-1, 1].map(sz => (
-          <mesh
-            key={sz}
-            position={[0, -0.07 - body * 0.27, sz * half * 0.86]}
-            rotation={[sz * 0.03, 0, 0]}
-            scale={[0.8, 1, 0.7]}
-            castShadow
-          >
-            <capsuleGeometry args={[kind === 'coat' ? 0.034 : 0.028, body * 0.45, 6, 16]} />
-            {cloth}
-          </mesh>
-        ))}
+      {[-1, 1].map(sz => (
+        <Bar
+          key={sz}
+          length={arm}
+          radius={0.007}
+          rotation={[Math.PI / 2 - sz * slope, 0, 0]}
+          position={[0, -0.03 - drop / 2, (sz * half) / 2]}
+        >
+          {wood}
+        </Bar>
+      ))}
+      <Bar length={across * 0.94} radius={0.004} rotation={[Math.PI / 2, 0, 0]} position={[0, -0.03 - drop, 0]}>
+        {wood}
+      </Bar>
     </group>
   )
 }
 
-const GARMENTS: { kind: GarmentKind; long: number; tone: number }[] = [
-  { kind: 'coat', long: 1.02, tone: -0.2 },
-  { kind: 'shirt', long: 0.74, tone: 0.3 },
-  { kind: 'dress', long: 0.98, tone: 0 },
-  { kind: 'shirt', long: 0.7, tone: 0.5 },
-  { kind: 'trousers', long: 0.62, tone: -0.35 },
-  { kind: 'shirt', long: 0.76, tone: 0.15 },
-  { kind: 'coat', long: 0.92, tone: -0.1 },
-  { kind: 'trousers', long: 0.62, tone: 0.25 },
-]
-
 // After the IKEA Mulig: an open clothes rack of thin white tube, a rail
-// across the top hung with clothes and a shelf near the floor for shoes
+// across the top hung with empty hangers and a shelf near the floor for shoes
 // and boxes.
-export function OpenRail({ w, d, h, M, clothes }: Size & { clothes: string }) {
+export function OpenRail({ w, d, h, M }: Size) {
   const tube = 0.011
   const post = d / 2 - 0.03
   const shelfY = Math.min(0.22, h * 0.15)
-  const count = Math.max(1, Math.floor((w - 0.16) / 0.085))
-  const across = Math.min(0.46, d * 0.9)
-  const hang = h - 0.08
+  const count = Math.max(1, Math.floor((w - 0.16) / 0.07))
+  const across = Math.min(0.42, d * 0.85)
+  const hang = h - 0.035
   return (
     <group>
       {[-1, 1].map(sx => (
@@ -914,15 +771,12 @@ export function OpenRail({ w, d, h, M, clothes }: Size & { clothes: string }) {
         {M('frame')}
       </Slab>
       {range(count).map(i => {
-        const g = GARMENTS[i % GARMENTS.length]
-        const long = Math.min(g.long, hang - shelfY - 0.1)
         const x = -w / 2 + 0.08 + ((w - 0.16) / Math.max(1, count - 1)) * i
-        const color = shade(clothes, g.tone)
         // Hung a little askew, each turned its own way on the rail.
         const turn = Math.sin(i * 2.7) * 0.12
         return (
           <group key={i} position={[count === 1 ? 0 : x, hang, 0]} rotation={[0, turn, 0]}>
-            <Garment kind={g.kind} long={long} across={across} color={color} seed={i} M={M} />
+            <Hanger across={across} M={M} />
           </group>
         )
       })}

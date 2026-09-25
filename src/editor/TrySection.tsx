@@ -25,6 +25,10 @@ const SWITCH_LABELS: Record<string, string> = {
   door: 'Open',
   smart_lock: 'Locked',
   vacuum_robot: 'Running',
+  lawn_mower: 'Mowing',
+  sprinkler: 'Watering',
+  desk: 'Standing',
+  bed_double: 'Raised',
 }
 
 const TINTS: { mode: Tint['mode'] | 'default'; label: string }[] = [

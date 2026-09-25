@@ -28,3 +28,11 @@ export function sameState(a: ItemState | null, b: ItemState | null) {
   if (keys.length !== Object.keys(b.levels).length) return false
   return keys.every(k => a.levels[k] === b.levels[k])
 }
+
+// How far a standing desk's top has gone up from its sitting height, in
+// meters, from its level, or from all the way up when it only switches.
+export const DESK_TRAVEL = 0.45
+export function deskRise(state: ItemState | null) {
+  if (!state) return 0
+  return (state.level ?? (state.on ? 1 : 0)) * DESK_TRAVEL
+}

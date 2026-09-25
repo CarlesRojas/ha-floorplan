@@ -651,11 +651,11 @@ export const DECORATION_KINDS: DecorationKind[] = [
         materials: { seat: 'matte', frame: 'metal', base: 'metal', castors: 'matte' },
       },
       {
-        id: 'shell',
-        label: 'Swivel Shell',
-        params: { width: 0.6, depth: 0.6, height: 0.47 },
-        colors: { seat: '#8f9c88', base: '#d4d6d8', castors: '#1b1b1c' },
-        materials: { seat: 'matte', base: 'metal', castors: 'matte' },
+        id: 'racer',
+        label: 'Bucket Racer',
+        params: { width: 0.7, depth: 0.68, height: 0.48 },
+        colors: { seat: '#1f1f21', accent: '#b3262c', pillows: '#2a2a2d', base: '#1f1f21', castors: '#1b1b1c' },
+        materials: { seat: 'fabric', accent: 'fabric', pillows: 'fabric', base: 'matte', castors: 'matte' },
       },
     ],
   ),
@@ -867,7 +867,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(1.4, 0.9, 2.4), depth(0.7, 0.5, 1), height(0.75, 0.65, 1.2)],
     DESK_WRITING.colors ?? {},
     DESK_WRITING.materials ?? {},
-    undefined,
+    // Every style is a standing desk: on, or at a level, the top goes up,
+    // and whatever stands on it goes up with it.
+    TOGGLE_LEVEL,
     // The office table was a kind of its own, and a saved one is read as a
     // desk in that style.
     [
@@ -980,8 +982,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
         label: 'Open Rail',
         // 99 by 46 cm, 151 cm tall.
         params: { width: 0.99, depth: 0.46, height: 1.51 },
-        colors: { frame: '#f3f1ec', clothes: '#8b98a3' },
-        materials: { frame: 'metal', clothes: 'fabric' },
+        colors: { frame: '#f3f1ec' },
+        materials: { frame: 'metal' },
       },
     ],
   ),
@@ -1082,7 +1084,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05), flag('headboard', 'Headboard', 1)],
     BED_HEADBOARD.colors ?? {},
     BED_HEADBOARD.materials ?? {},
-    undefined,
+    // Every style is motorized: on, or at a level, the head of the mattress
+    // tilts up.
+    TOGGLE_LEVEL,
     [
       BED_HEADBOARD,
       {
@@ -1353,7 +1357,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.37, 0.3, 0.5), depth(0.57, 0.45, 0.9)],
     { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#c4c7c8' },
     { pan: 'ceramic', seat: 'ceramic', flush: 'metal' },
-    undefined,
+    TOGGLE,
     [
       {
         id: 'arc',
@@ -1620,7 +1624,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [size(0.7, 0.3, 1.3), height(1.6, 0.8, 2.3)],
     { frame: SCANDI.oak, glass: SCANDI.mist },
     { frame: 'wood', glass: 'metal' },
-    TOGGLE,
+    NONE,
     [
       { id: 'round', label: 'Halo Round' },
       {
@@ -1926,11 +1930,31 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       { id: 'pedestal', label: 'Breeze Stand' },
       {
-        id: 'tower',
-        label: 'Slim Column',
-        params: { size: 0.24, height: 1 },
-        colors: { body: SCANDI.offWhite, mesh: SCANDI.slate, controls: SCANDI.slate },
-        materials: { body: 'matte', mesh: 'metal', controls: 'metal' },
+        id: 'disc',
+        label: 'Calm Disc',
+        params: { size: 0.36, height: 0.95 },
+        colors: { stand: SCANDI.offWhite, blades: SCANDI.mist, guard: SCANDI.offWhite },
+        materials: { stand: 'matte', blades: 'matte', guard: 'matte' },
+      },
+    ],
+  ),
+  kind(
+    'fireplace',
+    'climate',
+    'Fireplace',
+    'floor',
+    [width(1.2, 0.4, 2.4), height(0.9, 0.5, 1.6)],
+    { body: SCANDI.ink, hearth: '#8d8a85', logs: '#cfc8bd' },
+    { body: 'matte', hearth: 'concrete', logs: 'ceramic' },
+    TOGGLE,
+    [
+      { id: 'linear', label: 'Ribbon Flame' },
+      {
+        id: 'stove',
+        label: 'Iron Stove',
+        params: { width: 0.5, height: 0.75 },
+        colors: { body: '#2a2b2d', logs: '#6b4a32' },
+        materials: { body: 'metal', logs: 'wood' },
       },
     ],
   ),
@@ -1994,6 +2018,18 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { frame: SCANDI.offWhite, glass: SCANDI.mist },
     { frame: 'matte', glass: 'ceramic' },
     TOGGLE,
+    [
+      { id: 'casement', label: 'Twin Casement' },
+      { id: 'sash', label: 'Box Sash' },
+      { id: 'awning', label: 'Top Vent' },
+      { id: 'slider', label: 'Glide Pane' },
+      {
+        id: 'steel',
+        label: 'Iron Grid',
+        colors: { frame: '#2b2d2f', glass: SCANDI.mist },
+        materials: { frame: 'metal', glass: 'ceramic' },
+      },
+    ],
   ),
   kind(
     'door',
@@ -2071,11 +2107,51 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       { id: 'folding', label: 'Fold Reach' },
       {
-        id: 'hood',
-        label: 'Dome Hood',
-        params: { width: 1.4, height: 2.6, drop: 0.7 },
-        colors: { canopy: '#2f4a3e', cassette: SCANDI.charcoal },
+        id: 'pergola',
+        label: 'Pleat Pergola',
+        params: { width: 3, height: 2.4, drop: 2 },
+        colors: { canopy: SCANDI.linen, cassette: SCANDI.charcoal },
         materials: { canopy: 'fabric', cassette: 'metal' },
+      },
+    ],
+  ),
+
+  kind(
+    'christmas_tree',
+    'decor',
+    'Christmas tree',
+    'floor',
+    [size(1.1, 0.4, 1.8), height(1.9, 0.6, 3)],
+    { needles: '#2f5a3a', trunk: '#6b4a32', stand: '#8a2a22', star: '#e8c35a' },
+    { needles: 'matte', trunk: 'wood', stand: 'ceramic', star: 'metal' },
+    TOGGLE,
+    [
+      { id: 'fir', label: 'Nordic Fir' },
+      {
+        id: 'slim',
+        label: 'Pencil Pine',
+        params: { size: 0.7, height: 2.1 },
+        colors: { needles: '#3d6048', trunk: '#6b4a32', stand: '#cdb68f', star: '#f3e3b0' },
+        materials: { needles: 'matte', trunk: 'wood', stand: 'fabric', star: 'metal' },
+      },
+    ],
+  ),
+  kind(
+    'aquarium',
+    'decor',
+    'Aquarium',
+    'floor',
+    [width(1, 0.4, 2.4), depth(0.4, 0.25, 0.8), height(1.3, 0.8, 1.8)],
+    { cabinet: SCANDI.ink, frame: '#1d1f21', gravel: '#d8cdb8', plants: '#4f8a4a' },
+    { cabinet: 'matte', frame: 'matte', gravel: 'matte', plants: 'matte' },
+    TOGGLE,
+    [
+      { id: 'cabinet', label: 'Tank Cabinet' },
+      {
+        id: 'rimless',
+        label: 'Rimless Stand',
+        colors: { cabinet: '#2f3133', frame: '#dfe3e5', gravel: '#d8cdb8', plants: '#4f8a4a' },
+        materials: { cabinet: 'metal', frame: 'matte', gravel: 'matte', plants: 'matte' },
       },
     ],
   ),
@@ -2163,6 +2239,120 @@ export const DECORATION_KINDS: DecorationKind[] = [
     // bumper and dock so the bumper reads against the body.
     { body: '#575a5c', bumper: '#818283', brushes: SCANDI.ink },
     { body: 'matte', bumper: 'matte', brushes: 'matte' },
+    TOGGLE,
+  ),
+  kind(
+    'pet_feeder',
+    'utility',
+    'Pet feeder',
+    'floor',
+    [size(0.22, 0.12, 0.4), height(0.38, 0.1, 0.6)],
+    { body: SCANDI.offWhite, food: '#9a6a3c', bowl: '#c9ced2' },
+    { body: 'matte', food: 'matte', bowl: 'metal' },
+    TOGGLE,
+    [
+      { id: 'food', label: 'Kibble Tower' },
+      {
+        id: 'fountain',
+        label: 'Flow Bowl',
+        params: { size: 0.22, height: 0.16 },
+        colors: { body: SCANDI.offWhite, bowl: SCANDI.offWhite },
+        materials: { body: 'matte', bowl: 'ceramic' },
+      },
+    ],
+  ),
+  kind(
+    'water_heater',
+    'utility',
+    'Water heater',
+    'wall',
+    // The height is the top of the case, the way the other wall units hang.
+    [width(0.42, 0.3, 0.7), height(1.9, 1.2, 2.5)],
+    { body: SCANDI.offWhite, trim: '#d9d7d2', pipes: '#b87333' },
+    { body: 'matte', trim: 'matte', pipes: 'metal' },
+    TOGGLE,
+    [
+      { id: 'combi', label: 'Wall Combi' },
+      {
+        id: 'tank',
+        label: 'Tall Cylinder',
+        params: { width: 0.5, height: 2.2 },
+        colors: { body: SCANDI.offWhite, trim: SCANDI.ink },
+        materials: { body: 'matte', trim: 'matte' },
+      },
+    ],
+  ),
+
+  // Garden and outdoor
+  kind(
+    'hot_tub',
+    'outdoor',
+    'Hot tub',
+    'floor',
+    [size(2, 1.2, 2.6), height(0.9, 0.6, 1.2)],
+    { cabinet: '#5a4a3c', shell: '#e9ecee' },
+    { cabinet: 'wood', shell: 'ceramic' },
+    TOGGLE,
+    [
+      { id: 'spa', label: 'Square Spa' },
+      {
+        id: 'barrel',
+        label: 'Cedar Round',
+        params: { size: 1.8, height: 1 },
+        colors: { cabinet: '#b98a5e', shell: '#9b7452' },
+        materials: { cabinet: 'wood', shell: 'wood' },
+      },
+    ],
+  ),
+  kind(
+    'pool',
+    'outdoor',
+    'Pool',
+    'floor',
+    [width(4, 2, 10), depth(2.5, 1.5, 6), height(0.9, 0.5, 1.4)],
+    { frame: '#a57f5a', liner: '#7fc3dc' },
+    { frame: 'wood', liner: 'ceramic' },
+    TOGGLE,
+    [
+      { id: 'deck', label: 'Deck Plunge' },
+      {
+        id: 'frame',
+        label: 'Steel Frame',
+        params: { width: 3.6, depth: 2, height: 0.8 },
+        colors: { frame: '#6d7478', liner: '#5a9fbf' },
+        materials: { frame: 'metal', liner: 'matte' },
+      },
+    ],
+  ),
+  kind(
+    'sprinkler',
+    'outdoor',
+    'Sprinkler',
+    'floor',
+    // How far it throws, or how long the drip line runs.
+    [p('size', 'Reach', 3, 0.5, 8)],
+    { body: '#2f3133', nozzle: '#c9a23a' },
+    { body: 'matte', nozzle: 'matte' },
+    TOGGLE,
+    [
+      { id: 'rotor', label: 'Pop Rotor' },
+      { id: 'oscillating', label: 'Arc Bar', params: { size: 2.5 }, colors: { body: '#3f7a4a', nozzle: '#c9ced2' } },
+      {
+        id: 'drip',
+        label: 'Drip Line',
+        params: { size: 1.5 },
+        colors: { body: '#4a3a2c', nozzle: SCANDI.ink },
+      },
+    ],
+  ),
+  kind(
+    'lawn_mower',
+    'outdoor',
+    'Robot lawn mower',
+    'floor',
+    [size(0.55, 0.4, 0.8)],
+    { body: '#e2e4e1', bumper: '#3b3f42', brushes: '#c9ced2' },
+    { body: 'matte', bumper: 'matte', brushes: 'metal' },
     TOGGLE,
   ),
 ]

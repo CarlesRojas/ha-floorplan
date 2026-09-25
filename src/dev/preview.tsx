@@ -11,6 +11,7 @@
 // &stand=kitchen_counter shows a sink let into a counter, and at moves it
 // that far along the piece. Drag to turn it, scroll to zoom.
 import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
+import { deskRise } from '#/scene/decor/state.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { CEILING_HEIGHT_M, LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -88,10 +89,16 @@ createRoot(root).render(
                 all={all}
                 state={{
                   on: state,
-                  level: 1,
+                  level: state ? 1 : 0,
                   levels: { open: Number(query.get('open') ?? 1) },
                   glow: [glow.r, glow.g, glow.b],
                 }}
+                // Whatever stands on a standing desk goes up with it.
+                raise={
+                  d.on && stand === 'desk'
+                    ? deskRise({ on: state, level: state ? 1 : 0, levels: {}, glow: [1, 1, 1] })
+                    : 0
+                }
               />
             ))}
           </group>

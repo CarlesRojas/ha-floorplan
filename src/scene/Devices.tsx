@@ -1,6 +1,7 @@
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
+import { deskRise } from '#/scene/decor/state.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import { clickAction, deviceSignals, kelvinToRgb, levelChannels, levelValues, signalValues } from '#/signals.ts'
 import { LIGHT_GLOW_COLOR } from '#/theme.ts'
@@ -114,16 +115,35 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
     return h
   }
 
+  const stateOf = (item: (typeof decorations)[number]) => {
+    const device = boundTo.get(item.id)
+    const kind = decorationKind(item.kind)
+    // With nothing behind it, a piece the editor can try states on shows
+    // the one tried last, and a click steps it.
+    const tried = !device && onTry && kind && canTry(kind)
+    const tryState = tried ? tries?.[item.id] : undefined
+    const state = device && hass ? itemState(hass, device) : kind && tryState ? tryItemState(kind, tryState) : null
+    return { device, kind, tried, state }
+  }
+  const states = new Map(decorations.map(item => [item.id, stateOf(item)]))
+  // How far each piece is carried up by the standing desks it stands on,
+  // directly or on something else that stands on one.
+  const raise = (item: (typeof decorations)[number]) => {
+    let total = 0
+    let at = item
+    for (let depth = 0; at.on && depth < 6; depth++) {
+      const below = decorations.find(d => d.id === at.on)
+      if (!below) break
+      if (below.kind === 'desk') total += deskRise(states.get(below.id)?.state ?? null)
+      at = below
+    }
+    return total
+  }
+
   return (
     <>
       {decorations.map(item => {
-        const device = boundTo.get(item.id)
-        const kind = decorationKind(item.kind)
-        // With nothing behind it, a piece the editor can try states on
-        // shows the one tried last, and a click steps it.
-        const tried = !device && onTry && kind && canTry(kind)
-        const tryState = tried ? tries?.[item.id] : undefined
-        const state = device && hass ? itemState(hass, device) : kind && tryState ? tryItemState(kind, tryState) : null
+        const { device, tried, state } = states.get(item.id) ?? stateOf(item)
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.
         const onClick =
@@ -131,7 +151,7 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
             ? () => {
                 onPick?.(item.id)
                 if (device) act(device.entity_id)
-                else if (tried) onTry(item.id)
+                else if (tried) onTry?.(item.id)
               }
             : undefined
         const onOpen = device ? () => openMoreInfo(device.entity_id) : undefined
@@ -144,6 +164,7 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
             all={decorations}
             room={rooms.find(r => r.id === item.room)}
             state={state}
+            raise={raise(item)}
             onClick={onClick && h.click}
             onOpen={onOpen && h.open}
           />

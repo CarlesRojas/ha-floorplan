@@ -1,7 +1,7 @@
 import {
   OFFICE_CHAIRS,
-  SHELL_PATH,
-  SHELL_STAR,
+  RACER,
+  RACER_STAR,
   SLING_HALF,
   SLING_PATH,
   SLING_STAR,
@@ -16,7 +16,7 @@ import { bendAround, plate, taperedOutline } from '#/scene/decor/plates.ts'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
 import { useMemo, type ReactNode } from 'react'
-import { BoxGeometry, BufferGeometry, CatmullRomCurve3, Float32BufferAttribute, TubeGeometry, Vector3 } from 'three'
+import { BoxGeometry, CatmullRomCurve3, TubeGeometry, Vector3 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 type Props = {
@@ -325,93 +325,82 @@ function Sling({ lift, kx, kz, M }: Part) {
   )
 }
 
-// The shell, a surface swept along its middle profile and across its width,
-// its edges curling up on the seat and forward on the back, given a
-// thickness and closed round its rim.
-function shellGeometry(kx: number, kz: number) {
-  const curve = profile(SHELL_PATH, kz)
-  const rows = 48
-  const cols = 24
-  const thick = 0.009
-  const top: Vector3[] = []
-  const normals: Vector3[] = []
-  for (let j = 0; j <= rows; j++) {
-    const v = j / rows
-    const at = curve.getPointAt(v)
-    const t = curve.getTangentAt(v)
-    // The side the sitter is on: up on the seat, forward on the back.
-    const n = new Vector3(0, -t.z, t.y).normalize()
-    const back = Math.min(Math.max((at.y - 0.5) / 0.2, 0), 1)
-    const half = (0.235 - 0.02 * Math.sin(Math.PI * Math.min(v * 1.6, 1)) + 0.01 * back) * kx
-    const curl = 0.025 + 0.06 * back
-    for (let i = 0; i <= cols; i++) {
-      const u = (i / cols) * 2 - 1
-      // Round the corners of the front lip and the top of the back.
-      const edge = Math.min(v, 1 - v) * 8
-      const round = edge < 1 ? Math.sqrt(1 - (1 - edge) ** 2) : 1
-      const x = u * half * (0.75 + 0.25 * round)
-      top.push(
-        at
-          .clone()
-          .add(new Vector3(x, 0, 0))
-          .addScaledVector(n, curl * u * u),
-      )
-      normals.push(n)
-    }
-  }
-  const positions: number[] = []
-  const index: number[] = []
-  for (const p of top) positions.push(p.x, p.y, p.z)
-  top.forEach((p, k) => {
-    const q = p.clone().addScaledVector(normals[k], -thick)
-    positions.push(q.x, q.y, q.z)
-  })
-  const n = top.length
-  const at = (i: number, j: number) => j * (cols + 1) + i
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      const a = at(i, j)
-      const b = at(i + 1, j)
-      const c = at(i + 1, j + 1)
-      const d = at(i, j + 1)
-      index.push(a, d, b, b, d, c)
-      index.push(a + n, b + n, d + n, b + n, c + n, d + n)
-    }
-  }
-  // The rim, joining the two faces all the way round.
-  const rim: number[] = []
-  for (let i = 0; i <= cols; i++) rim.push(at(i, 0))
-  for (let j = 1; j <= rows; j++) rim.push(at(cols, j))
-  for (let i = cols - 1; i >= 0; i--) rim.push(at(i, rows))
-  for (let j = rows - 1; j > 0; j--) rim.push(at(0, j))
-  for (let k = 0; k < rim.length; k++) {
-    const a = rim[k]
-    const b = rim[(k + 1) % rim.length]
-    index.push(a, b, a + n, b, b + n, a + n)
-  }
-  const g = new BufferGeometry()
-  g.setAttribute('position', new Float32BufferAttribute(positions, 3))
-  g.setIndex(index)
-  g.computeVertexNormals()
-  return g
-}
-
-function Shell({ lift, kx, kz, M }: Part) {
-  const star = { ...SHELL_STAR, reach: (SHELL_STAR.reach * (kx + kz)) / 2 }
-  const geometry = useMemo(() => shellGeometry(kx, kz), [kx, kz])
-  const under = SHELL_PATH[3][0] - 0.01
+// Racer: a gaming chair after the racing bucket seats they copy. A tall
+// back with shoulder wings and a narrower head section, two slots for a
+// harness below the head, bolsters in the accent color down both sides of
+// the seat and the back, a head pillow and a lumbar pillow, and arms on
+// posts from under the seat, all on a wide five star base.
+function Racer({ lift, kx, kz, M }: Part) {
+  const star = { ...RACER_STAR, reach: (RACER_STAR.reach * (kx + kz)) / 2 }
+  const { seat, lean } = RACER
+  const back = -0.25 * kz
   return (
     <group>
       <FiveStar star={star} M={M} />
-      <Column star={SHELL_STAR} top={under - 0.04 + lift} M={M} />
+      <Column star={RACER_STAR} top={seat - 0.12 + lift} M={M} />
       <group position={[0, lift, 0]}>
-        {/* The plate under the seat the shell is screwed to. */}
-        <Slab size={[0.26, 0.035, 0.26]} radius={0.03} bevel={0.008} position={[0, under - 0.045, -0.02 * kz]}>
+        {/* The tilt mechanism under the seat. */}
+        <Slab size={[0.28, 0.05, 0.3]} radius={0.02} position={[0, seat - 0.13, 0]}>
           {M('base')}
         </Slab>
-        <mesh geometry={geometry} castShadow>
+        <Slab size={[0.5 * kx, 0.08, 0.52 * kz]} radius={0.05} bevel={0.02} position={[0, seat - 0.08, 0.01]}>
           {M('seat')}
-        </mesh>
+        </Slab>
+        {[-1, 1].map(s => (
+          <group key={s}>
+            <Cushion
+              size={[0.085, 0.085, 0.5 * kz]}
+              position={[s * (0.25 * kx - 0.025), seat - 0.06, 0.01]}
+              rotation={[0, 0, -s * 0.3]}
+            >
+              {M('accent')}
+            </Cushion>
+            {/* The arm: a bracket out from under the seat, a post and a pad. */}
+            <Slab size={[0.1 * kx, 0.03, 0.06]} radius={0.01} position={[s * 0.26 * kx, seat - 0.13, -0.04]}>
+              {M('base')}
+            </Slab>
+            <Slab size={[0.045, 0.25, 0.06]} radius={0.015} position={[s * 0.31 * kx, seat - 0.12, -0.04]}>
+              {M('base')}
+            </Slab>
+            <Slab size={[0.09, 0.03, 0.26]} radius={0.035} bevel={0.01} position={[s * 0.31 * kx, seat + 0.13, -0.01]}>
+              {M('base')}
+            </Slab>
+          </group>
+        ))}
+        <group position={[0, seat - 0.02, back]} rotation={[-lean, 0, 0]}>
+          <Slab size={[0.46 * kx, 0.44, 0.1]} radius={0.04} bevel={0.02}>
+            {M('seat')}
+          </Slab>
+          <Slab size={[0.56 * kx, 0.22, 0.1]} radius={0.07} bevel={0.02} position={[0, 0.42, 0]}>
+            {M('seat')}
+          </Slab>
+          <Slab size={[0.34 * kx, 0.26, 0.09]} radius={0.09} bevel={0.02} position={[0, 0.6, -0.005]}>
+            {M('seat')}
+          </Slab>
+          {[-1, 1].map(s => (
+            <group key={s}>
+              <Cushion size={[0.085, 0.46, 0.12]} position={[s * 0.245 * kx, 0, 0.02]} rotation={[0, s * 0.35, 0]}>
+                {M('accent')}
+              </Cushion>
+              <Cushion size={[0.085, 0.2, 0.12]} position={[s * 0.29 * kx, 0.44, 0.015]} rotation={[0, s * 0.35, 0]}>
+                {M('accent')}
+              </Cushion>
+              {/* A stripe up the front, and the harness slot. */}
+              <Slab size={[0.02, 0.6, 0.012]} radius={0.004} bevel={0.002} position={[s * 0.15 * kx, 0.02, 0.048]}>
+                {M('accent')}
+              </Slab>
+              <Slab size={[0.035, 0.075, 0.02]} radius={0.012} bevel={0.003} position={[s * 0.095 * kx, 0.68, 0.036]}>
+                <meshStandardMaterial color="#0b0b0c" roughness={0.9} />
+              </Slab>
+            </group>
+          ))}
+          <Cushion size={[0.3 * kx, 0.13, 0.09]} position={[0, 0.1, 0.07]}>
+            {M('pillows')}
+          </Cushion>
+          <Cushion size={[0.24 * kx, 0.1, 0.08]} position={[0, 0.74, 0.065]}>
+            {M('pillows')}
+          </Cushion>
+        </group>
       </group>
     </group>
   )
@@ -424,6 +413,6 @@ export default function OfficeChair({ style, w, d, h, M }: Props) {
   const spec = OFFICE_CHAIRS[style] ?? OFFICE_CHAIRS.teck
   const part = { lift: h - spec.seat, kx: w / spec.width, kz: d / spec.depth, M }
   if (style === 'sling') return <Sling {...part} />
-  if (style === 'shell') return <Shell {...part} />
+  if (style === 'racer') return <Racer {...part} />
   return <Teck {...part} />
 }

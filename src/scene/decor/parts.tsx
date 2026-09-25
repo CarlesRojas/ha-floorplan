@@ -504,30 +504,6 @@ export function Spinner({ speed, children }: { speed: number; children: ReactNod
   return <group ref={ref}>{children}</group>
 }
 
-// The smear of blades turning fast, a faint disc flat in the XZ plane that
-// thickens with the speed, so a running fan reads even in a still frame.
-export function SpinBlur({
-  radius,
-  inner = 0,
-  speed,
-  color,
-  y = 0,
-}: {
-  radius: number
-  inner?: number
-  speed: number
-  color: string
-  y?: number
-}) {
-  const k = Math.min(1, speed / 10)
-  return (
-    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} visible={k > 0.01}>
-      <ringGeometry args={[inner, radius, 64]} />
-      <meshBasicMaterial color={color} transparent opacity={0.16 * k} depthWrite={false} side={DoubleSide} />
-    </mesh>
-  )
-}
-
 // The small status light a device shows while it is running.
 export function Led({
   on,
@@ -807,6 +783,8 @@ export function Rain({
     [count, radius],
   )
   const dummy = useMemo(() => new Object3D(), [])
+  // Each drop hangs below its point, so none pokes up through the head.
+  const len = Math.min(0.16, fall * 0.09)
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
@@ -815,7 +793,7 @@ export function Rain({
       const f = (t * 1.6 + d.phase) % 1
       // They spread a touch as they fall, the way a rain head's jets do.
       const spread = 1 + f * 0.25
-      dummy.position.set(d.x * spread, -f * fall, d.z * spread)
+      dummy.position.set(d.x * spread, -len / 2 - f * (fall - len), d.z * spread)
       dummy.updateMatrix()
       m.setMatrixAt(i, dummy.matrix)
     })
@@ -834,7 +812,7 @@ export function Rain({
         frustumCulled={false}
         renderOrder={-1}
       >
-        <boxGeometry args={[0.003, Math.min(0.16, fall * 0.09), 0.003]} />
+        <boxGeometry args={[0.003, len, 0.003]} />
         <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
       </instancedMesh>
       <Waves
@@ -848,6 +826,40 @@ export function Rain({
         speed={0.9}
         color="#eef7fc"
       />
+    </group>
+  )
+}
+
+// The water in a bath or a bowl, rising while the tap runs until it is
+// `share` of the way from `floor` to `top`, and draining away once it is
+// shut. `w`, `l` and `r` are the inside of the vessel.
+export function Fill({
+  on,
+  floor,
+  top,
+  w,
+  l,
+  r,
+  share,
+  rate,
+}: {
+  on: boolean
+  floor: number
+  top: number
+  w: number
+  l: number
+  r: number
+  share: number
+  rate: number
+}) {
+  const fill = useEased(on ? 1 : 0, rate)
+  const depth = (top - floor) * share * fill
+  if (depth < 0.003) return null
+  return (
+    <group position={[0, floor, 0]} scale={[1, depth, 1]}>
+      <Slab size={[w - 0.004, 1, l - 0.004]} radius={Math.max(r - 0.002, 0.005)} bevel={0.001}>
+        <meshStandardMaterial color="#8fc3dc" transparent opacity={0.45} roughness={0.05} depthWrite={false} />
+      </Slab>
     </group>
   )
 }

@@ -32,10 +32,11 @@ export type Look = {
 // the page behind it, so it must fall away with the light or the faint far
 // end shows as a dark box.
 // How far along the throw the beam is drawn before it has faded away.
-const BEAM_REACH = 0.6
+const BEAM_REACH = 0.85
 
-// The whites a picture cuts between, from dim to bright and cool to warm.
-const BEAM_WHITES = ['#c9d6f2', '#eef3ff', '#fff4e6', '#dfe8ff', '#ffffff', '#b8c6e6']
+// The tints a picture cuts between, whites from cool to warm and a few
+// scenes with a color of their own.
+const BEAM_WHITES = ['#c9d6f2', '#eef3ff', '#fff4e6', '#ffffff', '#9fc0ff', '#ffc98a', '#b8f0c8', '#e6b8ff']
 
 export function Beam({ length, width, strength }: { length: number; width: number; strength: number }) {
   const material = useRef<MeshBasicMaterial>(null)
@@ -49,7 +50,7 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
     if (now >= at.next) {
       at.target = 0.55 + Math.random() * 0.45
       at.color.set(BEAM_WHITES[Math.floor(Math.random() * BEAM_WHITES.length)])
-      at.next = now + 0.4 + Math.random() * 2.2
+      at.next = now + 0.25 + Math.random() * 0.9
     }
     // A cut lands fast, and the picture shimmers a little while it plays.
     at.level += (at.target - at.level) * Math.min(1, delta * 14)
@@ -484,6 +485,12 @@ export function Console({
           <meshStandardMaterial color="#050505" />
         </mesh>
         <Led on={on} position={[-w * 0.3, h * 0.93, w / 2]} color="#e8f2f6" radius={Math.min(0.006, w * 0.04)} />
+        {/* The light bar across the foot of the front, lit while it is on. */}
+        <mesh position={[0, foot + h * 0.06, w / 2 + 0.0015]}>
+          <boxGeometry args={[w * 0.6, Math.min(0.008, h * 0.03), 0.003]} />
+          <meshStandardMaterial color="#1a1d20" emissive="#9ff09a" emissiveIntensity={3 * lit} />
+        </mesh>
+        <Halo on={on} position={[0, h * 0.3, w / 2 + 0.06]} color="#9ff09a" intensity={0.1} />
       </group>
     )
   }
@@ -515,11 +522,17 @@ export function Console({
                   color={color('light')}
                   material={material('light')}
                   emissive={[0.2, 0.42, 1]}
-                  emissiveIntensity={1.3 * lit}
+                  emissiveIntensity={3 * lit}
                 />
               </mesh>
             </group>
           ))}
+          {/* The light bar across the foot of the core's front. */}
+          <mesh position={[0, h * 0.1, d * 0.42 + 0.0015]}>
+            <boxGeometry args={[core * 0.6, Math.min(0.008, h * 0.03), 0.003]} />
+            <meshStandardMaterial color="#1a1d20" emissive="#8fb4ff" emissiveIntensity={3 * lit} />
+          </mesh>
+          <Halo on={on} position={[0, h * 0.4, d * 0.42 + 0.06]} color="#8fb4ff" intensity={0.1} />
         </group>
       </group>
     )

@@ -4,7 +4,7 @@ import { alongPath, legLengths, roamKey, roamRound } from '#/scene/decor/roam.ts
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig, Point, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, type ReactNode } from 'react'
 import { MathUtils, type Group } from 'three'
 
 type Props = {
@@ -35,6 +35,9 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
   const on = state?.on ?? false
   const r = p('size') / 2
   const h = 0.085
+  // The robot lawn mower is the same machine out on the grass: it roams the
+  // same way, only with a bigger body on wheels and a little garage.
+  const mower = kind.id === 'lawn_mower'
 
   // The round it drives, in plan meters. Working it out means sampling the
   // whole floor, so it is kept until the shape of the room, the furniture
@@ -153,77 +156,171 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
 
   return (
     <group>
-      {/* The dock: a low ramp the robot backs onto, with a short back
-          panel carrying the charging contacts. It never moves. */}
-      <Slab size={[r * 1.5, 0.014, r * 1.25]} radius={0.02} bevel={0.005} position={[0, 0, -r * 0.5]}>
+      {mower ? (
+        <MowerDock r={r} M={M} on={on} />
+      ) : (
+        <>
+          {/* The dock: a low ramp the robot backs onto, with a short back
+              panel carrying the charging contacts. It never moves. */}
+          <Slab size={[r * 1.5, 0.014, r * 1.25]} radius={0.02} bevel={0.005} position={[0, 0, -r * 0.5]}>
+            {M('bumper')}
+          </Slab>
+          {/* The lip the robot climbs, thin at the front. */}
+          <mesh position={[0, 0.007, r * 0.1]} rotation={[-0.16, 0, 0]}>
+            <boxGeometry args={[r * 1.5, 0.004, r * 0.22]} />
+            {M('bumper')}
+          </mesh>
+          <Slab size={[r * 1.15, 0.13, 0.035]} radius={0.016} bevel={0.006} position={[0, 0, -r * 1.06]}>
+            {M('body')}
+          </Slab>
+          {/* Two contacts on the panel, where the robot meets it. */}
+          {[-1, 1].map(side => (
+            <mesh key={side} position={[side * r * 0.3, 0.028, -r * 1.06 + 0.019]}>
+              <boxGeometry args={[r * 0.22, 0.014, 0.004]} />
+              {M('brushes')}
+            </mesh>
+          ))}
+          {/* The dock's own light, on while the robot is away charging rather
+              than out on a round. */}
+          <Led on={!on} position={[0, 0.105, -r * 1.06 + 0.02]} radius={0.007} />
+        </>
+      )}
+      <group ref={rig}>
+        {mower ? (
+          <Mower r={r} M={M} on={on} lit={lit} />
+        ) : (
+          <>
+            {/* A low puck: a bumper wrapping the front half, a lidar turret set
+                back on the top plate, and a side brush that spins while it runs. */}
+            <mesh position={[0, h / 2, 0]} castShadow>
+              <cylinderGeometry args={[r, r * 0.98, h, SEG]} />
+              {M('body')}
+            </mesh>
+            {/* Bumper, the front half of the rim only. The half cylinder runs
+                round from the front to the back through one side, so a quarter
+                turn centres it on the front. It was turned the other way, which
+                put it on the back, against the dock while parked and trailing
+                behind while running. */}
+            <mesh position={[0, h * 0.34, 0]} rotation={[0, -Math.PI / 2, 0]}>
+              <cylinderGeometry args={[r * 1.02, r * 1.02, h * 0.42, SEG, 1, true, 0, Math.PI]} />
+              <Material color={c('bumper')} material={m('bumper')} doubleSide />
+            </mesh>
+            {/* Lidar turret, behind the middle. */}
+            <mesh position={[0, h + 0.012, -r * 0.34]}>
+              <cylinderGeometry args={[r * 0.3, r * 0.32, 0.024, SEG]} />
+              {M('bumper')}
+            </mesh>
+            <mesh position={[0, h + 0.026, -r * 0.34]}>
+              <cylinderGeometry args={[r * 0.26, r * 0.28, 0.006, SEG]} />
+              {M('body')}
+            </mesh>
+            {/* A round button in front of the turret. */}
+            <mesh position={[0, h + 0.002, r * 0.3]}>
+              <cylinderGeometry args={[r * 0.16, r * 0.16, 0.006, SEG]} />
+              {M('bumper')}
+            </mesh>
+            {/* A ring of light round the button while it runs. */}
+            <mesh position={[0, h + 0.0055, r * 0.3]} rotation={[-Math.PI / 2, 0, 0]} visible={lit > 0.01}>
+              <ringGeometry args={[r * 0.17, r * 0.22, SEG]} />
+              <meshBasicMaterial color="#7fd0ff" transparent opacity={lit} />
+            </mesh>
+            <Led on={on} position={[0, h + 0.008, r * 0.62]} radius={0.007} />
+            <Spinner speed={9 * lit}>
+              <mesh position={[r * 0.72, 0.01, 0]}>
+                <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
+                {M('brushes')}
+              </mesh>
+              <mesh position={[-r * 0.72, 0.01, 0]}>
+                <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
+                {M('brushes')}
+              </mesh>
+            </Spinner>
+          </>
+        )}
+      </group>
+    </group>
+  )
+}
+
+type Part = { r: number; M: (slot: string) => ReactNode; on: boolean }
+
+// The mower's garage: a pad it drives onto with a curved roof over it, and
+// the charging post at the back.
+function MowerDock({ r, M, on }: Part) {
+  const roofW = r * 2.5
+  const roofH = r * 1.05
+  return (
+    <group>
+      <Slab size={[r * 2.2, 0.02, r * 2.4]} radius={0.03} bevel={0.006} position={[0, 0, -r * 0.2]}>
         {M('bumper')}
       </Slab>
-      {/* The lip the robot climbs, thin at the front. */}
-      <mesh position={[0, 0.007, r * 0.1]} rotation={[-0.16, 0, 0]}>
-        <boxGeometry args={[r * 1.5, 0.004, r * 0.22]} />
-        {M('bumper')}
-      </mesh>
-      <Slab size={[r * 1.15, 0.13, 0.035]} radius={0.016} bevel={0.006} position={[0, 0, -r * 1.06]}>
+      <Slab size={[r * 0.8, r * 0.7, 0.06]} radius={0.03} bevel={0.01} position={[0, 0, -r * 1.35]}>
         {M('body')}
       </Slab>
-      {/* Two contacts on the panel, where the robot meets it. */}
-      {[-1, 1].map(side => (
-        <mesh key={side} position={[side * r * 0.3, 0.028, -r * 1.06 + 0.019]}>
-          <boxGeometry args={[r * 0.22, 0.014, 0.004]} />
-          {M('brushes')}
-        </mesh>
-      ))}
-      {/* The dock's own light, on while the robot is away charging rather
-          than out on a round. */}
-      <Led on={!on} position={[0, 0.105, -r * 1.06 + 0.02]} radius={0.007} />
+      {/* The roof, a shallow arch on the post. Laid along the width, the arc
+          has to start a quarter turn round to sit on top rather than stand
+          across the front. */}
+      <mesh position={[0, roofH - r * 0.9, -r * 0.72]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[r * 0.9, r * 0.9, roofW, SEG, 1, true, Math.PI / 2 - 0.75, 1.5]} />
+        <Material color="#3c3f42" material="matte" doubleSide />
+      </mesh>
+      <mesh position={[0, roofH / 2, -r * 1.3]}>
+        <boxGeometry args={[r * 0.3, roofH, 0.04]} />
+        {M('body')}
+      </mesh>
+      <Led on={!on} position={[0, r * 0.55, -r * 1.3 + 0.035]} radius={0.01} />
+    </group>
+  )
+}
 
-      <group ref={rig}>
-        {/* A low puck: a bumper wrapping the front half, a lidar turret set
-            back on the top plate, and a side brush that spins while it runs. */}
-        <mesh position={[0, h / 2, 0]} castShadow>
-          <cylinderGeometry args={[r, r * 0.98, h, SEG]} />
-          {M('body')}
-        </mesh>
-        {/* Bumper, the front half of the rim only. The half cylinder runs
-            round from the front to the back through one side, so a quarter
-            turn centres it on the front. It was turned the other way, which
-            put it on the back, against the dock while parked and trailing
-            behind while running. */}
-        <mesh position={[0, h * 0.34, 0]} rotation={[0, -Math.PI / 2, 0]}>
-          <cylinderGeometry args={[r * 1.02, r * 1.02, h * 0.42, SEG, 1, true, 0, Math.PI]} />
-          <Material color={c('bumper')} material={m('bumper')} doubleSide />
-        </mesh>
-        {/* Lidar turret, behind the middle. */}
-        <mesh position={[0, h + 0.012, -r * 0.34]}>
-          <cylinderGeometry args={[r * 0.3, r * 0.32, 0.024, SEG]} />
-          {M('bumper')}
-        </mesh>
-        <mesh position={[0, h + 0.026, -r * 0.34]}>
-          <cylinderGeometry args={[r * 0.26, r * 0.28, 0.006, SEG]} />
-          {M('body')}
-        </mesh>
-        {/* A round button in front of the turret. */}
-        <mesh position={[0, h + 0.002, r * 0.3]}>
-          <cylinderGeometry args={[r * 0.16, r * 0.16, 0.006, SEG]} />
-          {M('bumper')}
-        </mesh>
-        {/* A ring of light round the button while it runs. */}
-        <mesh position={[0, h + 0.0055, r * 0.3]} rotation={[-Math.PI / 2, 0, 0]} visible={lit > 0.01}>
-          <ringGeometry args={[r * 0.17, r * 0.22, SEG]} />
-          <meshBasicMaterial color="#7fd0ff" transparent opacity={lit} />
-        </mesh>
-        <Led on={on} position={[0, h + 0.008, r * 0.62]} radius={0.007} />
-        <Spinner speed={9 * lit}>
-          <mesh position={[r * 0.72, 0.01, 0]}>
-            <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
+// A robot mower: a low, rounded shell on two big back wheels and two small
+// front ones, a stop button on top and a blade disc under it that spins
+// while it mows.
+function Mower({ r, M, on, lit }: Part & { lit: number }) {
+  const w = r * 1.5
+  const l = r * 2
+  const h = r * 0.55
+  const wheelR = r * 0.3
+  return (
+    <group>
+      <Slab size={[w * 0.92, h * 0.35, l * 0.9]} radius={0.03} bevel={0.01} position={[0, wheelR * 0.5, 0]}>
+        {M('bumper')}
+      </Slab>
+      {/* The shell, domed over the chassis. */}
+      <mesh position={[0, wheelR * 0.5 + h * 0.3, 0]} scale={[w / 2, h * 0.7, l / 2]} castShadow>
+        <sphereGeometry args={[1, SEG, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        {M('body')}
+      </mesh>
+      {[-1, 1].map(s => (
+        <group key={s}>
+          <mesh position={[(s * w) / 2, wheelR, -l * 0.28]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[wheelR, wheelR, 0.05, SEG]} />
+            <Material color="#1d1f21" material="matte" />
+          </mesh>
+          <mesh position={[s * w * 0.36, wheelR * 0.45, l * 0.36]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[wheelR * 0.45, wheelR * 0.45, 0.035, 20]} />
+            <Material color="#1d1f21" material="matte" />
+          </mesh>
+        </group>
+      ))}
+      {/* The stop button and the display round it. */}
+      <mesh position={[0, wheelR * 0.5 + h, -l * 0.05]}>
+        <cylinderGeometry args={[r * 0.14, r * 0.14, 0.02, SEG]} />
+        <Material color="#c8321e" material="matte" />
+      </mesh>
+      <mesh position={[0, wheelR * 0.5 + h * 0.97, l * 0.12]} rotation={[-Math.PI / 2 + 0.3, 0, 0]}>
+        <planeGeometry args={[r * 0.3, r * 0.12]} />
+        <meshStandardMaterial color="#111416" emissive="#8dff9a" emissiveIntensity={1.4 * lit} />
+      </mesh>
+      <Led on={on} position={[0, wheelR * 0.5 + h * 0.45, l / 2 - 0.01]} radius={0.01} color="#8dff9a" />
+      <Spinner speed={18 * lit}>
+        {[0, 1, 2].map(i => (
+          <mesh key={i} position={[0, 0.03, 0]} rotation={[0, (i * Math.PI * 2) / 3, 0]}>
+            <boxGeometry args={[r * 0.8, 0.004, 0.025]} />
             {M('brushes')}
           </mesh>
-          <mesh position={[-r * 0.72, 0.01, 0]}>
-            <boxGeometry args={[r * 0.55, 0.005, 0.016]} />
-            {M('brushes')}
-          </mesh>
-        </Spinner>
-      </group>
+        ))}
+      </Spinner>
     </group>
   )
 }

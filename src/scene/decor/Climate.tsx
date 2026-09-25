@@ -1,6 +1,6 @@
 import { roundedShape } from '#/geometry/polygon.ts'
 import type { Look } from '#/scene/decor/Media.tsx'
-import { Led, Material, SEG, Slab, SpinBlur, Spinner, Tube, Waves } from '#/scene/decor/parts.tsx'
+import { Led, Material, SEG, Slab, Spinner, Tube } from '#/scene/decor/parts.tsx'
 import { useMemo, type ReactNode } from 'react'
 import { ExtrudeGeometry } from 'three'
 
@@ -338,7 +338,6 @@ export function CeilingFan({
           </mesh>
         )}
         <Spinner speed={speed}>{Array.from({ length: blades }, (_, i) => blade(i))}</Spinner>
-        <SpinBlur radius={r} inner={mr} speed={speed} color={look.color('blades')} y={mh * 0.4} />
       </group>
     </group>
   )
@@ -347,15 +346,14 @@ export function CeilingFan({
 // Two floor fans. A pedestal fan: a weighted round base, a telescopic stem
 // up into the motor can, five blades, and a wire cage domed out in front
 // and behind, clipped at the rim. The height is the top of the cage, kept
-// high enough that the cage clears the floor. A tower fan: a slim oval
-// column with the outlet mesh down its front and the controls on top.
+// high enough that the cage clears the floor. A disc fan after the
+// Balmuda GreenFan: a slim pole and a shallow head behind a fine grille.
 export function FloorFan({
   style,
   r,
   h,
   on,
   speed,
-  glow,
   look,
 }: {
   style: string
@@ -363,54 +361,85 @@ export function FloorFan({
   h: number
   on: boolean
   speed: number
-  glow: number
   look: Look
 }) {
   const { paint, color, material } = look
-  if (style === 'tower') {
-    const foot = 0.044
+  if (style === 'disc') {
+    // A slim pole on a flat round foot, and a shallow head with nine
+    // broad blades behind a fine front grille, the motor in a round pod
+    // behind them.
+    const cy = Math.max(h - r, r + 0.1)
+    const pod = r * 0.34
     return (
       <group>
-        <mesh position={[0, foot / 2, 0]} castShadow>
-          <cylinderGeometry args={[r * 1.35, r * 1.5, foot, SEG * 2]} />
-          {paint('body')}
+        <Slab size={[r * 1.5, 0.022, r * 1.5]} radius={r * 0.75 - 0.001} bevel={0.008}>
+          {paint('stand')}
+        </Slab>
+        <mesh position={[0, (cy - pod * 0.6) / 2, -r * 0.12]}>
+          <cylinderGeometry args={[0.011, 0.013, cy - pod * 0.6, 20]} />
+          {paint('stand')}
         </mesh>
-        <group scale={[1, 1, 0.62]}>
-          <mesh position={[0, (h + foot) / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 0.78, r, h - foot, SEG * 2]} />
-            {paint('body')}
+        <Led on={on} position={[0, 0.024, r * 0.6]} color="#8fc2e8" radius={0.005} />
+        <group position={[0, cy, 0]}>
+          {/* The motor pod, domed at the back. */}
+          <mesh position={[0, 0, -r * 0.12]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[pod, pod, r * 0.16, SEG]} />
+            {paint('stand')}
           </mesh>
-          {/* The mesh outlet, a tall band just proud of the front, leaning
-              in with the taper of the column. */}
-          <mesh
-            position={[0, h * 0.52, r * (1 - (0.22 * (h * 0.52 - foot)) / (h - foot)) - r * 0.02]}
-            rotation={[-Math.atan((r * 0.22) / (h - foot)), 0, 0]}
-          >
-            <boxGeometry args={[r * 0.9, h * 0.66, r * 0.08]} />
-            <Material
-              color={color('mesh')}
-              material={material('mesh')}
-              emissive={[0.6, 0.8, 1]}
-              emissiveIntensity={0.7 * glow}
-            />
+          <mesh position={[0, 0, -r * 0.2]} scale={[1, 1, 0.55]}>
+            <sphereGeometry args={[pod, SEG, SEG / 2]} />
+            {paint('stand')}
+          </mesh>
+          {/* The blades turn about the forward axis. */}
+          <group position={[0, 0, r * 0.06]} rotation={[Math.PI / 2, 0, 0]}>
+            <Spinner speed={speed}>
+              {Array.from({ length: 9 }).map((_, i) => {
+                const a = (i / 9) * Math.PI * 2
+                return (
+                  <mesh key={i} rotation={[0.45, a, 0]} position={[Math.cos(a) * r * 0.52, 0, -Math.sin(a) * r * 0.52]}>
+                    <boxGeometry args={[r * 0.7, 0.004, r * 0.3]} />
+                    {paint('blades')}
+                  </mesh>
+                )
+              })}
+              <mesh>
+                <cylinderGeometry args={[r * 0.17, r * 0.17, 0.04, SEG]} />
+                {paint('blades')}
+              </mesh>
+            </Spinner>
+          </group>
+          {/* The guard: a deep rim, a back ring, and fine spokes across
+              a flat front round a badge. */}
+          <mesh position={[0, 0, r * 0.06]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[r, r, r * 0.2, SEG * 2, 1, true]} />
+            <Material color={color('guard')} material={material('guard')} doubleSide />
+          </mesh>
+          {[-0.04, 0.16].map(z => (
+            <mesh key={z} position={[0, 0, r * z]}>
+              <torusGeometry args={[r, 0.006, 10, SEG * 2]} />
+              {paint('guard')}
+            </mesh>
+          ))}
+          {[0.45, 0.75].map(k => (
+            <mesh key={k} position={[0, 0, r * 0.16]}>
+              <torusGeometry args={[r * k, 0.0025, 8, SEG * 2]} />
+              {paint('guard')}
+            </mesh>
+          ))}
+          {Array.from({ length: 36 }).map((_, i) => {
+            const a = (i / 36) * Math.PI * 2
+            return (
+              <mesh key={i} position={[Math.cos(a) * r * 0.59, Math.sin(a) * r * 0.59, r * 0.16]} rotation={[0, 0, a]}>
+                <boxGeometry args={[r * 0.82, 0.003, 0.003]} />
+                {paint('guard')}
+              </mesh>
+            )
+          })}
+          <mesh position={[0, 0, r * 0.16]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[r * 0.18, r * 0.18, 0.01, SEG]} />
+            {paint('guard')}
           </mesh>
         </group>
-        {/* Control ring on the top. */}
-        <mesh position={[0, h + 0.004, 0]} scale={[1, 1, 0.62]}>
-          <cylinderGeometry args={[r * 0.4, r * 0.4, 0.008, SEG]} />
-          {paint('controls')}
-        </mesh>
-        <Led on={on} position={[0, h + 0.01, 0]} color="#7fb3e8" radius={Math.min(0.008, r * 0.1)} />
-        {/* The draft off the outlet, tall rings spreading out in front. */}
-        <Waves
-          on={on}
-          position={[0, h * 0.52, r * 0.7]}
-          from={r * 0.5}
-          reach={r * 1.6}
-          stretch={[1, (h * 0.66) / r]}
-          strength={0.35}
-          color="#b8dcff"
-        />
       </group>
     )
   }
@@ -467,7 +496,6 @@ export function FloorFan({
               </mesh>
             ))}
           </Spinner>
-          <SpinBlur radius={r * 0.92} inner={r * 0.14} speed={speed} color={color('blades')} />
         </group>
         {/* The cage: a rim clip, rings and wires on both domes, and a
             badge in the middle of the front. */}

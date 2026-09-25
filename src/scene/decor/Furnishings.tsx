@@ -1,4 +1,3 @@
-import { useEased } from '#/scene/decor/ease.ts'
 import { Bar, SEG, Slab } from '#/scene/decor/parts.tsx'
 import { useFrame } from '@react-three/fiber'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
@@ -146,27 +145,6 @@ export function Mirror({ style, s, paint }: { style: string; s: number; paint: P
         <cylinderGeometry args={[r - ring, r - ring, 0.01, SEG * 2]} />
         {paint('glass')}
       </mesh>
-    </group>
-  )
-}
-
-// The backlight of a mirror: a soft glow on the wall round its edge, in
-// steps that fade outward, and a light behind it washing the wall.
-export function MirrorGlow({ style, s, on }: { style: string; s: number; on: boolean }) {
-  const lit = useEased(on ? 1 : 0, 6)
-  if (lit < 0.01) return null
-  return (
-    <group>
-      {[1.03, 1.09, 1.16, 1.24, 1.34].map((k, i) => (
-        <mesh key={k} position={[0, 0, 0.001 + i * 0.0002]}>
-          {style === 'square' ? (
-            <planeGeometry args={[s * k, s * k]} />
-          ) : (
-            <circleGeometry args={[(s / 2) * k, SEG * 2]} />
-          )}
-          <meshBasicMaterial color="#ffd08a" transparent opacity={0.3 * lit} depthWrite={false} />
-        </mesh>
-      ))}
     </group>
   )
 }

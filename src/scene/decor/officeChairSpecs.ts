@@ -50,24 +50,13 @@ export const SLING_PATH: [number, number][] = [
 ]
 export const SLING_HALF = 0.24
 
-// Shell: after the Hay About A Chair AAC 53 on castors. One molded shell,
-// its seat dished and its back curved round, on a polished five star base.
-// The profile down its middle, as height and depth pairs from the front
-// lip to the top of the back.
-export const SHELL_STAR: Star = { reach: 0.29, wheel: 0.025, hub: 0.12, tip: 0.075 }
-export const SHELL_PATH: [number, number][] = [
-  [0.44, 0.245],
-  [0.47, 0.215],
-  [0.465, 0.1],
-  [0.46, -0.1],
-  [0.49, -0.19],
-  [0.6, -0.235],
-  [0.74, -0.255],
-  [0.86, -0.265],
-]
+// Racer: a gaming chair after the racing bucket seats, 70 by 68 cm and
+// 132 cm tall. Its seat's top, and how far the back leans.
+export const RACER_STAR: Star = { reach: 0.34, wheel: 0.032, hub: 0.13, tip: 0.08 }
+export const RACER = { seat: 0.48, lean: 0.2 }
 
 export const OFFICE_CHAIRS: Record<string, OfficeChairSpec> = {
   teck: { width: 0.66, depth: 0.66, height: 0.99, seat: 0.49 },
   sling: { width: 0.58, depth: 0.6, height: 0.98, seat: 0.46 },
-  shell: { width: 0.6, depth: 0.6, height: 0.86, seat: 0.47 },
+  racer: { width: 0.7, depth: 0.68, height: 1.32, seat: 0.48 },
 }
