@@ -1,4 +1,4 @@
-import { Glass, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Glass, Rain, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
 import { useEased } from '#/scene/decor/ease.ts'
@@ -95,7 +95,19 @@ function Hose({ points, children }: { points: Vec3[]; children: ReactNode }) {
 // The showerpipe on a wall `span` wide: a thermostat bar at hand height, a
 // riser to a rain head on an arm reaching `reach` into the shower, and the
 // hand shower in a holder on the riser with its hose looping down.
-function Fittings({ span, reach, h, metal }: { span: number; reach: number; h: number; metal: ReactNode }) {
+function Fittings({
+  span,
+  reach,
+  h,
+  metal,
+  running,
+}: {
+  span: number
+  reach: number
+  h: number
+  metal: ReactNode
+  running: boolean
+}) {
   // A Raindance head is 24 cm across and its arm 40 cm, both less in a
   // small shower so the head stays over the tray.
   const head = Math.min(0.24, span * 0.3)
@@ -146,6 +158,8 @@ function Fittings({ span, reach, h, metal }: { span: number; reach: number; h: n
         <cylinderGeometry args={[head / 2, head / 2, 0.012, SEG * 2]} />
         {metal}
       </mesh>
+      {/* The rain out of the head while the shower runs. */}
+      <Rain on={running} position={[0, top - 0.02, off + arm]} radius={head / 2} fall={top - 0.02 - TRAY} />
       {/* The holder on the riser, and the hand shower sitting in it: a
           slim handle and a round head facing into the shower. */}
       <mesh position={[0, holder, off + 0.03]}>
@@ -244,9 +258,11 @@ type Props = {
   flip: boolean
   colors: { glass: string }
   M: (slot: string) => ReactNode
+  // Whether the water is running.
+  running: boolean
 }
 
-export default function Shower({ w, d, h, glass: count, flip, colors, M }: Props) {
+export default function Shower({ w, d, h, glass: count, flip, colors, M, running }: Props) {
   const glass = showerGlass(count, flip)
   const wall = showerWall(w, d, glass)
   const on = frame(wall, w, d, 0)
@@ -315,7 +331,7 @@ export default function Shower({ w, d, h, glass: count, flip, colors, M }: Props
         )
       })}
       <group position={on.position} rotation={[0, on.rotation, 0]}>
-        <Fittings span={on.span} reach={wall === 'back' ? d : w} h={h} metal={metal} />
+        <Fittings span={on.span} reach={wall === 'back' ? d : w} h={h} metal={metal} running={running} />
       </group>
     </group>
   )

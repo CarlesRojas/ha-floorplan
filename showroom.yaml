@@ -74,8 +74,8 @@ rooms:
     name: "Office chair"
     points:
       - [0, 18.87]
-      - [1.66, 18.87]
-      - [1.66, 20.53]
+      - [3.84, 18.87]
+      - [3.84, 20.53]
       - [0, 20.53]
   - id: stool
     name: "Stool"
@@ -305,8 +305,8 @@ rooms:
     name: "Towel rail"
     points:
       - [18, 28.58]
-      - [19.6, 28.58]
-      - [19.6, 29.98]
+      - [20.6, 28.58]
+      - [20.6, 29.98]
       - [18, 29.98]
   - id: half_wall
     name: "Half wall"
@@ -721,6 +721,16 @@ decorations:
     room: office_chair
     position: [0.83, 19.7]
     variant: teck
+  - id: office_chair_sling
+    kind: office_chair
+    room: office_chair
+    position: [1.95, 19.7]
+    variant: sling
+  - id: office_chair_shell
+    kind: office_chair
+    room: office_chair
+    position: [3.04, 19.7]
+    variant: shell
   - id: stool_lauta
     kind: stool
     room: stool
@@ -1091,11 +1101,18 @@ decorations:
     kind: shower
     room: shower
     position: [18.95, 27.23]
-  - id: towel_rail
+  - id: towel_rail_grouped
     kind: towel_rail
     room: towel_rail
     position: [18.8, 28.58]
     rotation: 180
+    variant: grouped
+  - id: towel_rail_ladder
+    kind: towel_rail
+    room: towel_rail
+    position: [19.85, 28.58]
+    rotation: 180
+    variant: ladder
   - id: half_wall
     kind: half_wall
     room: half_wall
@@ -1423,12 +1440,12 @@ decorations:
     position: [43.1, 1.8]
     rotation: 180
     variant: folding
-  - id: awning_drop_arm
+  - id: awning_hood
     kind: awning
     room: awning
     position: [45.3, 1.8]
     rotation: 180
-    variant: drop_arm
+    variant: hood
   - id: camera
     kind: camera
     room: camera

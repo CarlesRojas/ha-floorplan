@@ -10,8 +10,13 @@ import {
   Quaternion,
   Shape,
   TubeGeometry,
+  Object3D,
   Vector3,
   type Group,
+  type InstancedMesh,
+  type Mesh,
+  type MeshBasicMaterial,
+  type MeshStandardMaterial,
 } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
@@ -88,6 +93,7 @@ export function Slab({
   rotation,
   holes,
   front,
+  taper,
   children,
 }: {
   size: Vec3
@@ -95,6 +101,10 @@ export function Slab({
   bevel?: number
   position?: Vec3
   rotation?: Vec3
+  // How much smaller the bottom face is than the top, as a scale, the sides
+  // leaning in toward it. It shrinks toward the middle across and toward
+  // the back, so a piece against the wall stays against it.
+  taper?: number
   // The radius of the two front corners, at +z, drawn as true arcs, when
   // they are rounder than the back ones. Half the width makes the front a
   // semicircle.
@@ -143,8 +153,26 @@ export function Slab({
     // floor.
     geo.rotateX(-Math.PI / 2)
     geo.translate(0, b, 0)
+    if (taper !== undefined && taper !== 1) {
+      const p = geo.attributes.position
+      const n = geo.attributes.normal
+      const lean = (1 - taper) / h
+      for (let i = 0; i < p.count; i++) {
+        const [x, y, z] = [p.getX(i), p.getY(i), p.getZ(i)]
+        const k = taper + (1 - taper) * Math.min(Math.max(y / h, 0), 1)
+        p.setXYZ(i, x * k, y, -d / 2 + (z + d / 2) * k)
+        // The sides lean in, so their normals tip down by how fast the side
+        // moves out going up.
+        const [nx, ny, nz] = [n.getX(i), n.getY(i), n.getZ(i)]
+        const flat = Math.hypot(nx, nz)
+        if (flat < 0.01) continue
+        const out = lean * (x * nx + (z + d / 2) * nz)
+        const v = new Vector3(nx, ny - out * flat, nz).normalize()
+        n.setXYZ(i, v.x, v.y, v.z)
+      }
+    }
     return geo
-  }, [w, h, d, radius, bevel, cut, front])
+  }, [w, h, d, radius, bevel, cut, front, taper])
   return (
     <mesh geometry={geometry} position={position} rotation={rotation} castShadow receiveShadow>
       {children}
@@ -160,6 +188,7 @@ export function Hollow({
   radius = 0.02,
   floor = wall,
   position = [0, 0, 0],
+  taper,
   children,
 }: {
   size: Vec3
@@ -168,9 +197,12 @@ export function Hollow({
   radius?: number
   floor?: number
   position?: Vec3
+  // How much smaller the bottom is than the top, as for a Slab.
+  taper?: number
   children: ReactNode
 }) {
   const [w, , d] = size
+  const k = taper ?? 1
   return (
     <group position={position}>
       <Slab
@@ -178,10 +210,16 @@ export function Hollow({
         radius={radius + wall}
         bevel={Math.min(0.004, wall / 3)}
         holes={[{ x: 0, z: 0, w: w - wall * 2, d: d - wall * 2, r: radius }]}
+        taper={taper}
       >
         {children}
       </Slab>
-      <Slab size={[w - wall, floor, d - wall]} radius={radius + wall / 2} bevel={Math.min(0.003, floor / 3)}>
+      <Slab
+        size={[(w - wall) * k, floor, (d - wall) * k]}
+        radius={(radius + wall / 2) * k}
+        bevel={Math.min(0.003, floor / 3)}
+        position={[0, 0, (-d / 2) * (1 - k)]}
+      >
         {children}
       </Slab>
     </group>
@@ -466,6 +504,30 @@ export function Spinner({ speed, children }: { speed: number; children: ReactNod
   return <group ref={ref}>{children}</group>
 }
 
+// The smear of blades turning fast, a faint disc flat in the XZ plane that
+// thickens with the speed, so a running fan reads even in a still frame.
+export function SpinBlur({
+  radius,
+  inner = 0,
+  speed,
+  color,
+  y = 0,
+}: {
+  radius: number
+  inner?: number
+  speed: number
+  color: string
+  y?: number
+}) {
+  const k = Math.min(1, speed / 10)
+  return (
+    <mesh position={[0, y, 0]} rotation={[-Math.PI / 2, 0, 0]} visible={k > 0.01}>
+      <ringGeometry args={[inner, radius, 64]} />
+      <meshBasicMaterial color={color} transparent opacity={0.16 * k} depthWrite={false} side={DoubleSide} />
+    </mesh>
+  )
+}
+
 // The small status light a device shows while it is running.
 export function Led({
   on,
@@ -508,4 +570,284 @@ export function Halo({
 }) {
   const lit = useEased(on ? 1 : 0, 9)
   return <pointLight position={position} color={color} intensity={intensity * lit} distance={distance} decay={1} />
+}
+
+/**
+ * Puffs of steam or mist rising from a point while a thing runs: soft
+ * spheres that swell, drift and fade as they climb, each on its own turn of
+ * a shared loop. A negative `rise` sinks them, and `drift` carries them
+ * sideways, for a draft of air out of a vent. They ease out when it stops, so the last puffs thin away
+ * instead of vanishing.
+ */
+export function Steam({
+  on,
+  position,
+  radius = 0.03,
+  rise = 0.25,
+  count = 5,
+  strength = 0.3,
+  speed = 0.45,
+  drift = [0, 0],
+  color = '#eef3f5',
+}: {
+  on: boolean
+  position: [number, number, number]
+  radius?: number
+  rise?: number
+  count?: number
+  strength?: number
+  speed?: number
+  drift?: [number, number]
+  color?: string
+}) {
+  const lit = useEased(on ? 1 : 0, 3)
+  const puffs = useRef<(Mesh | null)[]>([])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    puffs.current.forEach((puff, i) => {
+      if (!puff) return
+      const f = (t * speed + i / count) % 1
+      const sway = radius * 0.7 * f
+      puff.position.set(
+        Math.sin(t * 1.3 + i * 2.1) * sway + drift[0] * f,
+        f * rise,
+        Math.cos(t * 1.1 + i * 1.7) * sway * 0.6 + drift[1] * f,
+      )
+      puff.scale.set(radius * (0.5 + f * 1.8), radius * (0.8 + f * 2.4), radius * (0.5 + f * 1.8))
+      puff.visible = lit > 0.01
+      ;(puff.material as MeshStandardMaterial).opacity = strength * lit * Math.sin(Math.PI * f) ** 1.5
+    })
+  })
+  return (
+    <group position={position}>
+      {Array.from({ length: count }, (_, i) => (
+        <mesh
+          key={i}
+          scale={radius * 0.5}
+          visible={false}
+          ref={el => {
+            puffs.current[i] = el
+          }}
+        >
+          <sphereGeometry args={[1, 14, 10]} />
+          <meshStandardMaterial
+            color={color}
+            transparent
+            opacity={0}
+            depthWrite={false}
+            roughness={1}
+            emissive={color}
+            emissiveIntensity={0.25}
+          />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Rings of sound spreading out from a speaker while it plays: thin bands
+ * that grow from `from` to `from + reach` and fade as they go, each on its
+ * own turn of a shared loop. They lie in the group's XY plane, so turn the
+ * group to lay them flat round a body or stand them in front of a baffle,
+ * and `stretch` pulls them into an oval for a long bar.
+ */
+export function Waves({
+  on,
+  position,
+  rotation = [0, 0, 0],
+  from,
+  reach,
+  count = 3,
+  stretch = [1, 1],
+  strength = 0.75,
+  speed = 0.7,
+  color = '#6aaeff',
+}: {
+  on: boolean
+  position: [number, number, number]
+  rotation?: [number, number, number]
+  from: number
+  reach: number
+  count?: number
+  stretch?: [number, number]
+  strength?: number
+  speed?: number
+  color?: string
+}) {
+  const lit = useEased(on ? 1 : 0, 4)
+  const rings = useRef<(Mesh | null)[]>([])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    rings.current.forEach((ring, i) => {
+      if (!ring) return
+      const f = (t * speed + i / count) % 1
+      const r = from + reach * f
+      ring.scale.set(r * stretch[0], r * stretch[1], 1)
+      ring.visible = lit > 0.01
+      ;(ring.material as MeshBasicMaterial).opacity = strength * lit * (1 - f) * Math.min(1, f * 6)
+    })
+  })
+  return (
+    <group position={position} rotation={rotation}>
+      {Array.from({ length: count }, (_, i) => (
+        <mesh
+          key={i}
+          scale={from}
+          visible={false}
+          ref={el => {
+            rings.current[i] = el
+          }}
+        >
+          <ringGeometry args={[0.95, 1, 64]} />
+          <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} side={DoubleSide} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+const LAID: [number, number, number] = [-Math.PI / 2, 0, 0]
+
+/**
+ * Water running from a tap: a thin clear column from the spout at
+ * `position` down `length` to where it lands, trembling a little the way a
+ * real stream does, with rings spreading from the spot it hits. It pours
+ * down from the spout when it opens and draws back up into it when it
+ * shuts, rather than blinking in and out.
+ */
+export function Stream({
+  on,
+  position,
+  length,
+  radius = 0.0065,
+  color = '#a9d2ee',
+}: {
+  on: boolean
+  position: [number, number, number]
+  length: number
+  radius?: number
+  color?: string
+}) {
+  const lit = useEased(on ? 1 : 0, 6)
+  const body = useRef<Mesh>(null)
+  useFrame(({ clock }) => {
+    const m = body.current
+    if (!m) return
+    const t = clock.elapsedTime
+    const k = 1 + 0.16 * Math.sin(t * 41) + 0.08 * Math.sin(t * 67)
+    m.scale.x = k
+    m.scale.z = k
+  })
+  const run = Math.max(length * lit, 0.0001)
+  return (
+    <group position={position}>
+      <mesh ref={body} position={[0, -run / 2, 0]} scale={[1, run, 1]} visible={lit > 0.01}>
+        <cylinderGeometry args={[radius, radius * 0.8, 1, 12, 1, true]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.3}
+          transparent
+          opacity={0.75}
+          roughness={0.05}
+          metalness={0.1}
+          depthWrite={false}
+        />
+      </mesh>
+      <Waves
+        on={on && lit > 0.9}
+        position={[0, -length + 0.002, 0]}
+        rotation={LAID}
+        from={radius * 1.5}
+        reach={radius * 9}
+        strength={0.55}
+        speed={1.3}
+        color="#eef7fc"
+      />
+    </group>
+  )
+}
+
+/**
+ * A shower's rain: fine streaks falling from a round head of `radius` at
+ * `position`, down `fall` to the tray, each on its own turn of a shared
+ * loop so the fall looks steady rather than in waves. They thin out when
+ * it is turned off, the last drops still on their way down.
+ */
+export function Rain({
+  on,
+  position,
+  radius,
+  fall,
+  count = 70,
+  color = '#8fc2e8',
+}: {
+  on: boolean
+  position: [number, number, number]
+  radius: number
+  fall: number
+  count?: number
+  color?: string
+}) {
+  const lit = useEased(on ? 1 : 0, 4)
+  const mesh = useRef<InstancedMesh>(null)
+  // Where each drop falls from, spread evenly over the head's face on a
+  // sunflower spiral, and where on the loop it starts.
+  const drops = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        const a = i * 2.39996
+        const r = radius * 0.9 * Math.sqrt((i + 0.5) / count)
+        // The phase is scattered by a hash, since one that followed the
+        // spiral lined the drops up into a corkscrew.
+        const phase = (((Math.sin(i * 12.9898) * 43758.5453) % 1) + 1) % 1
+        return { x: Math.cos(a) * r, z: Math.sin(a) * r, phase }
+      }),
+    [count, radius],
+  )
+  const dummy = useMemo(() => new Object3D(), [])
+  useFrame(({ clock }) => {
+    const m = mesh.current
+    if (!m) return
+    const t = clock.elapsedTime
+    drops.forEach((d, i) => {
+      const f = (t * 1.6 + d.phase) % 1
+      // They spread a touch as they fall, the way a rain head's jets do.
+      const spread = 1 + f * 0.25
+      dummy.position.set(d.x * spread, -f * fall, d.z * spread)
+      dummy.updateMatrix()
+      m.setMatrixAt(i, dummy.matrix)
+    })
+    m.instanceMatrix.needsUpdate = true
+    m.visible = lit > 0.01
+    ;(m.material as MeshBasicMaterial).opacity = 0.8 * lit
+  })
+  return (
+    <group position={position}>
+      {/* Drawn before the other see through things, so shower glass in
+          front of it, which writes depth, does not hide it. */}
+      <instancedMesh
+        ref={mesh}
+        args={[undefined, undefined, count]}
+        visible={false}
+        frustumCulled={false}
+        renderOrder={-1}
+      >
+        <boxGeometry args={[0.003, Math.min(0.16, fall * 0.09), 0.003]} />
+        <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
+      </instancedMesh>
+      <Waves
+        on={on}
+        position={[0, -fall + 0.002, 0]}
+        rotation={LAID}
+        from={radius * 0.3}
+        reach={radius * 0.9}
+        count={4}
+        strength={0.35}
+        speed={0.9}
+        color="#eef7fc"
+      />
+    </group>
+  )
 }

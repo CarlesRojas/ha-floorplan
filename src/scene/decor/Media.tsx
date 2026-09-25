@@ -1,14 +1,17 @@
-import { Led, Material, SEG, Slab, Spinner } from '#/scene/decor/parts.tsx'
-import { useMemo, type ReactNode } from 'react'
+import { Halo, Led, Material, SEG, Slab, Spinner, Waves } from '#/scene/decor/parts.tsx'
+import { useFrame } from '@react-three/fiber'
+import { useMemo, useRef, type ReactNode } from 'react'
 import {
   AdditiveBlending,
   BufferGeometry,
+  Color,
   DoubleSide,
   ExtrudeGeometry,
   Float32BufferAttribute,
   LatheGeometry,
   Shape,
   Vector2,
+  type MeshBasicMaterial,
 } from 'three'
 
 // The speakers, the game consoles and the projector's beam, each in the
@@ -28,7 +31,32 @@ export type Look = {
 // color: on the card's see through canvas the alpha a pixel gains darkens
 // the page behind it, so it must fall away with the light or the faint far
 // end shows as a dark box.
+// How far along the throw the beam is drawn before it has faded away.
+const BEAM_REACH = 0.6
+
+// The whites a picture cuts between, from dim to bright and cool to warm.
+const BEAM_WHITES = ['#c9d6f2', '#eef3ff', '#fff4e6', '#dfe8ff', '#ffffff', '#b8c6e6']
+
 export function Beam({ length, width, strength }: { length: number; width: number; strength: number }) {
+  const material = useRef<MeshBasicMaterial>(null)
+  // The scene now on screen: its brightness and tint, and when it cuts.
+  const scene = useRef({ level: 1, target: 1, color: new Color('#eef3ff'), next: 0 })
+  useFrame(({ clock }, delta) => {
+    const mat = material.current
+    if (!mat) return
+    const now = clock.elapsedTime
+    const at = scene.current
+    if (now >= at.next) {
+      at.target = 0.55 + Math.random() * 0.45
+      at.color.set(BEAM_WHITES[Math.floor(Math.random() * BEAM_WHITES.length)])
+      at.next = now + 0.4 + Math.random() * 2.2
+    }
+    // A cut lands fast, and the picture shimmers a little while it plays.
+    at.level += (at.target - at.level) * Math.min(1, delta * 14)
+    const shimmer = 1 + Math.sin(now * 23) * 0.03 + Math.sin(now * 37.3) * 0.02
+    mat.opacity = 0.28 * strength * at.level * shimmer
+    mat.color.lerp(at.color, Math.min(1, delta * 14))
+  })
   const geometry = useMemo(() => {
     const rows = 24
     const lens = 0.012
@@ -37,17 +65,18 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
     const index: number[] = []
     for (let i = 0; i <= rows; i++) {
       const t = i / rows
-      const hx = lens + (width / 2 - lens) * t
-      const hy = lens + (width / 2 / (16 / 9) - lens) * t
-      // Brightest just out of the lens, gone by the far end.
-      const fade = Math.pow(1 - t, 2.2) * Math.min(1, t * 8 + 0.2)
+      const along = t * BEAM_REACH
+      const hx = lens + (width / 2 - lens) * along
+      const hy = lens + (width / 2 / (16 / 9) - lens) * along
+      // Brightest just out of the lens, gone by the end of what is drawn.
+      const fade = Math.pow(1 - t, 1.8) * Math.min(1, t * 5 + 0.2)
       for (const [x, y] of [
         [-hx, -hy],
         [hx, -hy],
         [hx, hy],
         [-hx, hy],
       ]) {
-        positions.push(x, y, t * length)
+        positions.push(x, y, along * length)
         colors.push(1, 1, 1, fade)
       }
     }
@@ -68,10 +97,11 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
   return (
     <mesh geometry={geometry} renderOrder={2}>
       <meshBasicMaterial
-        color="#dbe9ff"
+        ref={material}
+        color="#eef3ff"
         vertexColors
         transparent
-        opacity={0.4 * strength}
+        opacity={0.28 * strength}
         blending={AdditiveBlending}
         depthWrite={false}
         side={DoubleSide}
@@ -132,6 +162,9 @@ function Swirl({ r, y, lit }: { r: number; y: number; lit: number }) {
 // buttons and a glass top that lights up, after the Apple HomePod. A small
 // ball of one with flat poles, after the HomePod mini. The old fabric drum
 // with a wooden base and top.
+// Lays a ring of sound flat, round a speaker that plays all ways.
+const FLAT: [number, number, number] = [-Math.PI / 2, 0, 0]
+
 export function Speaker({
   style,
   r,
@@ -168,6 +201,7 @@ export function Speaker({
           {paint('top')}
         </mesh>
         <Swirl r={pole * 0.8} y={half + 0.001} lit={lit} />
+        <Waves on={on} position={[0, 0, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
       </group>
     )
   }
@@ -189,6 +223,7 @@ export function Speaker({
           {paint('base')}
         </mesh>
         <Led on={on} position={[0, h + 0.002, r * 0.45]} radius={Math.min(0.007, r * 0.1)} />
+        <Waves on={on} position={[0, h * 0.55, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
       </group>
     )
   }
@@ -218,6 +253,7 @@ export function Speaker({
         {paint('top')}
       </mesh>
       <Swirl r={top * 0.7} y={h + 0.002} lit={lit} />
+      <Waves on={on} position={[0, h * 0.5, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
     </group>
   )
 }
@@ -312,6 +348,7 @@ export function FloorSpeaker({
           {paint('metal')}
         </mesh>
         <Led on={on} position={[0, h - cap * 0.5, r + 0.001]} color="#e8f2f6" radius={Math.min(0.004, r * 0.08)} />
+        <Waves on={on} position={[0, disc + neck + body * 0.6, 0]} rotation={FLAT} from={r * 1.15} reach={r * 3} />
       </group>
     )
   }
@@ -355,6 +392,7 @@ export function FloorSpeaker({
         {paint('trim')}
       </mesh>
       <Led on={on} position={[w * 0.36, ty, front + 0.002]} radius={0.004} />
+      <Waves on={on} position={[0, my, front + 0.03]} from={mid * 1.3} reach={w * 0.9} />
     </group>
   )
 }
@@ -430,9 +468,10 @@ export function Console({
             color={color('vent')}
             material={material('vent')}
             emissive={[0.35, 0.8, 0.3]}
-            emissiveIntensity={0.25 * lit}
+            emissiveIntensity={0.9 * lit}
           />
         </mesh>
+        <Halo on={on} position={[0, h + 0.05, 0]} color="#8fe08a" intensity={0.06} />
         {[0.12, 0.25, 0.38, 0.5, 0.62, 0.75, 0.88, 1].map(k => (
           <mesh key={k} position={[0, h + 0.001, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.4]}>
             <torusGeometry args={[vent * k, vent * 0.05, 8, SEG * 2]} />
@@ -519,6 +558,12 @@ export function Console({
         {paint('panel')}
       </mesh>
       <Led on={on} position={[-w * 0.4, mid, d / 2]} color="#e8f2f6" radius={Math.min(0.006, h * 0.12)} />
+      {/* The light bar along the foot of the front, lit while it is on. */}
+      <mesh position={[w * 0.08, feet + h * 0.12, d / 2 + 0.0015]}>
+        <boxGeometry args={[w * 0.6, Math.min(0.008, h * 0.14), 0.003]} />
+        <meshStandardMaterial color="#1a1d20" emissive="#cfe6ff" emissiveIntensity={3 * lit} />
+      </mesh>
+      <Halo on={on} position={[0, mid, d / 2 + 0.06]} color="#cfe6ff" intensity={0.1} />
     </group>
   )
 }

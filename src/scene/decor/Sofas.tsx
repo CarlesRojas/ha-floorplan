@@ -454,15 +454,17 @@ function RailSofa({ w, d, reach, chaise, flip, M }: SofaProps) {
   const chaiseW = chaiseX[1] - chaiseX[0]
   return (
     <group>
-      {/* Each arm: a leg at either end up to a flat board, and a side rail
-          at the seat. */}
+      {/* Each arm: a leg at either end, the front one up to a flat board
+          and the back one on through it as a post that carries the rail
+          along the top of the back, and a side rail at the seat. */}
       {[-1, 1].map(s => (
         <group key={s}>
-          {[back + legIn, front - legIn].map(z => (
-            <TopLeg key={z} x={s * armX} z={z} height={armTop - armT} radius={RAIL_LEG_R}>
-              {M('frame')}
-            </TopLeg>
-          ))}
+          <TopLeg x={s * armX} z={front - legIn} height={armTop - armT} radius={RAIL_LEG_R}>
+            {M('frame')}
+          </TopLeg>
+          <TopLeg x={s * armX} z={back + legIn} height={RAIL_BACK_TOP} radius={RAIL_LEG_R}>
+            {M('frame')}
+          </TopLeg>
           <Panel size={[armW, armT, d]} radius={0.015} position={[s * armX, armTop - armT, back + d / 2]}>
             {M('frame')}
           </Panel>
@@ -511,7 +513,7 @@ function RailSofa({ w, d, reach, chaise, flip, M }: SofaProps) {
         {M('upholstery')}
       </Soft>
       <Panel
-        size={[w - armW, 0.028, RAIL_BACK_T + 0.02]}
+        size={[w - armW + RAIL_LEG_R[1] * 2 + 0.01, 0.028, RAIL_BACK_T + 0.02]}
         radius={0.01}
         position={[0, RAIL_BACK_TOP, back + RAIL_BACK_T / 2]}
       >

@@ -1,4 +1,4 @@
-import { Bar, Led, Material, Panel, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
+import { Bar, Halo, Led, Material, Panel, SEG, Slab, Steam, Tube } from '#/scene/decor/parts.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import { useFrame } from '@react-three/fiber'
 import { useRef, type ReactNode } from 'react'
@@ -87,7 +87,17 @@ export function Fridge({ w, d, h, flip, fit }: { w: number; d: number; h: number
           </Pocket>
         </group>
       ))}
-      <Led on={fit.on} radius={0.006} position={[-side * (w / 2 - 0.05), h - 0.04, front + 0.001]} />
+      {/* The door display, dark glass that lights with the fridge's
+          temperature while it runs. */}
+      <mesh position={[-side * (w / 2 - 0.11), h - 0.14, front + 0.0015]}>
+        <planeGeometry args={[0.1, 0.045]} />
+        <meshStandardMaterial color="#15181a" emissive="#d9f2ff" emissiveIntensity={1.1 * fit.lit} roughness={0.3} />
+      </mesh>
+      <mesh position={[-side * (w / 2 - 0.11), h - 0.14, front + 0.002]}>
+        <planeGeometry args={[0.05, 0.016]} />
+        <meshBasicMaterial color="#7fd0ff" transparent opacity={fit.lit} />
+      </mesh>
+      <Halo on={fit.on} position={[-side * (w / 2 - 0.11), h - 0.14, front + 0.06]} color="#bfe6ff" intensity={0.08} />
     </group>
   )
 }
@@ -335,7 +345,22 @@ export function Dishwasher({ w, d, h, fit }: { w: number; d: number; h: number; 
       </Panel>
       <mesh position={[0, doorTop - fascia / 2, front + 0.0005]}>
         <planeGeometry args={[Math.min(0.12, w * 0.2), fascia * 0.4]} />
-        <Material color={fit.c('controls')} material="ceramic" emissive={[1, 1, 1]} emissiveIntensity={0.7 * fit.lit} />
+        <Material
+          color={fit.c('controls')}
+          material="ceramic"
+          emissive={[0.7, 0.85, 1]}
+          emissiveIntensity={1.6 * fit.lit}
+        />
+      </mesh>
+      {/* The spot it throws on the floor in front of the plinth while it
+          runs, the only sign of it with the door shut. */}
+      <mesh position={[0, 0.002, front + 0.09]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.045, 32]} />
+        <meshBasicMaterial color="#3d9bff" transparent opacity={0.85 * fit.lit} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0.0015, front + 0.09]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.045, 0.09, 32]} />
+        <meshBasicMaterial color="#3d9bff" transparent opacity={0.18 * fit.lit} depthWrite={false} />
       </mesh>
       {[-3, -2, -1, 1, 2, 3].map(i => (
         <mesh key={i} position={[i * w * 0.07 + Math.sign(i) * w * 0.05, doorTop - fascia / 2, front + 0.0005]}>
@@ -758,9 +783,23 @@ export function CeilingExtractor({ w, d, fit }: { w: number; d: number; fit: Fit
 // A coffee machine in one of three styles, from the big espresso machine
 // down to a pod machine a hand wide.
 export function CoffeeMachine({ style, w, d, h, fit }: { style?: string; w: number; d: number; h: number; fit: Fit }) {
-  if (style === 'bambino') return <CompactEspresso w={w} d={d} h={h} fit={fit} />
-  if (style === 'pod') return <PodMachine w={w} d={d} h={h} fit={fit} />
-  return <LineaEspresso w={w} d={d} h={h} fit={fit} />
+  const body =
+    style === 'bambino' ? (
+      <CompactEspresso w={w} d={d} h={h} fit={fit} />
+    ) : style === 'pod' ? (
+      <PodMachine w={w} d={d} h={h} fit={fit} />
+    ) : (
+      <LineaEspresso w={w} d={d} h={h} fit={fit} />
+    )
+  // While it is on, a warm light over the cup and a wisp of steam off the
+  // hot top.
+  return (
+    <group>
+      {body}
+      <Halo on={fit.on} position={[0, h * 0.35, d / 2 + 0.04]} color="#ffd2a0" intensity={0.12} distance={0.5} />
+      <Steam on={fit.on} position={[0, h + 0.01, 0]} radius={w * 0.1} rise={0.22} count={8} strength={0.1} />
+    </group>
+  )
 }
 
 // A compact espresso machine after the Sage Bambino, 19.5 by 32 by 31 cm: a
@@ -1110,6 +1149,15 @@ function JugKettle({ size, fit }: { size: number; fit: Fit }) {
       >
         {M('fittings')}
       </Tube>
+      <Steam
+        on={fit.on}
+        position={[r * 1.02, top + r * 0.1, 0]}
+        radius={r * 0.35}
+        rise={r * 3}
+        count={10}
+        strength={0.16}
+        speed={0.5}
+      />
     </group>
   )
 }
@@ -1180,6 +1228,15 @@ function Gooseneck({ size, fit }: { size: number; fit: Fit }) {
       >
         {M('fittings')}
       </Tube>
+      <Steam
+        on={fit.on}
+        position={[r * 2.05, base + h * 0.98, 0]}
+        radius={r * 0.25}
+        rise={r * 2.5}
+        count={10}
+        strength={0.16}
+        speed={0.5}
+      />
     </group>
   )
 }

@@ -1,10 +1,22 @@
-import { OFFICE_CHAIRS, TECK_ARM, TECK_BACK, TECK_SEAT, TECK_STAR, type Star } from '#/scene/decor/officeChairSpecs.ts'
+import {
+  OFFICE_CHAIRS,
+  SHELL_PATH,
+  SHELL_STAR,
+  SLING_HALF,
+  SLING_PATH,
+  SLING_STAR,
+  TECK_ARM,
+  TECK_BACK,
+  TECK_SEAT,
+  TECK_STAR,
+  type Star,
+} from '#/scene/decor/officeChairSpecs.ts'
 import { Cushion, Slab } from '#/scene/decor/parts.tsx'
 import { bendAround, plate, taperedOutline } from '#/scene/decor/plates.ts'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
 import { useMemo, type ReactNode } from 'react'
-import { BoxGeometry, CatmullRomCurve3, TubeGeometry, Vector3 } from 'three'
+import { BoxGeometry, BufferGeometry, CatmullRomCurve3, Float32BufferAttribute, TubeGeometry, Vector3 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 type Props = {
@@ -207,10 +219,211 @@ function Teck({ lift, kx, kz, M }: Part) {
   )
 }
 
+// The column up from the hub of the base to the seat: a wide gas spring
+// sleeve and the narrower rod out of it.
+function Column({ star, top, M }: { star: Star; top: number; M: Props['M'] }) {
+  return (
+    <>
+      <mesh position={[0, star.hub - 0.02, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.045, 0.05, 48]} />
+        {M('base')}
+      </mesh>
+      <Dowel from={[0, star.hub, 0]} to={[0, Math.min(0.25, top - 0.02), 0]} r={[0.026, 0.026]}>
+        {M('base')}
+      </Dowel>
+      <Dowel from={[0, star.hub, 0]} to={[0, top, 0]} r={[0.017, 0.017]}>
+        {M('base')}
+      </Dowel>
+    </>
+  )
+}
+
+// A side profile as a curve, stretched in depth by `kz`.
+function profile(path: [number, number][], kz: number) {
+  return new CatmullRomCurve3(path.map(([y, z]) => new Vector3(0, y, z * kz)))
+}
+
+function Sling({ lift, kx, kz, M }: Part) {
+  const half = SLING_HALF * kx
+  const star = { ...SLING_STAR, reach: (SLING_STAR.reach * (kx + kz)) / 2 }
+  const { rail, pads, arm } = useMemo(() => {
+    const curve = profile(SLING_PATH, kz)
+    const length = curve.getLength()
+    // The ribbed pads, one every few centimeters along the sling, each laid
+    // along the curve with its thickness on the sitting side.
+    const pitch = 0.058
+    const count = Math.floor(length / pitch)
+    const pads = Array.from({ length: count }, (_, i) => {
+      const u = (i + 0.5) / count
+      const at = curve.getPointAt(u)
+      const t = curve.getTangentAt(u)
+      return { at: at.toArray() as Vec3, angle: Math.atan2(t.z, t.y), len: (length / count) * 0.96 }
+    })
+    const rail = curve.getSpacedPoints(40).map(p => [0, p.y - 0.012, p.z] as Vec3)
+    const arm: Vec3[] = [
+      [0, 0.47, -0.2 * kz],
+      [0, 0.6, -0.175 * kz],
+      [0, 0.655, -0.1 * kz],
+      [0, 0.66, 0.02 * kz],
+      [0, 0.655, 0.15 * kz],
+    ]
+    return { rail, pads, arm }
+  }, [kz])
+  const under = SLING_PATH[2][0] - 0.03
+  return (
+    <group>
+      <FiveStar star={star} M={M} />
+      <Column star={SLING_STAR} top={under - 0.05 + lift} M={M} />
+      <group position={[0, lift, 0]}>
+        {/* The spider under the seat, out from the column to the rails. */}
+        <Slab size={[0.16, 0.05, 0.2]} radius={0.03} bevel={0.01} position={[0, under - 0.06, -0.03 * kz]}>
+          {M('base')}
+        </Slab>
+        {[-1, 1].flatMap(sx =>
+          [0.08, -0.12].map(z => (
+            <Dowel
+              key={`${sx}:${z}`}
+              from={[0, under - 0.035, z * kz]}
+              to={[sx * half, under + 0.005, z * kz]}
+              r={[0.012, 0.009]}
+            >
+              {M('base')}
+            </Dowel>
+          )),
+        )}
+        {[-1, 1].map(sx => (
+          <group key={sx}>
+            <group position={[sx * half, 0, 0]}>
+              <Tube points={rail} r={0.013}>
+                {M('frame')}
+              </Tube>
+            </group>
+            <group position={[sx * (half + 0.03), 0, 0]}>
+              <Tube points={arm} r={0.011}>
+                {M('frame')}
+              </Tube>
+            </group>
+            <Slab
+              size={[0.05, 0.02, 0.2 * kz]}
+              radius={0.02}
+              bevel={0.006}
+              position={[sx * (half + 0.03), 0.66, 0.05 * kz]}
+            >
+              {M('seat')}
+            </Slab>
+          </group>
+        ))}
+        {pads.map(({ at, angle, len }, i) => (
+          <group key={i} position={at} rotation={[angle, 0, 0]}>
+            <Slab size={[half * 2 - 0.01, len, 0.024]} radius={0.01} bevel={0.01} position={[0, -len / 2, 0.012]}>
+              {M('seat')}
+            </Slab>
+          </group>
+        ))}
+      </group>
+    </group>
+  )
+}
+
+// The shell, a surface swept along its middle profile and across its width,
+// its edges curling up on the seat and forward on the back, given a
+// thickness and closed round its rim.
+function shellGeometry(kx: number, kz: number) {
+  const curve = profile(SHELL_PATH, kz)
+  const rows = 48
+  const cols = 24
+  const thick = 0.009
+  const top: Vector3[] = []
+  const normals: Vector3[] = []
+  for (let j = 0; j <= rows; j++) {
+    const v = j / rows
+    const at = curve.getPointAt(v)
+    const t = curve.getTangentAt(v)
+    // The side the sitter is on: up on the seat, forward on the back.
+    const n = new Vector3(0, -t.z, t.y).normalize()
+    const back = Math.min(Math.max((at.y - 0.5) / 0.2, 0), 1)
+    const half = (0.235 - 0.02 * Math.sin(Math.PI * Math.min(v * 1.6, 1)) + 0.01 * back) * kx
+    const curl = 0.025 + 0.06 * back
+    for (let i = 0; i <= cols; i++) {
+      const u = (i / cols) * 2 - 1
+      // Round the corners of the front lip and the top of the back.
+      const edge = Math.min(v, 1 - v) * 8
+      const round = edge < 1 ? Math.sqrt(1 - (1 - edge) ** 2) : 1
+      const x = u * half * (0.75 + 0.25 * round)
+      top.push(
+        at
+          .clone()
+          .add(new Vector3(x, 0, 0))
+          .addScaledVector(n, curl * u * u),
+      )
+      normals.push(n)
+    }
+  }
+  const positions: number[] = []
+  const index: number[] = []
+  for (const p of top) positions.push(p.x, p.y, p.z)
+  top.forEach((p, k) => {
+    const q = p.clone().addScaledVector(normals[k], -thick)
+    positions.push(q.x, q.y, q.z)
+  })
+  const n = top.length
+  const at = (i: number, j: number) => j * (cols + 1) + i
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      const a = at(i, j)
+      const b = at(i + 1, j)
+      const c = at(i + 1, j + 1)
+      const d = at(i, j + 1)
+      index.push(a, d, b, b, d, c)
+      index.push(a + n, b + n, d + n, b + n, c + n, d + n)
+    }
+  }
+  // The rim, joining the two faces all the way round.
+  const rim: number[] = []
+  for (let i = 0; i <= cols; i++) rim.push(at(i, 0))
+  for (let j = 1; j <= rows; j++) rim.push(at(cols, j))
+  for (let i = cols - 1; i >= 0; i--) rim.push(at(i, rows))
+  for (let j = rows - 1; j > 0; j--) rim.push(at(0, j))
+  for (let k = 0; k < rim.length; k++) {
+    const a = rim[k]
+    const b = rim[(k + 1) % rim.length]
+    index.push(a, b, a + n, b, b + n, a + n)
+  }
+  const g = new BufferGeometry()
+  g.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  g.setIndex(index)
+  g.computeVertexNormals()
+  return g
+}
+
+function Shell({ lift, kx, kz, M }: Part) {
+  const star = { ...SHELL_STAR, reach: (SHELL_STAR.reach * (kx + kz)) / 2 }
+  const geometry = useMemo(() => shellGeometry(kx, kz), [kx, kz])
+  const under = SHELL_PATH[3][0] - 0.01
+  return (
+    <group>
+      <FiveStar star={star} M={M} />
+      <Column star={SHELL_STAR} top={under - 0.04 + lift} M={M} />
+      <group position={[0, lift, 0]}>
+        {/* The plate under the seat the shell is screwed to. */}
+        <Slab size={[0.26, 0.035, 0.26]} radius={0.03} bevel={0.008} position={[0, under - 0.045, -0.02 * kz]}>
+          {M('base')}
+        </Slab>
+        <mesh geometry={geometry} castShadow>
+          {M('seat')}
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 // Each chair is laid out again at the width and depth the sliders give it,
 // every part keeping its thickness, and its seat raised or lowered on the
 // column.
 export default function OfficeChair({ style, w, d, h, M }: Props) {
   const spec = OFFICE_CHAIRS[style] ?? OFFICE_CHAIRS.teck
-  return <Teck lift={h - spec.seat} kx={w / spec.width} kz={d / spec.depth} M={M} />
+  const part = { lift: h - spec.seat, kx: w / spec.width, kz: d / spec.depth, M }
+  if (style === 'sling') return <Sling {...part} />
+  if (style === 'shell') return <Shell {...part} />
+  return <Teck {...part} />
 }

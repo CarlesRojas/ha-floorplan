@@ -21,13 +21,18 @@ import { Color } from 'three'
 
 const query = new URLSearchParams(location.search)
 const on = query.get('on') === '1'
+// The room dark, as with the item on, unless told otherwise.
+const dark = query.has('dark') ? query.get('dark') === '1' : on
+// Drawn twice side by side, off on the left and on on the right, to see
+// how far apart the two states read.
+const compare = query.get('compare') === '1'
 const kind = decorationKind(query.get('kind') ?? 'light_pendant')
 const params: Record<string, number> = {}
 // A value starting with # colors the slot it names, which helps to read a
 // dark model.
 const colors: Record<string, string> = {}
 for (const [key, value] of query) {
-  if (['kind', 'variant', 'on', 'yaw', 'pitch', 'stand', 'at'].includes(key)) continue
+  if (['kind', 'variant', 'on', 'dark', 'compare', 'spread', 'yaw', 'pitch', 'stand', 'at'].includes(key)) continue
   if (value.startsWith('#')) colors[key] = value
   else if (Number.isFinite(Number(value))) params[key] = Number(value)
 }
@@ -55,8 +60,11 @@ const glow = new Color(LIGHT_GLOW_COLOR)
 // cord does not push the model out of frame.
 const lift = support ? 0 : kind?.mount === 'ceiling' ? -(CEILING_HEIGHT_M - 1.4) : kind ? -mountHeight(kind, params) : 0
 
+// How far apart the two copies stand when comparing.
+const spread = Number(query.get('spread')) || 1.2
+
 const root = document.createElement('div')
-root.style.cssText = `width:100vw;height:100vh;background:${on ? '#2a2a2e' : '#d9d6d0'}`
+root.style.cssText = `width:100vw;height:100vh;background:${dark ? '#2a2a2e' : '#d9d6d0'}`
 document.body.appendChild(root)
 createRoot(root).render(
   kind ? (
@@ -68,19 +76,26 @@ createRoot(root).render(
         position: [3 * Math.sin(yaw) * Math.cos(pitch), 3 * Math.sin(pitch), 3 * Math.cos(yaw) * Math.cos(pitch)],
       }}
     >
-      <ambientLight intensity={on ? 0.15 : 0.7} />
-      <directionalLight position={[3, 6, 4]} intensity={on ? 0.1 : 1.2} />
+      <ambientLight intensity={dark ? 0.15 : 0.7} />
+      <directionalLight position={[3, 6, 4]} intensity={dark ? 0.1 : 1.2} />
       <Bounds fit clip observe margin={1.15} maxDuration={0}>
-        <group position={[0, lift, 0]}>
-          {all.map(d => (
-            <DecorationModel
-              key={d.id}
-              item={d}
-              all={all}
-              state={{ on, level: 1, levels: { open: Number(query.get('open') ?? 1) }, glow: [glow.r, glow.g, glow.b] }}
-            />
-          ))}
-        </group>
+        {(compare ? [false, true] : [on]).map((state, i, sides) => (
+          <group key={i} position={[sides.length > 1 ? (i - 0.5) * spread : 0, lift, 0]}>
+            {all.map(d => (
+              <DecorationModel
+                key={d.id}
+                item={d}
+                all={all}
+                state={{
+                  on: state,
+                  level: 1,
+                  levels: { open: Number(query.get('open') ?? 1) },
+                  glow: [glow.r, glow.g, glow.b],
+                }}
+              />
+            ))}
+          </group>
+        ))}
       </Bounds>
       <OrbitControls makeDefault />
     </Canvas>

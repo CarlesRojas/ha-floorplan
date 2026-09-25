@@ -33,6 +33,41 @@ export const TECK_BACK = { foot: 0.4, head: 0.46, y: 0.515, z: -0.25, lean: 0.12
 // The arm pads' height, how far out they stand, and their size.
 export const TECK_ARM = { y: 0.63, x: 0.265, pad: [0.08, 0.025, 0.25] as [number, number, number] }
 
+// Sling: after the Vitra Aluminium Chair EA 117. A single sling of ribbed
+// leather pads runs from the front of the seat up the back between two
+// cast aluminum side rails, with arms off the rails, on a polished five
+// star base. The side profile the rails follow, as height and depth pairs.
+export const SLING_STAR: Star = { reach: 0.3, wheel: 0.025, hub: 0.12, tip: 0.07 }
+export const SLING_PATH: [number, number][] = [
+  [0.47, 0.25],
+  [0.445, 0.2],
+  [0.435, 0.02],
+  [0.44, -0.13],
+  [0.49, -0.21],
+  [0.64, -0.255],
+  [0.8, -0.275],
+  [0.96, -0.285],
+]
+export const SLING_HALF = 0.24
+
+// Shell: after the Hay About A Chair AAC 53 on castors. One molded shell,
+// its seat dished and its back curved round, on a polished five star base.
+// The profile down its middle, as height and depth pairs from the front
+// lip to the top of the back.
+export const SHELL_STAR: Star = { reach: 0.29, wheel: 0.025, hub: 0.12, tip: 0.075 }
+export const SHELL_PATH: [number, number][] = [
+  [0.44, 0.245],
+  [0.47, 0.215],
+  [0.465, 0.1],
+  [0.46, -0.1],
+  [0.49, -0.19],
+  [0.6, -0.235],
+  [0.74, -0.255],
+  [0.86, -0.265],
+]
+
 export const OFFICE_CHAIRS: Record<string, OfficeChairSpec> = {
   teck: { width: 0.66, depth: 0.66, height: 0.99, seat: 0.49 },
+  sling: { width: 0.58, depth: 0.6, height: 0.98, seat: 0.46 },
+  shell: { width: 0.6, depth: 0.6, height: 0.86, seat: 0.47 },
 }

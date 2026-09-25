@@ -1,5 +1,6 @@
 import type { Fit } from '#/scene/decor/Kitchen.tsx'
-import { Hollow, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
+import { useEased } from '#/scene/decor/ease.ts'
+import { Hollow, SEG, Slab, Stream, Tube } from '#/scene/decor/parts.tsx'
 import { BridgeTap } from '#/scene/decor/Sink.tsx'
 
 // Toilets, basins and baths, each in three styles drawn after real pieces.
@@ -56,6 +57,9 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
   const seatR = square ? Math.min(0.05, w * 0.14) : arc ? 0.012 : w / 2
   const seatFront = arc ? w / 2 : undefined
   const deep = top - Math.max(shell, 0.2) - 0.01
+  // The pan narrows on its way down, the same shape as the seat but
+  // smaller at the floor, or at the foot of a pan off the floor.
+  const taper = shell > 0 ? 0.76 : 0.64
   return (
     <group>
       <Slab
@@ -65,13 +69,20 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
         position={[0, shell, pz]}
         holes={[{ x: 0, z: sz + hole.z - pz, w: hole.w, d: hole.d, r: hole.r }]}
         front={arc ? w / 2 : undefined}
+        taper={taper}
       >
         {M('pan')}
       </Slab>
       {/* The bowl, the glaze curving down inside the opening, or in a
           square pan falling straight. */}
       {square ? (
-        <Hollow size={[hole.w, deep, hole.d]} wall={0.008} radius={hole.r} position={[0, top - deep, sz + hole.z]}>
+        <Hollow
+          size={[hole.w, deep, hole.d]}
+          wall={0.008}
+          radius={hole.r}
+          position={[0, top - deep, sz + hole.z]}
+          taper={0.6}
+        >
           {M('pan')}
         </Hollow>
       ) : (
@@ -82,11 +93,12 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
       )}
       {!square && shell > 0 && (
         <Slab
-          size={[w * 0.64, shell - foot + 0.002, d * 0.76]}
+          size={[w * 0.66, shell - foot + 0.002, d * 0.74]}
           radius={arc ? 0.02 : Math.min(0.1, w * 0.3)}
           bevel={0.01}
-          position={[0, foot, wall + d * 0.38]}
-          front={arc ? w * 0.32 : undefined}
+          position={[0, foot, wall + d * 0.37]}
+          front={arc ? w * 0.33 : undefined}
+          taper={0.85}
         >
           {M('pan')}
         </Slab>
@@ -256,6 +268,8 @@ export function Basin({ style, w, d, h, fit }: { style?: string; w: number; d: n
   const opening = { x: 0, z: bz, w: bw, d: bd, r: br + wall }
   const outer = kind === 'vanity' ? 0.01 : kind === 'wall_hung' ? 0.03 : Math.min(0.1, d * 0.25)
   const tapZ = -d / 2 + 0.045
+  // Where the water leaves each tap, up from the rim and out from its foot.
+  const spout = kind === 'vanity' ? [0.13, 0.095] : kind === 'wall_hung' ? [0.13, 0.11] : [0.158, 0.126]
   return (
     <group>
       <Slab size={[w, t, d]} radius={outer} bevel={0.008} position={[0, h - t, 0]} holes={[opening]}>
@@ -308,6 +322,7 @@ export function Basin({ style, w, d, h, fit }: { style?: string; w: number; d: n
           </group>
         )}
       </group>
+      <Stream on={fit.on} position={[0, h + spout[0], tapZ + spout[1]]} length={spout[0] + bh - wall} />
     </group>
   )
 }
@@ -409,6 +424,36 @@ function WallMixer({ y, z, fit }: { y: number; z: number; fit: Fit }) {
   )
 }
 
+// The water in a bath, rising while the tap runs until it is about two
+// thirds full, and draining away once it is shut. `w`, `l` and `r` are the
+// inside of the bath, `floor` and `top` the heights of its floor and rim.
+function BathWater({
+  on,
+  floor,
+  top,
+  w,
+  l,
+  r,
+}: {
+  on: boolean
+  floor: number
+  top: number
+  w: number
+  l: number
+  r: number
+}) {
+  const fill = useEased(on ? 1 : 0, 0.25)
+  const depth = (top - floor) * 0.65 * fill
+  if (depth < 0.003) return null
+  return (
+    <group position={[0, floor, 0]} scale={[1, depth, 1]}>
+      <Slab size={[w - 0.004, 1, l - 0.004]} radius={Math.max(r - 0.002, 0.005)} bevel={0.001}>
+        <meshStandardMaterial color="#8fc3dc" transparent opacity={0.45} roughness={0.05} depthWrite={false} />
+      </Slab>
+    </group>
+  )
+}
+
 // Three baths, the rim at the far end, -z, where the taps are. A
 // freestanding shell after the Duravit Luv, 61.5 cm tall with thin walls,
 // and a mixer on the wall at its end. A steel bath after the Kaldewei
@@ -438,6 +483,8 @@ export function Bathtub({ style, w, l, fit }: { style?: string; w: number; l: nu
         </Hollow>
         <Waste y={h - deep + 0.012} z={-tl / 2 + 0.15} r={0.03} fit={fit} />
         <WallMixer y={h + 0.16} z={-l / 2} fit={fit} />
+        <Stream on={fit.on} position={[0, h + 0.117, -l / 2 + 0.15]} length={deep + 0.105} radius={0.007} />
+        <BathWater on={fit.on} floor={h - deep + 0.012} top={h - 0.015} w={tw - 0.024} l={tl - 0.024} r={r - 0.012} />
       </group>
     )
   }
@@ -481,6 +528,8 @@ export function Bathtub({ style, w, l, fit }: { style?: string; w: number; l: nu
         <group position={[0, h, -l / 2 + 0.03]}>
           <BridgeTap fit={fit} />
         </group>
+        <Stream on={fit.on} position={[0, h + 0.264, -l / 2 + 0.24]} length={h + 0.264 - feet - 0.1} radius={0.007} />
+        <BathWater on={fit.on} floor={feet + 0.1} top={h - 0.045} w={bw - wall * 2} l={bl - wall * 2} r={r - wall} />
       </group>
     )
   }
@@ -498,6 +547,8 @@ export function Bathtub({ style, w, l, fit }: { style?: string; w: number; l: nu
       <Waste y={0.17} z={-l / 2 + 0.25} r={0.03} fit={fit} />
       {/* The mixer on the wall at its end, as on the built in bath. */}
       <WallMixer y={h + 0.16} z={-l / 2} fit={fit} />
+      <Stream on={fit.on} position={[0, h + 0.117, -l / 2 + 0.15]} length={h + 0.117 - 0.17} radius={0.007} />
+      <BathWater on={fit.on} floor={0.17} top={h} w={w - 0.06} l={l - 0.06} r={r - 0.03} />
     </group>
   )
 }

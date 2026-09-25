@@ -7,13 +7,14 @@ import {
   screenSize,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { Bar, Blob, Glass, Halo, Led, Material, SEG, Slab } from '#/scene/decor/parts.tsx'
+import { Bar, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
 import { roundedShape } from '#/geometry/polygon.ts'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
 import Vacuum from '#/scene/decor/Vacuum.tsx'
+import HoodAwning from '#/scene/decor/Hood.tsx'
 import { CeilingFan, FloorFan, Radiator } from '#/scene/decor/Climate.tsx'
 import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene/decor/Media.tsx'
 import type { RoomConfig } from '#/types.ts'
@@ -248,6 +249,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             </mesh>
           ))}
           <Led on={on} position={[0, h * 0.4, d / 2 + 0.002]} radius={0.007} />
+          <Waves
+            on={on}
+            position={[0, h / 2, d / 2 + 0.02]}
+            from={h * 0.7}
+            reach={h * 1.6}
+            stretch={[w / h / 2.4, 1]}
+          />
         </group>
       )
     }
@@ -368,6 +376,21 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <meshStandardMaterial color={c('display')} emissive="#7fb3e8" emissiveIntensity={0.8 * lit} />
           </mesh>
           <Led on={on} position={[w * 0.31, h * 0.42, d + 0.004]} color="#7fb3e8" radius={Math.min(0.008, h * 0.03)} />
+          {/* The draft out of the flap, cool air sinking forward along it. */}
+          {[-0.3, 0, 0.3].map(k => (
+            <Steam
+              key={k}
+              on={on}
+              position={[k * w, h * 0.08, d]}
+              radius={Math.min(0.06, w * 0.05)}
+              rise={-0.4}
+              drift={[0, 0.3]}
+              count={6}
+              strength={0.14}
+              speed={0.5}
+              color="#d6ecff"
+            />
+          ))}
         </group>
       )
     }
@@ -427,6 +450,22 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <cylinderGeometry args={[r * 0.3, r * 0.3, 0.012, SEG]} />
             <meshStandardMaterial color={c('display')} emissive="#7fb3e8" emissiveIntensity={0.9 * level * lit} />
           </mesh>
+          {/* A light round the rim of the collar, and the clean air rising
+              off the grille, fuller the faster it runs. */}
+          <mesh position={[0, h + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[r * 0.9, r * 0.97, SEG * 2]} />
+            <meshStandardMaterial color={c('body')} emissive="#7fb3e8" emissiveIntensity={1.4 * lit} />
+          </mesh>
+          <Steam
+            on={on}
+            position={[0, h + 0.02, 0]}
+            radius={r * 0.4}
+            rise={r * 3}
+            count={8}
+            strength={0.06 + level * 0.08}
+            speed={0.3 + level * 0.4}
+            color="#dceeff"
+          />
         </group>
       )
     }
@@ -452,17 +491,17 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <cylinderGeometry args={[r * 0.3, r * 0.3, 0.016, SEG]} />
             <Material color={c('nozzle')} material={m('nozzle')} />
           </mesh>
-          {on && (
-            // A soft plume rising out of the nozzle.
-            <>
-              <Blob radius={r * 0.34} squash={1.5} position={[0, h + r * 0.55, 0]}>
-                <meshStandardMaterial color="#e8f2f6" transparent opacity={0.28 * (0.4 + level * 0.6)} roughness={1} />
-              </Blob>
-              <Blob radius={r * 0.5} squash={1.2} position={[0, h + r * 1.25, 0]}>
-                <meshStandardMaterial color="#e8f2f6" transparent opacity={0.18 * (0.4 + level * 0.6)} roughness={1} />
-              </Blob>
-            </>
-          )}
+          {/* A soft plume rising out of the nozzle, fuller the higher it runs. */}
+          <Steam
+            on={on}
+            position={[0, h + r * 0.1, 0]}
+            radius={r * 0.35}
+            rise={r * 3.2}
+            count={10}
+            strength={0.12 + level * 0.14}
+            speed={0.25 + level * 0.2}
+            color="#e8f2f6"
+          />
         </group>
       )
     }
@@ -506,67 +545,15 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // A blind's slats turn with its second percentage: flat lets the light
       // through, upright shuts it out.
       const slatAngle = (1 - tiltAmount) * 1.2
-      if (awning && style === 'drop_arm') {
-        // A drop arm awning over a window: two arms hang from pivots on the
-        // wall below the cassette and swing out and up as it opens, and the
-        // cloth runs straight from the cassette to the bar across their
-        // ends. Closed, the arms hang flat against the wall and the cloth
-        // covers it like a blind.
-        const cassette = { h: 0.1, d: 0.12 }
-        const pivotY = -cassette.h - 0.2
-        const angle = 0.06 + out * 1.3
-        const exit: Vec3 = [0, -cassette.h + 0.015, cassette.d - 0.015]
-        const armX = w / 2 - 0.03
-        const hand = (x: number): Vec3 => [x, pivotY - full * Math.cos(angle), 0.06 + full * Math.sin(angle)]
-        const bar = hand(0)
-        const dy = bar[1] - exit[1]
-        const dz = bar[2] - exit[2]
-        const len = Math.hypot(dy, dz)
-        const metal = <Material color={c(head)} material={m(head)} />
+      if (awning && style === 'hood') {
         return (
-          <group>
-            <Slab size={[w + 0.04, cassette.h, cassette.d]} radius={0.035} position={[0, -cassette.h, cassette.d / 2]}>
-              {metal}
-            </Slab>
-            <group position={exit} rotation={[-Math.atan2(dz, -dy), 0, 0]} scale={[1, len, 1]}>
-              <mesh position={[0, -0.5, 0]}>
-                <boxGeometry args={[w - 0.04, 1, 0.006]} />
-                <Material color={c(cloth)} material={m(cloth)} />
-              </mesh>
-            </group>
-            <Slab size={[w, 0.045, 0.045]} radius={0.012} position={[0, bar[1] - 0.0225, bar[2]]}>
-              {metal}
-            </Slab>
-            {/* A short scalloped valance under the bar. */}
-            {Array.from({ length: Math.max(3, Math.round(w / 0.2)) }).map((_, i, all) => {
-              const tw = (w - 0.02) / all.length
-              return (
-                <group key={i} position={[-w / 2 + 0.01 + tw * (i + 0.5), bar[1] - 0.02, bar[2] + 0.028]}>
-                  <mesh position={[0, -0.045, 0]}>
-                    <boxGeometry args={[tw, 0.09, 0.004]} />
-                    <Material color={c(cloth)} material={m(cloth)} />
-                  </mesh>
-                  <mesh position={[0, -0.09, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                    <cylinderGeometry args={[tw / 2, tw / 2, 0.004, 16, 1, false, Math.PI / 2, Math.PI]} />
-                    <Material color={c(cloth)} material={m(cloth)} />
-                  </mesh>
-                </group>
-              )
-            })}
-            {[-1, 1].map(sx => {
-              const pivot: Vec3 = [sx * armX, pivotY, 0.06]
-              return (
-                <group key={sx}>
-                  <Slab size={[0.05, 0.08, 0.06]} radius={0.012} position={[sx * armX, pivotY - 0.04, 0.03]}>
-                    {metal}
-                  </Slab>
-                  <Rod from={pivot} to={hand(sx * armX)} radius={0.013}>
-                    {metal}
-                  </Rod>
-                </group>
-              )
-            })}
-          </group>
+          <HoodAwning
+            w={w}
+            rise={full}
+            out={awning ? coverLevel : 0}
+            canopy={<Material color={c(cloth)} material={m(cloth)} doubleSide />}
+            frame={<Material color={c(head)} material={m(head)} />}
+          />
         )
       }
       if (awning) {
@@ -1072,7 +1059,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         // A roller door: narrow slats that run up into a box over the
         // opening, one after another, the way a shutter does. None of them
         // changes size, and only the bottom one stays out when it is open.
-        const box = { h: 0.3, d: 0.3 }
+        const box = { h: 0.2, d: 0.2 }
         const n = Math.max(2, Math.round(h / 0.08))
         const pitch = h / n
         const z = 0.08
@@ -1123,10 +1110,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         return { y: h + r, z: zf + r + s - h - bend, a: Math.PI / 2 }
       }
       const run = h + 0.1
+      // Open, the bottom panel has come all the way round the bend too, so
+      // every panel lies flat under the ceiling.
+      const lift = (h + bend) * coverLevel
       return (
         <group>
           {Array.from({ length: panels }).map((_, i) => {
-            const { y, z, a } = at(panelH * (i + 0.5) + travel)
+            const { y, z, a } = at(panelH * (i + 0.5) + lift)
             return (
               <group key={i} position={[0, y, z]} rotation={[a, 0, 0]}>
                 <Slab size={[w, panelH - 0.01, 0.04]} radius={0.012} position={[0, -(panelH - 0.01) / 2, 0]}>
@@ -1208,7 +1198,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <cylinderGeometry args={[r * 0.26, r * 0.3, s * 0.03, SEG]} />
             <meshStandardMaterial color={c('lens')} roughness={0.05} metalness={0.5} />
           </mesh>
-          <Led on={on} position={[0, -r * 0.5, front + s * 0.02]} color="#8fd6a0" radius={s * 0.035} />
+          <Led on={on} position={[0, -r * 0.5, front + s * 0.02]} color="#8fd6a0" radius={s * 0.055} />
           <Halo on={on} position={[0, -r * 0.5, front + 0.05]} />
         </group>
       )
@@ -1258,15 +1248,22 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <cylinderGeometry args={[s * 0.44, s * 0.46, 0.038, SEG * 2]} />
             {M('turn')}
           </mesh>
-          {/* The turn knob, offset so the state reads at a glance. */}
-          <mesh position={[0, -h * 0.55, 0.066]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[s * 0.3, s * 0.34, 0.012, SEG]} />
-            {M('turn')}
-          </mesh>
-          <mesh position={[s * 0.12, -h * 0.55 + s * 0.12, 0.072]} rotation={[Math.PI / 2, 0, 0]}>
-            <boxGeometry args={[0.005, 0.004, s * 0.3]} />
-            <meshStandardMaterial color="#8fd6a0" emissive="#8fd6a0" emissiveIntensity={2.6 * lit} />
-          </mesh>
+          {/* The turn knob with its grip ridge, upright while it is locked and
+              turned a quarter over to lie flat once it is unlocked, so the
+              state reads at a glance, the way it does on the real thing. */}
+          <group position={[0, -h * 0.55, 0]} rotation={[0, 0, (1 - lit) * (Math.PI / 2)]}>
+            <mesh position={[0, 0, 0.066]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[s * 0.3, s * 0.34, 0.012, SEG]} />
+              {M('turn')}
+            </mesh>
+            <Slab size={[s * 0.14, s * 0.56, 0.014]} radius={s * 0.05} position={[0, -s * 0.28, 0.072]}>
+              {M('turn')}
+            </Slab>
+            <mesh position={[0, 0, 0.0795]}>
+              <planeGeometry args={[s * 0.04, s * 0.4]} />
+              <meshStandardMaterial color="#3a3d40" emissive="#8fd6a0" emissiveIntensity={2.6 * lit} />
+            </mesh>
+          </group>
           <Led on={on} position={[0, -h * 0.16, 0.03]} radius={0.008} />
           <Halo on={on} position={[0, -h * 0.4, 0.11]} />
         </group>
@@ -1294,10 +1291,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </mesh>
           <mesh position={[0, s * 0.02, t + s * 0.6]} rotation={[0.35, 0, 0]}>
             <sphereGeometry args={[s * 0.5, SEG, SEG, 0, Math.PI * 2, Math.PI * 0.45, Math.PI * 0.2]} />
-            <meshStandardMaterial color={c('lens')} roughness={0.4} />
+            {/* The lens band glows red while it sees someone, the flash the
+                real ones give, since the LED under the dome is hidden from
+                most angles. */}
+            <meshStandardMaterial color={c('lens')} roughness={0.4} emissive="#ff4a3a" emissiveIntensity={1.4 * lit} />
           </mesh>
           <Led on={on} position={[0, -s * 0.3, t + s * 0.1]} radius={s * 0.07} />
-          <Halo on={on} position={[0, -s * 0.3, t + s * 0.1 + 0.05]} />
+          <Halo on={on} position={[0, s * 0.02, t + s * 1.2]} color="#ff6a50" />
         </group>
       )
     }

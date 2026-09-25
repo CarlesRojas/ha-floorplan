@@ -1,7 +1,7 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useTravel } from '#/scene/decor/ease.ts'
 import { Material, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
-import { Books, Clock, Curtain, Mirror, Rug } from '#/scene/decor/Furnishings.tsx'
+import { Books, Clock, Curtain, Mirror, MirrorGlow, Rug } from '#/scene/decor/Furnishings.tsx'
 import { FloorPlant, ShelfPlant, WallPlant } from '#/scene/decor/Plants.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -146,6 +146,7 @@ export default function DecorModel({ kind, item, state }: Props) {
       return (
         <group position={[0, Math.max(0, s / 2 + 0.02 - p('height')), 0]}>
           <Mirror style={style} s={s} paint={paint} />
+          <MirrorGlow style={style} s={s} on={state?.on ?? false} />
         </group>
       )
     }

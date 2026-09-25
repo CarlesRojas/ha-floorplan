@@ -640,9 +640,24 @@ export const DECORATION_KINDS: DecorationKind[] = [
     OFFICE_TECK.colors ?? {},
     OFFICE_TECK.materials ?? {},
     undefined,
-    // One style, a Pilma desk chair, from its stated size and product
-    // photos. A saved style that is gone falls back to it.
-    [OFFICE_TECK],
+    // A saved style that is gone falls back to the first.
+    [
+      OFFICE_TECK,
+      {
+        id: 'sling',
+        label: 'Sling Rib',
+        params: { width: 0.58, depth: 0.6, height: 0.46 },
+        colors: { seat: '#2a2624', frame: '#d4d6d8', base: '#d4d6d8', castors: '#1b1b1c' },
+        materials: { seat: 'matte', frame: 'metal', base: 'metal', castors: 'matte' },
+      },
+      {
+        id: 'shell',
+        label: 'Swivel Shell',
+        params: { width: 0.6, depth: 0.6, height: 0.47 },
+        colors: { seat: '#8f9c88', base: '#d4d6d8', castors: '#1b1b1c' },
+        materials: { seat: 'matte', base: 'metal', castors: 'matte' },
+      },
+    ],
   ),
   kind(
     'stool',
@@ -1135,6 +1150,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     ],
     { cabinets: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
     { cabinets: 'matte', doors: 'matte', handles: 'metal' },
+    TOGGLE,
   ),
   kind(
     'fridge',
@@ -1230,7 +1246,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.54, 0.4, 1.2), depth(0.44, 0.35, 0.7), lift(0.9)],
     { bowl: '#b9bdbf', tap: '#c4c7c8' },
     { bowl: 'metal', tap: 'metal' },
-    undefined,
+    TOGGLE,
     [
       { id: 'undermount', label: 'Steel Andor' },
       {
@@ -1370,7 +1386,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.6, 0.4, 1.2), depth(0.46, 0.35, 0.6), height(0.85, 0.7, 0.95)],
     { bowl: BATH_WHITE, tap: '#c4c7c8' },
     { bowl: 'ceramic', tap: 'metal' },
-    undefined,
+    TOGGLE,
     [
       {
         id: 'vanity',
@@ -1397,7 +1413,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.8, 0.6, 1), length(1.7, 1.3, 2, 0.05)],
     { tub: BATH_WHITE, tap: '#c4c7c8' },
     { tub: 'ceramic', tap: 'metal' },
-    undefined,
+    TOGGLE,
     [
       { id: 'freestanding', label: 'Isle Shell', params: { width: 0.85, length: 1.8 } },
       {
@@ -1430,6 +1446,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     ],
     { tray: SCANDI.offWhite, glass: '#dbe6e9', frame: SCANDI.slate, tap: SCANDI.slate },
     { tray: 'ceramic', glass: 'ceramic', frame: 'metal', tap: 'metal' },
+    TOGGLE,
   ),
   kind(
     'towel_rail',
@@ -1440,6 +1457,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { rail: SCANDI.slate, towel: SCANDI.linen },
     { rail: 'metal', towel: 'fabric' },
     TOGGLE,
+    [
+      { id: 'grouped', label: 'Quad Tier' },
+      {
+        id: 'ladder',
+        label: 'Bow Ladder',
+        params: { width: 0.5 },
+        colors: { rail: '#e9e7e2', towel: '#b9c4c9' },
+      },
+    ],
   ),
 
   // Decor
@@ -1594,7 +1620,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [size(0.7, 0.3, 1.3), height(1.6, 0.8, 2.3)],
     { frame: SCANDI.oak, glass: SCANDI.mist },
     { frame: 'wood', glass: 'metal' },
-    undefined,
+    TOGGLE,
     [
       { id: 'round', label: 'Halo Round' },
       {
@@ -2045,10 +2071,10 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       { id: 'folding', label: 'Fold Reach' },
       {
-        id: 'drop_arm',
-        label: 'Pivot Drop',
-        params: { width: 1.4, height: 2.3, drop: 0.8 },
-        colors: { canopy: '#b85c43', cassette: SCANDI.offWhite },
+        id: 'hood',
+        label: 'Dome Hood',
+        params: { width: 1.4, height: 2.6, drop: 0.7 },
+        colors: { canopy: '#2f4a3e', cassette: SCANDI.charcoal },
         materials: { canopy: 'fabric', cassette: 'metal' },
       },
     ],

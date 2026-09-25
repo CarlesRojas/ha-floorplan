@@ -1,6 +1,6 @@
 import { roundedShape } from '#/geometry/polygon.ts'
 import type { Look } from '#/scene/decor/Media.tsx'
-import { Led, Material, SEG, Slab, Spinner, Tube } from '#/scene/decor/parts.tsx'
+import { Led, Material, SEG, Slab, SpinBlur, Spinner, Tube, Waves } from '#/scene/decor/parts.tsx'
 import { useMemo, type ReactNode } from 'react'
 import { ExtrudeGeometry } from 'three'
 
@@ -338,6 +338,7 @@ export function CeilingFan({
           </mesh>
         )}
         <Spinner speed={speed}>{Array.from({ length: blades }, (_, i) => blade(i))}</Spinner>
+        <SpinBlur radius={r} inner={mr} speed={speed} color={look.color('blades')} y={mh * 0.4} />
       </group>
     </group>
   )
@@ -390,7 +391,7 @@ export function FloorFan({
               color={color('mesh')}
               material={material('mesh')}
               emissive={[0.6, 0.8, 1]}
-              emissiveIntensity={0.25 * glow}
+              emissiveIntensity={0.7 * glow}
             />
           </mesh>
         </group>
@@ -400,6 +401,16 @@ export function FloorFan({
           {paint('controls')}
         </mesh>
         <Led on={on} position={[0, h + 0.01, 0]} color="#7fb3e8" radius={Math.min(0.008, r * 0.1)} />
+        {/* The draft off the outlet, tall rings spreading out in front. */}
+        <Waves
+          on={on}
+          position={[0, h * 0.52, r * 0.7]}
+          from={r * 0.5}
+          reach={r * 1.6}
+          stretch={[1, (h * 0.66) / r]}
+          strength={0.35}
+          color="#b8dcff"
+        />
       </group>
     )
   }
@@ -456,6 +467,7 @@ export function FloorFan({
               </mesh>
             ))}
           </Spinner>
+          <SpinBlur radius={r * 0.92} inner={r * 0.14} speed={speed} color={color('blades')} />
         </group>
         {/* The cage: a rim clip, rings and wires on both domes, and a
             badge in the middle of the front. */}

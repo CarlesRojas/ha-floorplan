@@ -60,6 +60,7 @@ const RESTYLED: Record<string, Record<string, Restyle>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
   dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
   toilet: { back_to_wall: 'square' },
+  awning: { drop_arm: 'hood' },
   plant_wall: { staghorn: 'pothos', moss: 'pearls' },
   sofa: { dresde_chaise: { variant: 'dresde', params: { chaise: 1, width: 2.98 } } },
   curtain: { pleat: 'wave' },

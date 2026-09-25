@@ -1,5 +1,5 @@
 import type { Fit } from '#/scene/decor/Kitchen.tsx'
-import { Hollow, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
+import { Hollow, SEG, Slab, Stream, Tube } from '#/scene/decor/parts.tsx'
 import { sinkPlan, type SinkStyle } from '#/scene/decor/sinkSpecs.ts'
 
 // A kitchen sink in one of three styles, with the tap that goes with it. Its
@@ -167,6 +167,7 @@ export function Sink({ style, w, d, fit }: { style: SinkStyle; w: number; d: num
         <group position={[tx, 0, tz]}>
           <BridgeTap fit={fit} />
         </group>
+        <Stream on={fit.on} position={[tx, 0.264, tz + 0.21]} length={0.264 + b.depth - top} radius={0.008} />
       </group>
     )
   }
@@ -207,6 +208,12 @@ export function Sink({ style, w, d, fit }: { style: SinkStyle; w: number; d: num
         <group position={[tx, rim, tz]}>
           <PullOutTap fit={fit} />
         </group>
+        <Stream
+          on={fit.on}
+          position={[tx, rim + 0.225, tz + 0.218]}
+          length={rim + 0.225 + b.depth - 0.012}
+          radius={0.008}
+        />
       </group>
     )
   }
@@ -229,6 +236,12 @@ export function Sink({ style, w, d, fit }: { style: SinkStyle; w: number; d: num
       <group position={[tx, 0, tz]}>
         <LeverTap fit={fit} />
       </group>
+      <Stream
+        on={fit.on}
+        position={[tx, 0.21, tz + 0.205]}
+        length={0.21 + plan.bowls[0].depth - 0.006}
+        radius={0.008}
+      />
     </group>
   )
 }
