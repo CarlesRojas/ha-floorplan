@@ -1,6 +1,8 @@
 import { Bar, Led, Material, Panel, SEG, Slab, Tube } from '#/scene/decor/parts.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
-import type { ReactNode } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useRef, type ReactNode } from 'react'
+import type { Group } from 'three'
 
 // What every kitchen fitting draws with: its slots as materials and colors,
 // and how far it is switched on.
@@ -86,6 +88,82 @@ export function Fridge({ w, d, h, flip, fit }: { w: number; d: number; h: number
         </group>
       ))}
       <Led on={fit.on} radius={0.006} position={[-side * (w / 2 - 0.05), h - 0.04, front + 0.001]} />
+    </group>
+  )
+}
+
+// A side by side fridge freezer after the Samsung RS68A8840S9, 91.2 by 71.6
+// by 178 cm: the freezer behind the narrower door on the left and the
+// fridge on the right, both full height, with a long bar handle down each
+// side of the split, an ice and water dispenser let into the freezer door
+// and a toe grille under both.
+export function SideBySide({ w, d, h, fit }: { w: number; d: number; h: number; fit: Fit }) {
+  const { M } = fit
+  const door = 0.06
+  const toe = Math.min(0.06, h * 0.04)
+  const gap = 0.006
+  const front = d / 2
+  const split = -w / 2 + w * 0.44
+  const leaves: [number, number][] = [
+    [-w / 2, split - gap / 2],
+    [split + gap / 2, w / 2],
+  ]
+  const handle = Math.min(1.1, (h - toe) * 0.6)
+  const handleY = toe + (h - toe) * 0.55
+  const stand = 0.035
+  // The dispenser, a dark recess at chest height in the middle of the
+  // freezer door.
+  const disp: [number, number] = [Math.min(0.2, w * 0.24), Math.min(0.32, h * 0.18)]
+  const dispX = (leaves[0][0] + leaves[0][1]) / 2 - 0.02
+  const dispY = Math.min(h - disp[1] / 2 - 0.25, 1.1)
+  return (
+    <group>
+      <Slab size={[w, h, d - door]} radius={0.012} bevel={0.006} position={[0, 0, -door / 2]}>
+        {M('body')}
+      </Slab>
+      <mesh position={[0, toe / 2, front - door + 0.004]}>
+        <boxGeometry args={[w - 0.03, toe - 0.008, 0.02]} />
+        {M('handles')}
+      </mesh>
+      {leaves.map(([a, b], i) => (
+        <group key={i}>
+          <Panel size={[b - a - 0.002, h - toe, door]} position={[(a + b) / 2, toe, front - door / 2]} radius={0.01}>
+            {M('doors')}
+          </Panel>
+          {/* The bar handle, on two posts, by the split. */}
+          <Bar length={handle} radius={0.012} position={[split + (i ? 1 : -1) * 0.045, handleY, front + stand]}>
+            {M('handles')}
+          </Bar>
+          {[-1, 1].map(s => (
+            <mesh
+              key={s}
+              position={[split + (i ? 1 : -1) * 0.045, handleY + s * (handle / 2 - 0.05), front + stand / 2]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <cylinderGeometry args={[0.009, 0.009, stand, 12]} />
+              {M('handles')}
+            </mesh>
+          ))}
+        </group>
+      ))}
+      <mesh position={[dispX, dispY, front + 0.001]}>
+        <boxGeometry args={[disp[0], disp[1], 0.03]} />
+        <meshStandardMaterial color="#1c1f21" roughness={0.5} />
+      </mesh>
+      {/* Its lit panel above it, and the spout in its top. */}
+      <mesh position={[dispX, dispY + disp[1] / 2 + 0.04, front + 0.0015]}>
+        <planeGeometry args={[disp[0], 0.05]} />
+        <meshStandardMaterial color="#15181a" emissive="#d9f2ff" emissiveIntensity={0.4 * fit.lit} />
+      </mesh>
+      <mesh position={[dispX, dispY + disp[1] / 2 - 0.03, front + 0.004]}>
+        <boxGeometry args={[0.03, 0.04, 0.03]} />
+        {M('handles')}
+      </mesh>
+      <Led
+        on={fit.on}
+        radius={0.006}
+        position={[dispX + disp[0] / 2 - 0.02, dispY + disp[1] / 2 + 0.04, front + 0.002]}
+      />
     </group>
   )
 }
@@ -382,6 +460,63 @@ function Rail({ from, to, y, fit }: { from: [number, number]; to: [number, numbe
   )
 }
 
+// The flame of a gas burner: a ring of small tongues leaning out from the
+// crown, a pale blue core in each deep blue one, with a soft glow on the
+// ring under them. Each tongue flickers on its own.
+function GasFlame({ radius, y, level }: { radius: number; y: number; level: number }) {
+  const count = Math.max(14, Math.round(radius * 900))
+  const tongues = useRef<(Group | null)[]>([])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    tongues.current.forEach((g, i) => {
+      if (!g) return
+      const f = 0.8 + 0.2 * Math.sin(t * 17 + i * 2.3) + 0.12 * Math.sin(t * 31 + i * 5.1)
+      g.scale.set(1, f * (0.45 + 0.55 * level), 1)
+    })
+  })
+  const tall = 0.022
+  return (
+    <group position={[0, y, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[radius, 0.004, 8, SEG]} />
+        <meshBasicMaterial color="#6fa2ff" transparent opacity={0.9 * level} toneMapped={false} />
+      </mesh>
+      {Array.from({ length: count }).map((_, i) => {
+        const a = (i / count) * Math.PI * 2
+        return (
+          <group key={i} position={[Math.cos(a) * radius, 0, Math.sin(a) * radius]} rotation={[0, -a, 0]}>
+            {/* Leaning out and up, as the gas leaves the crown sideways. */}
+            <group rotation={[0, 0, -0.75]}>
+              <group ref={el => void (tongues.current[i] = el)}>
+                <mesh position={[0, tall / 2, 0]}>
+                  <coneGeometry args={[0.005, tall, 8]} />
+                  <meshBasicMaterial
+                    color="#2f63ff"
+                    transparent
+                    opacity={0.75 * level}
+                    toneMapped={false}
+                    depthWrite={false}
+                  />
+                </mesh>
+                <mesh position={[0, tall * 0.3, 0]}>
+                  <coneGeometry args={[0.0028, tall * 0.55, 8]} />
+                  <meshBasicMaterial
+                    color="#bcd6ff"
+                    transparent
+                    opacity={0.9 * level}
+                    toneMapped={false}
+                    depthWrite={false}
+                  />
+                </mesh>
+              </group>
+            </group>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
 function GasHob({ w, d, fit }: { w: number; d: number; fit: Fit }) {
   const { M, lit, level } = fit
   const top = 0.01
@@ -427,17 +562,7 @@ function GasHob({ w, d, fit }: { w: number; d: number; fit: Fit }) {
                 {M('burners')}
               </mesh>
             )}
-            {/* The ring of blue flame round the crown while it burns. */}
-            <mesh position={[0, 0.018, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.5 + flame]}>
-              <torusGeometry args={[crown * 1.08, 0.004, 8, SEG]} />
-              <meshStandardMaterial
-                color="#3a6dff"
-                emissive="#3a7dff"
-                emissiveIntensity={2.4 * flame}
-                transparent
-                opacity={flame}
-              />
-            </mesh>
+            {flame > 0.01 && <GasFlame radius={crown * 1.04} y={0.014} level={flame} />}
           </group>
         )
       })}

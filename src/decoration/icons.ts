@@ -68,7 +68,6 @@ const BY_KIND: Record<string, IconDefinition> = {
   wall_clock: faClock,
   vase: faSeedling,
   books: faBoxArchive,
-  basket: faBoxArchive,
   curtain: faBars,
   tv: faTv,
   tv_wall: faTv,

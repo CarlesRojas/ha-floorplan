@@ -8,7 +8,7 @@ import {
   type DecorationKind,
 } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
-import { Bar, Cushion, Material, Panel, SEG, Slab, type Hole } from '#/scene/decor/parts.tsx'
+import { Bar, Material, Panel, SEG, Slab, type Hole } from '#/scene/decor/parts.tsx'
 import { Sink } from '#/scene/decor/Sink.tsx'
 import { sinkPlan, sinkStyle } from '#/scene/decor/sinkSpecs.ts'
 import Shower from '#/scene/decor/Shower.tsx'
@@ -23,13 +23,14 @@ import {
   Kettle,
   Microwave,
   Oven,
+  SideBySide,
   type Fit,
 } from '#/scene/decor/Kitchen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { Shape, type Group, type Mesh } from 'three'
+import { Color, Shape, type Group, type Mesh } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null; all: DecorationConfig[] }
 
@@ -90,19 +91,9 @@ function Led({ on, position, color = LED_ON }: { on: boolean; position: [number,
   )
 }
 
-// A drum that turns while the machine runs. A dryer's is loaded with
-// laundry, which tumbles with it.
-function Drum({
-  running,
-  load,
-  position,
-  radius,
-}: {
-  running: boolean
-  load: boolean
-  position: [number, number, number]
-  radius: number
-}) {
+// A drum that turns while the machine runs, its three paddles showing it
+// turning.
+function Drum({ running, position, radius }: { running: boolean; position: [number, number, number]; radius: number }) {
   const ref = useRef<Group>(null)
   useFrame((_, delta) => {
     if (running && ref.current) ref.current.rotation.z += delta * 2.2
@@ -113,7 +104,6 @@ function Drum({
         <torusGeometry args={[radius * 0.9, radius * 0.05, 12, SEG]} />
         <meshStandardMaterial color="#b9c2c6" roughness={0.5} />
       </mesh>
-      {/* The three paddles inside it, which show it turning. */}
       {[0, 1, 2].map(i => (
         <group key={i} rotation={[0, 0, (i * Math.PI * 2) / 3]}>
           <mesh position={[0, radius * 0.76, 0.002]}>
@@ -122,29 +112,105 @@ function Drum({
           </mesh>
         </group>
       ))}
-      {load &&
-        LAUNDRY.map(([a, s, color], i) => (
-          <Cushion
-            key={i}
-            size={[radius * s, 0.008, radius * s * 0.55]}
-            rotation={[Math.PI / 2, a + 0.4, 0]}
-            position={[Math.cos(a) * radius * 0.5, Math.sin(a) * radius * 0.5, 0.004]}
-          >
-            <meshStandardMaterial color={color} roughness={0.95} />
-          </Cushion>
-        ))}
     </group>
   )
 }
 
-// The laundry in a dryer: the angle each piece lies at round the drum, its
-// size as a share of the drum, and its color.
-const LAUNDRY: [number, number, string][] = [
-  [-1.9, 0.7, '#7d93ad'],
-  [-1.2, 0.6, '#e8e3d8'],
-  [-0.4, 0.55, '#b26b5a'],
-  [2.6, 0.5, '#d9cfb4'],
+// The laundry in a drum, each piece a crumpled lump of a few soft folds.
+// Each piece is its color, its size as a share of the drum, and where it
+// is in the tumble.
+const LAUNDRY: { color: string; size: number; phase: number }[] = [
+  { color: '#7d93ad', size: 0.3, phase: 0 },
+  { color: '#ece8df', size: 0.34, phase: 0.17 },
+  { color: '#b26b5a', size: 0.26, phase: 0.36 },
+  { color: '#d9cfb4', size: 0.28, phase: 0.52 },
+  { color: '#4d5a6b', size: 0.3, phase: 0.7 },
+  { color: '#c9a3ae', size: 0.24, phase: 0.86 },
 ]
+
+// The folds of one piece, as offsets and sizes within it.
+const FOLDS: [number, number, number, number][] = [
+  [0, 0, 1, 0.62],
+  [0.42, 0.22, 0.7, 0.5],
+  [-0.38, 0.2, 0.62, 0.46],
+  [0.12, -0.3, 0.6, 0.4],
+]
+
+// The laundry tumbling in a running drum: the paddles carry each piece up
+// the rising side until it drops back across the drum to the bottom. At
+// rest the pieces settle in a heap at the bottom. A washer's pieces are
+// darker with water.
+function Laundry({
+  running,
+  wet,
+  position,
+  radius,
+}: {
+  running: boolean
+  wet: boolean
+  position: [number, number, number]
+  radius: number
+}) {
+  const pieces = wet ? LAUNDRY.slice(0, 5) : LAUNDRY
+  const refs = useRef<(Group | null)[]>([])
+  const clock = useRef(0)
+  const blend = useRef(0)
+  useFrame((_, delta) => {
+    const target = running ? 1 : 0
+    blend.current += (target - blend.current) * Math.min(1, delta * 3)
+    clock.current += delta * blend.current * (wet ? 0.35 : 0.5)
+    const orbit = radius * 0.6
+    const bottom = -Math.PI / 2
+    pieces.forEach((piece, i) => {
+      const g = refs.current[i]
+      if (!g) return
+      const u = (((clock.current + piece.phase) % 1) + 1) % 1
+      let x: number
+      let y: number
+      if (u < 0.65) {
+        const a = bottom - 0.3 + (u / 0.65) * 2.2
+        x = Math.cos(a) * orbit
+        y = Math.sin(a) * orbit
+      } else {
+        // The drop: straight across in x, falling faster as it goes.
+        const k = (u - 0.65) / 0.35
+        const top = bottom + 1.9
+        const land = bottom - 0.3
+        x = Math.cos(top) * orbit + (Math.cos(land) - Math.cos(top)) * orbit * k
+        y = Math.sin(top) * orbit + (Math.sin(land) - Math.sin(top)) * orbit * k * k
+      }
+      // The heap at rest, the bigger pieces lower.
+      const restX = (i - (pieces.length - 1) / 2) * radius * 0.2
+      const restY = -radius * (0.62 - (i % 2) * 0.16 - Math.abs(restX / radius) * 0.4)
+      const b = blend.current
+      g.position.set(restX + (x - restX) * b, restY + (y - restY) * b, (i % 3) * 0.0015)
+      g.rotation.z += delta * b * (1.5 + i * 0.4) * (i % 2 ? 1 : -1)
+    })
+  })
+  return (
+    <group position={position}>
+      {pieces.map((piece, i) => {
+        const color = wet ? `#${new Color(piece.color).multiplyScalar(0.72).getHexString()}` : piece.color
+        const r = radius * piece.size
+        return (
+          <group key={i} ref={el => void (refs.current[i] = el)}>
+            {FOLDS.map(([fx, fy, sx, sy], j) => (
+              <mesh
+                key={j}
+                position={[fx * r, fy * r, j * 0.0006]}
+                scale={[sx * r, sy * r, 0.004]}
+                rotation={[0, 0, j * 0.9 + i]}
+              >
+                <sphereGeometry args={[1, 16, 10]} />
+                <meshStandardMaterial color={color} roughness={0.95} />
+              </mesh>
+            ))}
+          </group>
+        )
+      })}
+    </group>
+  )
+}
 
 // The water in a washer's drum, the lower part of it seen through the
 // glass, which rocks while it runs.
@@ -297,7 +363,11 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       )
     }
     case 'fridge':
-      return <Fridge w={p('width')} d={p('depth')} h={p('height')} flip={p('flip') > 0.5} fit={fit} />
+      return style === 'side_by_side' ? (
+        <SideBySide w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
+      ) : (
+        <Fridge w={p('width')} d={p('depth')} h={p('height')} flip={p('flip') > 0.5} fit={fit} />
+      )
     case 'oven':
       return <Oven w={p('width')} d={p('depth')} h={p('height')} fit={fit} />
     case 'microwave':
@@ -369,7 +439,8 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
             <circleGeometry args={[r, SEG * 2]} />
             <meshStandardMaterial color="#2a2e31" roughness={0.6} />
           </mesh>
-          <Drum running={on} load={dryer} position={[0, cy, front + 0.004]} radius={r} />
+          <Drum running={on} position={[0, cy, front + 0.004]} radius={r} />
+          <Laundry running={on} wet={!dryer} position={[0, cy, front + 0.007]} radius={r} />
           {!dryer && <Water radius={r * 0.86} running={on} position={[0, cy, front + 0.012]} />}
           {/* The hinge side is the left, the handle recess on the right. */}
           <Slab size={[0.02, 0.07, 0.012]} radius={0.006} bevel={0.002} position={[r + 0.03, cy - 0.035, front]}>
@@ -504,10 +575,27 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
               {glow}
             </Bar>
           ))}
-          {/* A towel folded over the top tube of the second group. */}
-          <Cushion size={[w * 0.5, towel, 0.06]} position={[w * 0.12, hangAt - towel / 2 + 0.02, 0.07]}>
-            <Material color={c('towel')} material={m('towel')} />
-          </Cushion>
+          {/* A towel folded over the top tube of the second group: a
+              longer layer hanging in front of the tubes, a shorter one
+              between them and the wall, and the fold round the top of the
+              tube joining them. */}
+          <group position={[w * 0.12, hangAt, 0.055]}>
+            <Slab size={[w * 0.5, towel, 0.01]} radius={0.004} bevel={0.003} position={[0, -towel, tube + 0.006]}>
+              <Material color={c('towel')} material={m('towel')} />
+            </Slab>
+            <Slab
+              size={[w * 0.5, towel * 0.75, 0.008]}
+              radius={0.004}
+              bevel={0.003}
+              position={[0, -towel * 0.75, -tube - 0.005]}
+            >
+              <Material color={c('towel')} material={m('towel')} />
+            </Slab>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[tube + 0.011, tube + 0.011, w * 0.5, 24, 1, false, 0, Math.PI]} />
+              <Material color={c('towel')} material={m('towel')} />
+            </mesh>
+          </group>
         </group>
       )
     }

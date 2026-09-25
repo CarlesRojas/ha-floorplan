@@ -73,14 +73,14 @@ The sidebar shows the decoration catalog. Selecting a room puts a block for it a
 
 The commands every drawing program has, with the same keys. They all show in the right click menu of whatever they act on, with their shortcut.
 
-| Command | How |
-| --- | --- |
-| Duplicate | Alt or Option and drag, or Ctrl D, Cmd D on a Mac |
-| Copy and paste an item | Ctrl C and Ctrl V. Paste drops the copy in the selected room, so an item can be copied from one room to another |
-| Rotate 90° | R |
-| Move by one grid step | Arrow keys, with Shift for a 5 cm step |
-| Delete | Del or Backspace |
-| Deselect, cancel a drawing | Escape |
+| Command                    | How                                                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Duplicate                  | Alt or Option and drag, or Ctrl D, Cmd D on a Mac                                                               |
+| Copy and paste an item     | Ctrl C and Ctrl V. Paste drops the copy in the selected room, so an item can be copied from one room to another |
+| Rotate 90°                 | R                                                                                                               |
+| Move by one grid step      | Arrow keys, with Shift for a 5 cm step                                                                          |
+| Delete                     | Del or Backspace                                                                                                |
+| Deselect, cancel a drawing | Escape                                                                                                          |
 
 Alt and drag copies furniture and rooms. A duplicated room keeps its shape and floor but not its area, since an area stands for one room. A copy released on top of another room moves to the nearest free spot. A copy is never bound to the original's entity, since an entity is stood in for once.
 
@@ -104,28 +104,29 @@ The sidebar shows the catalog of furniture and fixtures. Floor patterns are draw
 Things are small seen from across a room, so a press that lands on nothing is tried again in rings around itself, growing outward to `PICK_RADIUS_PX` in `src/theme.ts`. The first thing it finds takes the press, which means a lamp does not have to be hit exactly. Past that it is taken as a press on the room.
 
 Everything that moves is eased rather than switched. Home Assistant reports a cover's position every second or so while it travels, and a switch flips in one step, so without this a sliding door would stutter along in jumps and a window would snap open. Doors and casements swing, panels travel, curtains draw, screens roll, fans come up to speed and lamps fade up and down. A travelling cover only ever heads for the position Home Assistant last reported, never past it: what the reports give is the pace, since how far it moved between one and the next divided by how long that took is how fast the cover travels. Driving at that pace means arriving just as the next report lands, so a set of steps reads as one movement.
+
 - A window is divided into casements by how wide it is, each leaf between half a meter and a meter. Left alone they open from the middle, the way a pair of French casements does. Hinge right swings every one of them from its right edge instead. A sliding door takes its number of panels as a setting, and the panels split the width between them and gather one in front of another as it opens.
 - A kind can come in more than one style, and it is still listed once in the catalog: the item's own panel has a Style dropdown above its sizes. A pendant is a slatted drum or a glass globe in a wooden cage, and the color slots follow the style, since the two are made of different parts. Every search box has a cross to empty it.
 - Items are grouped by family in the sidebar, with a search box. Every model is built from primitives in code, in a Scandinavian vocabulary: pale oak, chalky whites, muted greens and clays, rounded frames on tapered legs, plump linen upholstery.
 
 ### Catalog
 
-| Family | Items |
-| --- | --- |
-| Lights | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip |
-| Seating | Sofa, armchair, dining chair, office chair, stool, bench, pouf |
-| Tables | Dining table, coffee table, side table (shelf table, nightstand or tray table), desk (writing desk or office table) |
-| Storage | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf |
-| Beds | Bed |
-| Kitchen | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle |
-| Laundry | Washing machine, dryer |
-| Bathroom | Toilet, basin, bathtub, shower, towel rail |
-| Decor | Half wall, Rug, large plant, small plant, wall mirror, wall clock, vase, books, basket, curtain |
-| Media | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, portable projector, projector screen |
-| Climate | Radiator, air conditioner, ceiling fan, floor fan (pedestal or tower), air purifier, humidifier, thermostat |
-| Windows and doors | Blind (venetian or roller shutter), window, door (flush, panelled or glazed), sliding door (solid or glass), garage door, awning |
-| Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor |
-| Smart home | Robot vacuum |
+| Family               | Items                                                                                                                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lights               | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip                                                                   |
+| Seating              | Sofa, armchair, dining chair, office chair, stool, bench, pouf                                                                                                                   |
+| Tables               | Dining table, coffee table, side table (shelf table, nightstand or tray table), desk (writing desk, office table or pedestal desk)                                               |
+| Storage              | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf                                                                                                                   |
+| Beds                 | Bed                                                                                                                                                                              |
+| Kitchen              | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle                                       |
+| Laundry              | Washing machine, dryer                                                                                                                                                           |
+| Bathroom             | Toilet, basin, bathtub, shower, towel rail                                                                                                                                       |
+| Decor                | Half wall, Rug, large plant, small plant, wall mirror, wall clock, vase, books, curtain                                                                                          |
+| Media                | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, projector, portable projector, projector screen                                                            |
+| Climate              | Radiator, air conditioner, ceiling fan, floor fan (pedestal or tower), air purifier, humidifier, thermostat                                                                      |
+| Windows and doors    | Blind (venetian or roller shutter), window, door (flush, panelled or glazed), sliding door (solid or glass), garage door (sectional or roller), awning (folding arm or drop arm) |
+| Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor                                                                                     |
+| Smart home           | Robot vacuum                                                                                                                                                                     |
 
 ### Light in the room
 
@@ -179,53 +180,53 @@ Only entities that drive at least one of the things an item can show are on offe
 
 ## Card config
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `rooms` | `[]` | List of rooms, see below |
-| `radius` | `0.3` | Corner radius in meters for rooms without their own |
-| `gap` | `0.12` | Gap in meters between adjacent rooms |
-| `aspect_ratio` | `4:3` | Card aspect ratio as `width:height` |
-| `sun_direction` | `145` | Where the sun comes from, in degrees clockwise from the top of the plan |
-| `devices` | `[]` | Entities bound to decoration items, see below |
-| `decorations` | `[]` | List of placed decoration items, see below |
+| Key             | Default | Description                                                             |
+| --------------- | ------- | ----------------------------------------------------------------------- |
+| `rooms`         | `[]`    | List of rooms, see below                                                |
+| `radius`        | `0.3`   | Corner radius in meters for rooms without their own                     |
+| `gap`           | `0.12`  | Gap in meters between adjacent rooms                                    |
+| `aspect_ratio`  | `4:3`   | Card aspect ratio as `width:height`                                     |
+| `sun_direction` | `145`   | Where the sun comes from, in degrees clockwise from the top of the plan |
+| `devices`       | `[]`    | Entities bound to decoration items, see below                           |
+| `decorations`   | `[]`    | List of placed decoration items, see below                              |
 
 Defaults for these and other visual values live in `src/theme.ts`.
 
 Each room:
 
-| Key | Description |
-| --- | --- |
-| `id` | Unique id, required |
-| `points` | Polygon corners in meters as `[x, y]`, at least 3, required |
-| `area_id` | Home Assistant area to link. Its name is used as the label |
-| `name` | Label override |
-| `radius` | Corner radius override |
-| `color` | Fill color override |
-| `floor` | Wood on a room drawn in the editor. `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
+| Key       | Description                                                                                                                                                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`      | Unique id, required                                                                                                                                                                                                                        |
+| `points`  | Polygon corners in meters as `[x, y]`, at least 3, required                                                                                                                                                                                |
+| `area_id` | Home Assistant area to link. Its name is used as the label                                                                                                                                                                                 |
+| `name`    | Label override                                                                                                                                                                                                                             |
+| `radius`  | Corner radius override                                                                                                                                                                                                                     |
+| `color`   | Fill color override                                                                                                                                                                                                                        |
+| `floor`   | Wood on a room drawn in the editor. `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
 
 Each device. A device is only a binding: it is never placed on its own, and its room and position follow the first item that stands in for it.
 
-| Key | Description |
-| --- | --- |
-| `entity_id` | Home Assistant entity, required |
-| `room` | Id of the room it sits in, required |
-| `position` | `[x, y]` in meters, required |
-| `decorations` | Ids of decoration items that stand in for this device in 3D, required |
-| `levels` | Which of the entity's percentages feeds each of the item's, for example `{ open: position, tilt: tilt }` |
+| Key           | Description                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------------- |
+| `entity_id`   | Home Assistant entity, required                                                                          |
+| `room`        | Id of the room it sits in, required                                                                      |
+| `position`    | `[x, y]` in meters, required                                                                             |
+| `decorations` | Ids of decoration items that stand in for this device in 3D, required                                    |
+| `levels`      | Which of the entity's percentages feeds each of the item's, for example `{ open: position, tilt: tilt }` |
 
 Each decoration:
 
-| Key | Description |
-| --- | --- |
-| `id` | Unique id, required |
-| `kind` | Catalog kind, for example `light_pendant`, required |
-| `room` | Id of the room it sits in, required |
-| `position` | `[x, y]` in meters, required |
-| `rotation` | Degrees, counter clockwise on the plan |
-| `on` | Id of the item this one stands on, for example the table under a lamp |
-| `params` | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height. Both ends of a slider, and its starting value, sit on a whole number of steps, so a bookshelf steps through 80, 85, 90 rather than 78, 83, 88. Anything under half a meter steps by a centimeter instead of five, since a seven centimeter sensor on a five centimeter step has nowhere to go. A size saved before a slider's steps changed is snapped to the nearest stop when it is read, so what is drawn is what the editor shows |
-| `variant` | Which of the kind's styles it is drawn in, for a kind that comes in more than one. The first when absent |
-| `colors` | Hex color per part. Each kind names its own parts, for example a door has `frame`, `panel` and `handle`, a sofa has `frame`, `upholstery` and `cushions`. Parts are painted plain: the kind decides how matte or polished each one is, and nothing but the floor carries a pattern |
+| Key        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | Unique id, required                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `kind`     | Catalog kind, for example `light_pendant`, required                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `room`     | Id of the room it sits in, required                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `position` | `[x, y]` in meters, required                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `rotation` | Degrees, counter clockwise on the plan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `on`       | Id of the item this one stands on, for example the table under a lamp                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `params`   | Kind specific numbers, in meters unless the editor says otherwise. Ranges reach well past the usual size in both directions, so a wardrobe can be three meters wide and a coffee table can sit at ankle height. Both ends of a slider, and its starting value, sit on a whole number of steps, so a bookshelf steps through 80, 85, 90 rather than 78, 83, 88. Anything under half a meter steps by a centimeter instead of five, since a seven centimeter sensor on a five centimeter step has nowhere to go. A size saved before a slider's steps changed is snapped to the nearest stop when it is read, so what is drawn is what the editor shows |
+| `variant`  | Which of the kind's styles it is drawn in, for a kind that comes in more than one. The first when absent                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `colors`   | Hex color per part. Each kind names its own parts, for example a door has `frame`, `panel` and `handle`, a sofa has `frame`, `upholstery` and `cushions`. Parts are painted plain: the kind decides how matte or polished each one is, and nothing but the floor carries a pattern                                                                                                                                                                                                                                                                                                                                                                    |
 
 Coordinates are in meters. `x` grows to the right and `y` grows upward on the plan.
 

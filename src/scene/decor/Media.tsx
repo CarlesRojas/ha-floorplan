@@ -24,10 +24,13 @@ export type Look = {
 // The light a projector throws: a hollow box widening from the lens to a
 // picture `width` wide, in the proportions of a wide screen, fading as it
 // goes. It adds to whatever is behind it, so it reads as haze in the air
-// and never hides the room.
+// and never hides the room. The fade rides in the vertex alpha, not the
+// color: on the card's see through canvas the alpha a pixel gains darkens
+// the page behind it, so it must fall away with the light or the faint far
+// end shows as a dark box.
 export function Beam({ length, width, strength }: { length: number; width: number; strength: number }) {
   const geometry = useMemo(() => {
-    const rows = 12
+    const rows = 24
     const lens = 0.012
     const positions: number[] = []
     const colors: number[] = []
@@ -37,7 +40,7 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
       const hx = lens + (width / 2 - lens) * t
       const hy = lens + (width / 2 / (16 / 9) - lens) * t
       // Brightest just out of the lens, gone by the far end.
-      const fade = Math.pow(1 - t, 1.4) * Math.min(1, t * 8 + 0.2)
+      const fade = Math.pow(1 - t, 2.2) * Math.min(1, t * 8 + 0.2)
       for (const [x, y] of [
         [-hx, -hy],
         [hx, -hy],
@@ -45,7 +48,7 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
         [-hx, hy],
       ]) {
         positions.push(x, y, t * length)
-        colors.push(fade, fade, fade)
+        colors.push(1, 1, 1, fade)
       }
     }
     for (let i = 0; i < rows; i++) {
@@ -57,7 +60,7 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
     }
     const g = new BufferGeometry()
     g.setAttribute('position', new Float32BufferAttribute(positions, 3))
-    g.setAttribute('color', new Float32BufferAttribute(colors, 3))
+    g.setAttribute('color', new Float32BufferAttribute(colors, 4))
     g.setIndex(index)
     return g
   }, [length, width])

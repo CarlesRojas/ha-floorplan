@@ -24,32 +24,37 @@ function seatHole(w: number, l: number) {
   return { w: hw, d: hd, z: 0.02, r: Math.min(hw, hd) / 2 - 0.002 }
 }
 
-// Three toilets, each with its own pan. A wall hung pan after the Duravit ME
-// by Starck, 37 by 57 cm, an oval shell hung off the wall with nothing
-// under it, and a Geberit Sigma20 plate a meter up the wall to flush it. A
-// close coupled one after the Duravit ME, round and soft, with its cistern
+// Four toilets, each with its own pan. The first two are drawn in plan as a
+// D, flat against the wall and a full semicircle at the front, after the
+// Laufen Kartell. One stands skirted down to the floor with its cistern on
+// the back, the same width, so the whole piece reads as one shape. The
+// other is hung off the wall with nothing under it but a narrower foot,
+// and a Geberit Sigma20 plate a meter up the wall to flush it. A close
+// coupled one after the Duravit ME, round and soft, with its cistern
 // standing on the back of the pan. A square close coupled one after the
 // Duravit Vero Air, skirted down to the floor with a flat sided cistern and
 // a rectangular bowl. `d` is how far it all comes out from the wall.
 export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: number; fit: Fit }) {
   const { M } = fit
-  const kind = style === 'close_coupled' || style === 'square' ? style : 'wall_hung'
+  const kind = style === 'close_coupled' || style === 'square' || style === 'wall_hung' ? style : 'arc'
   const square = kind === 'square'
+  const arc = kind === 'arc' || kind === 'wall_hung'
   const cistern = kind !== 'wall_hung'
   const wall = -d / 2
   const pz = 0
   const top = 0.4
   // The underside of the bowl's shell, and the narrower foot below it. A
   // square pan is skirted, one block down to the floor.
-  const shell = kind === 'wall_hung' ? 0.2 : square ? 0 : 0.2
+  const shell = kind === 'wall_hung' ? 0.2 : square || kind === 'arc' ? 0 : 0.2
   const foot = kind === 'wall_hung' ? 0.14 : 0
   // A cistern takes the back of the pan, so its seat stops short of it.
   const sl = Math.min(0.46, d * 0.78, d - (cistern ? 0.2 : 0.05))
   const sz = d / 2 - 0.008 - sl / 2
   const hole = seatHole(w, sl)
   if (square) hole.r = Math.min(0.06, hole.r)
-  const round = square ? Math.min(0.04, w * 0.12) : Math.min(w, d) * 0.45
-  const seatR = square ? Math.min(0.05, w * 0.14) : w / 2
+  const round = square ? Math.min(0.04, w * 0.12) : arc ? 0.02 : Math.min(w, d) * 0.45
+  const seatR = square ? Math.min(0.05, w * 0.14) : arc ? 0.012 : w / 2
+  const seatFront = arc ? w / 2 : undefined
   const deep = top - Math.max(shell, 0.2) - 0.01
   return (
     <group>
@@ -59,6 +64,7 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
         bevel={square ? 0.006 : 0.012}
         position={[0, shell, pz]}
         holes={[{ x: 0, z: sz + hole.z - pz, w: hole.w, d: hole.d, r: hole.r }]}
+        front={arc ? w / 2 : undefined}
       >
         {M('pan')}
       </Slab>
@@ -74,12 +80,13 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
           {M('pan')}
         </mesh>
       )}
-      {!square && (
+      {!square && shell > 0 && (
         <Slab
           size={[w * 0.64, shell - foot + 0.002, d * 0.76]}
-          radius={Math.min(0.1, w * 0.3)}
+          radius={arc ? 0.02 : Math.min(0.1, w * 0.3)}
           bevel={0.01}
           position={[0, foot, wall + d * 0.38]}
+          front={arc ? w * 0.32 : undefined}
         >
           {M('pan')}
         </Slab>
@@ -91,10 +98,17 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
         bevel={0.006}
         position={[0, top, sz]}
         holes={[{ x: 0, z: hole.z, w: hole.w, d: hole.d, r: hole.r }]}
+        front={seatFront}
       >
         {M('seat')}
       </Slab>
-      <Slab size={[w - 0.006, 0.02, sl - 0.006]} radius={seatR} bevel={0.008} position={[0, top + 0.018, sz]}>
+      <Slab
+        size={[w - 0.006, 0.02, sl - 0.006]}
+        radius={seatR}
+        bevel={0.008}
+        position={[0, top + 0.018, sz]}
+        front={seatFront && seatFront - 0.003}
+      >
         {M('seat')}
       </Slab>
       {[-1, 1].map(s => (
@@ -108,8 +122,9 @@ export function Toilet({ style, w, d, fit }: { style?: string; w: number; d: num
         <group>
           <Slab
             size={[w, 0.78 - top, 0.17]}
-            radius={square ? 0.012 : 0.06}
-            bevel={square ? 0.004 : 0.03}
+            radius={square ? 0.012 : arc ? 0.02 : 0.06}
+            bevel={square ? 0.004 : arc ? 0.01 : 0.03}
+            front={arc ? 0.07 : undefined}
             position={[0, top, wall + 0.085]}
           >
             {M('pan')}
@@ -344,9 +359,59 @@ function Vanity({
   )
 }
 
+// An exposed wall mixer on the end wall of a bath, after the Hansgrohe
+// Logis bath mixer: two rosettes on the wall, a slim body held off it on
+// their elbows, a single lever on top and a short spout under the middle
+// reaching over the rim.
+function WallMixer({ y, z, fit }: { y: number; z: number; fit: Fit }) {
+  const { M } = fit
+  return (
+    <group position={[0, y, z]}>
+      {[-1, 1].map(s => (
+        <group key={s} position={[s * 0.075, 0, 0]}>
+          <mesh position={[0, 0, 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.028, 0.028, 0.012, SEG]} />
+            {M('tap')}
+          </mesh>
+          <mesh position={[0, 0, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.011, 0.011, 0.04, 16]} />
+            {M('tap')}
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, 0, 0.055]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.022, 0.022, 0.22, SEG]} />
+        {M('tap')}
+      </mesh>
+      {/* The lever, on a short round cap. */}
+      <mesh position={[0, 0.03, 0.055]}>
+        <cylinderGeometry args={[0.018, 0.02, 0.02, SEG]} />
+        {M('tap')}
+      </mesh>
+      <Slab size={[0.018, 0.01, 0.08]} radius={0.006} bevel={0.002} position={[0, 0.036, 0.085]}>
+        {M('tap')}
+      </Slab>
+      <Tube
+        radius={0.012}
+        points={[
+          [0, -0.012, 0.06],
+          [0, -0.025, 0.1],
+          [0, -0.03, 0.15],
+        ]}
+      >
+        {M('tap')}
+      </Tube>
+      <mesh position={[0, -0.036, 0.15]}>
+        <cylinderGeometry args={[0.013, 0.013, 0.014, 20]} />
+        {M('tap')}
+      </mesh>
+    </group>
+  )
+}
+
 // Three baths, the rim at the far end, -z, where the taps are. A
 // freestanding shell after the Duravit Luv, 61.5 cm tall with thin walls,
-// and a floor mixer standing at its end. A steel bath after the Kaldewei
+// and a mixer on the wall at its end. A steel bath after the Kaldewei
 // Saniform Plus let into a panelled box, its mixer on the end wall. A roll
 // top after the Victoria + Albert Radford, rounded at both ends, on four
 // feet, with a deck mixer on its rim.
@@ -372,50 +437,7 @@ export function Bathtub({ style, w, l, fit }: { style?: string; w: number; l: nu
           {M('tub')}
         </Hollow>
         <Waste y={h - deep + 0.012} z={-tl / 2 + 0.15} r={0.03} fit={fit} />
-        {/* An exposed wall mixer on the end wall, after the Hansgrohe
-            Logis bath mixer: two rosettes on the wall, a slim body held
-            off it on their elbows, a single lever on top and a short spout
-            under the middle reaching over the rim. */}
-        <group position={[0, h + 0.16, -l / 2]}>
-          {[-1, 1].map(s => (
-            <group key={s} position={[s * 0.075, 0, 0]}>
-              <mesh position={[0, 0, 0.006]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.028, 0.028, 0.012, SEG]} />
-                {M('tap')}
-              </mesh>
-              <mesh position={[0, 0, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.011, 0.011, 0.04, 16]} />
-                {M('tap')}
-              </mesh>
-            </group>
-          ))}
-          <mesh position={[0, 0, 0.055]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.022, 0.022, 0.22, SEG]} />
-            {M('tap')}
-          </mesh>
-          {/* The lever, on a short round cap. */}
-          <mesh position={[0, 0.03, 0.055]}>
-            <cylinderGeometry args={[0.018, 0.02, 0.02, SEG]} />
-            {M('tap')}
-          </mesh>
-          <Slab size={[0.018, 0.01, 0.08]} radius={0.006} bevel={0.002} position={[0, 0.036, 0.085]}>
-            {M('tap')}
-          </Slab>
-          <Tube
-            radius={0.012}
-            points={[
-              [0, -0.012, 0.06],
-              [0, -0.025, 0.1],
-              [0, -0.03, 0.15],
-            ]}
-          >
-            {M('tap')}
-          </Tube>
-          <mesh position={[0, -0.036, 0.15]}>
-            <cylinderGeometry args={[0.013, 0.013, 0.014, 20]} />
-            {M('tap')}
-          </mesh>
-        </group>
+        <WallMixer y={h + 0.16} z={-l / 2} fit={fit} />
       </group>
     )
   }
@@ -474,33 +496,8 @@ export function Bathtub({ style, w, l, fit }: { style?: string; w: number; l: nu
         {M('tub')}
       </Hollow>
       <Waste y={0.17} z={-l / 2 + 0.25} r={0.03} fit={fit} />
-      {/* The floor mixer at the end, its spout over the rim and a hand
-          shower in a holder on its side. */}
-      <group position={[0, 0, -l / 2 - 0.12]}>
-        <mesh position={[0, 0.004, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.008, SEG]} />
-          {M('tap')}
-        </mesh>
-        <mesh position={[0, 0.45, 0]}>
-          <cylinderGeometry args={[0.022, 0.022, 0.9, SEG]} />
-          {M('tap')}
-        </mesh>
-        <Tube
-          radius={0.016}
-          points={[
-            [0, 0.88, 0],
-            [0, 0.93, 0.05],
-            [0, 0.93, 0.15],
-            [0, 0.89, 0.2],
-          ]}
-        >
-          {M('tap')}
-        </Tube>
-        <mesh position={[0, 0.8, 0.02]} rotation={[-Math.PI / 2 + 0.15, 0, 0]}>
-          <cylinderGeometry args={[0.012, 0.018, 0.18, 20]} />
-          {M('tap')}
-        </mesh>
-      </group>
+      {/* The mixer on the wall at its end, as on the built in bath. */}
+      <WallMixer y={h + 0.16} z={-l / 2} fit={fit} />
     </group>
   )
 }

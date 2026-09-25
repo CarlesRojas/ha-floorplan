@@ -1,4 +1,4 @@
-import { SOFA_CHAISE_WIDTH, SOFA_DEPTH, SOFA_REACH, SOFA_WIDTH } from '#/scene/decor/sofaSpecs.ts'
+import { SOFA_DEPTH, SOFA_REACH, SOFA_WIDTH } from '#/scene/decor/sofaSpecs.ts'
 import type { Signal } from '#/signals.ts'
 import { CEILING_HEIGHT_M, LIGHT_BASE_COLOR, LIGHT_SHADE_COLOR, SCANDI, SCREEN_OFF_COLOR } from '#/theme.ts'
 
@@ -288,7 +288,7 @@ const COUNTER_RUN: DecorationVariant = {
 // The bed's first style, which keeps the old bed's slots.
 const BED_HEADBOARD: DecorationVariant = {
   id: 'headboard',
-  label: 'Headboard Bed',
+  label: 'Splay Oak',
   colors: { frame: SCANDI.oak, bedding: SCANDI.offWhite, pillows: SCANDI.linen },
   materials: { frame: 'wood', bedding: 'fabric', pillows: 'fabric' },
 }
@@ -557,20 +557,35 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Sofa',
     'floor',
-    // The seats share out the width, and a narrow one is an armchair. The
-    // chaise's length and side only mean anything on the chaise style.
+    // The seats share out the width, and a narrow one is an armchair. Every
+    // style can run one end seat out as a chaise, whose length and side
+    // only mean anything with it on.
     [
       width(SOFA_WIDTH, 0.6, 4),
       depth(SOFA_DEPTH, 0.6, 1.3),
-      only(p('reach', 'Chaise length', SOFA_REACH, 1.2, 2.2), ['dresde_chaise']),
-      only(flag('flip', 'Chaise left'), ['dresde_chaise']),
+      flag('chaise', 'Chaise longue'),
+      p('reach', 'Chaise length', SOFA_REACH, 1.2, 2.2),
+      flag('flip', 'Chaise left'),
     ],
     { upholstery: SOFA_FABRIC_COLOR, cushions: SOFA_FABRIC_COLOR, legs: SOFA_LEG_COLOR },
     { upholstery: 'fabric', cushions: 'fabric', legs: 'matte' },
     NONE,
     [
-      { id: 'dresde', label: 'Pillow Arm', params: { width: SOFA_WIDTH } },
-      { id: 'dresde_chaise', label: 'Pillow Arm Chaise', params: { width: SOFA_CHAISE_WIDTH } },
+      { id: 'dresde', label: 'Pillow Arm' },
+      {
+        id: 'block',
+        label: 'Plinth Block',
+        params: { depth: 1.0 },
+        colors: { upholstery: '#c9bda9', cushions: '#c9bda9', plinth: '#3a3531' },
+        materials: { upholstery: 'fabric', cushions: 'fabric', plinth: 'matte' },
+      },
+      {
+        id: 'rail',
+        label: 'Teak Rail',
+        params: { width: 2.1, depth: 0.86 },
+        colors: { upholstery: '#6f7a67', cushions: '#6f7a67', frame: '#9a6a42' },
+        materials: { upholstery: 'fabric', cushions: 'fabric', frame: 'wood' },
+      },
     ],
   ),
   kind(
@@ -699,10 +714,28 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'seating',
     'Pouf',
     'floor',
-    // The sofa's base alone, square, on the sofa's legs.
+    // One to go with each sofa: its base on its legs, a soft cube on its
+    // plinth, or a cushion laid in a teak frame.
     [size(0.8, 0.3, 1.2), height(0.42, 0.25, 0.55)],
     { cover: SOFA_FABRIC_COLOR, legs: SOFA_LEG_COLOR },
     { cover: 'fabric', legs: 'matte' },
+    NONE,
+    [
+      { id: 'dresde', label: 'Pillow Arm' },
+      {
+        id: 'block',
+        label: 'Plinth Block',
+        params: { size: 0.7 },
+        colors: { cover: '#c9bda9', legs: '#3a3531' },
+      },
+      {
+        id: 'rail',
+        label: 'Teak Rail',
+        params: { size: 0.6 },
+        colors: { cover: '#6f7a67', legs: '#9a6a42' },
+        materials: { cover: 'fabric', legs: 'wood' },
+      },
+    ],
   ),
 
   // Tables
@@ -769,6 +802,14 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { top: '#e9e5de', base: '#f2f1ee' },
         materials: { top: 'ceramic', base: 'matte' },
       },
+      {
+        id: 'frame',
+        label: 'Steel Square',
+        // 100 by 60 cm, 38 cm tall.
+        params: { width: 1, depth: 0.6, height: 0.38 },
+        colors: { top: '#3a3b3d', legs: '#3a3b3d' },
+        materials: { top: 'metal', legs: 'metal' },
+      },
     ],
   ),
   kind(
@@ -823,6 +864,14 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { top: SCANDI.oak, frame: SCANDI.charcoal, tray: SCANDI.slate },
         materials: { top: 'wood', frame: 'metal', tray: 'metal' },
       },
+      {
+        id: 'pedestal',
+        label: 'Mikka Pedestal',
+        // 142 by 75 cm, with a three drawer pedestal.
+        params: { width: 1.42, depth: 0.75, height: 0.75 },
+        colors: { top: '#f3f1ec', legs: '#f3f1ec', drawer: '#f3f1ec', handle: '#8a8f92' },
+        materials: { top: 'matte', legs: 'matte', drawer: 'matte', handle: 'metal' },
+      },
     ],
   ),
 
@@ -875,12 +924,12 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       { id: 'oak', label: 'Oak Board' },
       {
-        id: 'usm',
-        label: 'Chrome Hallo',
-        // Two bays 75 cm wide, two rows of 35 cm, on short feet.
-        params: { width: 1.53, depth: 0.37, height: 0.74 },
-        colors: { frame: '#c9ccce', fronts: '#2f5b8a', handles: '#c9ccce' },
-        materials: { frame: 'metal', fronts: 'metal', handles: 'metal' },
+        id: 'credenza',
+        label: 'Slide Credenza',
+        // Four sliding doors, 190 by 46 cm and 65 cm tall.
+        params: { width: 1.9, depth: 0.46, height: 0.65 },
+        colors: { cabinet: '#7a5238', fronts: '#8d6143', frame: '#c9ccce' },
+        materials: { cabinet: 'wood', fronts: 'wood', frame: 'metal' },
       },
       {
         id: 'besta',
@@ -989,7 +1038,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { shelf: 'wood' },
     undefined,
     [
-      { id: 'ledge', label: 'Lipped Ledge' },
       {
         id: 'floating',
         label: 'Floating Lakka',
@@ -998,6 +1046,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { shelf: '#f3f1ec' },
         materials: { shelf: 'matte' },
       },
+      { id: 'ledge', label: 'Lipped Ledge' },
       {
         id: 'string',
         label: 'Wire Pocket',
@@ -1015,13 +1064,25 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'bed',
     'Bed',
     'floor',
-    [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05)],
+    [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05), flag('headboard', 'Headboard', 1)],
     BED_HEADBOARD.colors ?? {},
     BED_HEADBOARD.materials ?? {},
     undefined,
-    // The platform bed is the same bed with no board at its head, for one
-    // pushed against the wall.
-    [BED_HEADBOARD, { ...BED_HEADBOARD, id: 'platform', label: 'Platform Bed' }],
+    [
+      BED_HEADBOARD,
+      {
+        id: 'upholstered',
+        label: 'Channel Rest',
+        colors: { frame: '#a39a8c', bedding: SCANDI.offWhite, pillows: '#d8d2c6' },
+        materials: { frame: 'fabric', bedding: 'fabric', pillows: 'fabric' },
+      },
+      {
+        id: 'low',
+        label: 'Ledge Low',
+        colors: { frame: '#c49a6c', bedding: '#e9e4da', pillows: SCANDI.offWhite },
+        materials: { frame: 'wood', bedding: 'fabric', pillows: 'fabric' },
+      },
+    ],
   ),
 
   // Kitchen
@@ -1080,10 +1141,26 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Fridge',
     'floor',
-    [width(0.6, 0.5, 0.95), depth(0.66, 0.5, 0.8), height(2.03, 0.8, 2.1), base(), flag('flip', 'Hinge right')],
+    [
+      width(0.6, 0.5, 0.95),
+      depth(0.66, 0.5, 0.8),
+      height(2.03, 0.8, 2.1),
+      base(),
+      only(flag('flip', 'Hinge right'), ['bespoke']),
+    ],
     { body: SCANDI.offWhite, doors: SCANDI.offWhite, handles: SCANDI.slate },
     { body: 'ceramic', doors: 'ceramic', handles: 'metal' },
     TOGGLE,
+    [
+      { id: 'bespoke', label: 'Pocket Grip' },
+      {
+        id: 'side_by_side',
+        label: 'Twin Tower',
+        params: { width: 0.91, depth: 0.72, height: 1.78 },
+        colors: { body: '#a9adaf', doors: '#c3c6c7', handles: '#8a8e91' },
+        materials: { body: 'metal', doors: 'metal', handles: 'metal' },
+      },
+    ],
   ),
   kind(
     'oven',
@@ -1192,7 +1269,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: 'ceramic', steel: 'metal', wood: 'wood' },
     TOGGLE,
     [
-      { id: 'linea', label: 'Steel Lineo' },
       {
         id: 'bambino',
         label: 'Compact Bambu',
@@ -1200,6 +1276,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { body: '#c9cccd', steel: '#aeb3b5', handle: '#1c1f21' },
         materials: { body: 'metal', steel: 'metal', handle: 'matte' },
       },
+      { id: 'linea', label: 'Steel Lineo' },
       {
         id: 'pod',
         label: 'Pod Nib',
@@ -1262,6 +1339,13 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { pan: 'ceramic', seat: 'ceramic', flush: 'metal' },
     undefined,
     [
+      {
+        id: 'arc',
+        label: 'Arc Pair',
+        params: { width: 0.37, depth: 0.62 },
+        colors: { pan: BATH_WHITE, seat: BATH_WHITE, flush: '#c4c7c8' },
+        materials: { pan: 'ceramic', seat: 'ceramic', flush: 'metal' },
+      },
       {
         id: 'wall_hung',
         label: 'Vela Hung',
@@ -1378,6 +1462,13 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { field: 'carpet', border: 'carpet' },
     undefined,
     [
+      {
+        id: 'shag',
+        label: 'Plain Pile',
+        colors: { field: '#cfc8bc' },
+        materials: { field: 'carpet' },
+        params: { width: 2, depth: 1.4 },
+      },
       { id: 'border', label: 'Nord Border' },
       {
         id: 'kilim',
@@ -1385,13 +1476,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { field: '#e9e2d4', border: '#3f4a52', accent: '#c47a52' },
         materials: { field: 'carpet', border: 'carpet', accent: 'carpet' },
         params: { width: 2.3, depth: 1.6 },
-      },
-      {
-        id: 'shag',
-        label: 'Plain Pile',
-        colors: { field: '#cfc8bc' },
-        materials: { field: 'carpet' },
-        params: { width: 2, depth: 1.4 },
       },
       {
         id: 'round',
@@ -1435,11 +1519,18 @@ export const DECORATION_KINDS: DecorationKind[] = [
         params: { size: 0.7, height: 1.4 },
       },
       {
+        id: 'rubber_full',
+        label: 'Rubber bush',
+        colors: { pot: '#c9b79c', soil: '#3c332b', stems: '#9a5a44', leaves: '#3a6a3a' },
+        materials: { pot: 'ceramic', soil: 'matte', stems: 'matte', leaves: 'ceramic' },
+        params: { size: 0.85, height: 1.5 },
+      },
+      {
         id: 'bird',
         label: 'Bird of paradise',
         colors: { pot: '#2b2c2d', soil: '#3c332b', stems: '#6f8a4a', leaves: '#4e7a44' },
         materials: { pot: 'ceramic', soil: 'matte', stems: 'matte', leaves: 'wood' },
-        params: { size: 1.1, height: 1.9 },
+        params: { size: 0.9, height: 1.9 },
       },
     ],
   ),
@@ -1534,10 +1625,11 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       { id: 'oak', label: 'Oak Ring' },
       {
-        id: 'station',
-        label: 'Station Tid',
-        colors: { rim: '#2b2c2d', face: '#f7f6f2', hands: '#1f2123', accent: '#c8553d' },
-        materials: { rim: 'metal', face: 'matte', hands: 'matte', accent: 'matte' },
+        id: 'digital',
+        label: 'Glow Digit',
+        colors: { rim: '#232426', face: '#101112', accent: '#ff6a3d' },
+        materials: { rim: 'matte', face: 'ceramic', accent: 'matte' },
+        params: { size: 0.4 },
       },
       {
         id: 'ball',
@@ -1567,35 +1659,20 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { first: 'matte', second: 'matte', third: 'matte', pages: 'matte' },
   ),
   kind(
-    'basket',
-    'decor',
-    'Basket',
-    'floor',
-    [size(0.4, 0.2, 0.7), height(0.36, 0.2, 0.6)],
-    { weave: SCANDI.straw },
-    { weave: 'fabric' },
-  ),
-  kind(
     'curtain',
     'decor',
     'Curtain',
     'wall',
     [width(1.4, 0.6, 3), height(2.3, 1.2, 2.6), p('hem', 'Off floor', 0.02, 0, 1.5)],
-    { fabric: SCANDI.linen, rail: SCANDI.slate },
-    { fabric: 'fabric', rail: 'metal' },
+    { fabric: '#f4f1ea', rail: '#e9e7e2' },
+    { fabric: 'fabric', rail: 'matte' },
     TOGGLE_LEVEL,
     [
-      { id: 'pleat', label: 'Linen Pleat' },
-      {
-        id: 'wave',
-        label: 'Sheer Wave',
-        colors: { fabric: '#f4f1ea', rail: '#e9e7e2' },
-        materials: { fabric: 'fabric', rail: 'matte' },
-      },
+      { id: 'wave', label: 'Sheer Wave' },
       {
         id: 'eyelet',
         label: 'Velvet Eyelet',
-        colors: { fabric: '#5b6b5a', rail: '#2b2c2d' },
+        colors: { fabric: '#c9c9c6', rail: '#2b2c2d' },
         materials: { fabric: 'fabric', rail: 'metal' },
       },
     ],
@@ -1754,10 +1831,10 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'wall',
     [width(0.9, 0.3, 2), height(0.6, 0.3, 2), p('base', 'Off floor', 0.15, 0, 1)],
     { panel: SCANDI.offWhite, valve: SCANDI.slate },
-    { panel: 'metal', valve: 'metal' },
+    { panel: 'matte', valve: 'metal' },
     TOGGLE_LEVEL,
     [
-      { id: 'panel', label: 'Rib Plan' },
+      { id: 'panel', label: 'Flat Plane' },
       {
         id: 'column',
         label: 'Iron Column',
@@ -1794,7 +1871,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { housing: 'matte', blades: 'wood' },
     TOGGLE_LEVEL,
     [
-      { id: 'haiku', label: 'Aero Trio' },
       {
         id: 'classic',
         label: 'Bowl Five',
@@ -1802,6 +1878,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { housing: '#9a8466', blades: '#5b4432', bowl: '#f1ede4' },
         materials: { housing: 'metal', blades: 'wood', bowl: 'ceramic' },
       },
+      { id: 'haiku', label: 'Aero Trio' },
       {
         id: 'loft',
         label: 'Iron Loft',
@@ -1948,6 +2025,15 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { panels: SCANDI.mist, rail: SCANDI.slate },
     { panels: 'metal', rail: 'metal' },
     TOGGLE_LEVEL,
+    [
+      { id: 'sectional', label: 'Track Lift' },
+      {
+        id: 'roller',
+        label: 'Coil Box',
+        colors: { panels: '#b9bcbe', rail: '#5d6164' },
+        materials: { panels: 'metal', rail: 'metal' },
+      },
+    ],
   ),
   kind(
     'awning',
@@ -1958,6 +2044,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { canopy: SCANDI.linen, cassette: SCANDI.slate },
     { canopy: 'fabric', cassette: 'metal' },
     TOGGLE_LEVEL,
+    [
+      { id: 'folding', label: 'Fold Reach' },
+      {
+        id: 'drop_arm',
+        label: 'Pivot Drop',
+        params: { width: 1.4, height: 2.3, drop: 0.8 },
+        colors: { canopy: '#b85c43', cassette: SCANDI.offWhite },
+        materials: { canopy: 'fabric', cassette: 'metal' },
+      },
+    ],
   ),
 
   // Security and sensors
@@ -2143,8 +2239,14 @@ export function footprint(
   const w = screen
     ? screenSize(paramValue(kind, params, 'inches', variant))[0]
     : paramValue(kind, params, 'width', variant) || paramValue(kind, params, 'size', variant) || 0.3
+  // A chaise reaches out past the depth, when the style has one and, if it
+  // can be switched off, it is on.
+  const chaise = !kind.params.some(p => p.id === 'chaise') || paramValue(kind, params, 'chaise', variant) > 0.5
+  const reach = chaise && styleParams(kind, variant).some(p => p.id === 'reach')
   const d =
-    (styleParams(kind, variant).some(p => p.id === 'reach') ? paramValue(kind, params, 'reach', variant) : 0) ||
+    (reach
+      ? Math.max(paramValue(kind, params, 'reach', variant), paramValue(kind, params, 'depth', variant) + 0.3)
+      : 0) ||
     paramValue(kind, params, 'depth', variant) ||
     paramValue(kind, params, 'length', variant) ||
     (kind.params.some(p => p.id === 'size') ? w : 0.3)

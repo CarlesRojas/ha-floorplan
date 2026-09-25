@@ -49,8 +49,8 @@ function Blade({
 }
 
 // Three radiators, hung `base` off the floor with their pipes running down
-// into it. A double panel with a fluted front and a thermostatic valve,
-// after a Stelrad Compact. A run of cast iron columns between round
+// into it. A flat front plate over a convector body, after a Stelrad
+// Planar. A run of cast iron columns between round
 // headers. A row of flat vertical bars, after the Vasco Niva. All of them
 // warm up while they run.
 export function Radiator({
@@ -175,42 +175,57 @@ export function Radiator({
       </group>
     )
   }
-  const flutes = Math.max(8, Math.round(w / 0.03))
-  const slots = Math.max(6, Math.round(w / 0.055))
+  // The flat panel: a smooth front plate standing a shadow gap proud of a
+  // darker convector body, a slim grille flush in the top, and the pipes
+  // tucked under the right end, with the thermostatic head on the side.
+  const slots = Math.max(8, Math.round(w / 0.03))
+  const px = w / 2 - 0.07
   return (
     <group position={[0, base, 0]}>
-      {/* Front and back panel, with a narrow gap between them. */}
-      {[0.022, 0.072].map(z => (
-        <Slab key={z} size={[w, h, 0.028]} radius={0.014} bevel={0.008} position={[0, 0, z]}>
-          {hot()}
-        </Slab>
-      ))}
-      {/* The flutes pressed into the front. */}
-      {Array.from({ length: flutes }).map((_, i) => (
-        <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / flutes, h / 2, 0.0865]}>
-          <cylinderGeometry args={[0.0045, 0.0045, h - 0.05, 8, 1, false, -Math.PI / 2, Math.PI]} />
-          {hot()}
-        </mesh>
-      ))}
-      {/* Side covers, closing the gap at each end. */}
-      {[-1, 1].map(s => (
-        <Slab key={s} size={[0.022, h, 0.08]} radius={0.01} bevel={0.006} position={[(s * w) / 2, 0, 0.047]}>
-          {hot()}
-        </Slab>
-      ))}
-      {/* The top grille, a run of short slots. */}
-      <Slab size={[w, 0.016, 0.082]} radius={0.008} bevel={0.005} position={[0, h - 0.016, 0.046]}>
+      <Slab size={[w - 0.012, h - 0.012, 0.05]} radius={0.004} position={[0, 0.006, 0.042]}>
+        <meshStandardMaterial color="#6f7478" roughness={0.8} metalness={0.2} />
+      </Slab>
+      <Slab size={[w, h, 0.012]} radius={0.004} bevel={0.002} position={[0, 0, 0.073]}>
+        {hot()}
+      </Slab>
+      <Slab size={[w - 0.004, 0.004, 0.05]} position={[0, h - 0.006, 0.042]}>
         {hot()}
       </Slab>
       {Array.from({ length: slots }).map((_, i) => (
-        <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / slots, h - 0.004, 0.046]}>
-          <boxGeometry args={[(w / slots) * 0.5, 0.004, 0.05]} />
+        <mesh key={i} position={[-w / 2 + ((i + 0.5) * w) / slots, h - 0.0015, 0.042]}>
+          <boxGeometry args={[(w / slots) * 0.55, 0.002, 0.04]} />
           <meshStandardMaterial color="#2a2c2e" roughness={0.9} />
         </mesh>
       ))}
-      <group position={[0, -base, 0]}>
-        {pipe(-w / 2 - 0.04, 0.047, true)}
-        {pipe(w / 2 + 0.035, 0.047, false)}
+      {[px - 0.025, px + 0.025].map(x => (
+        <group key={x}>
+          {base > 0.01 && (
+            <mesh position={[x, -base / 2, 0.03]}>
+              <cylinderGeometry args={[0.008, 0.008, base, 12]} />
+              {paint('valve')}
+            </mesh>
+          )}
+          <mesh position={[x, -0.004, 0.03]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.016, 16]} />
+            {paint('valve')}
+          </mesh>
+        </group>
+      ))}
+      <group position={[w / 2, h - 0.08, 0.042]} rotation={[0, 0, -Math.PI / 2]}>
+        <mesh position={[0, 0.008, 0]}>
+          <cylinderGeometry args={[0.012, 0.012, 0.016, 16]} />
+          {paint('valve')}
+        </mesh>
+        <mesh position={[0, 0.047, 0]}>
+          <cylinderGeometry args={[0.022, 0.024, 0.062, SEG]} />
+          <meshStandardMaterial color="#f2f1ec" roughness={0.6} />
+        </mesh>
+        {[0.03, 0.045, 0.06].map(k => (
+          <mesh key={k} position={[0, k, 0]}>
+            <torusGeometry args={[0.023, 0.0018, 6, SEG]} />
+            <meshStandardMaterial color="#e1dfd8" roughness={0.6} />
+          </mesh>
+        ))}
       </group>
     </group>
   )

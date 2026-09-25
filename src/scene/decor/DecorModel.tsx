@@ -153,7 +153,7 @@ export default function DecorModel({ kind, item, state }: Props) {
       const s = p('size')
       return (
         <group position={[0, Math.max(0, s / 2 + 0.02 - p('height')), 0]}>
-          <Clock style={style} s={s} paint={paint} />
+          <Clock style={style} s={s} paint={paint} glow={c('accent')} />
         </group>
       )
     }
@@ -202,41 +202,6 @@ export default function DecorModel({ kind, item, state }: Props) {
     }
     case 'books':
       return <Books w={p('width')} h={p('height')} paint={paint} />
-    case 'basket': {
-      // A woven seagrass basket: flared body, rolled rim and two cut handles.
-      const r = p('size') / 2
-      const h = p('height')
-      // The rim and handles are cane, as thick as a small basket allows.
-      const rim = Math.min(0.022, r * 0.08, h * 0.08)
-      const cane = Math.min(0.014, r * 0.05)
-      return (
-        <group>
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <cylinderGeometry args={[r, r * 0.76, h, SEG * 2, 1, true]} />
-            <Material color={c('weave')} material={m('weave')} doubleSide />
-          </mesh>
-          <mesh position={[0, 0.012, 0]}>
-            <cylinderGeometry args={[r * 0.76, r * 0.76, 0.024, SEG * 2]} />
-            <Material color={c('weave')} material={m('weave')} />
-          </mesh>
-          <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, rim, 16, SEG * 2]} />
-            <Material color={c('weave')} material={m('weave')} />
-          </mesh>
-          {/* Handles, arching out of the rim on opposite sides. */}
-          {[-1, 1].map(s => (
-            <mesh
-              key={s}
-              position={[s * r * 0.98, h - rim, 0]}
-              rotation={[Math.PI / 2, 0, s > 0 ? -Math.PI / 2 : Math.PI / 2]}
-            >
-              <torusGeometry args={[Math.min(0.07, h * 0.28, r * 0.35), cane, 12, 28, Math.PI]} />
-              <Material color={c('weave')} material={m('weave')} />
-            </mesh>
-          ))}
-        </group>
-      )
-    }
     case 'curtain':
       return (
         <Curtain

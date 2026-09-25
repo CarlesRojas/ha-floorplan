@@ -36,7 +36,7 @@ const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<
 
 // Kinds that were dropped with nothing to take their place. A saved one is
 // left out.
-const DROPPED = new Set(['picture'])
+const DROPPED = new Set(['picture', 'basket'])
 
 // Parameters that were split in two, per kind. The side table was square,
 // with one size for both sides, before it had a width and a depth.
@@ -50,11 +50,22 @@ const SPLIT: Record<string, Record<string, string[]>> = {
 // dining chair's first style was a Pilma chair, then a molded shell, then
 // the Jin, and each of those is now the slab chair that took its place.
 // The toilet's back to wall style gave way to a square close coupled one.
-const RESTYLED: Record<string, Record<string, string>> = {
+// The sofa's chaise was a style of its own before every style could have
+// one, and a saved one keeps its chaise and its old width. The curtain's
+// linen pleat was dropped for the sheer wave, and the station clock for a
+// digital one. A style can
+// bring parameters that the item's own saved ones override.
+type Restyle = string | { variant: string; params: Record<string, number> }
+const RESTYLED: Record<string, Record<string, Restyle>> = {
   light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
   dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
   toilet: { back_to_wall: 'square' },
   plant_wall: { staghorn: 'pothos', moss: 'pearls' },
+  sofa: { dresde_chaise: { variant: 'dresde', params: { chaise: 1, width: 2.98 } } },
+  curtain: { pleat: 'wave' },
+  wall_clock: { station: 'digital' },
+  sideboard: { usm: 'credenza' },
+  bed_double: { platform: { variant: 'headboard', params: { headboard: 0 } } },
 }
 
 function migrate(config: CardConfig): CardConfig {
@@ -74,7 +85,9 @@ function migrate(config: CardConfig): CardConfig {
       })
       .map(d => {
         const style = d.variant ? RESTYLED[d.kind]?.[d.variant] : undefined
-        return style ? { ...d, variant: style } : d
+        if (!style) return d
+        if (typeof style === 'string') return { ...d, variant: style }
+        return { ...d, variant: style.variant, params: { ...style.params, ...d.params } }
       })
       .map(d => {
         const split = SPLIT[d.kind]

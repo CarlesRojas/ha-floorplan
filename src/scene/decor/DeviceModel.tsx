@@ -506,13 +506,76 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // A blind's slats turn with its second percentage: flat lets the light
       // through, upright shuts it out.
       const slatAngle = (1 - tiltAmount) * 1.2
+      if (awning && style === 'drop_arm') {
+        // A drop arm awning over a window: two arms hang from pivots on the
+        // wall below the cassette and swing out and up as it opens, and the
+        // cloth runs straight from the cassette to the bar across their
+        // ends. Closed, the arms hang flat against the wall and the cloth
+        // covers it like a blind.
+        const cassette = { h: 0.1, d: 0.12 }
+        const pivotY = -cassette.h - 0.2
+        const angle = 0.06 + out * 1.3
+        const exit: Vec3 = [0, -cassette.h + 0.015, cassette.d - 0.015]
+        const armX = w / 2 - 0.03
+        const hand = (x: number): Vec3 => [x, pivotY - full * Math.cos(angle), 0.06 + full * Math.sin(angle)]
+        const bar = hand(0)
+        const dy = bar[1] - exit[1]
+        const dz = bar[2] - exit[2]
+        const len = Math.hypot(dy, dz)
+        const metal = <Material color={c(head)} material={m(head)} />
+        return (
+          <group>
+            <Slab size={[w + 0.04, cassette.h, cassette.d]} radius={0.035} position={[0, -cassette.h, cassette.d / 2]}>
+              {metal}
+            </Slab>
+            <group position={exit} rotation={[-Math.atan2(dz, -dy), 0, 0]} scale={[1, len, 1]}>
+              <mesh position={[0, -0.5, 0]}>
+                <boxGeometry args={[w - 0.04, 1, 0.006]} />
+                <Material color={c(cloth)} material={m(cloth)} />
+              </mesh>
+            </group>
+            <Slab size={[w, 0.045, 0.045]} radius={0.012} position={[0, bar[1] - 0.0225, bar[2]]}>
+              {metal}
+            </Slab>
+            {/* A short scalloped valance under the bar. */}
+            {Array.from({ length: Math.max(3, Math.round(w / 0.2)) }).map((_, i, all) => {
+              const tw = (w - 0.02) / all.length
+              return (
+                <group key={i} position={[-w / 2 + 0.01 + tw * (i + 0.5), bar[1] - 0.02, bar[2] + 0.028]}>
+                  <mesh position={[0, -0.045, 0]}>
+                    <boxGeometry args={[tw, 0.09, 0.004]} />
+                    <Material color={c(cloth)} material={m(cloth)} />
+                  </mesh>
+                  <mesh position={[0, -0.09, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                    <cylinderGeometry args={[tw / 2, tw / 2, 0.004, 16, 1, false, Math.PI / 2, Math.PI]} />
+                    <Material color={c(cloth)} material={m(cloth)} />
+                  </mesh>
+                </group>
+              )
+            })}
+            {[-1, 1].map(sx => {
+              const pivot: Vec3 = [sx * armX, pivotY, 0.06]
+              return (
+                <group key={sx}>
+                  <Slab size={[0.05, 0.08, 0.06]} radius={0.012} position={[sx * armX, pivotY - 0.04, 0.03]}>
+                    {metal}
+                  </Slab>
+                  <Rod from={pivot} to={hand(sx * armX)} radius={0.013}>
+                    {metal}
+                  </Rod>
+                </group>
+              )
+            })}
+          </group>
+        )
+      }
       if (awning) {
         // After the Markilux 990: the cloth runs out of a cassette on a
         // front profile carried by two folding arms, which open out from
         // brackets under the cassette as the awning extends.
         const pitch = 0.25
         const reach = full * out
-        const cassette = { h: 0.16, d: 0.22 }
+        const cassette = { h: 0.12, d: 0.16 }
         const endY = -cassette.h + 0.02 - reach * Math.sin(pitch)
         const endZ = cassette.d - 0.02 + reach * Math.cos(pitch)
         const armX = w / 2 - Math.min(0.15, w * 0.1)
@@ -576,7 +639,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         // so one on its way in never pokes out of the top. A slat is hidden
         // rather than dropped once it is all the way in, so nothing is
         // built again as it travels.
-        const box = { h: 0.2, d: 0.2 }
+        const box = { h: 0.13, d: 0.12 }
         const n = Math.max(2, Math.round(full / 0.055))
         const pitch = full / n
         const z = 0.07
@@ -1002,24 +1065,94 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
     case 'garage_door': {
       const w = p('width')
       const h = p('height')
-      // The panels are cut once for the full height and the stack is scaled,
-      // so none of them is rebuilt or dropped while the door runs up.
-      const panels = Math.max(1, Math.round(h / 0.45))
-      const panelH = h / panels
-      const out = Math.max(1 - coverLevel, 0.001)
-      return (
-        <group>
-          {/* It rolls up into the header, so what is left of it hangs from
-              the top rather than sinking into the floor. */}
-          <group position={[0, h * (1 - out), 0]} scale={[1, out, 1]}>
-            {Array.from({ length: panels }).map((_, i) => (
-              <Slab key={i} size={[w, panelH - 0.01, 0.05]} radius={0.012} position={[0, panelH * i, 0.03]}>
-                {M('panels')}
+      const rail = <Material color={c('rail')} material={m('rail')} />
+      // How far it has run up, in meters of travel.
+      const travel = h * coverLevel
+      if (style === 'roller') {
+        // A roller door: narrow slats that run up into a box over the
+        // opening, one after another, the way a shutter does. None of them
+        // changes size, and only the bottom one stays out when it is open.
+        const box = { h: 0.3, d: 0.3 }
+        const n = Math.max(2, Math.round(h / 0.08))
+        const pitch = h / n
+        const z = 0.08
+        return (
+          <group>
+            <Slab size={[w + 0.14, box.h, box.d]} radius={0.02} position={[0, h, box.d / 2]}>
+              {rail}
+            </Slab>
+            {[-1, 1].map(sx => (
+              <Slab key={sx} size={[0.05, h, 0.07]} radius={0.008} position={[sx * (w / 2 + 0.025), 0, z]}>
+                {rail}
               </Slab>
             ))}
+            {Array.from({ length: n }).map((_, i) => {
+              const last = i === n - 1
+              const y = travel + (n - 1 - i) * pitch
+              return (
+                <group key={i} visible={last || y < h}>
+                  <Slab
+                    size={[w, last ? pitch * 0.8 : pitch * 0.94, last ? 0.04 : 0.02]}
+                    radius={0.006}
+                    bevel={0.003}
+                    position={[0, last ? Math.min(y, h - 0.05) : y, z]}
+                  >
+                    {last ? rail : M('panels')}
+                  </Slab>
+                </group>
+              )
+            })}
           </group>
-          <Slab size={[w + 0.08, 0.07, 0.09]} radius={0.02} position={[0, h - 0.07, 0.04]}>
-            <Material color={c('rail')} material={m('rail')} />
+        )
+      }
+      // A sectional door: the panels run up side tracks, round a bend at
+      // the top and carry on flat under the ceiling into the garage, each
+      // keeping its size. The panels are placed along that path every
+      // frame and never rebuilt.
+      const panels = Math.max(1, Math.round(h / 0.45))
+      const panelH = h / panels
+      const zf = 0.07
+      const r = 0.3
+      const bend = (r * Math.PI) / 2
+      const at = (s: number): { y: number; z: number; a: number } => {
+        if (s <= h) return { y: s, z: zf, a: 0 }
+        if (s <= h + bend) {
+          const a = (s - h) / r
+          return { y: h + r * Math.sin(a), z: zf + r - r * Math.cos(a), a }
+        }
+        return { y: h + r, z: zf + r + s - h - bend, a: Math.PI / 2 }
+      }
+      const run = h + 0.1
+      return (
+        <group>
+          {Array.from({ length: panels }).map((_, i) => {
+            const { y, z, a } = at(panelH * (i + 0.5) + travel)
+            return (
+              <group key={i} position={[0, y, z]} rotation={[a, 0, 0]}>
+                <Slab size={[w, panelH - 0.01, 0.04]} radius={0.012} position={[0, -(panelH - 0.01) / 2, 0]}>
+                  {M('panels')}
+                </Slab>
+              </group>
+            )
+          })}
+          {/* The tracks: up each side, round the bend and back under the ceiling. */}
+          {[-1, 1].map(sx => (
+            <group key={sx} position={[sx * (w / 2 + 0.02), 0, 0]}>
+              <Slab size={[0.03, h, 0.05]} radius={0.006} position={[0, 0, zf]}>
+                {rail}
+              </Slab>
+              <mesh position={[0, h, zf + r]} rotation={[0, Math.PI / 2, 0]}>
+                <torusGeometry args={[r, 0.018, 8, 16, Math.PI / 2]} />
+                {rail}
+              </mesh>
+              <Slab size={[0.03, 0.04, run]} radius={0.006} position={[0, h + r - 0.02, zf + r + run / 2]}>
+                {rail}
+              </Slab>
+            </group>
+          ))}
+          {/* The header over the opening, between the wall and the panels. */}
+          <Slab size={[w + 0.08, 0.07, 0.04]} radius={0.01} position={[0, h, 0.02]}>
+            {rail}
           </Slab>
         </group>
       )

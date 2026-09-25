@@ -14,7 +14,9 @@ import { Pouf, Sofa } from '#/scene/decor/Sofas.tsx'
 import Stool from '#/scene/decor/Stools.tsx'
 import {
   BlockCoffeeTable,
-  ChromeSideboard,
+  Credenza,
+  FrameCoffeeTable,
+  PedestalDesk,
   CubeShelf,
   FloatingShelf,
   Nightstand,
@@ -52,13 +54,13 @@ export default function FurnitureModel({ kind, item }: Props) {
   switch (kind.id) {
     // Seating
     case 'sofa': {
-      const style = decorationVariant(kind, item.variant)?.id ?? 'dresde'
       return (
         <Sofa
+          style={decorationVariant(kind, item.variant)?.id ?? 'dresde'}
           w={p('width')}
           d={p('depth')}
           reach={p('reach')}
-          chaise={style === 'dresde_chaise'}
+          chaise={p('chaise') > 0.5}
           flip={p('flip') > 0.5}
           M={M}
         />
@@ -81,7 +83,9 @@ export default function FurnitureModel({ kind, item }: Props) {
       return <Bench style={style} w={p('width')} d={p('depth')} h={p('height')} M={M} />
     }
     case 'pouf':
-      return <Pouf size={p('size')} h={p('height')} M={M} />
+      return (
+        <Pouf style={decorationVariant(kind, item.variant)?.id ?? 'dresde'} size={p('size')} h={p('height')} M={M} />
+      )
     // Tables
     case 'dining_table': {
       // Each style is a real table, laid out again at the size the sliders
@@ -94,6 +98,12 @@ export default function FurnitureModel({ kind, item }: Props) {
       const style = decorationVariant(kind, item.variant)?.id
       if (kind.id === 'desk' && style === 'office_table') {
         return <OfficeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
+      }
+      if (kind.id === 'desk' && style === 'pedestal') {
+        return <PedestalDesk w={p('width')} d={p('depth')} h={p('height')} M={M} />
+      }
+      if (kind.id === 'coffee_table' && style === 'frame') {
+        return <FrameCoffeeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
       }
       if (kind.id === 'coffee_table' && style === 'lack') {
         return <BlockCoffeeTable w={p('width')} d={p('depth')} h={p('height')} M={M} />
@@ -265,7 +275,7 @@ export default function FurnitureModel({ kind, item }: Props) {
     case 'wardrobe': {
       const style = decorationVariant(kind, item.variant)?.id
       const size = { w: p('width'), d: p('depth'), h: p('height'), M }
-      if (style === 'usm') return <ChromeSideboard {...size} />
+      if (style === 'credenza') return <Credenza {...size} />
       if (style === 'besta') return <PushSideboard {...size} />
       if (style === 'malm') return <PlainDresser {...size} />
       if (style === 'hemnes') return <PaintedDresser {...size} />
@@ -459,15 +469,16 @@ export default function FurnitureModel({ kind, item }: Props) {
 
     // Beds
     case 'bed_double': {
-      // A low platform with a lip, an upright headboard unless it is the
-      // platform style, and bedding folded back from the pillows. The pillows
-      // follow the width: one on a single bed, two on a double, three on
-      // anything wider.
+      // A frame of the style's own, its headboard left off when the switch
+      // is off, and the same mattress and bedding folded back from the
+      // pillows on all of them. The pillows follow the width: one on a
+      // single bed, two on a double, three on anything wider.
       const w = p('width')
       const l = p('length')
-      const headboard = decorationVariant(kind, item.variant)?.id !== 'platform'
+      const style = decorationVariant(kind, item.variant)?.id ?? 'headboard'
+      const headboard = p('headboard') > 0.5
       const legH = 0.14
-      const frameH = legH + 0.1
+      const frameH = style === 'upholstered' ? 0.3 : style === 'low' ? 0.16 : legH + 0.1
       const mattress = 0.18
       const headH = 0.5
       const pillows = Math.max(1, Math.round(w / 0.8))
@@ -481,30 +492,36 @@ export default function FurnitureModel({ kind, item }: Props) {
       const bedding = () => <Material color={c('bedding')} material={m('bedding')} />
       return (
         <group>
-          {/* The legs run along the length, so a long bed grows a middle
+          {style === 'upholstered' && <UpholsteredBed w={w} l={l} top={frameH} headboard={headboard} M={M} />}
+          {style === 'low' && <LowBed w={w} l={l} top={frameH} headboard={headboard} M={M} />}
+          {style === 'headboard' && (
+            <>
+              {/* The legs run along the length, so a long bed grows a middle
               pair at its sides. */}
-          <group rotation={[0, Math.PI / 2, 0]}>
-            <Legs
-              width={l - 0.1}
-              depth={w - 0.06}
-              height={legH}
-              inset={Math.min(0.12, w * 0.1)}
-              top={0.028}
-              bottom={0.02}
-              columns={l > 1.9 ? 3 : 2}
-              splay={0.06}
-            >
-              {M('frame')}
-            </Legs>
-          </group>
-          <Slab size={[w + 0.08, 0.1, l + 0.08]} radius={0.03} position={[0, legH, 0]}>
-            {M('frame')}
-          </Slab>
-          {/* Headboard, standing just clear of the mattress. */}
-          {headboard && (
-            <Slab size={[w + 0.08, headH + mattress, 0.055]} radius={0.025} position={[0, frameH, -l / 2 - 0.03]}>
-              {M('frame')}
-            </Slab>
+              <group rotation={[0, Math.PI / 2, 0]}>
+                <Legs
+                  width={l - 0.1}
+                  depth={w - 0.06}
+                  height={legH}
+                  inset={Math.min(0.12, w * 0.1)}
+                  top={0.028}
+                  bottom={0.02}
+                  columns={l > 1.9 ? 3 : 2}
+                  splay={0.06}
+                >
+                  {M('frame')}
+                </Legs>
+              </group>
+              <Slab size={[w + 0.08, 0.1, l + 0.08]} radius={0.03} position={[0, legH, 0]}>
+                {M('frame')}
+              </Slab>
+              {/* Headboard, standing just clear of the mattress. */}
+              {headboard && (
+                <Slab size={[w + 0.08, headH + mattress, 0.055]} radius={0.025} position={[0, frameH, -l / 2 - 0.03]}>
+                  {M('frame')}
+                </Slab>
+              )}
+            </>
           )}
           <Slab size={[w, mattress, l]} radius={0.1} bevel={0.02} position={[0, frameH, 0]}>
             {bedding()}
@@ -536,6 +553,112 @@ export default function FurnitureModel({ kind, item }: Props) {
     default:
       return null
   }
+}
+
+// A bed wrapped in fabric all round, after the Muuto Rest: a deep padded box
+// sitting on a dark recessed plinth, and a tall headboard of upright padded
+// channels that stands a little wider than the base.
+function UpholsteredBed({
+  w,
+  l,
+  top,
+  headboard,
+  M,
+}: {
+  w: number
+  l: number
+  top: number
+  headboard: boolean
+  M: (slot: string) => ReactNode
+}) {
+  const plinth = 0.04
+  const boardW = w + 0.16
+  const channels = Math.max(4, Math.round(boardW / 0.2))
+  const channelW = boardW / channels
+  const boardH = 1.05
+  return (
+    <group>
+      <Slab size={[w - 0.2, plinth, l - 0.3]} radius={0.01} position={[0, 0, 0]}>
+        <Material color="#2c2a28" material="matte" />
+      </Slab>
+      <Slab size={[w + 0.1, top - plinth, l + 0.06]} radius={0.06} bevel={0.03} position={[0, plinth, 0.02]}>
+        {M('frame')}
+      </Slab>
+      {headboard && (
+        <group position={[0, 0, -l / 2 - 0.06]}>
+          {/* The back panel the channels are stitched to. */}
+          <Slab size={[boardW, boardH - 0.02, 0.06]} radius={0.02} position={[0, 0.02, -0.03]}>
+            {M('frame')}
+          </Slab>
+          {Array.from({ length: channels }).map((_, i) => (
+            <Slab
+              key={i}
+              size={[channelW - 0.008, boardH - 0.06, 0.07]}
+              radius={0.033}
+              bevel={0.02}
+              position={[-boardW / 2 + channelW * (i + 0.5), 0.04, 0.015]}
+            >
+              {M('frame')}
+            </Slab>
+          ))}
+        </group>
+      )}
+    </group>
+  )
+}
+
+// A low Japanese platform, after the Muji oak bed: a wide board that shows
+// a ledge round the mattress, raised on a dark recessed plinth, and a low
+// headboard of upright slats between two rails.
+function LowBed({
+  w,
+  l,
+  top,
+  headboard,
+  M,
+}: {
+  w: number
+  l: number
+  top: number
+  headboard: boolean
+  M: (slot: string) => ReactNode
+}) {
+  const board = 0.04
+  const ledge = 0.14
+  const boardW = w + ledge * 2
+  const slats = Math.max(6, Math.round(boardW / 0.09))
+  const slatGap = boardW / slats
+  const headH = 0.48
+  return (
+    <group>
+      <Slab size={[w - 0.1, top - board, l - 0.2]} radius={0.01} position={[0, 0, 0.02]}>
+        <Material color="#2c2a28" material="matte" />
+      </Slab>
+      <Slab size={[boardW, board, l + ledge + 0.08]} radius={0.012} position={[0, top - board, (ledge - 0.08) / 2]}>
+        {M('frame')}
+      </Slab>
+      {headboard && (
+        <group position={[0, top, -l / 2 - 0.05]}>
+          {Array.from({ length: slats }).map((_, i) => (
+            <Slab
+              key={i}
+              size={[slatGap * 0.55, headH, 0.022]}
+              radius={0.004}
+              position={[-boardW / 2 + slatGap * (i + 0.5), 0, 0]}
+            >
+              {M('frame')}
+            </Slab>
+          ))}
+          <Slab size={[boardW, 0.05, 0.05]} radius={0.01} position={[0, headH, 0]}>
+            {M('frame')}
+          </Slab>
+          <Slab size={[boardW, 0.04, 0.04]} radius={0.008} position={[0, 0.02, 0]}>
+            {M('frame')}
+          </Slab>
+        </group>
+      )}
+    </group>
+  )
 }
 
 // A work table rather than a writing desk: a plain rectangular top on two

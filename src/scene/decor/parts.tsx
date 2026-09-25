@@ -3,7 +3,16 @@ import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef, type ReactNode } from 'react'
-import { CatmullRomCurve3, DoubleSide, ExtrudeGeometry, Quaternion, TubeGeometry, Vector3, type Group } from 'three'
+import {
+  CatmullRomCurve3,
+  DoubleSide,
+  ExtrudeGeometry,
+  Quaternion,
+  Shape,
+  TubeGeometry,
+  Vector3,
+  type Group,
+} from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
 // Scandinavian: softly rounded boxes, tapered legs, plump cushions and thin
@@ -50,6 +59,25 @@ export function Material({
   )
 }
 
+// A rectangle `W` and `D` out from its middle, the back corners (+y, which
+// is -z once stood up) rounded by `back` and the front ones by `front`, as
+// true arcs, counter clockwise.
+function arcShape(W: number, D: number, back: number, front: number) {
+  const f = Math.max(0.001, Math.min(front, W, D))
+  const r = Math.max(0.001, Math.min(back, W, D))
+  const s = new Shape()
+  s.moveTo(-W, D - r)
+  s.lineTo(-W, -D + f)
+  s.absarc(-W + f, -D + f, f, Math.PI, Math.PI * 1.5, false)
+  s.lineTo(W - f, -D)
+  s.absarc(W - f, -D + f, f, Math.PI * 1.5, Math.PI * 2, false)
+  s.lineTo(W, D - r)
+  s.absarc(W - r, D - r, r, 0, Math.PI / 2, false)
+  s.lineTo(-W + r, D)
+  s.absarc(-W + r, D - r, r, Math.PI / 2, Math.PI, false)
+  return s
+}
+
 // A box with rounded vertical corners and a softened top and bottom edge.
 // Width runs along x, depth along z, height along y.
 export function Slab({
@@ -59,6 +87,7 @@ export function Slab({
   position = [0, 0, 0],
   rotation,
   holes,
+  front,
   children,
 }: {
   size: Vec3
@@ -66,6 +95,10 @@ export function Slab({
   bevel?: number
   position?: Vec3
   rotation?: Vec3
+  // The radius of the two front corners, at +z, drawn as true arcs, when
+  // they are rounder than the back ones. Half the width makes the front a
+  // semicircle.
+  front?: number
   // Openings cut all the way through, for a sink in a worktop.
   holes?: Hole[]
   children: ReactNode
@@ -76,15 +109,18 @@ export function Slab({
   const geometry = useMemo(() => {
     const r = Math.min(radius, w / 2 - 0.001, d / 2 - 0.001)
     const b = Math.min(bevel, h / 2 - 0.001, r / 2)
-    const shape = roundedShape(
-      [
-        [-w / 2 + b, -d / 2 + b],
-        [w / 2 - b, -d / 2 + b],
-        [w / 2 - b, d / 2 - b],
-        [-w / 2 + b, d / 2 - b],
-      ],
-      Math.max(r - b, 0.001),
-    )
+    const shape =
+      front === undefined
+        ? roundedShape(
+            [
+              [-w / 2 + b, -d / 2 + b],
+              [w / 2 - b, -d / 2 + b],
+              [w / 2 - b, d / 2 - b],
+              [-w / 2 + b, d / 2 - b],
+            ],
+            Math.max(r - b, 0.001),
+          )
+        : arcShape(w / 2 - b, d / 2 - b, Math.max(r - b, 0.001), front - b)
     // The bevel grows the solid into each hole too, so a hole is drawn that
     // much wider to come out its own size.
     for (const part of cut ? cut.split(';') : []) {
@@ -108,7 +144,7 @@ export function Slab({
     geo.rotateX(-Math.PI / 2)
     geo.translate(0, b, 0)
     return geo
-  }, [w, h, d, radius, bevel, cut])
+  }, [w, h, d, radius, bevel, cut, front])
   return (
     <mesh geometry={geometry} position={position} rotation={rotation} castShadow receiveShadow>
       {children}

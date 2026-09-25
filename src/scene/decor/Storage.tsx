@@ -51,6 +51,41 @@ function Shadow({ size, position }: { size: [number, number]; position: [number,
 
 // Coffee tables
 
+// A thin steel plate on four slim square legs set right at its corners,
+// the legs tied near the floor by a square of bars.
+export function FrameCoffeeTable({ w, d, h, M }: Size) {
+  const plate = 0.012
+  const leg = 0.016
+  const bar = 0.012
+  const barY = 0.03
+  const x = w / 2 - leg / 2
+  const z = d / 2 - leg / 2
+  return (
+    <group>
+      {[-1, 1].flatMap(sx =>
+        [-1, 1].map(sz => (
+          <Slab key={`${sx}${sz}`} size={[leg, h - plate, leg]} radius={0.002} position={[sx * x, 0, sz * z]}>
+            {M('legs')}
+          </Slab>
+        )),
+      )}
+      {[-1, 1].map(sz => (
+        <Slab key={`x${sz}`} size={[w - leg * 2, bar, bar]} radius={0.002} position={[0, barY, sz * z]}>
+          {M('legs')}
+        </Slab>
+      ))}
+      {[-1, 1].map(sx => (
+        <Slab key={`z${sx}`} size={[bar, bar, d - leg * 2]} radius={0.002} position={[sx * x, barY, 0]}>
+          {M('legs')}
+        </Slab>
+      ))}
+      <Slab size={[w, plate, d]} radius={0.004} position={[0, h - plate, 0]}>
+        {M('top')}
+      </Slab>
+    </group>
+  )
+}
+
 // After the IKEA Lack: a thick top on four square legs, and a shelf between
 // them near the floor.
 export function BlockCoffeeTable({ w, d, h, M }: Size) {
@@ -343,87 +378,125 @@ export function StringShelf({ w, d, h, M, boards }: Size & { boards: number }) {
   )
 }
 
-// Sideboards
+// Desks
 
-// After the USM Haller: chrome tubes along every edge of 35 cm cells,
-// meeting in chrome balls, with colored steel panels filling them and a
-// small round lock on each drop front.
-export function ChromeSideboard({ w, d, h, M }: Size) {
-  const tube = 0.0095
-  const ball = 0.0125
-  const feet = Math.min(0.03, h * 0.05)
-  const H = h - feet
-  const cols = Math.max(1, Math.round(w / 0.75))
-  const rows = Math.max(1, Math.round(H / 0.35))
-  const xs = range(cols + 1).map(i => -w / 2 + ball + ((w - ball * 2) / cols) * i)
-  const ys = range(rows + 1).map(j => feet + ball + ((H - ball * 2) / rows) * j)
-  const zs = [-d / 2 + ball, d / 2 - ball]
-  const cellW = (w - ball * 2) / cols
-  const cellH = (H - ball * 2) / rows
-  const tubeX = w - ball * 2
-  const tubeY = cellH
+// After the IKEA Micke: a plain top on a board at one end and a pedestal of
+// drawers at the other, a modesty panel across the back between them and
+// a round cable hole near the back edge.
+export function PedestalDesk({ w, d, h, M }: Size) {
+  const top = 0.025
+  const side = 0.02
+  const pedW = Math.min(0.4, w * 0.3)
+  const under = h - top
+  const drawers = under > 0.6 ? 3 : 2
+  const gap = 0.004
+  const drawerH = (under - 0.03) / drawers
+  const pedX = w / 2 - pedW / 2
   return (
     <group>
-      {/* The panels, as one colored body just inside the frame. */}
-      <Slab
-        size={[w - ball * 2, H - ball * 2, d - ball * 2]}
-        radius={0.002}
-        bevel={0.001}
-        position={[0, feet + ball, 0]}
-      >
-        {M('fronts')}
+      <Slab size={[w, top, d]} radius={0.004} position={[0, under, 0]}>
+        {M('top')}
       </Slab>
-      {ys.flatMap(y =>
-        zs.map(z => (
-          <Bar key={`x${y}${z}`} length={tubeX} radius={tube} rotation={[0, 0, Math.PI / 2]} position={[0, y, z]}>
-            {M('frame')}
-          </Bar>
-        )),
-      )}
-      {xs.flatMap(x =>
-        zs.flatMap(z =>
-          range(rows).map(j => (
-            <Bar key={`y${x}${z}${j}`} length={tubeY} radius={tube} position={[x, ys[j] + cellH / 2, z]}>
-              {M('frame')}
+      {/* The cable hole, a dark ring let into the top. */}
+      <mesh position={[-w / 2 + 0.2, h + 0.0005, -d / 2 + 0.08]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.002, 28]} />
+        {M('handle')}
+      </mesh>
+      <Slab size={[side, under, d - 0.02]} radius={0.003} position={[-w / 2 + side / 2 + 0.005, 0, 0]}>
+        {M('legs')}
+      </Slab>
+      <Slab
+        size={[w - pedW - side - 0.01, under * 0.45, side]}
+        radius={0.003}
+        position={[-pedW / 2, under * 0.5, -d / 2 + 0.04]}
+      >
+        {M('legs')}
+      </Slab>
+      <Slab size={[pedW - 0.01, under, d - 0.04]} radius={0.003} position={[pedX, 0, -0.01]}>
+        {M('legs')}
+      </Slab>
+      {range(drawers).map(i => {
+        const y = 0.03 + drawerH * i + gap / 2
+        return (
+          <Fragment key={i}>
+            <Slab size={[pedW - 0.016, drawerH - gap, 0.016]} radius={0.003} position={[pedX, y, d / 2 - 0.03]}>
+              {M('drawer')}
+            </Slab>
+            <Bar
+              length={pedW * 0.4}
+              radius={0.006}
+              rotation={[0, 0, Math.PI / 2]}
+              position={[pedX, y + drawerH - gap - 0.04, d / 2 - 0.012]}
+            >
+              {M('handle')}
             </Bar>
-          )),
-        ),
-      )}
-      {xs.flatMap(x =>
-        ys.map(y => (
-          <Fragment key={`z${x}${y}`}>
-            <Bar length={d - ball * 2} radius={tube} rotation={[Math.PI / 2, 0, 0]} position={[x, y, 0]}>
-              {M('frame')}
-            </Bar>
-            {zs.map(z => (
-              <mesh key={z} position={[x, y, z]} castShadow>
-                <sphereGeometry args={[ball, 20, 14]} />
-                {M('frame')}
-              </mesh>
-            ))}
           </Fragment>
-        )),
-      )}
-      {/* Leveling feet under the bottom balls. */}
-      {xs.flatMap(x =>
-        zs.map(z => (
-          <mesh key={`f${x}${z}`} position={[x, (feet + ball) / 2, z]}>
-            <cylinderGeometry args={[0.006, 0.008, feet + ball, 12]} />
-            {M('frame')}
-          </mesh>
-        )),
-      )}
-      {range(cols).flatMap(i =>
-        range(rows).map(j => (
-          <Knob
-            key={`k${i}${j}`}
-            radius={0.008}
-            position={[-w / 2 + ball + cellW * (i + 0.5), ys[j] + cellH - 0.035, d / 2 - ball + 0.004]}
+        )
+      })}
+    </group>
+  )
+}
+
+// Sideboards
+
+// After the Florence Knoll credenza: a long wooden case with four sliding
+// doors, each with a round finger pull, standing on a thin frame of square
+// steel legs tied by rails under the case.
+export function Credenza({ w, d, h, M }: Size) {
+  const legH = Math.min(0.2, h * 0.28)
+  const leg = 0.018
+  const top = 0.02
+  const H = h - legH
+  const doors = Math.max(2, Math.round(w / 0.45))
+  const doorW = (w - 0.03) / doors
+  const doorH = H - top - 0.03
+  return (
+    <group>
+      {[-1, 1].flatMap(sx =>
+        [-1, 1].map(sz => (
+          <Slab
+            key={`${sx}${sz}`}
+            size={[leg, legH, leg]}
+            radius={0.002}
+            position={[sx * (w / 2 - 0.03), 0, sz * (d / 2 - 0.03)]}
           >
-            {M('handles')}
-          </Knob>
+            {M('frame')}
+          </Slab>
         )),
       )}
+      {/* The rails the case sits on, along the length and across the ends. */}
+      {[-1, 1].map(sz => (
+        <Slab key={`x${sz}`} size={[w - 0.06, leg, leg]} radius={0.002} position={[0, legH - leg, sz * (d / 2 - 0.03)]}>
+          {M('frame')}
+        </Slab>
+      ))}
+      {[-1, 1].map(sx => (
+        <Slab key={`z${sx}`} size={[leg, leg, d - 0.06]} radius={0.002} position={[sx * (w / 2 - 0.03), legH - leg, 0]}>
+          {M('frame')}
+        </Slab>
+      ))}
+      <Slab size={[w, H, d - 0.01]} radius={0.006} bevel={0.003} position={[0, legH, -0.005]}>
+        {M('cabinet')}
+      </Slab>
+      {range(doors).map(i => {
+        const x = -w / 2 + 0.015 + doorW * (i + 0.5)
+        // The doors run on two tracks, so every other one sits a little further out.
+        const z = d / 2 - 0.004 + (i % 2) * 0.006
+        return (
+          <Fragment key={i}>
+            <Slab size={[doorW - 0.004, doorH, 0.012]} radius={0.003} position={[x, legH + 0.015, z]}>
+              {M('fronts')}
+            </Slab>
+            <mesh
+              position={[x + (i % 2 ? -1 : 1) * (doorW / 2 - 0.05), legH + 0.015 + doorH / 2, z + 0.0065]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <cylinderGeometry args={[0.016, 0.016, 0.002, 24]} />
+              {M('frame')}
+            </mesh>
+          </Fragment>
+        )
+      })}
     </group>
   )
 }

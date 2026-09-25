@@ -46,7 +46,7 @@ export function Rug({
   }
   if (style === 'shag') {
     return (
-      <Slab size={[w, 0.024, d]} radius={Math.min(0.08, Math.min(w, d) * 0.1)} bevel={0.01} position={[0, 0.001, 0]}>
+      <Slab size={[w, 0.024, d]} radius={0.02} bevel={0.008} position={[0, 0.001, 0]}>
         {paint('field')}
       </Slab>
     )
@@ -196,13 +196,111 @@ function Hands({ z, hour, minute, second }: { z: number; hour: ReactNode; minute
   )
 }
 
+// The segments of a seven segment digit, as [x, y, along x] from its middle
+// in shares of its width and height, and which of them each digit lights:
+// top, upper right, lower right, bottom, lower left, upper left, middle.
+const SEGMENTS: [number, number, boolean][] = [
+  [0, 0.5, true],
+  [0.5, 0.25, false],
+  [0.5, -0.25, false],
+  [0, -0.5, true],
+  [-0.5, -0.25, false],
+  [-0.5, 0.25, false],
+  [0, 0, true],
+]
+const DIGITS = [
+  '1111110',
+  '0110000',
+  '1101101',
+  '1111001',
+  '0110011',
+  '1011011',
+  '1011111',
+  '1110000',
+  '1111111',
+  '1111011',
+]
+
+// Four seven segment digits and a blinking colon showing the hours and
+// minutes, `w` wide and `h` tall, their unlit segments faintly there.
+function DigitalTime({ w, h, z, glow }: { w: number; h: number; z: number; glow: string }) {
+  const lit = useRef<(Mesh | null)[]>([])
+  const colon = useRef<Group>(null)
+  const dw = w / 5.2
+  const t = Math.min(dw, h) * 0.16
+  const xs = [-1.95, -0.85, 0.85, 1.95].map(k => k * dw)
+  useFrame(() => {
+    const now = new Date()
+    const text = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+    for (let d = 0; d < 4; d++) {
+      const mask = DIGITS[Number(text[d])]
+      for (let k = 0; k < 7; k++) {
+        const mesh = lit.current[d * 7 + k]
+        if (mesh) mesh.visible = mask[k] === '1'
+      }
+    }
+    if (colon.current) colon.current.visible = now.getSeconds() % 2 === 0
+  })
+  const segment = (flat: boolean): [number, number, number] =>
+    flat ? [dw * 0.72, t, 0.002] : [t, h / 2 - t * 0.4, 0.002]
+  return (
+    <group position={[0, 0, z]}>
+      {xs.map((x, d) =>
+        SEGMENTS.map(([sx, sy, flat], k) => (
+          <group key={`${d}:${k}`} position={[x + sx * dw * 0.82, sy * (h - t), 0]}>
+            <mesh>
+              <boxGeometry args={segment(flat)} />
+              <meshStandardMaterial color={glow} transparent opacity={0.08} />
+            </mesh>
+            <mesh
+              ref={el => {
+                lit.current[d * 7 + k] = el
+              }}
+              position={[0, 0, 0.001]}
+            >
+              <boxGeometry args={segment(flat)} />
+              <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} toneMapped={false} />
+            </mesh>
+          </group>
+        )),
+      )}
+      <group ref={colon}>
+        {[-1, 1].map(s => (
+          <mesh key={s} position={[0, s * h * 0.2, 0.001]}>
+            <boxGeometry args={[t, t, 0.002]} />
+            <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} toneMapped={false} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  )
+}
+
 // Three wall clocks, each telling the time. An oak ring round a pale face
-// with four quarter marks. A station clock after the Mondaine, a thin dark
-// rim, twelve bars and a red second hand with a disc near its tip. A ball
-// clock after the Vitra Ball Clock by George Nelson, twelve balls on spokes
-// round a small hub and no face at all. `s` is its diameter.
-export function Clock({ style, s, paint }: { style: string; s: number; paint: Paint }) {
+// with four quarter marks. A digital clock, a slim dark bar with the hours
+// and minutes lit in seven segment digits behind smoked glass. A ball clock
+// after the Vitra Ball Clock by George Nelson, twelve balls on spokes round
+// a small hub and no face at all. `s` is its diameter, or the digital
+// clock's width. `glow` is the color the digits light in.
+export function Clock({ style, s, paint, glow }: { style: string; s: number; paint: Paint; glow: string }) {
   const r = s / 2
+  if (style === 'digital') {
+    const h = s * 0.34
+    const depth = 0.03
+    return (
+      <group>
+        <Slab size={[s, depth, h]} radius={Math.min(0.012, h * 0.2)} bevel={0.004} rotation={[Math.PI / 2, 0, 0]}>
+          {paint('rim')}
+        </Slab>
+        {/* The smoked glass front, inset in the frame. */}
+        <mesh position={[0, 0, depth + 0.0005]}>
+          <planeGeometry args={[s - 0.02, h - 0.02]} />
+          {paint('face')}
+        </mesh>
+        <DigitalTime w={s * 0.8} h={h * 0.56} z={depth + 0.002} glow={glow} />
+      </group>
+    )
+  }
   if (style === 'ball') {
     const hub = r * 0.14
     const reach = r - r * 0.09
@@ -248,9 +346,8 @@ export function Clock({ style, s, paint }: { style: string; s: number; paint: Pa
       </group>
     )
   }
-  const station = style === 'station'
-  const ring = station ? Math.min(0.01, r * 0.05) : Math.min(0.016, r * 0.1)
-  const marks = station ? 12 : 4
+  const ring = Math.min(0.016, r * 0.1)
+  const marks = 4
   return (
     <group>
       <mesh position={[0, 0, 0.02]}>
@@ -263,44 +360,36 @@ export function Clock({ style, s, paint }: { style: string; s: number; paint: Pa
       </mesh>
       {Array.from({ length: marks }, (_, i) => {
         const a = (i / marks) * Math.PI * 2
-        const len = station ? r * 0.2 : r * 0.14
-        const at = r - ring * 2 - len / 2 - (station ? r * 0.02 : 0)
+        const len = r * 0.14
+        const at = r - ring * 2 - len / 2
         return (
           <mesh key={i} position={[Math.sin(a) * at, Math.cos(a) * at, 0.0245]} rotation={[0, 0, -a]}>
-            <boxGeometry args={[station ? r * 0.055 : r * 0.04, len, 0.003]} />
-            {paint(station ? 'hands' : 'rim')}
+            <boxGeometry args={[r * 0.04, len, 0.003]} />
+            {paint('rim')}
           </mesh>
         )
       })}
       <Hands
         z={0.026}
         hour={
-          <Hand len={r * 0.5} tail={station ? r * 0.12 : 0} w={station ? r * 0.08 : r * 0.07} z={0}>
+          <Hand len={r * 0.5} w={r * 0.07} z={0}>
             {paint('hands')}
           </Hand>
         }
         minute={
-          <Hand len={r * 0.76} tail={station ? r * 0.12 : 0} w={station ? r * 0.06 : r * 0.05} z={0.004}>
+          <Hand len={r * 0.76} w={r * 0.05} z={0.004}>
             {paint('hands')}
           </Hand>
         }
         second={
-          <group>
-            <Hand len={r * 0.62} tail={r * 0.2} w={r * 0.018} z={0.008}>
-              {paint('accent')}
-            </Hand>
-            {station && (
-              <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, r * 0.6, 0.008]}>
-                <cylinderGeometry args={[r * 0.075, r * 0.075, 0.003, SEG]} />
-                {paint('accent')}
-              </mesh>
-            )}
-          </group>
+          <Hand len={r * 0.62} tail={r * 0.2} w={r * 0.018} z={0.008}>
+            {paint('accent')}
+          </Hand>
         }
       />
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.037]}>
         <cylinderGeometry args={[r * 0.04, r * 0.04, 0.004, 20]} />
-        {paint(station ? 'accent' : 'hands')}
+        {paint('hands')}
       </mesh>
     </group>
   )
@@ -415,12 +504,11 @@ function Drape({
   )
 }
 
-// Three curtains, two panels each, the rod or track at the origin and the
+// Two curtains, two panels each, the rod or track at the origin and the
 // floor `height` below it, the cloth stopping `hem` off the floor. `level`
-// is how far open, from 0 shut to 1 drawn back to each end. A linen pleat
-// after IKEA's Hilja on a slim rod with rings. A sheer on a slim ceiling
-// style track, hanging in the even S folds of a wave heading. A heavy velvet
-// with eyelets threaded straight onto a thick rod.
+// is how far open, from 0 shut to 1 drawn back to each end. A sheer on a
+// slim ceiling style track, hanging in the even S folds of a wave heading,
+// and a heavy velvet with eyelets threaded straight onto a thick rod.
 export function Curtain({
   style,
   w,
@@ -444,37 +532,6 @@ export function Curtain({
   // and bunches to a third of that when open.
   const full = w / 2 + 0.06
   const gather = 1 - 0.66 * level
-  if (style === 'wave') {
-    const waves = Math.max(3, Math.round(full / 0.11))
-    return (
-      <group>
-        <Slab size={[w + 0.1, 0.02, 0.03]} radius={0.004} bevel={0.002} position={[0, 0.005, z]}>
-          {paint('rail')}
-        </Slab>
-        {[-1, 1].map(s => (
-          <mesh key={s} position={[s * (w / 2 + 0.02), 0.015, z / 2]}>
-            <boxGeometry args={[0.02, 0.012, z]} />
-            {paint('rail')}
-          </mesh>
-        ))}
-        {[-1, 1].map(s => (
-          <Drape
-            key={s}
-            x0={s * full}
-            x1={s * (full - full * gather)}
-            top={0.004}
-            bottom={-drop}
-            z={z}
-            cloth={full * 1.9}
-            waves={waves}
-            shadow={false}
-          >
-            {sheer}
-          </Drape>
-        ))}
-      </group>
-    )
-  }
   if (style === 'eyelet') {
     const waves = Math.max(3, Math.round(full / 0.16))
     const rod = w + 0.24
@@ -516,49 +573,33 @@ export function Curtain({
       </group>
     )
   }
-  const rod = w + 0.2
-  const pleats = Math.max(4, Math.round(full / 0.12))
-  const pitch = (full * gather) / pleats
+  const waves = Math.max(3, Math.round(full / 0.11))
   return (
     <group>
-      <Bar length={rod} radius={0.01} rotation={[0, 0, Math.PI / 2]} position={[0, 0.02, z]}>
+      <Slab size={[w + 0.1, 0.02, 0.03]} radius={0.004} bevel={0.002} position={[0, 0.005, z]}>
         {paint('rail')}
-      </Bar>
+      </Slab>
       {[-1, 1].map(s => (
-        <group key={s}>
-          <mesh position={[(s * rod) / 2, 0.02, z]}>
-            <sphereGeometry args={[0.02, 20, 14]} />
-            {paint('rail')}
-          </mesh>
-          <mesh position={[s * (w / 2 + 0.03), 0.02, z / 2]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.008, 0.008, z, 12]} />
-            {paint('rail')}
-          </mesh>
-          <mesh position={[s * (w / 2 + 0.03), 0.02, 0.004]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.022, 0.022, 0.008, 20]} />
-            {paint('rail')}
-          </mesh>
-        </group>
+        <mesh key={s} position={[s * (w / 2 + 0.02), 0.015, z / 2]}>
+          <boxGeometry args={[0.02, 0.012, z]} />
+          {paint('rail')}
+        </mesh>
       ))}
-      {[-1, 1].map(s =>
-        Array.from({ length: pleats }).map((_, i) => {
-          const x = s * (full - (i + 0.5) * pitch)
-          const fold = i % 2 === 0 ? 0.018 : -0.012
-          return (
-            <group key={`${s}:${i}`}>
-              {/* Each pleat is a soft column, so the panel reads as cloth. */}
-              <mesh position={[x, -drop / 2, z + fold]} scale={[pitch / 0.09, 1, 0.9 + 0.2 * level]} castShadow>
-                <cylinderGeometry args={[0.045, 0.05, drop, 16]} />
-                {paint('fabric')}
-              </mesh>
-              <mesh position={[x, 0.02, z]} rotation={[0, Math.PI / 2, 0]}>
-                <torusGeometry args={[0.016, 0.003, 8, 20]} />
-                {paint('rail')}
-              </mesh>
-            </group>
-          )
-        }),
-      )}
+      {[-1, 1].map(s => (
+        <Drape
+          key={s}
+          x0={s * full}
+          x1={s * (full - full * gather)}
+          top={0.004}
+          bottom={-drop}
+          z={z}
+          cloth={full * 1.9}
+          waves={waves}
+          shadow={false}
+        >
+          {sheer}
+        </Drape>
+      ))}
     </group>
   )
 }

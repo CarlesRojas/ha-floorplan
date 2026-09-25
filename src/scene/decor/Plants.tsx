@@ -660,15 +660,28 @@ function pearls(width: number, top: number, reach: number, trail: number): Parts
 
 // Rubber plant, Ficus elastica: two upright stems from the pot, the big
 // glossy oval leaves alternating up them on short stalks, held out and up.
-function rubber(size: number, height: number, potH: number): Parts {
+// A full one is a bushier plant of five stems at different heights, leaning
+// out a little, their leaves closer together and held up more eagerly,
+// all the way down to the pot.
+function rubber(size: number, height: number, potH: number, full = false): Parts {
   const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
-  const rnd = random(37)
+  const rnd = random(full ? 53 : 37)
   const soil = potH * 0.9
-  const L = clamp(height * 0.15, 0.1, 0.3)
-  const tops = [new Vector3(0.03, height - L * 0.3, 0.01), new Vector3(-size * 0.12, height * 0.82 - L * 0.3, -0.02)]
+  const L = clamp(height * (full ? 0.13 : 0.15), 0.1, 0.3)
+  const tops = full
+    ? [
+        new Vector3(0.02, height - L * 0.3, 0.01),
+        new Vector3(-size * 0.28, height * 0.84 - L * 0.3, -size * 0.05),
+        new Vector3(size * 0.27, height * 0.76 - L * 0.3, -size * 0.08),
+        new Vector3(size * 0.06, height * 0.64 - L * 0.3, size * 0.28),
+        new Vector3(-size * 0.16, height * 0.56 - L * 0.3, size * 0.2),
+      ]
+    : [new Vector3(0.03, height - L * 0.3, 0.01), new Vector3(-size * 0.12, height * 0.82 - L * 0.3, -0.02)]
   let k = 0
   tops.forEach((tip, n) => {
-    const base = new Vector3(n ? -0.02 : 0.015, soil - 0.03, n ? -0.01 : 0.01)
+    const base = full
+      ? new Vector3(tip.x * 0.1, soil - 0.03, tip.z * 0.1)
+      : new Vector3(n ? -0.02 : 0.015, soil - 0.03, n ? -0.01 : 0.01)
     const r = clamp(height * 0.01, 0.008, 0.02) * (n ? 0.85 : 1)
     const bend = base
       .clone()
@@ -676,10 +689,11 @@ function rubber(size: number, height: number, potH: number): Parts {
       .add(new Vector3(n ? -0.02 : 0.02, 0, 0))
     f.stems.stem([base.toArray() as Vec3, bend.toArray() as Vec3, tip.toArray() as Vec3], r, r * 0.6)
     const curve = new CatmullRomCurve3([base, bend, tip])
-    const count = Math.max(5, Math.round((tip.y - soil) / 0.08))
+    const count = Math.max(5, Math.round((tip.y - soil) / (full ? 0.055 : 0.08)))
+    const from = full ? 0.08 : 0.2
     for (let i = 0; i < count; i++) {
-      const s = 0.2 + (0.8 * (i + 1)) / count
-      const at = curve.getPointAt(s)
+      const s = from + ((1 - from) * (i + 1)) / count
+      const at = curve.getPointAt(Math.min(s, 1))
       const young = s > 0.92 ? 0.6 : 1 - s * 0.15
       const length = L * young * (0.9 + rnd() * 0.2)
       const reach = Math.min(1, (size / 2 - Math.hypot(at.x, at.z)) / (length * 1.1))
@@ -696,7 +710,7 @@ function rubber(size: number, height: number, potH: number): Parts {
           cols: 4,
         },
         at,
-        heading(k++ * 2.4 + rnd() * 0.3, 0.1 + s * 0.8 - (1 - Math.max(reach, 0)) * 0.3),
+        heading(k++ * 2.4 + rnd() * 0.3, (full ? 0.3 : 0.1) + s * 0.8 - (1 - Math.max(reach, 0)) * 0.3),
         0.03,
         UP,
         (rnd() - 0.5) * 0.3,
@@ -709,7 +723,7 @@ function rubber(size: number, height: number, potH: number): Parts {
 }
 
 // Bird of paradise, Strelitzia nicolai: long upright stalks from the soil in
-// a loose fan, each ending in a big paddle shaped leaf.
+// a narrow fan, each ending in a big paddle shaped leaf held up.
 function bird(size: number, height: number, potH: number): Parts {
   const f: Parts = { stems: new Foliage(), leaves: new Foliage() }
   const rnd = random(41)
@@ -719,7 +733,8 @@ function bird(size: number, height: number, potH: number): Parts {
   for (let i = 0; i < count; i++) {
     // A fan, mostly along x, the way a clump spreads.
     const a = (i % 2 ? Math.PI / 2 : -Math.PI / 2) + (rnd() - 0.5) * 1.2
-    const rise = 1.5 - (i / count) * 0.45 - rnd() * 0.1
+    // Steep, so the clump stays narrow and the leaves stand tall.
+    const rise = 1.48 - (i / count) * 0.28 - rnd() * 0.06
     const base = new Vector3((rnd() - 0.5) * 0.06, soil - 0.02, (rnd() - 0.5) * 0.06)
     const tall = (height - soil - L * 0.85) / Math.sin(rise)
     const wide = (size / 2 - L * 0.35) / Math.max(Math.cos(rise), 0.05)
@@ -734,7 +749,7 @@ function bird(size: number, height: number, potH: number): Parts {
         width: long * 0.42,
         outline: PADDLE,
         fold: 0.1,
-        droop: long * (0.05 + (1.5 - rise) * 0.2),
+        droop: long * (0.04 + (1.5 - rise) * 0.15),
         curl: long * 0.03,
         rows: 16,
         cols: 5,
@@ -757,7 +772,10 @@ export function FloorPlant({
   height: number
   paint: Paint
 }) {
-  const kind = style === 'monstera' || style === 'kentia' || style === 'rubber' || style === 'bird' ? style : 'fiddle'
+  const kind =
+    style === 'monstera' || style === 'kentia' || style === 'rubber' || style === 'rubber_full' || style === 'bird'
+      ? style
+      : 'fiddle'
   const potR = kind === 'kentia' ? clamp(size * 0.16, 0.14, 0.22) : clamp(size * 0.2, 0.1, 0.2)
   const potH = kind === 'kentia' ? clamp(height * 0.2, 0.2, 0.38) : clamp(height * 0.2, 0.16, 0.34)
   const grown = useMemo(
@@ -767,8 +785,8 @@ export function FloorPlant({
           ? monstera(size, height, potH)
           : kind === 'kentia'
             ? kentia(size, height, potH)
-            : kind === 'rubber'
-              ? rubber(size, height, potH)
+            : kind === 'rubber' || kind === 'rubber_full'
+              ? rubber(size, height, potH, kind === 'rubber_full')
               : kind === 'bird'
                 ? bird(size, height, potH)
                 : fiddle(size, height, potH),
