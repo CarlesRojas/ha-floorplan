@@ -16,7 +16,7 @@ import { bendAround, plate, taperedOutline } from '#/scene/decor/plates.ts'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
 import { useMemo, type ReactNode } from 'react'
-import { BoxGeometry, CatmullRomCurve3, TubeGeometry, Vector3 } from 'three'
+import { BoxGeometry, CatmullRomCurve3, Shape, SplineCurve, TubeGeometry, Vector2, Vector3 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 type Props = {
@@ -325,79 +325,173 @@ function Sling({ lift, kx, kz, M }: Part) {
   )
 }
 
-// Racer: a gaming chair after the racing bucket seats they copy. A tall
-// back with shoulder wings and a narrower head section, two slots for a
-// harness below the head, bolsters in the accent color down both sides of
-// the seat and the back, a head pillow and a lumbar pillow, and arms on
-// posts from under the seat, all on a wide five star base.
+// Racer: a gaming chair after the Secretlab TITAN Evo. A flat seat with a
+// waterfall front edge and low sloping wings, a back widest at the
+// shoulders, pinched at the waist and running up into a narrower head
+// section with a flat top, padded bolsters down both sides of the back with
+// piping in the accent color, the lumbar support built in with its knob on
+// the side, and a magnetic pillow at the head. Four way arms stand on L
+// brackets from under the seat, and the chair sits on a ribbed gas lift and
+// a flat topped five star base.
+const RACER_SIDE: [number, number][] = [
+  [0.245, 0],
+  [0.236, 0.12],
+  [0.225, 0.28],
+  [0.248, 0.45],
+  [0.265, 0.55],
+  [0.255, 0.61],
+  [0.2, 0.648],
+  [0.165, 0.675],
+  [0.16, 0.78],
+  [0.148, 0.835],
+  [0.12, 0.85],
+]
+const RACER_BOLSTER: [number, number][] = [
+  [0.198, 0.05],
+  [0.19, 0.15],
+  [0.18, 0.28],
+  [0.2, 0.44],
+  [0.214, 0.54],
+  [0.19, 0.6],
+]
+const RACER_BEND = 0.6
+const RACER_SHELL = 0.05
+
+// The back's outline, rising from the middle of its foot, shrunk by `inset`.
+function racerOutline(kx: number, inset: number) {
+  const side = new SplineCurve(RACER_SIDE.map(([x, y]) => new Vector2(x * kx - inset, Math.max(inset, y - inset))))
+  const right = side.getPoints(80)
+  const top = right[right.length - 1].y
+  const s = new Shape()
+  s.moveTo(-right[0].x, inset)
+  for (const p of right) s.lineTo(p.x, p.y)
+  s.lineTo(0, top)
+  for (const p of [...right].reverse()) s.lineTo(-p.x, p.y)
+  return s
+}
+
+// Where a point laid out flat on the back ends up once it is bent round.
+function bent(x: number, y: number, z: number): Vec3 {
+  const t = x / RACER_BEND
+  const r = RACER_BEND - z
+  return [r * Math.sin(t), y, RACER_BEND - r * Math.cos(t)]
+}
+
 function Racer({ lift, kx, kz, M }: Part) {
   const star = { ...RACER_STAR, reach: (RACER_STAR.reach * (kx + kz)) / 2 }
   const { seat, lean } = RACER
-  const back = -0.25 * kz
+  const [sw, sd] = [0.47 * kx, 0.46 * kz]
+  const back = -0.24 * kz
+  const shell = RACER_SHELL
+  const { plateGeo, panel, bolsters, piping } = useMemo(() => {
+    const along = (side: number, inward: number, z: number) =>
+      RACER_BOLSTER.map(([x, y]) => bent(side * (x * kx - inward), y, z))
+    return {
+      plateGeo: plate(i => racerOutline(kx, i), shell, RACER_BEND, 0.012),
+      panel: plate(i => taperedOutline(0.3 * kx, 0.3 * kx, 0.56, 0.03, 0.06, i), 0.022, RACER_BEND, 0.008),
+      bolsters: [-1, 1].map(side => along(side, 0, shell - 0.004)),
+      piping: [-1, 1].map(side => along(side, 0.036, shell + 0.018)),
+    }
+  }, [kx, shell])
+  const hub = RACER_STAR.hub
+  const column = seat - 0.19 + lift
+  const knob = bent(0.232 * kx, 0.17, shell / 2)
   return (
     <group>
-      <FiveStar star={star} M={M} />
-      <Column star={RACER_STAR} top={seat - 0.12 + lift} M={M} />
+      <FiveStar star={star} blades M={M} />
+      {/* The gas lift, a ribbed cover telescoping over the spring. */}
+      <mesh position={[0, hub - 0.02, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.045, 0.05, 48]} />
+        {M('base')}
+      </mesh>
+      {Array.from({ length: 6 }, (_, i) => (
+        <mesh key={i} position={[0, hub + 0.012 + i * 0.026, 0]} castShadow>
+          <cylinderGeometry args={[0.035 - i * 0.0012, 0.036 - i * 0.0012, 0.022, 40]} />
+          {M('base')}
+        </mesh>
+      ))}
+      <Dowel from={[0, hub, 0]} to={[0, column, 0]} r={[0.015, 0.015]}>
+        {M('base')}
+      </Dowel>
       <group position={[0, lift, 0]}>
-        {/* The tilt mechanism under the seat. */}
-        <Slab size={[0.28, 0.05, 0.3]} radius={0.02} position={[0, seat - 0.13, 0]}>
+        {/* The tilt mechanism, and its recline lever out on the right. */}
+        <Slab size={[0.25, 0.06, 0.2]} radius={0.015} position={[0, seat - 0.19, -0.03]}>
           {M('base')}
         </Slab>
-        <Slab size={[0.5 * kx, 0.08, 0.52 * kz]} radius={0.05} bevel={0.02} position={[0, seat - 0.08, 0.01]}>
+        <Dowel from={[0.1, seat - 0.16, -0.08]} to={[0.24 * kx, seat - 0.15, -0.11]} r={[0.006, 0.006]}>
+          {M('base')}
+        </Dowel>
+        <Slab size={[0.05, 0.022, 0.03]} radius={0.01} position={[0.25 * kx, seat - 0.161, -0.112]}>
+          {M('base')}
+        </Slab>
+        {/* The seat: a molded pan, the flat cushion rolling over its front
+            edge, and a low wing sloping up on each side. */}
+        <Slab size={[sw + 0.06, 0.05, sd - 0.02]} radius={0.04} bevel={0.01} position={[0, seat - 0.12, -0.005]}>
+          {M('base')}
+        </Slab>
+        <Slab size={[sw, 0.06, sd - 0.03]} radius={0.03} bevel={0.02} position={[0, seat - 0.06, -0.005]}>
           {M('seat')}
         </Slab>
+        <mesh position={[0, seat - 0.04, sd / 2 - 0.02]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <capsuleGeometry args={[0.04, sw - 0.08, 8, 24]} />
+          {M('seat')}
+        </mesh>
         {[-1, 1].map(s => (
           <group key={s}>
             <Cushion
-              size={[0.085, 0.085, 0.5 * kz]}
-              position={[s * (0.25 * kx - 0.025), seat - 0.06, 0.01]}
-              rotation={[0, 0, -s * 0.3]}
+              size={[0.065, 0.1, sd]}
+              position={[s * (sw / 2 + 0.02), seat - 0.075, 0.005]}
+              rotation={[0, 0, -s * 0.22]}
+            >
+              {M('seat')}
+            </Cushion>
+            <Slab
+              size={[0.006, 0.008, sd - 0.04]}
+              radius={0.003}
+              position={[s * (sw / 2 - 0.004), seat - 0.004, 0.005]}
             >
               {M('accent')}
-            </Cushion>
-            {/* The arm: a bracket out from under the seat, a post and a pad. */}
-            <Slab size={[0.1 * kx, 0.03, 0.06]} radius={0.01} position={[s * 0.26 * kx, seat - 0.13, -0.04]}>
+            </Slab>
+            {/* The back's bracket, from the tilt plate up behind the seat. */}
+            <Slab size={[0.04, 0.2, 0.06]} radius={0.015} position={[s * (sw / 2 - 0.02), seat - 0.15, back + 0.02]}>
               {M('base')}
             </Slab>
-            <Slab size={[0.045, 0.25, 0.06]} radius={0.015} position={[s * 0.31 * kx, seat - 0.12, -0.04]}>
+            {/* An arm: an L bracket out from under the seat, a rectangular
+                post up the side and a flat pad on top. */}
+            <Slab size={[0.2 * kx, 0.025, 0.06]} radius={0.008} position={[s * 0.21 * kx, seat - 0.17, -0.05]}>
               {M('base')}
             </Slab>
-            <Slab size={[0.09, 0.03, 0.26]} radius={0.035} bevel={0.01} position={[s * 0.31 * kx, seat + 0.13, -0.01]}>
+            <Slab size={[0.05, 0.4, 0.04]} radius={0.012} position={[s * 0.31 * kx, seat - 0.17, -0.05]}>
+              {M('base')}
+            </Slab>
+            <Slab size={[0.1, 0.03, 0.27]} radius={0.04} bevel={0.01} position={[s * 0.31 * kx, seat + 0.23, -0.02]}>
               {M('base')}
             </Slab>
           </group>
         ))}
-        <group position={[0, seat - 0.02, back]} rotation={[-lean, 0, 0]}>
-          <Slab size={[0.46 * kx, 0.44, 0.1]} radius={0.04} bevel={0.02}>
+        <group position={[0, seat - 0.04, back - shell]} rotation={[-lean, 0, 0]}>
+          <mesh geometry={plateGeo} castShadow>
             {M('seat')}
-          </Slab>
-          <Slab size={[0.56 * kx, 0.22, 0.1]} radius={0.07} bevel={0.02} position={[0, 0.42, 0]}>
+          </mesh>
+          <mesh geometry={panel} position={[0, 0.03, shell - 0.006]} castShadow>
             {M('seat')}
-          </Slab>
-          <Slab size={[0.34 * kx, 0.26, 0.09]} radius={0.09} bevel={0.02} position={[0, 0.6, -0.005]}>
-            {M('seat')}
-          </Slab>
-          {[-1, 1].map(s => (
-            <group key={s}>
-              <Cushion size={[0.085, 0.46, 0.12]} position={[s * 0.245 * kx, 0, 0.02]} rotation={[0, s * 0.35, 0]}>
-                {M('accent')}
-              </Cushion>
-              <Cushion size={[0.085, 0.2, 0.12]} position={[s * 0.29 * kx, 0.44, 0.015]} rotation={[0, s * 0.35, 0]}>
-                {M('accent')}
-              </Cushion>
-              {/* A stripe up the front, and the harness slot. */}
-              <Slab size={[0.02, 0.6, 0.012]} radius={0.004} bevel={0.002} position={[s * 0.15 * kx, 0.02, 0.048]}>
-                {M('accent')}
-              </Slab>
-              <Slab size={[0.035, 0.075, 0.02]} radius={0.012} bevel={0.003} position={[s * 0.095 * kx, 0.68, 0.036]}>
-                <meshStandardMaterial color="#0b0b0c" roughness={0.9} />
-              </Slab>
-            </group>
+          </mesh>
+          {bolsters.map((points, i) => (
+            <Tube key={i} points={points} r={0.04}>
+              {M('seat')}
+            </Tube>
           ))}
-          <Cushion size={[0.3 * kx, 0.13, 0.09]} position={[0, 0.1, 0.07]}>
-            {M('pillows')}
-          </Cushion>
-          <Cushion size={[0.24 * kx, 0.1, 0.08]} position={[0, 0.74, 0.065]}>
+          {piping.map((points, i) => (
+            <Tube key={i} points={points} r={0.005}>
+              {M('accent')}
+            </Tube>
+          ))}
+          {/* The lumbar knob, on the right side of the back. */}
+          <mesh position={knob} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.03, 0.03, 0.03, 32]} />
+            {M('base')}
+          </mesh>
+          <Cushion size={[0.28 * kx, 0.16, 0.08]} position={[0, 0.61, shell + 0.01]}>
             {M('pillows')}
           </Cushion>
         </group>

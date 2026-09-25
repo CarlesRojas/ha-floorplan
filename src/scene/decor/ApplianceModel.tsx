@@ -263,51 +263,146 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
 
   switch (kind.id) {
     case 'kitchen_counter': {
+      // A run of base units, each an open box behind its fronts: a drawer
+      // over a door, or a single filler front on a unit too narrow for that.
+      // While it is on the drawers slide out and the doors swing open in
+      // pairs, the way the upper cabinets' do, showing a shelf and the pans
+      // inside. A unit with a sink over it is a sink unit: its drawer front
+      // is a dummy that stays put and it has no shelf, so the bowl hangs in
+      // the open space.
       const w = p('width')
       const d = p('depth')
       const h = p('height')
       const topH = 0.04
       const plinth = 0.1
+      const t = 0.018
       const island = decorationVariant(kind, item.variant)?.id === 'island'
       const modules = counterModules(w, p('wide') > 0.5, p('grow'))
-      const frontH = h - topH - plinth - 0.02
+      const bodyH = h - topH - plinth
+      const frontH = bodyH - 0.02
       const drawerH = Math.min(0.16, frontH * 0.3)
+      const doorH = frontH - drawerH - 0.012
       const gap = 0.015
+      // The fronts stand just proud of the carcass, so a door swings clear
+      // of the sides it closes against.
+      const fz = d / 2 + 0.0095
       // Each unit's left edge, from the run's left end.
       const starts = modules.map((_, i) => modules.slice(0, i).reduce((a, b) => a + b, 0))
+      const bowls = sinkHoles(item, all, 'carcass', [w, d], [0, 0])
+      const underSink = (x0: number, x1: number) => bowls.some(b => b.x + b.w / 2 > x0 && b.x - b.w / 2 < x1)
       return (
         <group>
           <Slab size={[w - 0.1, plinth, d - 0.08]} radius={0.01} position={[0, 0, island ? 0 : -0.04]}>
             {M('cabinets')}
           </Slab>
-          <Slab
-            size={[w, h - topH - plinth, d]}
-            radius={0.02}
-            position={[0, plinth, 0]}
-            holes={sinkHoles(item, all, 'carcass', [w, d], [0, 0])}
-          >
+          {/* The carcass: a back, a floor, a top the sinks cut through, and
+              a side at every joint between units. */}
+          <Slab size={[w, bodyH, t]} radius={0.004} position={[0, plinth, -d / 2 + t / 2]}>
             {M('cabinets')}
           </Slab>
-          {/* Handleless fronts with a shadow gap between them, each unit a
-              drawer over a door the way a run of base units is built, a
-              wide unit too. A unit too narrow for that is a single filler
-              front. */}
+          <Slab size={[w, t, d - t]} radius={0.004} position={[0, plinth, t / 2]}>
+            {M('cabinets')}
+          </Slab>
+          <Slab size={[w, t, d]} radius={0.004} position={[0, plinth + bodyH - t, 0]} holes={bowls}>
+            {M('cabinets')}
+          </Slab>
+          {[0, ...starts.slice(1), w].map(x => (
+            <Slab
+              key={x}
+              size={[t, bodyH - 2 * t, d - t]}
+              radius={0.002}
+              position={[-w / 2 + Math.min(Math.max(x, t / 2), w - t / 2), plinth + t, t / 2]}
+            >
+              {M('cabinets')}
+            </Slab>
+          ))}
           {modules.map((cw, i) => {
             const x = -w / 2 + starts[i] + cw / 2
             if (cw < 0.25)
               return (
-                <Panel key={i} size={[Math.max(cw - gap, 0.004), frontH, 0.018]} position={[x, plinth + 0.01, d / 2]}>
+                <Panel key={i} size={[Math.max(cw - gap, 0.004), frontH, 0.018]} position={[x, plinth + 0.01, fz]}>
                   {M('fronts')}
                 </Panel>
               )
+            const sink = underSink(x - cw / 2, x + cw / 2)
+            const inner = cw - t - 0.03
+            const boxD = d - 0.08
+            const boxH = drawerH * 0.7
+            const drawerY = plinth + frontH - drawerH + 0.01
+            const slide = sink ? 0 : open * d * 0.55
+            const dw = cw - gap
+            // Units pair off, the first of a pair hung on its left edge and
+            // the second on its right, so each pair opens from the middle.
+            const side = i % 2 === 0 ? -1 : 1
+            const pan = Math.min(0.1, cw * 0.18)
             return (
               <group key={i}>
-                <Panel size={[cw - gap, drawerH, 0.018]} position={[x, plinth + frontH - drawerH + 0.01, d / 2]}>
-                  {M('fronts')}
-                </Panel>
-                <Panel size={[cw - gap, frontH - drawerH - 0.012, 0.018]} position={[x, plinth + 0.01, d / 2]}>
-                  {M('fronts')}
-                </Panel>
+                {!sink && (
+                  <>
+                    {/* The rail the drawer runs over, and the shelf behind
+                        the door, with a pan under it and bowls on it. */}
+                    <Slab
+                      size={[cw - t, t, d - t - 0.02]}
+                      radius={0.002}
+                      position={[x, drawerY - t - 0.006, t / 2 - 0.01]}
+                    >
+                      {M('cabinets')}
+                    </Slab>
+                    <Slab
+                      size={[cw - t, t, d - t - 0.04]}
+                      radius={0.002}
+                      position={[x, plinth + t + doorH * 0.5, t / 2 - 0.02]}
+                    >
+                      {M('cabinets')}
+                    </Slab>
+                    <mesh position={[x - cw * 0.15, plinth + t + 0.06, 0]}>
+                      <cylinderGeometry args={[pan, pan, 0.12, SEG]} />
+                      <meshStandardMaterial color="#8c9296" metalness={0.6} roughness={0.35} />
+                    </mesh>
+                    {[0, 1, 2].map(k => (
+                      <mesh key={k} position={[x + cw * 0.12, plinth + t * 2 + doorH * 0.5 + 0.02 + k * 0.035, 0]}>
+                        <cylinderGeometry args={[pan * 0.9, pan * 0.55, 0.04, SEG]} />
+                        <meshStandardMaterial color="#f2f1ec" roughness={0.4} />
+                      </mesh>
+                    ))}
+                  </>
+                )}
+                {/* The drawer: its front, and a box behind it with a cutlery
+                    tray, which slides out as one. */}
+                <group position={[0, 0, slide]}>
+                  <Panel size={[dw, drawerH, 0.018]} position={[x, drawerY, fz]}>
+                    {M('fronts')}
+                  </Panel>
+                  {!sink && (
+                    <group position={[x, drawerY + 0.012, fz - 0.009 - boxD / 2]}>
+                      {[-1, 1].map(sd => (
+                        <mesh key={sd} position={[(sd * inner) / 2, boxH / 2, 0]}>
+                          <boxGeometry args={[0.012, boxH, boxD]} />
+                          {M('cabinets')}
+                        </mesh>
+                      ))}
+                      <mesh position={[0, boxH / 2, -boxD / 2]}>
+                        <boxGeometry args={[inner, boxH, 0.012]} />
+                        {M('cabinets')}
+                      </mesh>
+                      <mesh position={[0, 0.005, 0]}>
+                        <boxGeometry args={[inner, 0.01, boxD]} />
+                        {M('cabinets')}
+                      </mesh>
+                      {[-0.25, 0, 0.25].map(k => (
+                        <mesh key={k} position={[k * inner, 0.02, 0]}>
+                          <boxGeometry args={[inner * 0.2, 0.02, boxD * 0.8]} />
+                          <meshStandardMaterial color="#b8bdc0" metalness={0.5} roughness={0.4} />
+                        </mesh>
+                      ))}
+                    </group>
+                  )}
+                </group>
+                <group position={[x + (side * dw) / 2, plinth + 0.01, fz]} rotation={[0, side * open * 1.9, 0]}>
+                  <Panel size={[dw, doorH, 0.018]} position={[(-side * dw) / 2, 0, 0]}>
+                    {M('fronts')}
+                  </Panel>
+                </group>
               </group>
             )
           })}

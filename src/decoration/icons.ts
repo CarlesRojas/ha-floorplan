@@ -115,7 +115,6 @@ const BY_KIND: Record<string, IconDefinition> = {
   hot_tub: faHotTubPerson,
   pool: faWaterLadder,
   sprinkler: faShower,
-  lawn_mower: faRobot,
 }
 
 const BY_FAMILY: Record<string, IconDefinition> = {

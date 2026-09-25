@@ -90,7 +90,7 @@ createRoot(root).render(
                 state={{
                   on: state,
                   level: state ? 1 : 0,
-                  levels: { open: Number(query.get('open') ?? 1) },
+                  levels: { open: Number(query.get('open') ?? 1), tilt: Number(query.get('tilt') ?? 0) },
                   glow: [glow.r, glow.g, glow.b],
                 }}
                 // Whatever stands on a standing desk goes up with it.

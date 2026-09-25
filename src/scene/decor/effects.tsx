@@ -1,7 +1,7 @@
 import { useEased } from '#/scene/decor/ease.ts'
 import { scatter } from '#/scene/decor/scatter.ts'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import {
   AdditiveBlending,
   Color,
@@ -85,52 +85,58 @@ export function Flames({
 }
 
 /**
- * Little bulbs at `points`, each in its own color, that twinkle on their
- * own beats while lit and sit dim and grey while off.
+ * A string of warm white fairy lights at `points` that runs through the
+ * patterns a light string's controller does, a few seconds each: all on,
+ * a random blink, bands climbing the string by height, and every other
+ * bulb in turn. Off, the bulbs sit dim and grey.
  */
-export function Twinkle({
+export function FairyLights({
   on,
   points,
-  colors,
-  radius = 0.012,
+  radius = 0.01,
+  color = '#ffc978',
 }: {
   on: boolean
   points: Vec3[]
-  colors: string[]
   radius?: number
+  color?: string
 }) {
   const lit = useEased(on ? 1 : 0, 4)
   const mesh = useRef<InstancedMesh>(null)
-  const bulbs = useMemo(
-    () =>
-      points.map((at, i) => ({
-        at,
-        color: new Color(colors[i % colors.length]),
-        speed: 1.5 + scatter(i, 2) * 3,
-        phase: scatter(i, 3) * Math.PI * 2,
-      })),
-    [points, colors],
-  )
+  const level = useRef<number[]>([])
+  const warm = useMemo(() => new Color(color), [color])
   const dim = useMemo(() => new Color('#4a4844'), [])
   const shade = useMemo(() => new Color(), [])
-  const dummy = useMemo(() => new Object3D(), [])
-  useFrame(({ clock }) => {
+  useLayoutEffect(() => {
+    const m = mesh.current
+    if (!m) return
+    const dummy = new Object3D()
+    points.forEach((at, i) => {
+      dummy.position.set(...at)
+      dummy.updateMatrix()
+      m.setMatrixAt(i, dummy.matrix)
+    })
+    m.instanceMatrix.needsUpdate = true
+  }, [points])
+  useFrame(({ clock }, delta) => {
     const m = mesh.current
     if (!m) return
     const t = clock.elapsedTime
-    bulbs.forEach((b, i) => {
-      dummy.position.set(...b.at)
-      dummy.updateMatrix()
-      m.setMatrixAt(i, dummy.matrix)
-      const beat = 0.6 + 0.4 * Math.max(0, Math.sin(t * b.speed + b.phase)) ** 2
-      m.setColorAt(i, shade.lerpColors(dim, b.color, lit * beat))
+    const pattern = Math.floor(t / 7) % 4
+    points.forEach(([, y], i) => {
+      let want = 1
+      if (pattern === 1) want = scatter(i + Math.floor(t * 2.5 + scatter(i, 42)) * 997, 41) > 0.45 ? 1 : 0
+      else if (pattern === 2) want = Math.sin(t * 3 - y * 7) > 0 ? 1 : 0
+      else if (pattern === 3) want = (i + Math.floor(t * 1.6)) % 2
+      const now = level.current[i] ?? 0
+      level.current[i] = now + (want - now) * Math.min(1, delta * 14)
+      m.setColorAt(i, shade.lerpColors(dim, warm, lit * level.current[i]))
     })
-    m.instanceMatrix.needsUpdate = true
     if (m.instanceColor) m.instanceColor.needsUpdate = true
   })
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, points.length]} frustumCulled={false}>
-      <sphereGeometry args={[radius, 10, 8]} />
+    <instancedMesh key={points.length} ref={mesh} args={[undefined, undefined, points.length]} frustumCulled={false}>
+      <sphereGeometry args={[radius, 8, 6]} />
       <meshBasicMaterial toneMapped={false} />
     </instancedMesh>
   )
@@ -152,11 +158,15 @@ export function Spray({
   speed = 0.9,
   color = '#b9dcf2',
   size = 0.009,
+  fan = 0,
 }: {
   on: boolean
   reach: number
   apex: number
   lanes?: number[]
+  // How much wider the lanes stand apart where the water lands than where
+  // it leaves: 1 lands them twice as far apart.
+  fan?: number
   spread?: number
   // How high above the ground the water leaves.
   from?: number
@@ -178,7 +188,7 @@ export function Spray({
       const f = (t * speed + scatter(i, 4)) % 1
       const far = reach * (0.75 + 0.25 * scatter(i, 5))
       dummy.position.set(
-        lanes[i % lanes.length] + (scatter(i, 6) - 0.5) * spread * 2 * f,
+        lanes[i % lanes.length] * (1 + fan * f) + (scatter(i, 6) - 0.5) * spread * 2 * f,
         from * (1 - f) + 4 * apex * f * (1 - f),
         far * f,
       )

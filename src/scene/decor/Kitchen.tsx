@@ -574,10 +574,16 @@ export function Dishwasher({ w, d, h, fit }: { w: number; d: number; h: number; 
               {M('controls')}
             </mesh>
           ))}
-          {/* The grip: a dark slot the width of the door under the fascia. */}
-          <mesh position={[0, doorTop - fascia - 0.012, -face / 2]}>
-            <boxGeometry args={[w * 0.7, 0.024, face + 0.002]} />
+          {/* The grip: a dark slot under the fascia, cut only part way into
+              the door, and the door carried on behind it. Run through the
+              whole door, its back face lay on the inner face and fought it. */}
+          <mesh position={[0, doorTop - fascia - 0.012, -face * 0.25 + 0.001]}>
+            <boxGeometry args={[w * 0.7, 0.024, face * 0.5]} />
             {M('controls')}
+          </mesh>
+          <mesh position={[0, doorTop - fascia - 0.012, -face * 0.75]}>
+            <boxGeometry args={[w - 0.004, 0.024, face * 0.5]} />
+            {M('door')}
           </mesh>
           <Panel size={[w - 0.004, doorTop - fascia - 0.024 - toe, face]} position={[0, toe, -face / 2]} radius={0.004}>
             {M('door')}

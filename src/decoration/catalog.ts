@@ -1084,9 +1084,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05), flag('headboard', 'Headboard', 1)],
     BED_HEADBOARD.colors ?? {},
     BED_HEADBOARD.materials ?? {},
-    // Every style is motorized: on, or at a level, the head of the mattress
-    // tilts up.
-    TOGGLE_LEVEL,
+    undefined,
     [
       BED_HEADBOARD,
       {
@@ -1124,7 +1122,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     ],
     COUNTER_RUN.colors ?? {},
     COUNTER_RUN.materials ?? {},
-    undefined,
+    // On, the drawers slide out and the doors stand open.
+    TOGGLE,
     [
       COUNTER_RUN,
       {
@@ -2021,7 +2020,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [
       { id: 'casement', label: 'Twin Casement' },
       { id: 'sash', label: 'Box Sash' },
-      { id: 'awning', label: 'Top Vent' },
       { id: 'slider', label: 'Glide Pane' },
       {
         id: 'steel',
@@ -2122,8 +2120,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Christmas tree',
     'floor',
     [size(1.1, 0.4, 1.8), height(1.9, 0.6, 3)],
-    { needles: '#2f5a3a', trunk: '#6b4a32', stand: '#8a2a22', star: '#e8c35a' },
-    { needles: 'matte', trunk: 'wood', stand: 'ceramic', star: 'metal' },
+    { needles: '#2f5a3a', trunk: '#6b4a32', stand: '#8a2a22' },
+    { needles: 'matte', trunk: 'wood', stand: 'ceramic' },
     TOGGLE,
     [
       { id: 'fir', label: 'Nordic Fir' },
@@ -2131,8 +2129,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
         id: 'slim',
         label: 'Pencil Pine',
         params: { size: 0.7, height: 2.1 },
-        colors: { needles: '#3d6048', trunk: '#6b4a32', stand: '#cdb68f', star: '#f3e3b0' },
-        materials: { needles: 'matte', trunk: 'wood', stand: 'fabric', star: 'metal' },
+        colors: { needles: '#3d6048', trunk: '#6b4a32', stand: '#cdb68f' },
+        materials: { needles: 'matte', trunk: 'wood', stand: 'fabric' },
       },
     ],
   ),
@@ -2141,16 +2139,18 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'decor',
     'Aquarium',
     'floor',
-    [width(1, 0.4, 2.4), depth(0.4, 0.25, 0.8), height(1.3, 0.8, 1.8)],
+    [width(1, 0.4, 2.4), depth(0.4, 0.25, 0.8), height(1.3, 0.8, 2.6)],
     { cabinet: SCANDI.ink, frame: '#1d1f21', gravel: '#d8cdb8', plants: '#4f8a4a' },
     { cabinet: 'matte', frame: 'matte', gravel: 'matte', plants: 'matte' },
     TOGGLE,
     [
       { id: 'cabinet', label: 'Tank Cabinet' },
       {
-        id: 'rimless',
-        label: 'Rimless Stand',
-        colors: { cabinet: '#2f3133', frame: '#dfe3e5', gravel: '#d8cdb8', plants: '#4f8a4a' },
+        // Glass from a low plinth all the way up, as tall as it is set.
+        id: 'floor',
+        label: 'Reef Column',
+        params: { width: 0.8, depth: 0.5, height: 1.8 },
+        colors: { cabinet: '#2f3133', frame: '#1d1f21', gravel: '#d8cdb8', plants: '#4f8a4a' },
         materials: { cabinet: 'metal', frame: 'matte', gravel: 'matte', plants: 'matte' },
       },
     ],
@@ -2344,16 +2344,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
         colors: { body: '#4a3a2c', nozzle: SCANDI.ink },
       },
     ],
-  ),
-  kind(
-    'lawn_mower',
-    'outdoor',
-    'Robot lawn mower',
-    'floor',
-    [size(0.55, 0.4, 0.8)],
-    { body: '#e2e4e1', bumper: '#3b3f42', brushes: '#c9ced2' },
-    { body: 'matte', bumper: 'matte', brushes: 'metal' },
-    TOGGLE,
   ),
 ]
 

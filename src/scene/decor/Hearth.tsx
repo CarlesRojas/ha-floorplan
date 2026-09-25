@@ -1,13 +1,13 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
-import { Bubbles, Falling, Flames, Twinkle } from '#/scene/decor/effects.tsx'
+import { Bubbles, FairyLights, Falling, Flames, Spray } from '#/scene/decor/effects.tsx'
 import { scatter } from '#/scene/decor/scatter.ts'
 import { Glass, Halo, Led, Material, SEG, Slab, Waves } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type ReactNode } from 'react'
-import type { Group } from 'three'
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
+import { Color, Object3D, Vector3, type Group, type InstancedMesh } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
@@ -54,6 +54,75 @@ export default function HearthModel({ kind, item, state }: Props) {
 const FIRE_LIGHT = '#ff9a4a'
 const SOOT = '#0c0c0d'
 
+// A body `w` wide, `h` tall and `d` deep, standing on its base at `y0`,
+// with a firebox let into its front: an opening `ow` by `oh` from `oy` up,
+// `depth` deep, lined in soot that glows while the fire burns. The logs and
+// flames go in the recess, behind whatever glass closes it.
+function Firebox({
+  w,
+  h,
+  d,
+  y0,
+  ow,
+  oh,
+  oy,
+  depth,
+  lit,
+  children,
+}: {
+  w: number
+  h: number
+  d: number
+  y0: number
+  ow: number
+  oh: number
+  oy: number
+  depth: number
+  lit: number
+  children: ReactNode
+}) {
+  const side = (w - ow) / 2
+  const lining = <meshStandardMaterial color={SOOT} emissive={FIRE_LIGHT} emissiveIntensity={0.3 * lit} />
+  const inner = d / 2 - depth / 2
+  return (
+    <group>
+      <Slab size={[w, oy - y0, d]} radius={0.006} bevel={0.003} position={[0, y0, 0]}>
+        {children}
+      </Slab>
+      <Slab size={[w, y0 + h - oy - oh, d]} radius={0.006} bevel={0.003} position={[0, oy + oh, 0]}>
+        {children}
+      </Slab>
+      {[-1, 1].map(s => (
+        <Slab key={s} size={[side, oh, d]} radius={0.004} bevel={0.002} position={[s * (ow / 2 + side / 2), oy, 0]}>
+          {children}
+        </Slab>
+      ))}
+      <Slab size={[ow, oh, d - depth]} radius={0.004} bevel={0.002} position={[0, oy, -depth / 2]}>
+        {children}
+      </Slab>
+      {/* The lining: back, floor, roof and the two cheeks. */}
+      <mesh position={[0, oy + oh / 2, d / 2 - depth + 0.001]}>
+        <planeGeometry args={[ow, oh]} />
+        {lining}
+      </mesh>
+      <mesh position={[0, oy + 0.001, inner]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[ow, depth]} />
+        {lining}
+      </mesh>
+      <mesh position={[0, oy + oh - 0.001, inner]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[ow, depth]} />
+        {lining}
+      </mesh>
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[s * (ow / 2 - 0.001), oy + oh / 2, inner]} rotation={[0, -s * (Math.PI / 2), 0]}>
+          <planeGeometry args={[depth, oh]} />
+          {lining}
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 // A wide gas fire set in a plain black box on a stone hearth, after the
 // Faber MatriX: one long ribbon of flame over a bed of pale pebbles behind
 // a sheet of glass.
@@ -67,24 +136,21 @@ function LinearFire({ p, M, on }: Look) {
   const openH = Math.min(0.42, (h - plinth) * 0.5)
   const openY = plinth + (h - plinth) * 0.28
   const front = D / 2
+  // How far the firebox runs back behind the glass.
+  const box = D * 0.55
   const stones = Math.max(6, Math.round(openW / 0.07))
   return (
     <group>
       <Slab size={[w + 0.24, plinth, D + 0.26]} radius={0.01} bevel={0.004} position={[0, 0, 0.1]}>
         {M('hearth')}
       </Slab>
-      <Slab size={[w, h - plinth, D]} radius={0.01} bevel={0.004} position={[0, plinth, 0]}>
+      <Firebox w={w} h={h - plinth} d={D} y0={plinth} ow={openW} oh={openH} oy={openY} depth={box} lit={lit}>
         {M('body')}
-      </Slab>
-      {/* The firebox, a sooty recess that catches the glow. */}
-      <mesh position={[0, openY + openH / 2, front + 0.002]}>
-        <planeGeometry args={[openW, openH]} />
-        <meshStandardMaterial color={SOOT} emissive={FIRE_LIGHT} emissiveIntensity={0.35 * lit} />
-      </mesh>
+      </Firebox>
       {Array.from({ length: stones }, (_, i) => (
         <mesh
           key={i}
-          position={[-openW / 2 + (openW / stones) * (i + 0.5), openY + 0.014, front + 0.016]}
+          position={[-openW / 2 + (openW / stones) * (i + 0.5), openY + 0.014, front - box * 0.45]}
           scale={[1.2 + scatter(i) * 0.5, 0.7, 0.8]}
         >
           <sphereGeometry args={[0.018, 12, 8]} />
@@ -96,11 +162,11 @@ function LinearFire({ p, M, on }: Look) {
         width={openW * 0.92}
         height={openH * 0.75}
         count={Math.round(openW / 0.06)}
-        position={[0, openY + 0.02, front + 0.018]}
+        position={[0, openY + 0.02, front - box * 0.45]}
       />
-      <mesh position={[0, openY + openH / 2, front + 0.034]}>
+      <mesh position={[0, openY + openH / 2, front - 0.004]}>
         <planeGeometry args={[openW, openH]} />
-        <Glass color="#ffffff" opacity={0.12} />
+        <Glass color="#ffffff" opacity={0.08} />
       </mesh>
       <Halo on={on} position={[0, openY + openH / 2, front + 0.35]} color={FIRE_LIGHT} intensity={0.9} distance={3} />
     </group>
@@ -120,6 +186,8 @@ function Stove({ p, c, M, on }: Look) {
   const doorH = bodyH * 0.5
   const doorY = legH + bodyH * 0.2
   const front = d / 2
+  // How far the firebox runs back behind the door.
+  const box = d * 0.7
   const iron = M('body')
   return (
     <group>
@@ -131,9 +199,9 @@ function Stove({ p, c, M, on }: Look) {
           </mesh>
         )),
       )}
-      <Slab size={[w, bodyH, d]} radius={0.02} bevel={0.008} position={[0, legH, 0]}>
+      <Firebox w={w} h={bodyH} d={d} y0={legH} ow={doorW} oh={doorH} oy={doorY} depth={box} lit={lit}>
         {iron}
-      </Slab>
+      </Firebox>
       {/* The top plate, a little proud all round. */}
       <Slab size={[w + 0.03, 0.02, d + 0.03]} radius={0.02} bevel={0.006} position={[0, h - 0.02, 0]}>
         {iron}
@@ -142,31 +210,42 @@ function Stove({ p, c, M, on }: Look) {
         <cylinderGeometry args={[0.065, 0.065, 0.6, SEG]} />
         {iron}
       </mesh>
-      {/* The door: a frame round a window onto the fire. */}
-      <Slab size={[doorW + 0.05, doorH + 0.05, 0.02]} radius={0.015} bevel={0.005} position={[0, doorY - 0.025, front]}>
-        {iron}
-      </Slab>
-      <mesh position={[0, doorY + doorH / 2, front + 0.021]}>
-        <planeGeometry args={[doorW, doorH]} />
-        <meshStandardMaterial color={SOOT} emissive={FIRE_LIGHT} emissiveIntensity={0.4 * lit} />
-      </mesh>
-      {/* Two logs across the grate. */}
+      {/* Two logs across the grate, well back inside. */}
       {[-1, 1].map(s => (
         <mesh
           key={s}
-          position={[0, doorY + 0.03 + (s > 0 ? 0.035 : 0), front + 0.03]}
+          position={[0, doorY + 0.03 + (s > 0 ? 0.035 : 0), front - box * 0.5 + s * 0.03]}
           rotation={[0, 0, Math.PI / 2 + s * 0.15]}
         >
           <cylinderGeometry args={[0.022, 0.022, doorW * 0.8, 12]} />
           {M('logs')}
         </mesh>
       ))}
-      <Flames on={on} width={doorW * 0.8} height={doorH * 0.6} count={9} position={[0, doorY + 0.04, front + 0.032]} />
-      <mesh position={[0, doorY + doorH / 2, front + 0.045]}>
+      <Flames
+        on={on}
+        width={doorW * 0.8}
+        height={doorH * 0.6}
+        count={9}
+        position={[0, doorY + 0.04, front - box * 0.45]}
+      />
+      {/* The door: an iron frame round a clear pane. */}
+      <mesh position={[0, doorY + doorH / 2, front + 0.01]}>
         <planeGeometry args={[doorW, doorH]} />
-        <Glass color="#ffffff" opacity={0.14} />
+        <Glass color="#ffffff" opacity={0.08} />
       </mesh>
-      <mesh position={[doorW / 2 + 0.01, doorY + doorH * 0.6, front + 0.04]}>
+      {[-1, 1].map(s => (
+        <group key={s}>
+          <mesh position={[0, doorY + doorH / 2 + s * (doorH / 2 + 0.0125), front + 0.01]}>
+            <boxGeometry args={[doorW + 0.05, 0.025, 0.02]} />
+            {iron}
+          </mesh>
+          <mesh position={[s * (doorW / 2 + 0.0125), doorY + doorH / 2, front + 0.01]}>
+            <boxGeometry args={[0.025, doorH, 0.02]} />
+            {iron}
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[doorW / 2 + 0.012, doorY + doorH * 0.6, front + 0.03]}>
         <boxGeometry args={[0.018, 0.08, 0.02]} />
         <Material color={c('logs')} material="metal" />
       </mesh>
@@ -175,86 +254,120 @@ function Stove({ p, c, M, on }: Look) {
   )
 }
 
-// A tree in tiers of branches on a trunk in a pot, a star on top and a
-// string of bulbs wound round it that twinkle while it is on.
-function ChristmasTree({ p, c, M, style, on }: Look) {
+// A tree grown the way a real one is: whorls of branches up a trunk, each
+// branch with two side shoots, drooping on a fir and reaching up on a
+// pencil pine, set round a little from the whorl below and every one a
+// slightly different length and shade. Warm white fairy lights are
+// scattered over it, thicker lower down where there is more tree, and run
+// through their patterns while it is on.
+function ChristmasTree({ p, M, style, on }: Look) {
   const size = p('size')
   const h = p('height')
   const R = size / 2
   const slim = style === 'slim'
   const potH = Math.min(0.24, h * 0.13)
-  const trunkH = Math.min(0.08, h * 0.04)
-  const y0 = potH + trunkH
-  const tiers = slim ? 6 : 5
-  const tierH = ((h - y0 - 0.08) / (tiers * 0.93 - 0.93 + 1.7)) * 1.7
-  const step = (tierH / 1.7) * 0.93
-  const tip = y0 + step * (tiers - 1) + tierH
-  const tier = (i: number) => ({ y: y0 + step * i, r: R * (1 - (i / tiers) * 0.88) })
-  const colors = slim ? ['#ffe2a8', '#fff3d6', '#ffd48a'] : ['#ff4d4d', '#ffd35a', '#5ad1ff', '#7dff8a', '#ff8af0']
-  // The string runs round the rim of every tier, where the bulbs hang
-  // clear of the branches and catch the eye.
-  const bulbs = useMemo(() => {
-    const out: Vec3[] = []
-    for (let i = 0; i < tiers; i++) {
-      const { y, r } = tier(i)
-      const n = Math.max(6, Math.round((Math.PI * 2 * r) / 0.085))
+  // The lowest whorl, a little clear of the pot.
+  const y0 = potH + Math.min(0.1, h * 0.05)
+  const crown = h - y0
+  const branches = useMemo(() => {
+    const out: { at: Vec3; dir: Vec3; len: number; wid: number; shade: number }[] = []
+    const shoot = (from: Vec3, a: number, lift: number, len: number, wid: number, shade: number) => {
+      const dir: Vec3 = [Math.cos(a) * Math.cos(lift), Math.sin(lift), Math.sin(a) * Math.cos(lift)]
+      out.push({
+        at: [from[0] + (dir[0] * len) / 2, from[1] + (dir[1] * len) / 2, from[2] + (dir[2] * len) / 2],
+        dir,
+        len,
+        wid,
+        shade,
+      })
+      return dir
+    }
+    const whorls = Math.max(8, Math.round(crown / (slim ? 0.07 : 0.085)))
+    for (let k = 0; k < whorls; k++) {
+      const t = k / whorls
+      const y = y0 + crown * t
+      const reach = R * (1 - t) ** (slim ? 0.8 : 1)
+      const n = Math.max(3, Math.round((slim ? 5 : 8) * (1 - t * 0.6)))
       for (let j = 0; j < n; j++) {
-        const a = ((j + (i % 2) * 0.5) / n) * Math.PI * 2
-        out.push([Math.cos(a) * r * 0.98, y + 0.015 + (j % 2) * 0.02, Math.sin(a) * r * 0.98])
+        const i = k * 16 + j
+        const a = (j / n) * Math.PI * 2 + k * 2.4 + (scatter(i, 31) - 0.5) * 0.6
+        const len = Math.max(0.05, reach * (0.8 + scatter(i, 32) * 0.3))
+        const lift = (slim ? 0.35 : -0.2) + (scatter(i, 33) - 0.5) * 0.25
+        const shade = 0.8 + scatter(i, 34) * 0.35
+        const dir = shoot([0, y, 0], a, lift, len, len * (slim ? 0.3 : 0.38), shade)
+        const fork: Vec3 = [dir[0] * len * 0.5, y + dir[1] * len * 0.5, dir[2] * len * 0.5]
+        for (const s of [-1, 1]) shoot(fork, a + s * 0.6, lift - 0.1, len * 0.45, len * 0.2, shade * 0.95)
       }
     }
+    // The leader, standing up out of the last whorl.
+    shoot([0, h - 0.22, 0], 0, Math.PI / 2, 0.22, 0.05, 1)
     return out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiers, R, y0, step])
-  const lit = useEased(on ? 1 : 0, 4)
+  }, [R, y0, crown, h, slim])
+  const bulbs = useMemo(
+    () =>
+      Array.from({ length: Math.max(30, Math.round(60 * size * h)) }, (_, i): Vec3 => {
+        const t = 1 - Math.sqrt(scatter(i, 35)) * 0.97
+        const a = scatter(i, 36) * Math.PI * 2
+        const r = R * (1 - t) ** (slim ? 0.8 : 1) * (0.72 + scatter(i, 37) * 0.22)
+        return [Math.cos(a) * r, y0 + crown * t - (slim ? 0 : r * 0.1), Math.sin(a) * r]
+      }),
+    [R, y0, crown, size, h, slim],
+  )
+  const needles = useRef<InstancedMesh>(null)
+  useLayoutEffect(() => {
+    const m = needles.current
+    if (!m) return
+    const o = new Object3D()
+    const up = new Vector3(0, 1, 0)
+    const v = new Vector3()
+    const shade = new Color()
+    branches.forEach((b, i) => {
+      o.position.set(...b.at)
+      o.quaternion.setFromUnitVectors(up, v.set(...b.dir))
+      o.scale.set(b.wid, b.len, b.wid)
+      o.updateMatrix()
+      m.setMatrixAt(i, o.matrix)
+      m.setColorAt(i, shade.setScalar(b.shade))
+    })
+    m.instanceMatrix.needsUpdate = true
+    if (m.instanceColor) m.instanceColor.needsUpdate = true
+  }, [branches])
   return (
     <group>
       <mesh position={[0, potH / 2, 0]} castShadow>
         <cylinderGeometry args={[R * 0.32, R * 0.26, potH, SEG]} />
         {M('stand')}
       </mesh>
-      <mesh position={[0, potH + trunkH / 2, 0]}>
-        <cylinderGeometry args={[0.03, 0.035, trunkH + 0.02, 12]} />
+      <mesh position={[0, potH + (h - potH) * 0.4, 0]}>
+        <cylinderGeometry args={[0.012, 0.035, (h - potH) * 0.8, 10]} />
         {M('trunk')}
       </mesh>
-      {Array.from({ length: tiers }, (_, i) => (
-        <mesh key={i} position={[0, tier(i).y + tierH / 2, 0]} castShadow>
-          <coneGeometry args={[tier(i).r, tierH, slim ? 16 : 20]} />
-          {M('needles')}
-        </mesh>
-      ))}
-      <Twinkle on={on} points={bulbs} colors={colors} radius={0.016} />
-      <mesh position={[0, tip + 0.04, 0]} scale={[0.8, 1.2, 0.35]}>
-        <octahedronGeometry args={[0.075]} />
-        <meshStandardMaterial
-          color={c('star')}
-          metalness={0.6}
-          roughness={0.3}
-          emissive={c('star')}
-          emissiveIntensity={1.4 * lit}
-        />
+      {/* A dark core, so no light shows through between the branches. */}
+      <mesh position={[0, y0 + crown * 0.4, 0]}>
+        <coneGeometry args={[R * 0.45, crown * 0.8, 12]} />
+        {M('needles')}
       </mesh>
-      <Halo
-        on={on}
-        position={[0, y0 + (tip - y0) * 0.4, R + 0.35]}
-        color={slim ? '#ffd9a0' : '#ffe6c8'}
-        intensity={0.25}
-        distance={2.2}
-      />
+      <instancedMesh key={branches.length} ref={needles} args={[undefined, undefined, branches.length]} castShadow>
+        <coneGeometry args={[0.5, 1, 7]} />
+        {M('needles')}
+      </instancedMesh>
+      <FairyLights on={on} points={bulbs} radius={0.011} />
+      <Halo on={on} position={[0, y0 + crown * 0.4, R + 0.35]} color="#ffd9a0" intensity={0.25} distance={2.2} />
     </group>
   )
 }
 
-// A tank of fish on a cabinet, or on a slim steel stand. The light over the
-// water comes on with the switch, and so does the air stone, and the fish
-// swim either way, if a little slower in the dark.
+// A tank of fish on a cabinet, or a tall one standing on the floor on a low
+// plinth, glass all the way up to its height. The light over the water
+// comes on with the switch, and so does the air stone, and the fish swim
+// either way, if a little slower in the dark.
 function Aquarium({ p, M, style, on }: Look) {
   const w = p('width')
   const d = p('depth')
   const h = p('height')
   const lit = useEased(on ? 1 : 0, 3)
-  const cabinet = style !== 'rimless'
-  const baseH = Math.min(0.75, h * 0.56)
+  const cabinet = style !== 'floor'
+  const baseH = cabinet ? Math.min(0.75, h * 0.56) : 0.08
   const tankH = h - baseH - 0.03
   const water = tankH * 0.9
   const inW = w - 0.02
@@ -262,7 +375,7 @@ function Aquarium({ p, M, style, on }: Look) {
   const fish = useRef<(Group | null)[]>([])
   const shoal = useMemo(
     () =>
-      Array.from({ length: Math.max(4, Math.round(w * 7)) }, (_, i) => ({
+      Array.from({ length: Math.max(4, Math.round(w * (cabinet ? 7 : 14))) }, (_, i) => ({
         speed: 0.25 + scatter(i, 1) * 0.35,
         phase: scatter(i, 2) * Math.PI * 2,
         y: 0.1 + scatter(i, 3) * 0.7,
@@ -270,7 +383,7 @@ function Aquarium({ p, M, style, on }: Look) {
         color: ['#ff8a3d', '#ffd24d', '#4dc3ff', '#ff5d7a', '#b6f06a'][i % 5],
         scale: 0.7 + scatter(i, 5) * 0.6,
       })),
-    [w],
+    [w, cabinet],
   )
   const clock = useRef(0)
   useFrame((_, delta) => {
@@ -308,22 +421,9 @@ function Aquarium({ p, M, style, on }: Look) {
           </mesh>
         </>
       ) : (
-        <>
-          {[-1, 1].flatMap(sx =>
-            [-1, 1].map(sz => (
-              <mesh key={`${sx}${sz}`} position={[(sx * (w - 0.03)) / 2, baseH / 2, (sz * (d - 0.03)) / 2]} castShadow>
-                <boxGeometry args={[0.025, baseH, 0.025]} />
-                {M('cabinet')}
-              </mesh>
-            )),
-          )}
-          <Slab size={[w, 0.025, d]} radius={0.005} bevel={0.003} position={[0, baseH - 0.025, 0]}>
-            {M('cabinet')}
-          </Slab>
-          <Slab size={[w - 0.03, 0.02, d - 0.03]} radius={0.005} bevel={0.003} position={[0, 0.12, 0]}>
-            {M('cabinet')}
-          </Slab>
-        </>
+        <Slab size={[w - 0.02, baseH, d - 0.02]} radius={0.008} bevel={0.003} position={[0, 0, 0]}>
+          {M('cabinet')}
+        </Slab>
       )}
       <group position={[0, baseH, 0]}>
         {/* The tank's own foot, then the gravel, rocks and plants. */}
@@ -410,7 +510,12 @@ function Aquarium({ p, M, style, on }: Look) {
           </mesh>
         </group>
       ))}
-      <Led on={on} position={[w / 2 - 0.04, baseH - 0.05, d / 2 + 0.004]} radius={0.005} color="#8fd6ff" />
+      <Led
+        on={on}
+        position={[w / 2 - 0.04, cabinet ? baseH - 0.05 : baseH / 2, d / 2 - (cabinet ? -0.004 : 0.006)]}
+        radius={0.005}
+        color="#8fd6ff"
+      />
     </group>
   )
 }
@@ -484,8 +589,8 @@ function PetFeeder({ p, c, M, on }: Look) {
   )
 }
 
-// A round drinking fountain: water bubbles up out of a dome in the middle
-// and runs back down into the bowl round it while the pump is on.
+// A round drinking fountain: water spouts up out of a dome in the middle,
+// arcs over and falls back into the bowl round it while the pump is on.
 function PetFountain({ p, c, M, on }: Look) {
   const s = p('size')
   const h = Math.min(p('height'), s * 0.8)
@@ -519,6 +624,23 @@ function PetFountain({ p, c, M, on }: Look) {
         <sphereGeometry args={[R * 0.1, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial color="#e6f5fb" transparent opacity={0.8 * flow} roughness={0.02} depthWrite={false} />
       </mesh>
+      {/* The spout: little jets thrown up and out on every side, landing
+          on the water past the dome. */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <group key={i} position={[0, baseH + 0.012, 0]} rotation={[0, (i / 8) * Math.PI * 2, 0]}>
+          <Spray
+            on={on}
+            reach={R * 0.55}
+            apex={R * 0.45}
+            from={R * 0.37}
+            spread={0.004}
+            count={10}
+            speed={1.1}
+            size={0.004}
+            color="#9fd3ec"
+          />
+        </group>
+      ))}
       <Waves
         on={on}
         position={[0, baseH + 0.016, 0]}

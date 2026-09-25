@@ -25,10 +25,8 @@ const SWITCH_LABELS: Record<string, string> = {
   door: 'Open',
   smart_lock: 'Locked',
   vacuum_robot: 'Running',
-  lawn_mower: 'Mowing',
   sprinkler: 'Watering',
   desk: 'Standing',
-  bed_double: 'Raised',
 }
 
 const TINTS: { mode: Tint['mode'] | 'default'; label: string }[] = [
@@ -63,8 +61,8 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
           </button>
         )}
       </div>
-      {/* On a positioned piece the switch is fully open or fully shut,
-          and the slider anything in between. Each moves the other. */}
+      {/* The switch is fully on or fully off, and the first slider
+          anything in between. Each moves the other. */}
       <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
         {switchLabel}
         <Switch checked={s.on} accent={accent} label={switchLabel} onChange={on => onChange(switchTry(kind, s, on))} />

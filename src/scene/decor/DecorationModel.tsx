@@ -70,9 +70,9 @@ const KIND_MODELS: Record<string, FamilyModel> = {
 }
 
 // The models that read the rest of the plan, not just the piece they stand
-// on: the vacuum and the mower find their way round everything on the floor, and a counter
+// on: the vacuum finds its way round everything on the floor, and a counter
 // cuts holes for the sinks standing on it.
-const READS_PLAN = new Set(['vacuum_robot', 'lawn_mower', 'kitchen_counter'])
+const READS_PLAN = new Set(['vacuum_robot', 'kitchen_counter'])
 
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own

@@ -114,6 +114,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
   // Home Assistant counts a tilt up from shut, so nothing feeding it means
   // slats closed and a window standing straight.
   const tiltAmount = useTravel(state?.levels.tilt ?? 0)
+  // A window's lean. A tilt and turn handle does one or the other, so a
+  // window that opens at all stands straight again first.
+  const leanAmount = useTravel(openTarget > 0 ? 0 : (state?.levels.tilt ?? 0))
   const runLevel = useEased(level, 6)
 
   // One leaf of a window or a door: a thin frame around a pane of glass, or
@@ -762,47 +765,41 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         </group>
       )
       const glass = c('glass')
+      // How far a leaf's top leans into the room when it tilts, about ten
+      // degrees at full tilt.
+      const lean = -leanAmount * 0.17
       // The ways a window can open other than on side hinges. Each keeps the
       // outer frame and puts its own leaves inside it.
       let leavesDrawn: ReactNode = null
       if (style === 'sash') {
-        // A box sash: two halves, the lower one sliding up in front of the
-        // upper one as the window opens, each split by a glazing bar.
+        // A box sash: two halves, the lower one sliding up on the room side
+        // of the upper one as the window opens, each split by a glazing bar.
+        // The lower one tilts in from its foot.
         const sh = inner.h / 2 + 0.015
         const rise = coverLevel * inner.h * 0.45
         leavesDrawn = (
           <>
-            <group position={[0, f + inner.h - sh, 0.005]}>
+            <group position={[0, f + inner.h - sh, 0.04]}>
               {sash(0, inner.w, sh, frame, glass)}
               {bars(0, inner.w, sh, 2, 1, 0.03)}
             </group>
-            <group position={[0, f + rise, 0.04]}>
+            <group position={[0, f + rise, 0.005]} rotation={[lean, 0, 0]}>
               {sash(0, inner.w, sh, frame, glass)}
               {bars(0, inner.w, sh, 2, 1, 0.03)}
             </group>
           </>
         )
-      } else if (style === 'awning') {
-        // Top hung: every leaf hangs from its head and its foot swings out.
-        leavesDrawn = Array.from({ length: leaves }).map((_, i) => (
-          <group
-            key={i}
-            position={[-inner.w / 2 + (i + 0.5) * leafW, f + inner.h, 0.02]}
-            rotation={[-0.6 * coverLevel, 0, 0]}
-          >
-            <group position={[0, -inner.h, 0]}>{sash(0, leafW, inner.h, frame, glass)}</group>
-          </group>
-        ))
       } else if (style === 'slider') {
         // Two panes on two tracks. The back one slides over the fixed one,
-        // from the right unless the hinge is flipped.
+        // from the right unless the hinge is flipped, and tilts in from its
+        // foot.
         const side = hingeRight ? -1 : 1
         const pw = inner.w / 2 + 0.015
         const travel = coverLevel * (inner.w / 2 - 0.03)
         leavesDrawn = (
           <>
             <group position={[0, f, 0.04]}>{sash((-side * inner.w) / 4, pw, inner.h, frame, glass)}</group>
-            <group position={[(side * inner.w) / 4 - side * travel, f, 0.005]}>
+            <group position={[(side * inner.w) / 4 - side * travel, f, 0.005]} rotation={[lean, 0, 0]}>
               {sash(0, pw, inner.h, frame, glass)}
             </group>
           </>
@@ -837,8 +834,8 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
               return (
                 <group key={i} position={[hinge, f, 0.02]} rotation={[0, open, 0]}>
                   {/* Tilt and turn: the top leans in when a tilt percentage
-                    feeds it, on top of whatever the swing is doing. */}
-                  <group rotation={[-tiltAmount * 0.3, 0, 0]}>
+                    feeds it and the window is shut. */}
+                  <group rotation={[lean, 0, 0]}>
                     {sash((left ? 1 : -1) * (leafW / 2), leafW, inner.h, frame, glass, t)}
                     {steel && bars((left ? 1 : -1) * (leafW / 2), leafW, inner.h, 2, rows, t)}
                   </group>
@@ -1165,31 +1162,37 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </group>
         )
       }
-      // A sectional door: the panels run up side tracks, round a bend at
-      // the top and carry on flat under the ceiling into the garage, each
-      // keeping its size. The panels are placed along that path every
-      // frame and never rebuilt.
+      // A sectional door: the panels run up side tracks and round a bend at
+      // the top, and once flat under the ceiling each slides into a stack
+      // just past the bend, tucking in under the ones before it, so the
+      // open door takes a single panel's length of ceiling. The panels are
+      // placed along that path every frame and never rebuilt.
       const panels = Math.max(1, Math.round(h / 0.45))
       const panelH = h / panels
       const zf = 0.07
       const r = 0.3
       const bend = (r * Math.PI) / 2
-      const at = (s: number): { y: number; z: number; a: number } => {
+      // `tuck` is how far under the flat this panel lies once stacked.
+      const at = (s: number, tuck: number): { y: number; z: number; a: number } => {
         if (s <= h) return { y: s, z: zf, a: 0 }
         if (s <= h + bend) {
           const a = (s - h) / r
           return { y: h + r * Math.sin(a), z: zf + r - r * Math.cos(a), a }
         }
-        return { y: h + r, z: zf + r + s - h - bend, a: Math.PI / 2 }
+        // How far it has run along the flat, up to where the stack stands,
+        // and how far down into the stack it has tucked.
+        const flat = Math.min(s - h - bend, panelH / 2)
+        return { y: h + r - tuck * (flat / (panelH / 2)), z: zf + r + flat, a: Math.PI / 2 }
       }
-      const run = h + 0.1
+      const run = panelH + 0.1
       // Open, the bottom panel has come all the way round the bend too, so
       // every panel lies flat under the ceiling.
       const lift = (h + bend) * coverLevel
       return (
         <group>
           {Array.from({ length: panels }).map((_, i) => {
-            const { y, z, a } = at(panelH * (i + 0.5) + lift)
+            // Each panel stacks a panel's thickness under the one ahead of it.
+            const { y, z, a } = at(panelH * (i + 0.5) + lift, (panels - 1 - i) * 0.045)
             return (
               <group key={i} position={[0, y, z]} rotation={[a, 0, 0]}>
                 <Slab size={[w, panelH - 0.01, 0.04]} radius={0.012} position={[0, -(panelH - 0.01) / 2, 0]}>

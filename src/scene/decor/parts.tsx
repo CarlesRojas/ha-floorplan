@@ -565,6 +565,7 @@ export function Steam({
   speed = 0.45,
   drift = [0, 0],
   color = '#eef3f5',
+  phase = 0,
 }: {
   on: boolean
   position: [number, number, number]
@@ -575,6 +576,9 @@ export function Steam({
   speed?: number
   drift?: [number, number]
   color?: string
+  // Where in its cycle this plume starts, so plumes side by side do not
+  // puff in step.
+  phase?: number
 }) {
   const lit = useEased(on ? 1 : 0, 3)
   const puffs = useRef<(Mesh | null)[]>([])
@@ -582,7 +586,7 @@ export function Steam({
     const t = clock.elapsedTime
     puffs.current.forEach((puff, i) => {
       if (!puff) return
-      const f = (t * speed + i / count) % 1
+      const f = (t * speed + i / count + phase) % 1
       const sway = radius * 0.7 * f
       puff.position.set(
         Math.sin(t * 1.3 + i * 2.1) * sway + drift[0] * f,

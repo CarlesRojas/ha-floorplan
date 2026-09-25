@@ -515,8 +515,8 @@ rooms:
     name: "Window"
     points:
       - [34.9, 26.1]
-      - [43.9, 26.1]
-      - [43.9, 27.5]
+      - [42.2, 26.1]
+      - [42.2, 27.5]
       - [34.9, 27.5]
   - id: door
     name: "Door"
@@ -528,136 +528,129 @@ rooms:
   - id: sliding_door
     name: "Sliding door"
     points:
-      - [44.9, 0]
-      - [50.6, 0]
-      - [50.6, 1.4]
-      - [44.9, 1.4]
+      - [43.2, 0]
+      - [48.9, 0]
+      - [48.9, 1.4]
+      - [43.2, 1.4]
   - id: garage_door
     name: "Garage door"
     points:
-      - [44.9, 1.8]
-      - [51.4, 1.8]
-      - [51.4, 3.2]
-      - [44.9, 3.2]
+      - [43.2, 1.8]
+      - [49.7, 1.8]
+      - [49.7, 3.2]
+      - [43.2, 3.2]
   - id: awning
     name: "Awning"
     points:
-      - [44.9, 3.6]
-      - [51.4, 3.6]
-      - [51.4, 5]
-      - [44.9, 5]
+      - [43.2, 3.6]
+      - [49.7, 3.6]
+      - [49.7, 5]
+      - [43.2, 5]
   - id: christmas_tree
     name: "Christmas tree"
     points:
-      - [44.9, 5.4]
-      - [48.2, 5.4]
-      - [48.2, 7.5]
-      - [44.9, 7.5]
+      - [43.2, 5.4]
+      - [46.5, 5.4]
+      - [46.5, 7.5]
+      - [43.2, 7.5]
   - id: aquarium
     name: "Aquarium"
     points:
-      - [44.9, 7.9]
-      - [48.4, 7.9]
-      - [48.4, 9.3]
-      - [44.9, 9.3]
+      - [43.2, 7.9]
+      - [46.5, 7.9]
+      - [46.5, 9.4]
+      - [43.2, 9.4]
   - id: camera
     name: "Camera"
     points:
-      - [44.9, 9.7]
-      - [46, 9.7]
-      - [46, 11.1]
-      - [44.9, 11.1]
+      - [43.2, 9.8]
+      - [44.3, 9.8]
+      - [44.3, 11.2]
+      - [43.2, 11.2]
   - id: doorbell
     name: "Doorbell"
     points:
-      - [44.9, 11.5]
-      - [45.97, 11.5]
-      - [45.97, 12.9]
-      - [44.9, 12.9]
+      - [43.2, 11.6]
+      - [44.27, 11.6]
+      - [44.27, 13]
+      - [43.2, 13]
   - id: motion_sensor
     name: "Motion sensor"
     points:
-      - [44.9, 13.3]
-      - [45.97, 13.3]
-      - [45.97, 14.7]
-      - [44.9, 14.7]
+      - [43.2, 13.4]
+      - [44.27, 13.4]
+      - [44.27, 14.8]
+      - [43.2, 14.8]
   - id: smoke_detector
     name: "Smoke detector"
     points:
-      - [44.9, 15.1]
-      - [46.04, 15.1]
-      - [46.04, 16.5]
-      - [44.9, 16.5]
+      - [43.2, 15.2]
+      - [44.34, 15.2]
+      - [44.34, 16.6]
+      - [43.2, 16.6]
   - id: alarm_panel
     name: "Alarm panel"
     points:
-      - [44.9, 16.9]
-      - [46.06, 16.9]
-      - [46.06, 18.3]
-      - [44.9, 18.3]
+      - [43.2, 17]
+      - [44.36, 17]
+      - [44.36, 18.4]
+      - [43.2, 18.4]
   - id: smart_lock
     name: "Smart lock"
     points:
-      - [44.9, 18.7]
-      - [45.99, 18.7]
-      - [45.99, 20.1]
-      - [44.9, 20.1]
+      - [43.2, 18.8]
+      - [44.29, 18.8]
+      - [44.29, 20.2]
+      - [43.2, 20.2]
   - id: air_quality
     name: "Air quality sensor"
     points:
-      - [44.9, 20.5]
-      - [46, 20.5]
-      - [46, 21.9]
-      - [44.9, 21.9]
+      - [43.2, 20.6]
+      - [44.3, 20.6]
+      - [44.3, 22]
+      - [43.2, 22]
   - id: vacuum_robot
     name: "Robot vacuum"
     points:
-      - [44.9, 22.3]
-      - [46.25, 22.3]
-      - [46.25, 23.7]
-      - [44.9, 23.7]
+      - [43.2, 22.4]
+      - [44.55, 22.4]
+      - [44.55, 23.8]
+      - [43.2, 23.8]
   - id: pet_feeder
     name: "Pet feeder"
     points:
-      - [44.9, 24.1]
-      - [46.84, 24.1]
-      - [46.84, 25.5]
-      - [44.9, 25.5]
+      - [43.2, 24.2]
+      - [45.14, 24.2]
+      - [45.14, 25.6]
+      - [43.2, 25.6]
   - id: water_heater
     name: "Water heater"
     points:
-      - [44.9, 25.9]
-      - [47.32, 25.9]
-      - [47.32, 27.3]
-      - [44.9, 27.3]
+      - [43.2, 26]
+      - [45.62, 26]
+      - [45.62, 27.4]
+      - [43.2, 27.4]
   - id: hot_tub
     name: "Hot tub"
     points:
-      - [52.4, 0]
-      - [57.7, 0]
-      - [57.7, 3]
-      - [52.4, 3]
+      - [50.7, 0]
+      - [56, 0]
+      - [56, 3]
+      - [50.7, 3]
   - id: pool
     name: "Pool"
     points:
-      - [52.4, 3.4]
-      - [61.5, 3.4]
-      - [61.5, 6.9]
-      - [52.4, 6.9]
+      - [50.7, 3.4]
+      - [59.8, 3.4]
+      - [59.8, 6.9]
+      - [50.7, 6.9]
   - id: sprinkler
     name: "Sprinkler"
     points:
-      - [52.4, 7.3]
-      - [61.4, 7.3]
-      - [61.4, 11.3]
-      - [52.4, 11.3]
-  - id: lawn_mower
-    name: "Robot lawn mower"
-    points:
-      - [52.4, 11.7]
-      - [53.95, 11.7]
-      - [53.95, 13.25]
-      - [52.4, 13.25]
+      - [50.7, 7.3]
+      - [59.7, 7.3]
+      - [59.7, 11.3]
+      - [50.7, 11.3]
 decorations:
   - id: light_ceiling
     kind: light_ceiling
@@ -1472,22 +1465,16 @@ decorations:
     position: [37.7, 26.1]
     rotation: 180
     variant: sash
-  - id: window_awning
-    kind: window
-    room: window
-    position: [39.4, 26.1]
-    rotation: 180
-    variant: awning
   - id: window_slider
     kind: window
     room: window
-    position: [41.1, 26.1]
+    position: [39.4, 26.1]
     rotation: 180
     variant: slider
   - id: window_steel
     kind: window
     room: window
-    position: [42.8, 26.1]
+    position: [41.1, 26.1]
     rotation: 180
     variant: steel
   - id: door_flush
@@ -1511,154 +1498,150 @@ decorations:
   - id: sliding_door_panel
     kind: sliding_door
     room: sliding_door
-    position: [46.3, 0]
+    position: [44.6, 0]
     rotation: 180
     variant: panel
   - id: sliding_door_glass
     kind: sliding_door
     room: sliding_door
-    position: [48.9, 0]
+    position: [47.2, 0]
     rotation: 180
     variant: glass
   - id: garage_door_sectional
     kind: garage_door
     room: garage_door
-    position: [46.65, 1.8]
+    position: [44.95, 1.8]
     rotation: 180
     variant: sectional
   - id: garage_door_roller
     kind: garage_door
     room: garage_door
-    position: [49.65, 1.8]
+    position: [47.95, 1.8]
     rotation: 180
     variant: roller
   - id: awning_folding
     kind: awning
     room: awning
-    position: [46.4, 3.6]
+    position: [44.7, 3.6]
     rotation: 180
     variant: folding
   - id: awning_pergola
     kind: awning
     room: awning
-    position: [49.4, 3.6]
+    position: [47.7, 3.6]
     rotation: 180
     variant: pergola
   - id: christmas_tree_fir
     kind: christmas_tree
     room: christmas_tree
-    position: [45.95, 6.45]
+    position: [44.25, 6.45]
     variant: fir
   - id: christmas_tree_slim
     kind: christmas_tree
     room: christmas_tree
-    position: [47.35, 6.45]
+    position: [45.65, 6.45]
     variant: slim
   - id: aquarium_cabinet
     kind: aquarium
     room: aquarium
-    position: [45.9, 8.6]
+    position: [44.2, 8.65]
     variant: cabinet
-  - id: aquarium_rimless
+  - id: aquarium_floor
     kind: aquarium
     room: aquarium
-    position: [47.4, 8.6]
-    variant: rimless
+    position: [45.6, 8.65]
+    variant: floor
   - id: camera
     kind: camera
     room: camera
-    position: [45.45, 9.7]
+    position: [43.75, 9.8]
     rotation: 180
   - id: doorbell
     kind: doorbell
     room: doorbell
-    position: [45.43, 11.5]
+    position: [43.74, 11.6]
     rotation: 180
   - id: motion_sensor
     kind: motion_sensor
     room: motion_sensor
-    position: [45.43, 13.3]
+    position: [43.74, 13.4]
     rotation: 180
   - id: smoke_detector
     kind: smoke_detector
     room: smoke_detector
-    position: [45.47, 15.8]
+    position: [43.77, 15.9]
   - id: alarm_panel
     kind: alarm_panel
     room: alarm_panel
-    position: [45.48, 16.9]
+    position: [43.78, 17]
     rotation: 180
   - id: smart_lock
     kind: smart_lock
     room: smart_lock
-    position: [45.45, 18.7]
+    position: [43.75, 18.8]
     rotation: 180
   - id: air_quality
     kind: air_quality
     room: air_quality
-    position: [45.45, 21.2]
+    position: [43.75, 21.3]
   - id: vacuum_robot
     kind: vacuum_robot
     room: vacuum_robot
-    position: [45.58, 23]
+    position: [43.88, 23.1]
   - id: pet_feeder_food
     kind: pet_feeder
     room: pet_feeder
-    position: [45.51, 24.8]
+    position: [43.81, 24.9]
     variant: food
   - id: pet_feeder_fountain
     kind: pet_feeder
     room: pet_feeder
-    position: [46.23, 24.8]
+    position: [44.53, 24.9]
     variant: fountain
   - id: water_heater_combi
     kind: water_heater
     room: water_heater
-    position: [45.61, 25.9]
+    position: [43.91, 26]
     rotation: 180
     variant: combi
   - id: water_heater_tank
     kind: water_heater
     room: water_heater
-    position: [46.57, 25.9]
+    position: [44.87, 26]
     rotation: 180
     variant: tank
   - id: hot_tub_spa
     kind: hot_tub
     room: hot_tub
-    position: [53.9, 1.5]
+    position: [52.2, 1.5]
     variant: spa
   - id: hot_tub_barrel
     kind: hot_tub
     room: hot_tub
-    position: [56.3, 1.5]
+    position: [54.6, 1.5]
     variant: barrel
   - id: pool_deck
     kind: pool
     room: pool
-    position: [54.9, 5.15]
+    position: [53.2, 5.15]
     variant: deck
   - id: pool_frame
     kind: pool
     room: pool
-    position: [59.2, 5.15]
+    position: [57.5, 5.15]
     variant: frame
   - id: sprinkler_rotor
     kind: sprinkler
     room: sprinkler
-    position: [54.4, 9.3]
+    position: [52.7, 9.3]
     variant: rotor
   - id: sprinkler_oscillating
     kind: sprinkler
     room: sprinkler
-    position: [57.65, 9.3]
+    position: [55.95, 9.3]
     variant: oscillating
   - id: sprinkler_drip
     kind: sprinkler
     room: sprinkler
-    position: [60.15, 9.3]
+    position: [58.45, 9.3]
     variant: drip
-  - id: lawn_mower
-    kind: lawn_mower
-    room: lawn_mower
-    position: [53.18, 12.48]

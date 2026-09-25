@@ -1,19 +1,16 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
-import { Bubbles, Falling, Spray, Sweep } from '#/scene/decor/effects.tsx'
+import { Bubbles, Spray, Sweep } from '#/scene/decor/effects.tsx'
 import { scatter } from '#/scene/decor/scatter.ts'
 import { Halo, Hollow, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
-import Vacuum from '#/scene/decor/Vacuum.tsx'
-import type { DecorationConfig, RoomConfig } from '#/types.ts'
+import type { DecorationConfig } from '#/types.ts'
 import { useMemo, type ReactNode } from 'react'
 
 type Props = {
   kind: DecorationKind
   item: DecorationConfig
   state: ItemState | null
-  room?: RoomConfig
-  all: DecorationConfig[]
 }
 
 type Look = {
@@ -33,12 +30,11 @@ const UNDERWATER = '#39c6ff'
 const SPRAY = '#5aa9e0'
 
 // Things for the garden, the terrace and the balcony.
-export default function OutdoorModel({ kind, item, state, room, all }: Props) {
+export default function OutdoorModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
   const m = (slot: string) => materialValue(kind, slot, item.variant)
   const on = state?.on ?? false
-  const lit = useEased(on ? 1 : 0, 9)
   const look: Look = {
     p,
     c,
@@ -54,8 +50,6 @@ export default function OutdoorModel({ kind, item, state, room, all }: Props) {
     case 'sprinkler':
       if (look.style === 'drip') return <DripLine {...look} />
       return look.style === 'oscillating' ? <ArcBar {...look} /> : <PopRotor {...look} />
-    case 'lawn_mower':
-      return <Vacuum kind={kind} item={item} state={state} room={room} all={all} lit={lit} />
     default:
       return null
   }
@@ -106,6 +100,34 @@ function Surface({
       />
     </group>
   )
+}
+
+// Wisps of steam off a hot tub's water, sixteen small ones scattered over
+// the surface instead of one plume from the middle.
+function TubSteam({ on, y, r, round = false }: { on: boolean; y: number; r: number; round?: boolean }) {
+  const spots = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i): [number, number] => {
+        if (!round) return [(scatter(i, 21) - 0.5) * 1.7 * r, (scatter(i, 22) - 0.5) * 1.7 * r]
+        const a = scatter(i, 21) * Math.PI * 2
+        const d = Math.sqrt(scatter(i, 22)) * r * 0.85
+        return [Math.cos(a) * d, Math.sin(a) * d]
+      }),
+    [r, round],
+  )
+  return spots.map(([x, z], i) => (
+    <Steam
+      key={i}
+      on={on}
+      position={[x, y, z]}
+      radius={0.035 + scatter(i, 23) * 0.02}
+      rise={0.22 + scatter(i, 24) * 0.12}
+      count={3}
+      strength={0.16}
+      speed={0.25 + scatter(i, 25) * 0.12}
+      phase={scatter(i, 26)}
+    />
+  ))
 }
 
 // A square acrylic spa in a panelled cabinet, after the Jacuzzi J-300: the
@@ -164,15 +186,7 @@ function SquareSpa({ p, M, on }: Look) {
         speed={0.9}
         position={[0, water - 0.07, 0]}
       />
-      <Steam
-        on={on}
-        position={[0, water + 0.02, 0]}
-        radius={s * 0.12}
-        rise={0.45}
-        count={6}
-        strength={0.2}
-        speed={0.3}
-      />
+      <TubSteam on={on} y={water + 0.02} r={inner / 2} />
       <Led on={on} position={[s / 2 - 0.1, h + 0.001, s / 2 - 0.05]} radius={0.01} color="#8fd6ff" />
       <Halo on={on} position={[0, water + 0.2, 0]} color={UNDERWATER} intensity={0.5} distance={2.4} />
     </group>
@@ -232,15 +246,7 @@ function BarrelTub({ p, M, on }: Look) {
       ))}
       <Surface on={on} w={(R - 0.04) * 2} d={(R - 0.04) * 2} y={water} round jets />
       <Bubbles on={on} w={R} d={R} h={0.08} count={40} radius={0.01} speed={0.9} position={[0, water - 0.07, 0]} />
-      <Steam
-        on={on}
-        position={[0, water + 0.02, 0]}
-        radius={s * 0.12}
-        rise={0.45}
-        count={6}
-        strength={0.2}
-        speed={0.3}
-      />
+      <TubSteam on={on} y={water + 0.02} r={R - 0.08} round />
       <Halo on={on} position={[0, water + 0.2, 0]} color={UNDERWATER} intensity={0.45} distance={2.2} />
     </group>
   )
@@ -350,8 +356,14 @@ function Ladder({ x, z, h, outside = false }: { x: number; z: number; h: number;
     <group position={[x, 0, z]}>
       {[-1, 1].map(s => (
         <group key={s} position={[s * 0.22, 0, 0]}>
-          <mesh position={[0, h + 0.15, 0]} rotation={[0, 0, 0]}>
+          {/* Each handrail bows over the coping, from the rail in the water
+              down to a foot anchored in the deck. */}
+          <mesh position={[0, h + 0.15, 0]} rotation={[0, Math.PI / 2, 0]}>
             <torusGeometry args={[0.1, 0.018, 8, 20, Math.PI]} />
+            {steel}
+          </mesh>
+          <mesh position={[0, h + 0.075, 0.1 * inward]}>
+            <cylinderGeometry args={[0.018, 0.018, 0.15, 12]} />
             {steel}
           </mesh>
           <mesh position={[0, h / 2 + 0.05, -0.1 * inward]}>
@@ -436,14 +448,16 @@ function ArcBar({ p, M, on }: Look) {
             <cylinderGeometry args={[0.012, 0.012, bar, 16]} />
             {M('nozzle')}
           </mesh>
-          {/* The jets fan out along the bar, so the curtain is wider than
-              the sprinkler itself. */}
+          {/* The jets leave along the bar and fan out as they fly, so the
+              curtain lands wider than the sprinkler itself. */}
           <Spray
             on={on}
-            reach={reach * 0.6}
-            apex={reach * 0.35}
-            lanes={lanes.map(x => x * 3)}
-            spread={0.15}
+            reach={reach * 0.7}
+            apex={reach * 0.2}
+            from={0.012}
+            lanes={lanes}
+            fan={2.2}
+            spread={0.06}
             count={16}
             speed={0.8}
             size={0.014}
@@ -456,39 +470,41 @@ function ArcBar({ p, M, on }: Look) {
 }
 
 // A drip line: a brown hose laid along the bed with an emitter every short
-// step, each letting out slow drops that darken the soil round it.
+// step, each flicking out slow drops, one after another, to either side.
 function DripLine({ p, M, on }: Look) {
   const len = p('size')
   const n = Math.max(3, Math.round(len / 0.3))
-  const wet = useEased(on ? 1 : 0, 0.3)
-  const emitters = useMemo(
-    () => Array.from({ length: n }, (_, i): Vec3 => [-len / 2 + (len / n) * (i + 0.5), 0.028, 0]),
-    [n, len],
-  )
+  const lanes = useMemo(() => Array.from({ length: n }, (_, i) => -len / 2 + (len / n) * (i + 0.5)), [n, len])
   return (
     <group>
       <mesh position={[0, 0.012, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.009, 0.009, len, 12]} />
         {M('body')}
       </mesh>
-      {emitters.map((at, i) => (
-        <group key={i}>
-          <mesh position={[at[0], 0.02, 0]}>
-            <cylinderGeometry args={[0.008, 0.01, 0.018, 10]} />
-            {M('nozzle')}
-          </mesh>
-          <mesh
-            position={[at[0], 0.001, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            scale={0.02 + wet * (0.09 + scatter(i, 3) * 0.04)}
-            visible={wet > 0.02}
-          >
-            <circleGeometry args={[1, 24]} />
-            <meshStandardMaterial color="#3a2a1c" transparent opacity={0.55 * wet} depthWrite={false} />
-          </mesh>
+      {lanes.map(x => (
+        <mesh key={x} position={[x, 0.02, 0]}>
+          <cylinderGeometry args={[0.008, 0.01, 0.018, 10]} />
+          {M('nozzle')}
+        </mesh>
+      ))}
+      {/* Turned half round, the second throw runs the other way, so the
+          lanes are mirrored to land on the same emitters. */}
+      {[0, Math.PI].map(turn => (
+        <group key={turn} rotation={[0, turn, 0]}>
+          <Spray
+            on={on}
+            reach={0.16}
+            apex={0.05}
+            from={0.028}
+            lanes={turn ? lanes.map(x => -x) : lanes}
+            spread={0.03}
+            count={2}
+            speed={0.35}
+            size={0.007}
+            color={SPRAY}
+          />
         </group>
       ))}
-      <Falling on={on} points={emitters} fall={0.028} size={[0.007, 0.012, 0.007]} per={2} speed={0.9} color={SPRAY} />
     </group>
   )
 }

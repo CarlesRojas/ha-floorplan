@@ -724,7 +724,7 @@ function Hanger({ across, M }: { across: number; M: Size['M'] }) {
           key={sz}
           length={arm}
           radius={0.007}
-          rotation={[Math.PI / 2 - sz * slope, 0, 0]}
+          rotation={[Math.PI / 2 + sz * slope, 0, 0]}
           position={[0, -0.03 - drop / 2, (sz * half) / 2]}
         >
           {wood}
@@ -737,9 +737,59 @@ function Hanger({ across, M }: { across: number; M: Size['M'] }) {
   )
 }
 
+// A zipped suit cover `long` long, hung from a hanger's bar, narrower over
+// the shoulders and with its zip down the middle of each face.
+function SuitCover({ long, across, color }: { long: number; across: number; color: string }) {
+  const cloth = <meshStandardMaterial color={color} roughness={0.85} />
+  return (
+    <group position={[0, -0.08, 0]}>
+      <Slab size={[0.06, 0.12, across * 0.8]} radius={0.025} bevel={0.012} position={[0, -0.12, 0]}>
+        {cloth}
+      </Slab>
+      <Slab size={[0.07, long - 0.1, across]} radius={0.03} bevel={0.015} position={[0, -long, 0]}>
+        {cloth}
+      </Slab>
+      <Slab size={[0.074, long - 0.16, 0.008]} radius={0.003} position={[0, -long + 0.04, 0]}>
+        <meshStandardMaterial color="#1a1a1b" roughness={0.5} />
+      </Slab>
+    </group>
+  )
+}
+
+// A long dress hung by its straps: a fitted bodice, a narrow waist and a
+// skirt flaring to the hem, flattened the way cloth hangs.
+function Dress({ long, color }: { long: number; color: string }) {
+  const top = -0.085
+  const at = (f: number) => top - long * f
+  return (
+    <Turned
+      profile={[
+        [0, at(1)],
+        [0.25, at(1)],
+        [0.19, at(0.72)],
+        [0.14, at(0.42)],
+        [0.1, at(0.3)],
+        [0.125, at(0.17)],
+        [0.14, at(0.05)],
+        [0.09, top],
+        [0, top],
+      ]}
+      scale={[0.28, 1, 1]}
+    >
+      <meshStandardMaterial color={color} roughness={0.7} />
+    </Turned>
+  )
+}
+
+// What hangs on each hanger along the rail, in turn: a suit cover, a long
+// dress or nothing, with room left beside the fuller ones.
+const WARDROBE = ['suit', '', 'dress', '', 'suit', '', '', 'dress', '', 'dress', '', 'suit', '']
+const COVERS = ['#2b3140', '#3a3a3c', '#4a3f35']
+const DRESSES = ['#6e1f2e', '#1f5a48', '#d9a6a0', '#1d1d24']
+
 // After the IKEA Mulig: an open clothes rack of thin white tube, a rail
-// across the top hung with empty hangers and a shelf near the floor for shoes
-// and boxes.
+// across the top hung with suit covers, long dresses and a few empty
+// hangers, and a shelf near the floor for shoes and boxes.
 export function OpenRail({ w, d, h, M }: Size) {
   const tube = 0.011
   const post = d / 2 - 0.03
@@ -747,6 +797,8 @@ export function OpenRail({ w, d, h, M }: Size) {
   const count = Math.max(1, Math.floor((w - 0.16) / 0.07))
   const across = Math.min(0.42, d * 0.85)
   const hang = h - 0.035
+  // The clothes stop short of the shelf.
+  const long = Math.min(1.05, hang - 0.18 - shelfY - 0.1)
   return (
     <group>
       {[-1, 1].map(sx => (
@@ -777,6 +829,12 @@ export function OpenRail({ w, d, h, M }: Size) {
         return (
           <group key={i} position={[count === 1 ? 0 : x, hang, 0]} rotation={[0, turn, 0]}>
             <Hanger across={across} M={M} />
+            {long > 0.3 && WARDROBE[i % WARDROBE.length] === 'suit' && (
+              <SuitCover long={long} across={0.58} color={COVERS[i % COVERS.length]} />
+            )}
+            {long > 0.3 && WARDROBE[i % WARDROBE.length] === 'dress' && (
+              <Dress long={long} color={DRESSES[i % DRESSES.length]} />
+            )}
           </group>
         )
       })}
