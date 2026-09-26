@@ -779,8 +779,12 @@ function GlobeLitterBox({ p, c, M, on }: Look) {
   const baseZ = -d / 2 + baseD / 2
   const front = baseZ + baseD / 2
   // The opening: a cap this far round from the front pole is left off the
-  // sphere, and the bezel rings its edge.
+  // sphere, and the bezel rings its edge. The pole is tipped down off the
+  // axis the globe turns on, so the opening faces the cat a little from
+  // above at rest and swings round the front as the globe turns, which is
+  // what shows it turning at all.
   const cap = Math.PI * 0.32
+  const tip = 0.3
   const mouth = R * Math.sin(cap)
   const mouthZ = R * Math.cos(cap)
   return (
@@ -816,19 +820,21 @@ function GlobeLitterBox({ p, c, M, on }: Look) {
       </mesh>
       <group position={[0, cy, -R * 0.1]}>
         <Turning on={on} axis="z">
-          {/* The globe, its front pole turned to +z so the cap comes off the front. */}
-          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <sphereGeometry args={[R, SEG, 24, 0, Math.PI * 2, cap, Math.PI - cap]} />
-            {M('body')}
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <sphereGeometry args={[R - 0.006, SEG, 24, 0, Math.PI * 2, cap, Math.PI - cap]} />
-            <Material color={c('drum')} material="matte" doubleSide />
-          </mesh>
-          <mesh position={[0, 0, mouthZ]}>
-            <torusGeometry args={[mouth, 0.022, 12, SEG]} />
-            {M('drum')}
-          </mesh>
+          <group rotation={[tip, 0, 0]}>
+            {/* The globe, its front pole turned to +z so the cap comes off the front. */}
+            <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <sphereGeometry args={[R, SEG, 24, 0, Math.PI * 2, cap, Math.PI - cap]} />
+              {M('body')}
+            </mesh>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <sphereGeometry args={[R - 0.006, SEG, 24, 0, Math.PI * 2, cap, Math.PI - cap]} />
+              <Material color={c('drum')} material="matte" doubleSide />
+            </mesh>
+            <mesh position={[0, 0, mouthZ]}>
+              <torusGeometry args={[mouth, 0.022, 12, SEG]} />
+              {M('drum')}
+            </mesh>
+          </group>
         </Turning>
         {/* The back of the globe sits in a dark shell that stays put. */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
@@ -866,10 +872,10 @@ function MoonLitterBox({ p, M, on }: Look) {
         <boxGeometry args={[w * 0.28, 0.014, 0.016]} />
         {M('trim')}
       </mesh>
-      {/* The cheeks the pod rolls between. */}
+      {/* The cheeks the pod rolls between, up to the axle they carry. */}
       {[-1, 1].map(s => (
-        <mesh key={s} position={[s * (len / 2 + 0.015), baseH + R * 0.32, 0]} castShadow>
-          <boxGeometry args={[0.03, R * 0.64, R * 1.3]} />
+        <mesh key={s} position={[s * (len / 2 + 0.015), (baseH + cy + 0.04) / 2, 0]} castShadow>
+          <boxGeometry args={[0.03, cy + 0.04 - baseH, R * 1.1]} />
           {M('body')}
         </mesh>
       ))}
@@ -886,13 +892,18 @@ function MoonLitterBox({ p, M, on }: Look) {
             </mesh>
           ))}
           <Hatch r={R * 0.48} z={R + 0.002} deep={0.03} trim={M('trim')} />
-          {/* The crank on the side: a spoke out from the axle and a knob on it. */}
-          <mesh position={[len / 2 + 0.02, R * 0.3, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <boxGeometry args={[R * 0.6, 0.02, 0.03]} />
+          {/* The crank: the axle comes out through the cheek first, and the
+              arm and its knob turn clear of it outside. */}
+          <mesh position={[len / 2 + 0.035, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.016, 0.016, 0.07, 16]} />
             {M('trim')}
           </mesh>
-          <mesh position={[len / 2 + 0.05, R * 0.6, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.018, 0.018, 0.06, 16]} />
+          <mesh position={[len / 2 + 0.08, R * 0.3, 0]}>
+            <boxGeometry args={[0.02, R * 0.6 + 0.03, 0.03]} />
+            {M('trim')}
+          </mesh>
+          <mesh position={[len / 2 + 0.115, R * 0.6, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.018, 0.018, 0.07, 16]} />
             {M('body')}
           </mesh>
         </Turning>
