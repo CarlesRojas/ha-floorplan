@@ -670,43 +670,43 @@ rooms:
     points:
       - [49.8, 9]
       - [52.25, 9]
-      - [52.25, 10.6]
-      - [49.8, 10.6]
+      - [52.25, 10.7]
+      - [49.8, 10.7]
   - id: water_heater
     name: "Water heater"
     points:
-      - [49.8, 11]
-      - [52.22, 11]
-      - [52.22, 12.4]
-      - [49.8, 12.4]
+      - [49.8, 11.1]
+      - [52.22, 11.1]
+      - [52.22, 12.5]
+      - [49.8, 12.5]
   - id: hot_tub
     name: "Hot tub"
     points:
-      - [49.8, 12.8]
-      - [55.1, 12.8]
-      - [55.1, 15.8]
-      - [49.8, 15.8]
+      - [49.8, 12.9]
+      - [55.1, 12.9]
+      - [55.1, 15.9]
+      - [49.8, 15.9]
   - id: louvred_pergola
     name: "Louvred pergola"
     points:
-      - [49.8, 16.2]
-      - [58.3, 16.2]
-      - [58.3, 20.2]
-      - [49.8, 20.2]
+      - [49.8, 16.3]
+      - [58.3, 16.3]
+      - [58.3, 20.3]
+      - [49.8, 20.3]
   - id: sauna
     name: "Sauna"
     points:
-      - [49.8, 20.6]
-      - [55.5, 20.6]
-      - [55.5, 23.8]
-      - [49.8, 23.8]
+      - [49.8, 20.7]
+      - [55.5, 20.7]
+      - [55.5, 23.9]
+      - [49.8, 23.9]
   - id: pool
     name: "Pool"
     points:
-      - [49.8, 24.2]
-      - [58.9, 24.2]
-      - [58.9, 27.7]
-      - [49.8, 27.7]
+      - [49.8, 24.3]
+      - [58.9, 24.3]
+      - [58.9, 27.8]
+      - [49.8, 27.8]
   - id: sprinkler
     name: "Sprinkler"
     points:
@@ -1749,67 +1749,67 @@ decorations:
     room: pet_feeder
     position: [51.13, 7.9]
     variant: fountain
-  - id: litter_box_cube
+  - id: litter_box_globe
     kind: litter_box
     room: litter_box
-    position: [50.58, 9.8]
-    variant: cube
+    position: [50.58, 9.85]
+    variant: globe
   - id: litter_box_moon
     kind: litter_box
     room: litter_box
-    position: [51.55, 9.8]
+    position: [51.55, 9.85]
     variant: moon
   - id: water_heater_combi
     kind: water_heater
     room: water_heater
-    position: [50.51, 11]
+    position: [50.51, 11.1]
     rotation: 180
     variant: combi
   - id: water_heater_tank
     kind: water_heater
     room: water_heater
-    position: [51.47, 11]
+    position: [51.47, 11.1]
     rotation: 180
     variant: tank
   - id: hot_tub_spa
     kind: hot_tub
     room: hot_tub
-    position: [51.3, 14.3]
+    position: [51.3, 14.4]
     variant: spa
   - id: hot_tub_barrel
     kind: hot_tub
     room: hot_tub
-    position: [53.7, 14.3]
+    position: [53.7, 14.4]
     variant: barrel
   - id: louvred_pergola_alu
     kind: louvred_pergola
     room: louvred_pergola
-    position: [52.05, 18.2]
+    position: [52.05, 18.3]
     variant: alu
   - id: louvred_pergola_timber
     kind: louvred_pergola
     room: louvred_pergola
-    position: [56.05, 18.2]
+    position: [56.05, 18.3]
     variant: timber
   - id: sauna_barrel
     kind: sauna
     room: sauna
-    position: [51.3, 22.2]
+    position: [51.3, 22.3]
     variant: barrel
   - id: sauna_cabin
     kind: sauna
     room: sauna
-    position: [53.9, 22.2]
+    position: [53.9, 22.3]
     variant: cabin
   - id: pool_deck
     kind: pool
     room: pool
-    position: [52.3, 25.95]
+    position: [52.3, 26.05]
     variant: deck
   - id: pool_frame
     kind: pool
     room: pool
-    position: [56.6, 25.95]
+    position: [56.6, 26.05]
     variant: frame
   - id: sprinkler_rotor
     kind: sprinkler

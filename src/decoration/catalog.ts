@@ -2441,14 +2441,14 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'utility',
     'Litter box',
     'floor',
-    [width(0.54, 0.3, 1.2), depth(0.62, 0.3, 1.4), height(0.55, 0.35, 1.5)],
-    { body: '#f0f0ef', drum: '#3c3f42', trim: '#9a9da0' },
+    [width(0.56, 0.3, 1.2), depth(0.69, 0.3, 1.4), height(0.75, 0.35, 1.5)],
+    { body: '#f0f0ef', drum: '#2a2c2f', trim: '#9a9da0' },
     { body: 'matte', drum: 'matte', trim: 'matte' },
     TOGGLE,
     [
-      // A self cleaning cube: a white body with a low round entry in its
-      // front, the drum turning behind it and a waste drawer below.
-      { id: 'cube', label: 'Sift Cube' },
+      // A self cleaning globe: a white sphere with a wide opening framed in
+      // dark in its front, turning on a base that holds the waste drawer.
+      { id: 'globe', label: 'Orbit Globe' },
       {
         // A wooden pod on a drawer base, rolled over by hand on its crank to
         // sift the litter.

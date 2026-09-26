@@ -44,7 +44,7 @@ export default function HearthModel({ kind, item, state }: Props) {
     case 'pet_feeder':
       return look.style === 'fountain' ? <PetFountain {...look} /> : <PetFeeder {...look} />
     case 'litter_box':
-      return look.style === 'moon' ? <MoonLitterBox {...look} /> : <CubeLitterBox {...look} />
+      return look.style === 'moon' ? <MoonLitterBox {...look} /> : <GlobeLitterBox {...look} />
     case 'water_heater':
       return look.style === 'tank' ? <TankHeater {...look} /> : <CombiBoiler {...look} />
     default:
@@ -762,100 +762,80 @@ function Hatch({ r, z, deep = 0.01, trim }: { r: number; z: number; deep?: numbe
   )
 }
 
-// A self cleaning litter box in the shape of a rounded white cube: a low,
-// round entry in the front panel, the drum turning in the hollow behind it
-// with the litter lying in its bottom, and the waste drawer under that.
-function CubeLitterBox({ p, c, M, on }: Look) {
+// A self cleaning litter box in the shape of a globe: a white sphere with a
+// wide opening framed by a dark bezel in its front, sitting on a base that
+// holds the waste drawer, with a step before it. While on, the globe turns
+// about its front to back axis to sift the litter, which stays lying in its
+// bottom, and it stops wherever it is when switched off.
+function GlobeLitterBox({ p, c, M, on }: Look) {
   const w = p('width')
   const d = p('depth')
   const h = p('height')
-  const base = 0.03
-  const body = h - base
-  const mid = base + body / 2
-  const panel = 0.03
-  // The drum fills the body, and the entry into it is a pill let into the
-  // front panel, round at the top and dropping to a low threshold.
-  const drumR = Math.min(w, body) * 0.44
-  const drumY = base + 0.02 + drumR
-  const R = drumR * 0.55
-  const top = drumY + drumR * 0.3
-  const low = drumY - drumR * 0.2
-  const drumL = d - panel - 0.06
-  const ribs = 6
+  const baseH = Math.min(h * 0.3, 0.26)
+  const R = Math.min(w / 2, (h - baseH) / 1.9, d * 0.42)
+  const cy = h - R
+  // The base runs under the back of the globe, the step out in front of it.
+  const baseD = d * 0.85
+  const baseZ = -d / 2 + baseD / 2
+  const front = baseZ + baseD / 2
+  // The opening: a cap this far round from the front pole is left off the
+  // sphere, and the bezel rings its edge.
+  const cap = Math.PI * 0.32
+  const mouth = R * Math.sin(cap)
+  const mouthZ = R * Math.cos(cap)
   return (
     <group>
-      <Slab size={[w * 0.96, base, d * 0.96]} radius={w * 0.06} bevel={0.004}>
+      <Slab size={[w, baseH, baseD]} radius={w * 0.12} bevel={0.01} position={[0, 0, baseZ]}>
+        {M('body')}
+      </Slab>
+      {/* The waste drawer front and its pull, and the button strip over it. */}
+      <Slab size={[w * 0.8, baseH * 0.55, 0.014]} radius={0.01} bevel={0.003} position={[0, 0.015, front + 0.004]}>
         {M('trim')}
       </Slab>
-      {/* The body, a round tunnel through it for the drum, closed at the back.
-          A slab stands on its position, so stood on its face it runs from
-          there toward +z. */}
-      <Slab
-        size={[w, d - panel, body]}
-        radius={w * 0.1}
-        bevel={0.012}
-        position={[0, mid, -d / 2]}
-        rotation={[Math.PI / 2, 0, 0]}
-        holes={[{ x: 0, z: mid - drumY, w: drumR * 2 + 0.02, d: drumR * 2 + 0.02, r: drumR + 0.01 }]}
-      >
-        {M('body')}
-      </Slab>
-      <mesh position={[0, drumY, -d / 2 + 0.02]}>
-        <boxGeometry args={[drumR * 2 + 0.04, drumR * 2 + 0.04, 0.02]} />
+      <mesh position={[0, 0.015 + baseH * 0.28, front + 0.018]}>
+        <boxGeometry args={[w * 0.22, 0.006, 0.004]} />
         {M('drum')}
       </mesh>
-      {/* The front panel with the entry in it. */}
+      <mesh position={[0, baseH * 0.82, front + 0.002]}>
+        <boxGeometry args={[w * 0.3, 0.018, 0.004]} />
+        {M('drum')}
+      </mesh>
+      <Led on={on} position={[w * 0.11, baseH * 0.82, front + 0.005]} radius={0.004} />
+      {/* The step, and the litter lying still in the bottom of the globe. */}
       <Slab
-        size={[w, panel, body]}
-        radius={w * 0.1}
-        bevel={0.008}
-        position={[0, mid, d / 2 - panel]}
-        rotation={[Math.PI / 2, 0, 0]}
-        holes={[{ x: 0, z: mid - (top + low) / 2, w: R * 2, d: top - low + R * 2, r: R }]}
+        size={[w * 0.7, 0.035, d - baseD + 0.04]}
+        radius={0.015}
+        bevel={0.005}
+        position={[0, 0, front + (d - baseD) / 2 - 0.02]}
       >
-        {M('body')}
+        {M('trim')}
       </Slab>
-      <group position={[0, drumY, -panel / 2 - 0.03]}>
+      <mesh position={[0, cy - R * 0.55, -R * 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[R * 0.8, SEG]} />
+        <Material color="#cdbfa6" material="matte" />
+      </mesh>
+      <group position={[0, cy, -R * 0.1]}>
         <Turning on={on} axis="z">
+          {/* The globe, its front pole turned to +z so the cap comes off the front. */}
+          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <sphereGeometry args={[R, SEG, 24, 0, Math.PI * 2, cap, Math.PI - cap]} />
+            {M('body')}
+          </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[drumR, drumR, drumL, SEG, 1, true]} />
+            <sphereGeometry args={[R - 0.006, SEG, 24, 0, Math.PI * 2, cap, Math.PI - cap]} />
             <Material color={c('drum')} material="matte" doubleSide />
           </mesh>
-          {/* Ribs down the inside of the drum, so the turn shows through the entry. */}
-          {Array.from({ length: ribs }, (_, i) => {
-            const a = (i / ribs) * Math.PI * 2
-            return (
-              <mesh key={i} position={[Math.cos(a) * drumR * 0.96, Math.sin(a) * drumR * 0.96, 0]} rotation={[0, 0, a]}>
-                <boxGeometry args={[0.02, drumR * 0.08, drumL * 0.9]} />
-                {M('trim')}
-              </mesh>
-            )
-          })}
+          <mesh position={[0, 0, mouthZ]}>
+            <torusGeometry args={[mouth, 0.022, 12, SEG]} />
+            {M('drum')}
+          </mesh>
         </Turning>
-        {/* The litter lying in the bottom of the drum. */}
-        <mesh position={[0, -drumR * 0.68, 0]}>
-          <boxGeometry args={[drumR * 1.4, 0.06, drumL * 0.9]} />
-          <Material color="#cdbfa6" material="matte" />
+        {/* The back of the globe sits in a dark shell that stays put. */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[R + 0.006, SEG, 16, 0, Math.PI * 2, Math.PI * 0.64, Math.PI * 0.36]} />
+          {M('drum')}
         </mesh>
       </group>
-      {/* The waste drawer, and the button strip along the top of the front. */}
-      <Slab
-        size={[w * 0.62, body * 0.14, 0.016]}
-        radius={0.01}
-        bevel={0.003}
-        position={[0, base + 0.01, d / 2 + 0.006]}
-      >
-        {M('trim')}
-      </Slab>
-      <mesh position={[0, base + 0.01 + body * 0.07, d / 2 + 0.016]}>
-        <boxGeometry args={[w * 0.18, 0.006, 0.004]} />
-        {M('drum')}
-      </mesh>
-      <mesh position={[0, h - 0.004, d / 2 - 0.05]}>
-        <boxGeometry args={[w * 0.3, 0.004, 0.04]} />
-        {M('drum')}
-      </mesh>
-      <Led on={on} position={[w * 0.1, h - 0.002, d / 2 - 0.05]} radius={0.005} />
     </group>
   )
 }
