@@ -1,6 +1,6 @@
 import Canvas from '#/editor/Canvas.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
-import Scene from '#/scene/Scene.tsx'
+import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomInfo from '#/editor/RoomInfo.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
@@ -20,7 +20,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import { faCheck, faFloppyDisk, faPenRuler, faSpinner, faTrash } from '@fortawesome/free-solid-svg-icons'
+import {
+  type IconDefinition,
+  faCamera,
+  faCheck,
+  faEye,
+  faFloppyDisk,
+  faPenRuler,
+  faSpinner,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
@@ -126,6 +136,40 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       if (item) setAddRoom(item.room)
     }
     setSelectedDecoration(id)
+  }
+  // The 3D view's camera, to save where it stands or send it somewhere.
+  // Null while the view is closed.
+  const camera = useRef<CameraHandle | null>(null)
+  // The view the card opens with, taken from where the camera stands now.
+  const saveMainView = () => {
+    const view = camera.current?.view()
+    if (view) onChange({ ...config, camera: view })
+  }
+  const clearMainView = () => {
+    const { camera: _dropped, ...rest } = config
+    onChange(rest)
+  }
+  const setRoomCamera = (roomId: string, view: RoomConfig['camera']) =>
+    commit(
+      rooms.map(r => {
+        if (r.id !== roomId) return r
+        if (!view) {
+          const { camera: _dropped, ...rest } = r
+          return rest
+        }
+        return { ...r, camera: view }
+      }),
+    )
+  const saveRoomCamera = (roomId: string) => {
+    const view = camera.current?.view()
+    if (view) setRoomCamera(roomId, view)
+  }
+  const showMainView = () => {
+    if (config.camera) camera.current?.flyTo(config.camera)
+  }
+  const showRoomCamera = (roomId: string) => {
+    const view = rooms.find(r => r.id === roomId)?.camera
+    if (view) camera.current?.flyTo(view)
   }
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
@@ -754,11 +798,11 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     </div>
   )
 
-  // The selected room fills the sidebar on its own, the way a selected item
-  // or device does. Selecting something inside the room is what is being
-  // looked at then, so the room steps aside.
-  // The cross closes the room's block without letting go of the room, since
-  // what is added next still belongs in it.
+  // The selected room fills the sidebar on its own, in place of the
+  // catalog, the way a selected item does. Selecting something inside the
+  // room is what is being looked at then, so the room steps aside.
+  // The cross closes the room's block and brings the catalog back without
+  // letting go of the room, since what is added next still belongs in it.
   const roomInfo =
     selectedRoom && showRoom ? (
       <RoomInfo
@@ -769,6 +813,10 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         onRenameDone={flushRename}
         onAssignArea={assignArea}
         onFloor={setFloor}
+        onSaveCamera={saveRoomCamera}
+        onShowCamera={showRoomCamera}
+        onClearCamera={id => setRoomCamera(id, undefined)}
+        hasPreview={showPreview}
         onDelete={deleteRoom}
         onDeselect={() => setShowRoom(false)}
       />
@@ -862,14 +910,44 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                     <span className="h-1 w-14 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
                   </div>
                   <div
-                    className="min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
+                    className="relative min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
                     style={{ flex: previewShare }}
                   >
+                    {/* The view the card opens with: saved from where the
+                        camera stands, flown back to, or forgotten. Named
+                        buttons in the corner, over the view. */}
+                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                      <PreviewButton
+                        icon={faXmark}
+                        label="Forget view"
+                        title="Forget the saved view, the card frames the plan by itself again"
+                        disabled={!config.camera}
+                        onClick={clearMainView}
+                      />
+                      <PreviewButton
+                        icon={faEye}
+                        label="Fly to view"
+                        title="Fly the camera to the view the card opens with"
+                        disabled={!config.camera}
+                        onClick={showMainView}
+                      />
+                      <PreviewButton
+                        icon={faCamera}
+                        label={config.camera ? 'Replace opening view' : 'Save opening view'}
+                        title={
+                          config.camera
+                            ? 'Replace the view the card opens with by where the camera stands now'
+                            : 'Open the card with the view the camera has now'
+                        }
+                        onClick={saveMainView}
+                      />
+                    </div>
                     <Scene
                       hass={hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
                       onPickDecoration={pickDecoration}
+                      cameraRef={camera}
                       tries={tries}
                       onTry={stepTry}
                       onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
@@ -911,8 +989,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
               <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
             </div>
             <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
-              {roomInfo}
-              {panels}
+              {roomInfo ?? panels}
             </div>
           </div>
         </div>
@@ -952,6 +1029,35 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         {opening ? 'Opening…' : 'Open editor'}
       </button>
     </div>
+  )
+}
+
+// A named button in the corner of the 3D view. Greyed out when there is no
+// saved view for it to act on.
+function PreviewButton({
+  icon,
+  label,
+  title,
+  disabled,
+  onClick,
+}: {
+  icon: IconDefinition
+  label: string
+  title: string
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-8 items-center gap-1.5 rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2.5 text-xs text-(--primary-text-color) shadow hover:bg-(--secondary-background-color) disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-(--card-background-color)"
+    >
+      <FontAwesomeIcon icon={icon} className="size-3.5" />
+      <span>{label}</span>
+    </button>
   )
 }
 

@@ -1,4 +1,6 @@
 type: custom:floorplan-3d
+grid_options:
+  columns: full
 rooms:
   - id: light_ceiling
     name: "Ceiling light"

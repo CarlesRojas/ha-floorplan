@@ -59,7 +59,7 @@ Create a dashboard, Edit, Add card. Search "Floorplan 3D". The card opens with a
 
 The card's visual editor is a top-down drawing tool. Open it from the card's edit dialog.
 
-Editing the card shows Home Assistant's own card dialog first, with its visibility and layout tabs, and a line on what the editor is for above an Open editor button. The editor opens fullscreen from there. Save saves the card to the dashboard and keeps editing. Save & Close does the same and leaves, with Home Assistant's dialog still open behind it, so closing that dialog afterwards keeps the edits. A card still being added is saved by that dialog's own Save the first time, since saving it from here could add it twice. Discard goes back to the last save, or to how the editor opened when nothing has been saved since, and returns to the dialog. The 3D view is open under the plan when the editor opens, and the cube toolbar button (P) closes and reopens it. It takes the bottom half of the column. Drag the divider between them to give either one more room. The 3D view frames the plan by itself until you orbit, pan or zoom it. From then on the camera stays where you put it, so editing does not throw your view away. The plan frames itself the same way, so changing the split keeps everything in view unless you have panned or zoomed it yourself.
+Editing the card shows Home Assistant's own card dialog first, with its visibility and layout tabs, and a line on what the editor is for above an Open editor button. The editor opens fullscreen from there. Save saves the card to the dashboard and keeps editing. Save & Close does the same and leaves, with Home Assistant's dialog still open behind it, so closing that dialog afterwards keeps the edits. A card still being added is saved by that dialog's own Save the first time, since saving it from here could add it twice. Discard goes back to the last save, or to how the editor opened when nothing has been saved since, and returns to the dialog. The 3D view is open under the plan when the editor opens, and the cube toolbar button (P) closes and reopens it. It takes the bottom half of the column. Drag the divider between them to give either one more room. The 3D view frames the plan by itself until you orbit, pan or zoom it. From then on the camera stays where you put it, so editing does not throw your view away. Three named buttons sit in the view's top right corner. The rightmost, Save opening view, saves where the camera stands as the view the card opens with, and the view opens there in the editor too from then on. Once one is saved the button reads Replace opening view, Fly to view beside it flies the camera back to it, and Forget view at the far left forgets it, after which the card frames the plan again. Those two are greyed out until a view is saved. The plan frames itself the same way, so changing the split keeps everything in view unless you have panned or zoomed it yourself.
 
 - Draw room (D): click to place corners, click the first corner or press Enter to close.
 - Select (V): click a room to select it, drag corners to move them, drag edges to resize, drag a room to move it. Right click a corner, edge, room or the canvas for a menu.
@@ -67,7 +67,9 @@ Editing the card shows Home Assistant's own card dialog first, with its visibili
 - Corners snap to a 20 cm grid and to other rooms' corners and wall lines.
 - Rooms never overlap. While dragging, the room follows the pointer and turns red where it would overlap. On release it lands on the nearest valid position, sliding along the free axis. A corner cannot be drawn inside a room or through one.
 
-The sidebar shows the decoration catalog. Selecting a room puts a block for it above the catalog: its name, the Home Assistant area it stands for, the floor under it, a button to delete it, and a cross that puts the block away. The cross lets go of the block, not of the room. Selecting an item inside the room shows that item instead, in place of both. An area can be linked to one room only. Radius and color can be set per room in the YAML.
+The sidebar shows the decoration catalog. Selecting a room fills it with a block for the room instead: its name, the Home Assistant area it stands for, the floor under it, its camera view, a button to delete it, and a cross that puts the block away and brings the catalog back. The cross lets go of the block, not of the room, so what is added next still lands in it. Selecting an item inside the room shows that item instead. An area can be linked to one room only. Radius and color can be set per room in the YAML.
+
+A room can have a view of its own. Orbit the 3D view to where the room looks best and press Use current view in the room's block. In the card, clicking that room's floor then flies the camera there, and a room with no view does nothing when clicked. The eye beside the button flies the editor's camera to the saved view and the cross forgets it. Orbiting during a flight takes the camera over. Once the camera has left the view the card opened with, by orbiting or by flying to a room, a button in the card's bottom right corner flies it back there and goes away when it lands.
 
 ### Editing commands
 
@@ -101,7 +103,7 @@ The sidebar shows the catalog of furniture and fixtures. Floor patterns are draw
 - An item can stand in for a Home Assistant entity, which is the only way an entity reaches the plan: nothing is placed on its own. The item panel has a Device dropdown listing every entity that drives at least one of the things that item can show, the ones that fit best first, each with the controls it brings at the end of its row and the pieces it already drives listed under its name. A list of more than a handful searches itself: a box at the top of the panel takes the focus as it opens and filters on the entity's name and its id, the arrows walk what is left and Enter takes it. An entity can have several items, an item stands in for one entity, so an entity already behind another piece is still on offer. When it is behind more than one, the panel lists the others under Also driving: a row goes to that piece, the bin beside it asks first and then lets go of it. The room and position of the binding follow the item, and an item on the plan with an entity behind it carries an amber outline. Bound items take the entity's clicks and show its state, for example a lamp glows with the light's brightness and color. Clicking an item acts on its entity. Right clicking it, or holding it on a touch screen, opens Home Assistant's own dialog for the entity, where everything a click cannot do lives: brightness, color, a cover's exact position. A press that wanders is the camera being moved, so it never opens the dialog. Deleting an item, or the room it is in, drops the binding with it. Entities on offer: lights, switches, covers, media players, fans, climate, humidifiers, locks, cameras, vacuums, temperature and humidity sensors, door, window and motion sensors. Diagnostic entities are left out.
 - An item with more than one look and no entity behind it can be tried in each of them, in the editor only. Its panel has a Try its states section with a switch for on and off, a slider for each level (brightness, speed, how far a cover is open, a blind's slats, a window's tilt) and, for lights, a default, white or color tint. The switch is fully on or fully off and the first slider anything in between, each moving the other: switching off takes the slider to 0%, and any level above 0% is on. Clicking the item in 3D switches it too, the way it would act on an entity. Nothing tried is saved, and Reset puts the item back. An item with an entity shows the entity's state instead.
 
-Things are small seen from across a room, so a press that lands on nothing is tried again in rings around itself, growing outward to `PICK_RADIUS_PX` in `src/theme.ts`. The first thing it finds takes the press, which means a lamp does not have to be hit exactly. Past that it is taken as a press on the room.
+Things are small seen from across a room, so a press that lands on nothing is tried again in rings around itself, growing outward to `PICK_RADIUS_PX` in `src/theme.ts`. The first thing it finds takes the press, which means a lamp does not have to be hit exactly. The floor is checked part way through the rings, where `PICK_ROOM_AT` in the same file says: 0 checks it before the first ring, 1 only once every point has been tried, and 0.5 half way. Up to that point a press near a lamp goes to the lamp rather than to the room under it, and a press that finds nothing at all is a press on the room, if the floor was under it.
 
 Everything that moves is eased rather than switched. Home Assistant reports a cover's position every second or so while it travels, and a switch flips in one step, so without this a sliding door would stutter along in jumps and a window would snap open. Doors and casements swing, panels travel, curtains draw, screens roll, fans come up to speed and lamps fade up and down. A travelling cover only ever heads for the position Home Assistant last reported, never past it: what the reports give is the pace, since how far it moved between one and the next divided by how long that took is how fast the cover travels. Driving at that pace means arriving just as the next report lands, so a set of steps reads as one movement.
 
@@ -111,23 +113,23 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 
 ### Catalog
 
-| Family               | Items                                                                                                                                                                                                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lights               | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip                                                                                                                                              |
-| Seating              | Sofa, armchair, dining chair, office chair, stool, bench, pouf                                                                                                                                                                                              |
-| Tables               | Dining table, coffee table, side table (shelf table, nightstand or tray table), desk (writing desk, office table or pedestal desk)                                                                                                                          |
-| Storage              | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf                                                                                                                                                                                              |
-| Beds                 | Bed                                                                                                                                                                                                                                                         |
-| Kitchen              | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle, toaster, cooking robot, air fryer                                                                               |
-| Laundry              | Washing machine, dryer                                                                                                                                                                                                                                      |
-| Bathroom             | Toilet, basin, bathtub, shower, towel rail                                                                                                                                                                                                                  |
-| Decor                | Half wall, Rug, large plant (among them a golden bamboo and a weeping fig), small plant, wall mirror, wall clock, vase, books, curtain, Christmas tree (a fir or a bare winter tree strung with lights) |
-| Media                | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, PC tower, laptop, wireless charger (phone, watch, earbuds or tablet), projector, portable projector, ultra short throw projector, projector screen                                    |
-| Climate              | Radiator, air conditioner (split unit or duct grille), ceiling fan, floor fan (pedestal or disc), air purifier, humidifier, thermostat, fireplace (linear or wood stove)                                                                                    |
-| Windows and doors    | Blind (venetian or roller shutter), window (casement, box sash, sliding or steel grid), door (flush, panelled or glazed), sliding door (solid or glass), garage door (sectional or roller), awning (folding arm or pergola)                                 |
-| Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor                                                                                                                                                                |
-| Smart home           | Robot vacuum, pet feeder (food or water fountain), litter box (a self cleaning globe or a hand rolled wooden moon), water heater (combi boiler or tank)                                                                                                                                                                      |
-| Garden and outdoor   | Hot tub (square spa or barrel), pool (decked or frame), sprinkler (pop up rotor, oscillating bar or drip line), louvred pergola (sliding slats or turning cedar blades), sauna (barrel or cabin)                                                            |
+| Family               | Items                                                                                                                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lights               | Ceiling light, pendant, floor lamp, table lamp, wall light, floor LED strip, ceiling LED strip, wall LED strip                                                                                                              |
+| Seating              | Sofa, armchair, dining chair, office chair, stool, bench, pouf                                                                                                                                                              |
+| Tables               | Dining table, coffee table, side table (shelf table, nightstand or tray table), desk (writing desk, office table or pedestal desk)                                                                                          |
+| Storage              | Bookshelf, sideboard, wardrobe, dresser, shoe rack, wall shelf                                                                                                                                                              |
+| Beds                 | Bed                                                                                                                                                                                                                         |
+| Kitchen              | Counter, island, upper cabinets, fridge, oven, hob, extractor hood, ceiling extractor, dishwasher, sink, microwave, coffee machine, kettle, toaster, cooking robot, air fryer                                               |
+| Laundry              | Washing machine, dryer                                                                                                                                                                                                      |
+| Bathroom             | Toilet, basin, bathtub, shower, towel rail                                                                                                                                                                                  |
+| Decor                | Half wall, Rug, large plant (among them a golden bamboo and a weeping fig), small plant, wall mirror, wall clock, vase, books, curtain, Christmas tree (a fir or a bare winter tree strung with lights)                     |
+| Media                | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, PC tower, laptop, wireless charger (phone, watch, earbuds or tablet), projector, portable projector, ultra short throw projector, projector screen    |
+| Climate              | Radiator, air conditioner (split unit or duct grille), ceiling fan, floor fan (pedestal or disc), air purifier, humidifier, thermostat, fireplace (linear or wood stove)                                                    |
+| Windows and doors    | Blind (venetian or roller shutter), window (casement, box sash, sliding or steel grid), door (flush, panelled or glazed), sliding door (solid or glass), garage door (sectional or roller), awning (folding arm or pergola) |
+| Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor                                                                                                                                |
+| Smart home           | Robot vacuum, pet feeder (food or water fountain), litter box (a self cleaning globe or a hand rolled wooden moon), water heater (combi boiler or tank)                                                                     |
+| Garden and outdoor   | Hot tub (square spa or barrel), pool (decked or frame), sprinkler (pop up rotor, oscillating bar or drip line), louvred pergola (sliding slats or turning cedar blades), sauna (barrel or cabin)                            |
 
 ### Light in the room
 
@@ -185,15 +187,16 @@ Only entities that drive at least one of the things an item can show are on offe
 
 ## Card config
 
-| Key             | Default | Description                                                             |
-| --------------- | ------- | ----------------------------------------------------------------------- |
-| `rooms`         | `[]`    | List of rooms, see below                                                |
-| `radius`        | `0.3`   | Corner radius in meters for rooms without their own                     |
-| `gap`           | `0.12`  | Gap in meters between adjacent rooms                                    |
-| `aspect_ratio`  | `4:3`   | Card aspect ratio as `width:height`                                     |
-| `sun_direction` | `145`   | Where the sun comes from, in degrees clockwise from the top of the plan |
-| `devices`       | `[]`    | Entities bound to decoration items, see below                           |
-| `decorations`   | `[]`    | List of placed decoration items, see below                              |
+| Key             | Default | Description                                                              |
+| --------------- | ------- | ------------------------------------------------------------------------ |
+| `rooms`         | `[]`    | List of rooms, see below                                                 |
+| `radius`        | `0.3`   | Corner radius in meters for rooms without their own                      |
+| `gap`           | `0.12`  | Gap in meters between adjacent rooms                                     |
+| `aspect_ratio`  | `4:3`   | Card aspect ratio as `width:height`                                      |
+| `sun_direction` | `145`   | Where the sun comes from, in degrees clockwise from the top of the plan  |
+| `camera`        |         | The view the card opens with, saved from the editor's 3D view, see below |
+| `devices`       | `[]`    | Entities bound to decoration items, see below                            |
+| `decorations`   | `[]`    | List of placed decoration items, see below                               |
 
 Defaults for these and other visual values live in `src/theme.ts`.
 
@@ -208,6 +211,15 @@ Each room:
 | `radius`  | Corner radius override                                                                                                                                                                                                                     |
 | `color`   | Fill color override                                                                                                                                                                                                                        |
 | `floor`   | Wood on a room drawn in the editor. `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
+| `camera`  | The view the camera flies to when the room's floor is clicked in the card. A room without one does nothing when clicked                                                                                                                    |
+
+A view, on the card or on a room, is where the camera stands and what it looks at, both as `[x, y, z]` in meters: `x` as on the plan, `y` up, `z` the plan's `y` with its sign flipped. It is saved from the editor's 3D view rather than written by hand.
+
+```yaml
+camera:
+  position: [4.2, 5.1, 6.8]
+  target: [2.5, 0.3, -3.1]
+```
 
 Each device. A device is only a binding: it is never placed on its own, and its room and position follow the first item that stands in for it.
 

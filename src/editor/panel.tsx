@@ -18,18 +18,10 @@ export function Sticky({ children, className }: { children: ReactNode; className
   )
 }
 
-// Title of whatever is selected, with the way back to the list.
-export function SelectedHeader({
-  title,
-  tag,
-  accent,
-  onBack,
-}: {
-  title: string
-  tag?: ReactNode
-  accent: string
-  onBack: () => void
-}) {
+// Title of whatever is selected, with the way back to the list. The cross
+// is in the text's own color, not the accent, so it reads as a way out and
+// not as something switched on.
+export function SelectedHeader({ title, tag, onBack }: { title: string; tag?: ReactNode; onBack: () => void }) {
   return (
     <div className="flex items-center gap-2">
       <p className="min-w-0 flex-1 truncate text-sm font-semibold">{title}</p>
@@ -38,8 +30,7 @@ export function SelectedHeader({
         type="button"
         aria-label="Back to the list"
         onClick={onBack}
-        className="flex size-7 shrink-0 items-center justify-center rounded-lg hover:bg-(--secondary-background-color)"
-        style={{ color: accent }}
+        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-(--primary-text-color) hover:bg-(--secondary-background-color)"
       >
         <FontAwesomeIcon icon={faXmark} className="size-4" />
       </button>

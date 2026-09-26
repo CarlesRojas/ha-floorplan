@@ -22,6 +22,8 @@ export const CAMERA_MIN_POLAR_DEG = 6
 export const CAMERA_MAX_POLAR_DEG = 82
 export const CAMERA_NEAR_M = 0.1
 export const CAMERA_FAR_M = 200
+// How long the camera takes to travel to a saved view.
+export const CAMERA_FLIGHT_S = 0.9
 
 // Lights
 

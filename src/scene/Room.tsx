@@ -12,11 +12,11 @@ type Props = {
   index: number
   radius: number
   gap: number
-  // In the editor, clicking the bare floor picks the room.
-  onPick?: (id: string) => void
 }
 
-function Room({ room, index, radius, gap, onPick }: Props) {
+// Clicks on the floor are not taken here. The press fallback finds the room
+// under a press once the pieces around it have had their turn.
+function Room({ room, index, radius, gap }: Props) {
   // The bevel grows outward from the outline, so inset by it as well to keep
   // the visible edge where the gap says it should be.
   const points = useMemo(
@@ -62,18 +62,11 @@ function Room({ room, index, radius, gap, onPick }: Props) {
 
   return (
     <mesh
-      // Named so the editor's outline can find the room that is picked.
+      // Named so the outline and the press fallback can find the room.
       name={`room:${room.id}`}
       geometry={geometry}
       castShadow
       receiveShadow
-      onClick={
-        onPick &&
-        (e => {
-          e.stopPropagation()
-          onPick(room.id)
-        })
-      }
     >
       {floor ? (
         // Extrude UVs are plan meters, so the surface tiles at its own

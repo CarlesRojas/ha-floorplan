@@ -112,6 +112,12 @@ export const NIGHT_SUN_INTENSITY = 0.05
 // A ray hits one point, so a press that lands on nothing is tried again in
 // rings out to this radius.
 export const PICK_RADIUS_PX = 42
+// How far through those rings a press that has found nothing is checked
+// against the floor, as a share of all the points tried, 0 to 1. Devices
+// keep the press up to that point, so a press near a lamp goes to the lamp
+// and not to the room under it. At 0 the floor is checked before the first
+// ring, at 1 only once every point has been tried.
+export const PICK_ROOM_AT = 0.5
 // Radius of the sphere shown for a device with no decoration bound.
 export const DEVICE_SPHERE_RADIUS_M = 0.12
 export const DEVICE_SPHERE_COLOR = '#ffffff'

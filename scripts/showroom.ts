@@ -62,5 +62,14 @@ for (const kind of DECORATION_KINDS) {
   y += depth + GAP
 }
 
-const yaml = ['type: custom:floorplan-3d', 'rooms:', ...rooms, 'decorations:', ...decorations, ''].join('\n')
+const yaml = [
+  'type: custom:floorplan-3d',
+  'grid_options:',
+  '  columns: full',
+  'rooms:',
+  ...rooms,
+  'decorations:',
+  ...decorations,
+  '',
+].join('\n')
 writeFileSync(new URL('../showroom.yaml', import.meta.url), yaml)
