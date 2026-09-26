@@ -23,7 +23,8 @@ type Look = {
 type Vec3 = [number, number, number]
 
 // The pieces round the home that show they are on with something alive: a
-// fire, a tree's lights, a lit tank of fish, a feeder, a boiler.
+// fire, a tree's lights, a lit tank of fish, a feeder, a litter box that
+// turns itself over, a boiler.
 export default function HearthModel({ kind, item, state }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
   const c = (slot: string) => colorValue(kind, item.colors, slot, item.variant)
@@ -44,6 +45,8 @@ export default function HearthModel({ kind, item, state }: Props) {
       return <Aquarium {...look} />
     case 'pet_feeder':
       return look.style === 'fountain' ? <PetFountain {...look} /> : <PetFeeder {...look} />
+    case 'litter_box':
+      return look.style === 'drum' ? <DrumLitterBox {...look} /> : <GlobeLitterBox {...look} />
     case 'water_heater':
       return look.style === 'tank' ? <TankHeater {...look} /> : <CombiBoiler {...look} />
     default:
@@ -268,6 +271,11 @@ const FROND = (t: number) => {
 // whorl below, every one a slightly different length and one of two shades.
 // All the fronds of a shade are one geometry, so the tree costs three
 // draws whatever its size.
+// How many whorls of fronds a crown this tall carries, and how far up it
+// the trunk shows: to just under the last whorl, so its fronds hide the end.
+const firWhorls = (crown: number) => Math.max(7, Math.round(crown / 0.115))
+const firTop = (crown: number) => crown * (1 - 1.5 / firWhorls(crown))
+
 function firTree(R: number, y0: number, crown: number) {
   const rnd = random(11)
   const light = new Foliage()
@@ -298,23 +306,21 @@ function firTree(R: number, y0: number, crown: number) {
     )
     twigs.stem([at.toArray() as Vec3, fork.toArray() as Vec3], 0.009, 0.005)
   }
-  const whorls = Math.max(7, Math.round(crown / 0.115))
+  const whorls = firWhorls(crown)
   for (let k = 0; k < whorls; k++) {
     const t = k / whorls
     const at = new Vector3(0, y0 + crown * t, 0)
     const reach = R * (1 - t) * 0.98 + 0.04
     const n = Math.max(3, Math.round(9 * (1 - t * 0.55)))
+    // The last whorls turn upward and close into the tip, instead of lying
+    // flat in a star with nothing above them.
+    const tip = Math.max(0, (t - 0.78) / 0.22)
     for (let j = 0; j < n; j++) {
       const a = (j / n) * Math.PI * 2 + k * 2.4 + (rnd() - 0.5) * 0.5
       const len = Math.max(0.08, reach * (0.85 + rnd() * 0.3))
-      const lift = -0.08 + (rnd() - 0.5) * 0.24
+      const lift = -0.08 + (rnd() - 0.5) * 0.24 + tip * 0.55
       frond(rnd() < 0.5 ? light : dark, at, a, lift, len)
     }
-  }
-  // The leader, a few short fronds standing up round the top.
-  const top = new Vector3(0, y0 + crown - 0.08, 0)
-  for (let j = 0; j < 4; j++) {
-    frond(j % 2 ? light : dark, top, (j / 4) * Math.PI * 2 + 0.4, 1.1 + rnd() * 0.2, 0.14)
   }
   return { light: light.geometry(), dark: dark.geometry(), twigs: twigs.geometry() }
 }
@@ -465,9 +471,10 @@ function ChristmasTree({ p, c, M, style, on }: Look) {
       )}
       {fir && (
         <>
-          {/* The trunk, all the way up into the leader. */}
-          <mesh position={[0, (potH + h - 0.1) / 2, 0]}>
-            <cylinderGeometry args={[0.012, 0.035, h - 0.1 - potH, 10]} />
+          {/* The trunk, up to the last whorl and no further, so no bare tip
+              shows above the fronds. */}
+          <mesh position={[0, (potH + y0 + firTop(crown)) / 2, 0]}>
+            <cylinderGeometry args={[0.012, 0.035, y0 + firTop(crown) - potH, 10]} />
             {M('trunk')}
           </mesh>
           {/* A dark core, so no light shows through between the fronds. */}
@@ -893,6 +900,144 @@ function TankHeater({ p, M, on }: Look) {
         </mesh>
       ))}
       <Halo on={on} position={[0, tall * 0.3, r + 0.2]} color="#ff9a5a" intensity={0.1} />
+    </group>
+  )
+}
+
+// How fast a litter box turns while it cleans, in turns a second.
+const LITTER_TURN = 0.12
+
+// Turns its children about their front to back axis while `on`, winding up
+// and down over a moment so the drum never jumps into motion, and holds
+// them wherever they were when it stopped.
+function Turning({ on, children }: { on: boolean; children: ReactNode }) {
+  const ref = useRef<Group>(null)
+  const speed = useEased(on ? 1 : 0, 1.5)
+  useFrame((_, delta) => {
+    if (!ref.current || speed < 0.001) return
+    ref.current.rotation.z += speed * LITTER_TURN * Math.PI * 2 * delta
+  })
+  return <group ref={ref}>{children}</group>
+}
+
+// The entry into a litter box: a dark mouth with a rim round it, facing +z
+// and standing `deep` proud of whatever it is set in so it shows against a
+// curved front.
+function Hatch({ r, z, deep = 0.01, trim }: { r: number; z: number; deep?: number; trim: ReactNode }) {
+  return (
+    <group position={[0, 0, z]}>
+      <mesh position={[0, 0, -deep / 2]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[r, r, deep, SEG]} />
+        <meshStandardMaterial color={SOOT} roughness={1} />
+      </mesh>
+      <mesh>
+        <torusGeometry args={[r, r * 0.06, 8, SEG]} />
+        {trim}
+      </mesh>
+    </group>
+  )
+}
+
+// A self cleaning litter box: a globe on a hooded base with the waste drawer
+// in it. When it runs, the globe rolls over about its entry to sift the
+// litter, and it comes to rest wherever it is when it is switched off.
+function GlobeLitterBox({ p, M, on }: Look) {
+  const w = p('width')
+  const d = p('depth')
+  const h = p('height')
+  // The globe is as round as the footprint allows and the base takes the
+  // rest of the height, so a taller box stands its globe higher.
+  const R = Math.min(w, d) * 0.47
+  const baseH = Math.max(h - R * 2, 0.1)
+  const cy = baseH + R * 0.92
+  // Along its axis the globe stretches to fill the depth.
+  const zs = d / (R * 2.1)
+  const rings = [0, Math.PI / 3, (Math.PI * 2) / 3]
+  return (
+    <group>
+      <Slab size={[w, baseH, d]} radius={Math.min(w, d) * 0.12} bevel={0.01} position={[0, baseH / 2, 0]}>
+        {M('body')}
+      </Slab>
+      {/* The waste drawer in the front of the base, with its pull. */}
+      <mesh position={[0, baseH * 0.4, d / 2 + 0.003]}>
+        <boxGeometry args={[w * 0.78, baseH * 0.55, 0.006]} />
+        {M('drum')}
+      </mesh>
+      <mesh position={[0, baseH * 0.62, d / 2 + 0.008]}>
+        <boxGeometry args={[w * 0.3, 0.012, 0.006]} />
+        {M('trim')}
+      </mesh>
+      {/* The cradle the globe sits in. */}
+      <mesh position={[0, baseH + R * 0.25, 0]} scale={[1, 0.6, zs]}>
+        <cylinderGeometry args={[R * 0.75, R * 0.85, R * 0.5, SEG]} />
+        {M('drum')}
+      </mesh>
+      <group position={[0, cy, 0]} scale={[1, 1, zs]}>
+        <Turning on={on}>
+          <mesh castShadow>
+            <sphereGeometry args={[R, SEG, 24]} />
+            {M('body')}
+          </mesh>
+          {/* Bands over the globe from front to back, so the turn shows. */}
+          {rings.map(a => (
+            <group key={a} rotation={[0, 0, a]}>
+              <mesh rotation={[0, Math.PI / 2, 0]}>
+                <torusGeometry args={[R * 1.002, R * 0.025, 8, SEG]} />
+                {M('trim')}
+              </mesh>
+            </group>
+          ))}
+          <Hatch r={R * 0.4} z={R * 1.05} deep={R * 0.2} trim={M('drum')} />
+        </Turning>
+      </group>
+      <Led on={on} position={[0, baseH - 0.03, d / 2 + 0.002]} radius={0.006} />
+    </group>
+  )
+}
+
+// A litter box built as a drum lying on its side in a cradle, its entry in
+// the front end. The drum rolls about its length while it cleans, its ribs
+// giving the turn away, and stops dead when it is switched off.
+function DrumLitterBox({ p, M, on }: Look) {
+  const w = p('width')
+  const d = p('depth')
+  const h = p('height')
+  const R = Math.min(w * 0.47, h * 0.42)
+  const baseH = Math.max(h - R * 2, 0.06)
+  const cy = baseH + R * 0.9
+  const len = d * 0.92
+  const ribs = 8
+  return (
+    <group>
+      <Slab size={[w, baseH, d]} radius={Math.min(w, d) * 0.1} bevel={0.008} position={[0, baseH / 2, 0]}>
+        {M('body')}
+      </Slab>
+      {/* The two cheeks of the cradle the drum rolls in. */}
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[(s * w) / 2 - s * 0.02, baseH + R * 0.35, 0]} castShadow>
+          <boxGeometry args={[0.04, R * 0.7, len * 0.6]} />
+          {M('body')}
+        </mesh>
+      ))}
+      <group position={[0, cy, 0]}>
+        <Turning on={on}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[R, R, len, SEG]} />
+            {M('drum')}
+          </mesh>
+          {Array.from({ length: ribs }, (_, i) => {
+            const a = (i / ribs) * Math.PI * 2
+            return (
+              <mesh key={i} position={[Math.cos(a) * R, Math.sin(a) * R, 0]} rotation={[0, 0, a]}>
+                <boxGeometry args={[0.012, R * 0.14, len * 0.9]} />
+                {M('trim')}
+              </mesh>
+            )
+          })}
+          <Hatch r={R * 0.5} z={len / 2 + 0.002} trim={M('body')} />
+        </Turning>
+      </group>
+      <Led on={on} position={[w * 0.35, baseH - 0.02, d / 2 + 0.002]} radius={0.006} />
     </group>
   )
 }

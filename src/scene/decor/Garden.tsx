@@ -375,9 +375,11 @@ function BarrelSauna({ p, c, M, on }: Look) {
   const L = p('depth')
   const h = p('height')
   const lit = useEased(on ? 1 : 0, 2)
-  // The cradles lift the drum clear of the ground.
-  const lift = 0.1
-  const R = Math.min(w, h - lift) / 2
+  // The drum is as wide as the sauna, and the cradles lift it clear of the
+  // ground by whatever height is left over, so a taller sauna stands its
+  // barrel higher rather than swelling it.
+  const R = w / 2
+  const lift = Math.max(0.1, h - R * 2)
   const cy = lift + R
   const stave = 0.045
   const ri = R - stave

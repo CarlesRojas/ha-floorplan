@@ -301,14 +301,16 @@ const LAMINA_BASE = [
 
 // Its round base has no depth of its own to take, so only its height
 // changes: a taller Lámina has a longer rod and sheet.
-function Lamina({ c, m, state, up }: ModelProps) {
+function Lamina({ c, m, state, up, out }: ModelProps) {
   const black = <Material color={c('structure')} material={m('structure')} />
   const [bottom, top] = [LAMINA_SHEET[0], LAMINA_SHEET[1] + up]
   const arms = [LAMINA_ARMS[0], LAMINA_ARMS[1] + up]
   const h = top - bottom
   // The arc is centered a little in front of the rod, so its deepest
-  // point is where the plan draws it.
-  const center = LAMINA_SHEET_R - LAMINA_SHEET_BACK
+  // point is where the plan draws it. More depth carries the sheet further
+  // back from the rod on longer arms.
+  const back = LAMINA_SHEET_BACK + out
+  const center = LAMINA_SHEET_R - back
   const half = Math.asin(LAMINA_SHEET_W / 2 / LAMINA_SHEET_R)
   const rodH = LAMINA_TOP + up - LAMINA_BASE_H
   return (
@@ -335,8 +337,8 @@ function Lamina({ c, m, state, up }: ModelProps) {
         <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} solid />
       </mesh>
       {arms.map(y => (
-        <mesh key={y} position={[0, y, -(LAMINA_ROD_R + LAMINA_SHEET_BACK) / 2]} userData={{ transmits: true }}>
-          <boxGeometry args={[LAMINA_ARM_W, 0.004, LAMINA_SHEET_BACK - LAMINA_ROD_R]} />
+        <mesh key={y} position={[0, y, -(LAMINA_ROD_R + back) / 2]} userData={{ transmits: true }}>
+          <boxGeometry args={[LAMINA_ARM_W, 0.004, back - LAMINA_ROD_R]} />
           {black}
         </mesh>
       ))}

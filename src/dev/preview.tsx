@@ -9,7 +9,10 @@
 // &yaw=90 looks at it from its right side, and pitch raises the view by that
 // many degrees. stand puts it on a piece of that kind at its defaults, so
 // &stand=kitchen_counter shows a sink let into a counter, and at moves it
-// that far along the piece. text is the state in words, as &text=heat. Drag to turn it, scroll to zoom.
+// that far along the piece. text is the state in words, as &text=heat.
+// grow=width shows the model twice, as it is and with that parameter at its
+// largest, for checking that everything in it grows along. Drag to turn it,
+// scroll to zoom.
 import { decorationKind, mountHeight } from '#/decoration/catalog.ts'
 import { deskRise } from '#/scene/decor/state.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -53,6 +56,10 @@ const item: DecorationConfig = {
   colors,
 }
 const all = support ? [support, item] : [item]
+// The same item with one parameter turned all the way up.
+const grow = query.get('grow')
+const grown: DecorationConfig | null =
+  grow && kind ? { ...item, params: { ...params, [grow]: kind.params.find(x => x.id === grow)?.max ?? 0 } } : null
 const yaw = (Number(query.get('yaw')) || 0) * (Math.PI / 180)
 // How far above the model the camera looks down from, for flat things like
 // a hob.
@@ -81,16 +88,16 @@ createRoot(root).render(
       <ambientLight intensity={dark ? 0.15 : 0.7} />
       <directionalLight position={[3, 6, 4]} intensity={dark ? 0.1 : 1.2} />
       <Bounds fit clip observe margin={1.15} maxDuration={0}>
-        {(compare ? [false, true] : [on]).map((state, i, sides) => (
+        {(compare || grown ? [false, true] : [on]).map((state, i, sides) => (
           <group key={i} position={[sides.length > 1 ? (i - 0.5) * spread : 0, lift, 0]}>
-            {all.map(d => (
+            {(grown && state ? [support, grown].filter(x => x !== null) : all).map(d => (
               <DecorationModel
                 key={d.id}
                 item={d}
-                all={all}
+                all={grown && state ? [support, grown].filter(x => x !== null) : all}
                 state={{
-                  on: state,
-                  level: state ? 1 : 0,
+                  on: grown ? on : state,
+                  level: (grown ? on : state) ? 1 : 0,
                   levels: { open: Number(query.get('open') ?? 1), tilt: Number(query.get('tilt') ?? 0) },
                   glow: [glow.r, glow.g, glow.b],
                   text: query.get('text') ?? undefined,

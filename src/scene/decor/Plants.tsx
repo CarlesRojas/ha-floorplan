@@ -244,23 +244,20 @@ function monstera(size: number, height: number, potH: number): Parts {
   const rnd = random(11)
   const soil = potH * 0.9
   const L = clamp(Math.min(height * 0.34, size * 0.36), 0.16, 0.55)
-  f.soil.stem(
-    [
-      [0, soil - 0.05, 0],
-      [0, soil + (height - soil) * 0.36, 0],
-    ],
-    clamp(height * 0.02, 0.018, 0.035),
-    clamp(height * 0.02, 0.018, 0.035),
-    undefined,
-    10,
-  )
   const count = 11
+  // How far up the pole the highest stalk sets off from.
+  let climbed = soil
   for (let i = 0; i < count; i++) {
     const a = i * 2.4 + rnd() * 0.3
     const rise = 1.25 - (i % 4) * 0.14 - rnd() * 0.08
-    const base = new Vector3(Math.sin(a) * 0.03, soil, Math.cos(a) * 0.03)
     const tall = (height - soil - L * 0.25) / Math.sin(rise)
     const wide = (size / 2 - L * 0.85) / Math.cos(rise)
+    // A stalk only reaches as far out as the plant is wide. Whatever height
+    // that leaves it short of, the plant makes up by climbing: the stalks set
+    // off from up the moss pole, spread between the soil and the top.
+    const up = Math.max(0, tall - wide) * Math.sin(rise) * (((i * 5) % count) / (count - 1))
+    const base = new Vector3(Math.sin(a) * 0.03, soil + up, Math.cos(a) * 0.03)
+    climbed = Math.max(climbed, base.y)
     const stalk = Math.max(0.1, Math.min(tall, wide) * (0.62 + (0.38 * ((i * 7) % count)) / count))
     const toward = heading(a, rise)
     const end = base.clone().addScaledVector(toward, stalk)
@@ -295,6 +292,17 @@ function monstera(size: number, height: number, potH: number): Parts {
       )
     }
   }
+  // The moss pole, up past the highest stalk that leaves it.
+  f.soil.stem(
+    [
+      [0, soil - 0.05, 0],
+      [0, Math.max(soil + (height - soil) * 0.36, climbed + L * 0.2), 0],
+    ],
+    clamp(height * 0.02, 0.018, 0.035),
+    clamp(height * 0.02, 0.018, 0.035),
+    undefined,
+    10,
+  )
   return f
 }
 

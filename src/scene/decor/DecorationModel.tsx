@@ -62,14 +62,15 @@ const FAMILY_MODELS: Record<string, FamilyModel> = {
 }
 
 // Kinds drawn by a model other than their family's: the pieces that come
-// alive when they are on, a fire, a tree's lights, a tank, a feeder and a
-// boiler, all live together, as do the desk gadgets, the small kitchen
+// alive when they are on, a fire, a tree's lights, a tank, a feeder, a
+// litter box and a boiler, all live together, as do the desk gadgets, the small kitchen
 // appliances and the garden buildings.
 const KIND_MODELS: Record<string, FamilyModel> = {
   fireplace: HearthModel,
   christmas_tree: HearthModel,
   aquarium: HearthModel,
   pet_feeder: HearthModel,
+  litter_box: HearthModel,
   water_heater: HearthModel,
   pc_tower: GadgetModel,
   laptop: GadgetModel,
