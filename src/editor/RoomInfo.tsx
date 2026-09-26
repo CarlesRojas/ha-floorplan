@@ -1,7 +1,7 @@
 import { SelectedHeader } from '#/editor/panel.tsx'
 import { EDITOR_ACCENT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, RoomConfig } from '#/types.ts'
-import { faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCamera, faEye, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
@@ -12,6 +12,13 @@ type Props = {
   onRenameDone: () => void
   onAssignArea: (roomId: string, areaId: string | undefined) => void
   onFloor: (roomId: string, floor: RoomConfig['floor']) => void
+  // The room's view: saved from where the 3D view's camera stands now,
+  // shown by flying the camera to it, or forgotten.
+  onSaveCamera: (roomId: string) => void
+  onShowCamera: (roomId: string) => void
+  onClearCamera: (roomId: string) => void
+  // Whether there is a 3D view to take the camera from.
+  hasPreview: boolean
   onDelete: (roomId: string) => void
   onDeselect: () => void
 }
@@ -29,6 +36,10 @@ export default function RoomInfo({
   onRenameDone,
   onAssignArea,
   onFloor,
+  onSaveCamera,
+  onShowCamera,
+  onClearCamera,
+  hasPreview,
   onDelete,
   onDeselect,
 }: Props) {
@@ -65,7 +76,7 @@ export default function RoomInfo({
 
   return (
     <div className="flex flex-col gap-2 border-b border-(--divider-color) pb-3">
-      <SelectedHeader title={room.name ?? room.id} tag={swatch} accent={accent} onBack={onDeselect} />
+      <SelectedHeader title={room.name ?? room.id} tag={swatch} onBack={onDeselect} />
       <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
         Name
         <input
@@ -127,6 +138,49 @@ export default function RoomInfo({
           {slider('Pattern angle', 'rotation', 0, 175, 5)}
         </>
       )}
+      <div className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+        Camera
+        <div className="flex min-w-0 items-center gap-1.5">
+          <button
+            type="button"
+            disabled={!hasPreview}
+            title={hasPreview ? "Save where the 3D view stands now as this room's view" : 'Open the 3D view first'}
+            onClick={() => onSaveCamera(room.id)}
+            className="flex h-8 min-w-0 flex-1 items-center justify-center gap-2 rounded border border-(--divider-color) px-2 text-sm disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faCamera} className="size-3.5" />
+            <span className="truncate">{room.camera ? 'Replace view' : 'Use current view'}</span>
+          </button>
+          {room.camera && (
+            <>
+              <button
+                type="button"
+                disabled={!hasPreview}
+                aria-label="Fly to this room's view"
+                title="Fly to this room's view"
+                onClick={() => onShowCamera(room.id)}
+                className="flex size-8 shrink-0 items-center justify-center rounded border border-(--divider-color) disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={faEye} className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Forget this room's view"
+                title="Forget this room's view"
+                onClick={() => onClearCamera(room.id)}
+                className="flex size-8 shrink-0 items-center justify-center rounded border border-(--divider-color)"
+              >
+                <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      <p className="-mt-1 text-xs text-(--secondary-text-color)">
+        {room.camera
+          ? 'Clicking this room in the card flies the camera to its view.'
+          : 'Orbit the 3D view to where this room looks best, then save it. Clicking the room in the card will fly there.'}
+      </p>
       <button
         type="button"
         onClick={() => {

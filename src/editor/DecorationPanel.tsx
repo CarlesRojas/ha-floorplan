@@ -146,7 +146,7 @@ export default function DecorationPanel({
     return (
       <div className="flex flex-col gap-3">
         <Sticky>
-          <SelectedHeader title={kind.label} tag={roomTag} accent={accent} onBack={() => onSelect(null)} />
+          <SelectedHeader title={kind.label} tag={roomTag} onBack={() => onSelect(null)} />
           <ModelPreview item={item} boxRef={previewBox} {...previewShape} />
           <PreviewHandle onDrag={resize} />
           <Signals signals={kind.expresses} accent={accent} />

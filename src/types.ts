@@ -42,6 +42,14 @@ export type HomeAssistant = {
 // Plan coordinates in meters. x grows to the right, y grows upward on the plan.
 export type Point = [number, number]
 
+// Where the camera stands and what it looks at, in scene meters: x as on
+// the plan, y up, z the plan's y with its sign flipped. Saved from the
+// editor's 3D view, never written by hand.
+export type CameraView = {
+  position: [number, number, number]
+  target: [number, number, number]
+}
+
 export type RoomConfig = {
   id: string
   name?: string
@@ -51,6 +59,9 @@ export type RoomConfig = {
   color?: string
   // Floor material from the theme's list, with an optional color tint.
   floor?: { material: string; color?: string; scale?: number; rotation?: number; intensity?: number }
+  // Where the camera goes when the room is clicked in the card. A room
+  // without one does nothing when clicked.
+  camera?: CameraView
 }
 
 // A Home Assistant entity placed in a room.
@@ -101,6 +112,8 @@ export type CardConfig = {
   // Where the sun comes from, in degrees clockwise from the top of the plan.
   // 0 puts it beyond the top edge, 90 to the right of it.
   sun_direction?: number
+  // The view the card opens with. Without one the camera frames the plan.
+  camera?: CameraView
 }
 
 declare global {

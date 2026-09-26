@@ -8,7 +8,7 @@ import {
   CAMERA_NEAR_M,
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
-import CameraRig from '#/scene/CameraRig.tsx'
+import CameraRig, { type CameraHandle } from '#/scene/CameraRig.tsx'
 import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
@@ -21,7 +21,9 @@ import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils, PCFShadowMap } from 'three'
-import { useCallback, useLayoutEffect, useRef } from 'react'
+import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react'
+
+export type { CameraHandle } from '#/scene/CameraRig.tsx'
 
 type Props = {
   hass: HomeAssistant | null
@@ -43,6 +45,8 @@ type Props = {
   onTry?: (id: string) => void
   // Stops drawing and holds the last frame, for a card nobody can see.
   paused?: boolean
+  // Filled with the camera's handle, to read the view or fly to one.
+  cameraRef?: RefObject<CameraHandle | null>
 }
 
 export default function Scene({
@@ -56,6 +60,7 @@ export default function Scene({
   tries,
   onTry,
   paused = false,
+  cameraRef,
 }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
@@ -103,7 +108,7 @@ export default function Scene({
           around it onto the floor. */}
       <Shadows />
       <Cleanup />
-      <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
+      <CameraRig rooms={rooms} decorations={config.decorations ?? []} view={config.camera} handle={cameraRef} />
       <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
       {/* A press that misses everything looks around itself for something
           to act on, so small things are still easy to hit. */}
