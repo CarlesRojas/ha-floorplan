@@ -4,7 +4,7 @@ import type { SurfaceKind } from '#/materials/textures.ts'
 import { FLOOR_MATERIALS, ROOM_COLORS, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
 import { ensureCounterClockwise, inset, roundedShape } from '#/geometry/polygon.ts'
 import type { RoomConfig } from '#/types.ts'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { ExtrudeGeometry } from 'three'
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
   onPick?: (id: string) => void
 }
 
-export default function Room({ room, index, radius, gap, onPick }: Props) {
+function Room({ room, index, radius, gap, onPick }: Props) {
   // The bevel grows outward from the outline, so inset by it as well to keep
   // the visible edge where the gap says it should be.
   const points = useMemo(
@@ -91,3 +91,5 @@ export default function Room({ room, index, radius, gap, onPick }: Props) {
     </mesh>
   )
 }
+
+export default memo(Room)

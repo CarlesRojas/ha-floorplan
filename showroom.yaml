@@ -1,0 +1,1828 @@
+type: custom:floorplan-3d
+rooms:
+  - id: light_ceiling
+    name: "Ceiling light"
+    points:
+      - [0, 0]
+      - [1.1, 0]
+      - [1.1, 1.4]
+      - [0, 1.4]
+  - id: light_pendant
+    name: "Pendant"
+    points:
+      - [0, 1.8]
+      - [3.39, 1.8]
+      - [3.39, 3.22]
+      - [0, 3.22]
+  - id: light_floor
+    name: "Floor lamp"
+    points:
+      - [0, 3.62]
+      - [3.3, 3.62]
+      - [3.3, 5.12]
+      - [0, 5.12]
+  - id: light_table
+    name: "Table lamp"
+    points:
+      - [0, 5.52]
+      - [3.18, 5.52]
+      - [3.18, 6.92]
+      - [0, 6.92]
+  - id: light_wall
+    name: "Wall light"
+    points:
+      - [0, 7.32]
+      - [2.56, 7.32]
+      - [2.56, 8.72]
+      - [0, 8.72]
+  - id: light_strip
+    name: "Floor LED strip"
+    points:
+      - [0, 9.12]
+      - [2, 9.12]
+      - [2, 10.52]
+      - [0, 10.52]
+  - id: light_strip_ceiling
+    name: "Ceiling LED strip"
+    points:
+      - [0, 10.92]
+      - [2.6, 10.92]
+      - [2.6, 12.32]
+      - [0, 12.32]
+  - id: light_strip_wall
+    name: "Wall LED strip"
+    points:
+      - [0, 12.72]
+      - [2.6, 12.72]
+      - [2.6, 14.12]
+      - [0, 14.12]
+  - id: sofa
+    name: "Sofa"
+    points:
+      - [0, 14.52]
+      - [8.7, 14.52]
+      - [8.7, 16.52]
+      - [0, 16.52]
+  - id: dining_chair
+    name: "Dining chair"
+    points:
+      - [0, 16.92]
+      - [3.42, 16.92]
+      - [3.42, 18.47]
+      - [0, 18.47]
+  - id: office_chair
+    name: "Office chair"
+    points:
+      - [0, 18.87]
+      - [3.94, 18.87]
+      - [3.94, 20.55]
+      - [0, 20.55]
+  - id: stool
+    name: "Stool"
+    points:
+      - [0, 20.95]
+      - [3.37, 20.95]
+      - [3.37, 22.49]
+      - [0, 22.49]
+  - id: bench
+    name: "Bench"
+    points:
+      - [0, 22.89]
+      - [4.5, 22.89]
+      - [4.5, 24.38]
+      - [0, 24.38]
+  - id: pouf
+    name: "Pouf"
+    points:
+      - [0, 24.78]
+      - [4.1, 24.78]
+      - [4.1, 26.58]
+      - [0, 26.58]
+  - id: dining_table
+    name: "Dining table"
+    points:
+      - [0, 26.98]
+      - [7.4, 26.98]
+      - [7.4, 28.98]
+      - [0, 28.98]
+  - id: coffee_table
+    name: "Coffee table"
+    points:
+      - [9.7, 0]
+      - [16.25, 0]
+      - [16.25, 1.7]
+      - [9.7, 1.7]
+  - id: side_table
+    name: "Side table"
+    points:
+      - [9.7, 2.1]
+      - [13.05, 2.1]
+      - [13.05, 3.55]
+      - [9.7, 3.55]
+  - id: desk
+    name: "Desk"
+    points:
+      - [9.7, 3.95]
+      - [16.1, 3.95]
+      - [16.1, 5.75]
+      - [9.7, 5.75]
+  - id: bookshelf
+    name: "Bookshelf"
+    points:
+      - [9.7, 6.15]
+      - [14.15, 6.15]
+      - [14.15, 7.55]
+      - [9.7, 7.55]
+  - id: sideboard
+    name: "Sideboard"
+    points:
+      - [9.7, 7.95]
+      - [17, 7.95]
+      - [17, 9.41]
+      - [9.7, 9.41]
+  - id: wardrobe
+    name: "Wardrobe"
+    points:
+      - [9.7, 9.81]
+      - [15.4, 9.81]
+      - [15.4, 11.46]
+      - [9.7, 11.46]
+  - id: dresser
+    name: "Dresser"
+    points:
+      - [9.7, 11.86]
+      - [14.6, 11.86]
+      - [14.6, 13.36]
+      - [9.7, 13.36]
+  - id: shoe_rack
+    name: "Shoe rack"
+    points:
+      - [9.7, 13.76]
+      - [14.2, 13.76]
+      - [14.2, 15.16]
+      - [9.7, 15.16]
+  - id: wall_shelf
+    name: "Wall shelf"
+    points:
+      - [9.7, 15.56]
+      - [14.3, 15.56]
+      - [14.3, 16.96]
+      - [9.7, 16.96]
+  - id: bed_double
+    name: "Bed"
+    points:
+      - [9.7, 17.36]
+      - [16.5, 17.36]
+      - [16.5, 20.41]
+      - [9.7, 20.41]
+  - id: kitchen_counter
+    name: "Counter"
+    points:
+      - [9.7, 20.81]
+      - [14.8, 20.81]
+      - [14.8, 22.71]
+      - [9.7, 22.71]
+  - id: upper_cabinets
+    name: "Upper cabinets"
+    points:
+      - [9.7, 23.11]
+      - [12.5, 23.11]
+      - [12.5, 24.51]
+      - [9.7, 24.51]
+  - id: fridge
+    name: "Fridge"
+    points:
+      - [9.7, 24.91]
+      - [12.7, 24.91]
+      - [12.7, 26.61]
+      - [9.7, 26.61]
+  - id: oven
+    name: "Oven"
+    points:
+      - [9.7, 27.01]
+      - [11.3, 27.01]
+      - [11.3, 28.56]
+      - [9.7, 28.56]
+  - id: hob
+    name: "Hob"
+    points:
+      - [18, 0]
+      - [20.7, 0]
+      - [20.7, 1.5]
+      - [18, 1.5]
+  - id: extractor_hood
+    name: "Extractor hood"
+    points:
+      - [18, 1.9]
+      - [19.6, 1.9]
+      - [19.6, 3.4]
+      - [18, 3.4]
+  - id: ceiling_extractor
+    name: "Ceiling extractor"
+    points:
+      - [18, 3.8]
+      - [19.85, 3.8]
+      - [19.85, 5.3]
+      - [18, 5.3]
+  - id: dishwasher
+    name: "Dishwasher"
+    points:
+      - [18, 5.7]
+      - [19.6, 5.7]
+      - [19.6, 7.3]
+      - [18, 7.3]
+  - id: kitchen_sink
+    name: "Sink"
+    points:
+      - [18, 7.7]
+      - [22.15, 7.7]
+      - [22.15, 9.2]
+      - [18, 9.2]
+  - id: microwave
+    name: "Microwave"
+    points:
+      - [18, 9.6]
+      - [19.44, 9.6]
+      - [19.44, 11]
+      - [18, 11]
+  - id: coffee_machine
+    name: "Coffee machine"
+    points:
+      - [18, 11.4]
+      - [20.64, 11.4]
+      - [20.64, 12.85]
+      - [18, 12.85]
+  - id: kettle
+    name: "Kettle"
+    points:
+      - [18, 13.25]
+      - [19.8, 13.25]
+      - [19.8, 14.65]
+      - [18, 14.65]
+  - id: toaster
+    name: "Toaster"
+    points:
+      - [18, 15.05]
+      - [20.23, 15.05]
+      - [20.23, 16.45]
+      - [18, 16.45]
+  - id: cooking_robot
+    name: "Cooking robot"
+    points:
+      - [18, 16.85]
+      - [20.19, 16.85]
+      - [20.19, 18.25]
+      - [18, 18.25]
+  - id: air_fryer
+    name: "Air fryer"
+    points:
+      - [18, 18.65]
+      - [20.18, 18.65]
+      - [20.18, 20.05]
+      - [18, 20.05]
+  - id: washing_machine
+    name: "Washing machine"
+    points:
+      - [18, 20.45]
+      - [19.6, 20.45]
+      - [19.6, 22.05]
+      - [18, 22.05]
+  - id: dryer
+    name: "Dryer"
+    points:
+      - [18, 22.45]
+      - [19.6, 22.45]
+      - [19.6, 24.05]
+      - [18, 24.05]
+  - id: toilet
+    name: "Toilet"
+    points:
+      - [18, 24.45]
+      - [21.99, 24.45]
+      - [21.99, 26.1]
+      - [18, 26.1]
+  - id: basin
+    name: "Basin"
+    points:
+      - [18, 26.5]
+      - [22, 26.5]
+      - [22, 27.98]
+      - [18, 27.98]
+  - id: bathtub
+    name: "Bathtub"
+    points:
+      - [23.15, 0]
+      - [27.65, 0]
+      - [27.65, 2.9]
+      - [23.15, 2.9]
+  - id: shower
+    name: "Shower"
+    points:
+      - [23.15, 3.3]
+      - [25.05, 3.3]
+      - [25.05, 5.2]
+      - [23.15, 5.2]
+  - id: towel_rail
+    name: "Towel rail"
+    points:
+      - [23.15, 5.6]
+      - [25.75, 5.6]
+      - [25.75, 7]
+      - [23.15, 7]
+  - id: half_wall
+    name: "Half wall"
+    points:
+      - [23.15, 7.4]
+      - [26.15, 7.4]
+      - [26.15, 8.8]
+      - [23.15, 8.8]
+  - id: rug
+    name: "Rug"
+    points:
+      - [23.15, 9.2]
+      - [33.55, 9.2]
+      - [33.55, 11.8]
+      - [23.15, 11.8]
+  - id: plant_large
+    name: "Floor plant"
+    points:
+      - [23.15, 12.2]
+      - [33.8, 12.2]
+      - [33.8, 14.5]
+      - [23.15, 14.5]
+  - id: plant_small
+    name: "Shelf plant"
+    points:
+      - [23.15, 14.9]
+      - [25.95, 14.9]
+      - [25.95, 16.3]
+      - [23.15, 16.3]
+  - id: plant_wall
+    name: "Wall plant"
+    points:
+      - [23.15, 16.7]
+      - [25.97, 16.7]
+      - [25.97, 18.1]
+      - [23.15, 18.1]
+  - id: wall_mirror
+    name: "Wall mirror"
+    points:
+      - [23.15, 18.5]
+      - [25.95, 18.5]
+      - [25.95, 20.2]
+      - [23.15, 20.2]
+  - id: wall_clock
+    name: "Wall clock"
+    points:
+      - [23.15, 20.6]
+      - [26.18, 20.6]
+      - [26.18, 22]
+      - [23.15, 22]
+  - id: vase
+    name: "Vase"
+    points:
+      - [23.15, 22.4]
+      - [24.33, 22.4]
+      - [24.33, 23.8]
+      - [23.15, 23.8]
+  - id: books
+    name: "Books"
+    points:
+      - [23.15, 24.2]
+      - [24.41, 24.2]
+      - [24.41, 25.6]
+      - [23.15, 25.6]
+  - id: curtain
+    name: "Curtain"
+    points:
+      - [23.15, 26]
+      - [27.45, 26]
+      - [27.45, 27.4]
+      - [23.15, 27.4]
+  - id: tv
+    name: "TV"
+    points:
+      - [23.15, 27.8]
+      - [25.48, 27.8]
+      - [25.48, 29.2]
+      - [23.15, 29.2]
+  - id: tv_wall
+    name: "Wall TV"
+    points:
+      - [34.8, 0]
+      - [37.13, 0]
+      - [37.13, 1.4]
+      - [34.8, 1.4]
+  - id: soundbar
+    name: "Soundbar"
+    points:
+      - [34.8, 1.8]
+      - [38.35, 1.8]
+      - [38.35, 3.2]
+      - [34.8, 3.2]
+  - id: speaker
+    name: "Speaker"
+    points:
+      - [34.8, 3.6]
+      - [37.2, 3.6]
+      - [37.2, 5]
+      - [34.8, 5]
+  - id: floor_speaker
+    name: "Floor speaker"
+    points:
+      - [34.8, 5.4]
+      - [36.68, 5.4]
+      - [36.68, 6.8]
+      - [34.8, 6.8]
+  - id: monitor
+    name: "Monitor"
+    points:
+      - [34.8, 7.2]
+      - [36.4, 7.2]
+      - [36.4, 8.6]
+      - [34.8, 8.6]
+  - id: game_console
+    name: "Game console"
+    points:
+      - [34.8, 9]
+      - [37.33, 9]
+      - [37.33, 10.4]
+      - [34.8, 10.4]
+  - id: pc_tower
+    name: "PC tower"
+    points:
+      - [34.8, 10.8]
+      - [36.75, 10.8]
+      - [36.75, 12.26]
+      - [34.8, 12.26]
+  - id: laptop
+    name: "Laptop"
+    points:
+      - [34.8, 12.66]
+      - [36.97, 12.66]
+      - [36.97, 14.06]
+      - [34.8, 14.06]
+  - id: wireless_charger
+    name: "Wireless charger"
+    points:
+      - [34.8, 14.46]
+      - [37.74, 14.46]
+      - [37.74, 15.86]
+      - [34.8, 15.86]
+  - id: projector
+    name: "Projector"
+    points:
+      - [34.8, 16.26]
+      - [36.06, 16.26]
+      - [36.06, 17.66]
+      - [34.8, 17.66]
+  - id: projector_portable
+    name: "Portable projector"
+    points:
+      - [34.8, 18.06]
+      - [35.9, 18.06]
+      - [35.9, 19.46]
+      - [34.8, 19.46]
+  - id: projector_ust
+    name: "Short throw projector"
+    points:
+      - [34.8, 19.86]
+      - [38.01, 19.86]
+      - [38.01, 21.26]
+      - [34.8, 21.26]
+  - id: projector_screen
+    name: "Projector screen"
+    points:
+      - [34.8, 21.66]
+      - [38.01, 21.66]
+      - [38.01, 23.06]
+      - [34.8, 23.06]
+  - id: radiator
+    name: "Radiator"
+    points:
+      - [34.8, 23.46]
+      - [38.95, 23.46]
+      - [38.95, 24.86]
+      - [34.8, 24.86]
+  - id: ac_unit
+    name: "Air conditioner"
+    points:
+      - [34.8, 25.26]
+      - [37.55, 25.26]
+      - [37.55, 26.66]
+      - [34.8, 26.66]
+  - id: fan_ceiling
+    name: "Ceiling fan"
+    points:
+      - [34.8, 27.06]
+      - [40.5, 27.06]
+      - [40.5, 29.36]
+      - [34.8, 29.36]
+  - id: fan_floor
+    name: "Floor fan"
+    points:
+      - [41.5, 0]
+      - [43.76, 0]
+      - [43.76, 1.4]
+      - [41.5, 1.4]
+  - id: fireplace
+    name: "Fireplace"
+    points:
+      - [41.5, 1.8]
+      - [44.7, 1.8]
+      - [44.7, 3.2]
+      - [41.5, 3.2]
+  - id: air_purifier
+    name: "Air purifier"
+    points:
+      - [41.5, 3.6]
+      - [42.78, 3.6]
+      - [42.78, 5]
+      - [41.5, 5]
+  - id: humidifier
+    name: "Humidifier"
+    points:
+      - [41.5, 5.4]
+      - [42.7, 5.4]
+      - [42.7, 6.8]
+      - [41.5, 6.8]
+  - id: thermostat
+    name: "Thermostat"
+    points:
+      - [41.5, 7.2]
+      - [42.61, 7.2]
+      - [42.61, 8.6]
+      - [41.5, 8.6]
+  - id: blind
+    name: "Blind"
+    points:
+      - [41.5, 9]
+      - [45.4, 9]
+      - [45.4, 10.4]
+      - [41.5, 10.4]
+  - id: window
+    name: "Window"
+    points:
+      - [41.5, 10.8]
+      - [48.8, 10.8]
+      - [48.8, 12.2]
+      - [41.5, 12.2]
+  - id: door
+    name: "Door"
+    points:
+      - [41.5, 12.6]
+      - [46.05, 12.6]
+      - [46.05, 14]
+      - [41.5, 14]
+  - id: sliding_door
+    name: "Sliding door"
+    points:
+      - [41.5, 14.4]
+      - [47.2, 14.4]
+      - [47.2, 15.8]
+      - [41.5, 15.8]
+  - id: garage_door
+    name: "Garage door"
+    points:
+      - [41.5, 16.2]
+      - [48, 16.2]
+      - [48, 17.6]
+      - [41.5, 17.6]
+  - id: awning
+    name: "Awning"
+    points:
+      - [41.5, 18]
+      - [48, 18]
+      - [48, 19.4]
+      - [41.5, 19.4]
+  - id: christmas_tree
+    name: "Christmas tree"
+    points:
+      - [41.5, 19.8]
+      - [45.3, 19.8]
+      - [45.3, 22]
+      - [41.5, 22]
+  - id: camera
+    name: "Camera"
+    points:
+      - [41.5, 22.4]
+      - [42.6, 22.4]
+      - [42.6, 23.8]
+      - [41.5, 23.8]
+  - id: doorbell
+    name: "Doorbell"
+    points:
+      - [41.5, 24.2]
+      - [42.57, 24.2]
+      - [42.57, 25.6]
+      - [41.5, 25.6]
+  - id: motion_sensor
+    name: "Motion sensor"
+    points:
+      - [41.5, 26]
+      - [42.57, 26]
+      - [42.57, 27.4]
+      - [41.5, 27.4]
+  - id: smoke_detector
+    name: "Smoke detector"
+    points:
+      - [41.5, 27.8]
+      - [42.64, 27.8]
+      - [42.64, 29.2]
+      - [41.5, 29.2]
+  - id: alarm_panel
+    name: "Alarm panel"
+    points:
+      - [49.8, 0]
+      - [50.96, 0]
+      - [50.96, 1.4]
+      - [49.8, 1.4]
+  - id: smart_lock
+    name: "Smart lock"
+    points:
+      - [49.8, 1.8]
+      - [50.89, 1.8]
+      - [50.89, 3.2]
+      - [49.8, 3.2]
+  - id: air_quality
+    name: "Air quality sensor"
+    points:
+      - [49.8, 3.6]
+      - [50.9, 3.6]
+      - [50.9, 5]
+      - [49.8, 5]
+  - id: vacuum_robot
+    name: "Robot vacuum"
+    points:
+      - [49.8, 5.4]
+      - [51.15, 5.4]
+      - [51.15, 6.8]
+      - [49.8, 6.8]
+  - id: pet_feeder
+    name: "Pet feeder"
+    points:
+      - [49.8, 7.2]
+      - [51.74, 7.2]
+      - [51.74, 8.6]
+      - [49.8, 8.6]
+  - id: litter_box
+    name: "Litter box"
+    points:
+      - [49.8, 9]
+      - [52.25, 9]
+      - [52.25, 10.7]
+      - [49.8, 10.7]
+  - id: water_heater
+    name: "Water heater"
+    points:
+      - [49.8, 11.1]
+      - [52.22, 11.1]
+      - [52.22, 12.5]
+      - [49.8, 12.5]
+  - id: hot_tub
+    name: "Hot tub"
+    points:
+      - [49.8, 12.9]
+      - [55.1, 12.9]
+      - [55.1, 15.9]
+      - [49.8, 15.9]
+  - id: louvred_pergola
+    name: "Louvred pergola"
+    points:
+      - [49.8, 16.3]
+      - [58.3, 16.3]
+      - [58.3, 20.3]
+      - [49.8, 20.3]
+  - id: sauna
+    name: "Sauna"
+    points:
+      - [49.8, 20.7]
+      - [55.5, 20.7]
+      - [55.5, 23.9]
+      - [49.8, 23.9]
+  - id: pool
+    name: "Pool"
+    points:
+      - [49.8, 24.3]
+      - [58.9, 24.3]
+      - [58.9, 27.8]
+      - [49.8, 27.8]
+  - id: sprinkler
+    name: "Sprinkler"
+    points:
+      - [59.9, 0]
+      - [68.9, 0]
+      - [68.9, 4]
+      - [59.9, 4]
+decorations:
+  - id: light_ceiling
+    kind: light_ceiling
+    room: light_ceiling
+    position: [0.55, 0.7]
+  - id: light_pendant_nagoya
+    kind: light_pendant
+    room: light_pendant
+    position: [0.71, 2.51]
+    variant: nagoya
+  - id: light_pendant_globo_cestita
+    kind: light_pendant
+    room: light_pendant
+    position: [1.51, 2.51]
+    variant: globo_cestita
+  - id: light_pendant_headhat_bowl
+    kind: light_pendant
+    room: light_pendant
+    position: [2.19, 2.51]
+    variant: headhat_bowl
+  - id: light_pendant_cirio_simple
+    kind: light_pendant
+    room: light_pendant
+    position: [2.84, 2.51]
+    variant: cirio_simple
+  - id: light_floor_tmm
+    kind: light_floor
+    room: light_floor
+    position: [0.8, 4.37]
+    variant: tmm
+  - id: light_floor_fad
+    kind: light_floor
+    room: light_floor
+    position: [1.85, 4.37]
+    variant: fad
+  - id: light_floor_lamina
+    kind: light_floor
+    room: light_floor
+    position: [2.7, 4.37]
+    variant: lamina
+  - id: light_table_cestita
+    kind: light_table
+    room: light_table
+    position: [0.61, 6.22]
+    variant: cestita
+  - id: light_table_sylvestrina
+    kind: light_table
+    room: light_table
+    position: [1.29, 6.22]
+    variant: sylvestrina
+  - id: light_table_maija
+    kind: light_table
+    room: light_table
+    position: [1.96, 6.22]
+    variant: maija
+  - id: light_table_basica_minima
+    kind: light_table
+    room: light_table
+    position: [2.62, 6.22]
+    variant: basica_minima
+  - id: light_wall_tmm
+    kind: light_wall
+    room: light_wall
+    position: [0.6, 7.32]
+    rotation: 180
+    variant: tmm
+  - id: light_wall_singular
+    kind: light_wall
+    room: light_wall
+    position: [1.29, 7.32]
+    rotation: 180
+    variant: singular
+  - id: light_wall_wally
+    kind: light_wall
+    room: light_wall
+    position: [1.97, 7.32]
+    rotation: 180
+    variant: wally
+  - id: light_strip
+    kind: light_strip
+    room: light_strip
+    position: [1, 9.82]
+  - id: light_strip_ceiling
+    kind: light_strip_ceiling
+    room: light_strip_ceiling
+    position: [1.3, 11.62]
+  - id: light_strip_wall
+    kind: light_strip_wall
+    room: light_strip_wall
+    position: [1.3, 12.72]
+    rotation: 180
+  - id: sofa_dresde
+    kind: sofa
+    room: sofa
+    position: [1.65, 15.52]
+    variant: dresde
+  - id: sofa_block
+    kind: sofa
+    room: sofa
+    position: [4.45, 15.52]
+    variant: block
+  - id: sofa_rail
+    kind: sofa
+    room: sofa
+    position: [7.15, 15.52]
+    variant: rail
+  - id: dining_chair_oia
+    kind: dining_chair
+    room: dining_chair
+    position: [0.74, 17.69]
+    variant: oia
+  - id: dining_chair_sura
+    kind: dining_chair
+    room: dining_chair
+    position: [1.71, 17.69]
+    variant: sura
+  - id: dining_chair_varma
+    kind: dining_chair
+    room: dining_chair
+    position: [2.68, 17.69]
+    variant: varma
+  - id: office_chair_teck
+    kind: office_chair
+    room: office_chair
+    position: [0.83, 19.71]
+    variant: teck
+  - id: office_chair_sling
+    kind: office_chair
+    room: office_chair
+    position: [1.95, 19.71]
+    variant: sling
+  - id: office_chair_racer
+    kind: office_chair
+    room: office_chair
+    position: [3.09, 19.71]
+    variant: racer
+  - id: stool_lauta
+    kind: stool
+    room: stool
+    position: [0.73, 21.72]
+    variant: lauta
+  - id: stool_dean
+    kind: stool
+    room: stool
+    position: [1.69, 21.72]
+    variant: dean
+  - id: stool_keula
+    kind: stool
+    room: stool
+    position: [2.65, 21.72]
+    variant: keula
+  - id: bench_lauta
+    kind: bench
+    room: bench
+    position: [1.15, 23.64]
+    variant: lauta
+  - id: bench_angle
+    kind: bench
+    room: bench
+    position: [3.15, 23.64]
+    variant: angle
+  - id: pouf_dresde
+    kind: pouf
+    room: pouf
+    position: [0.9, 25.68]
+    variant: dresde
+  - id: pouf_block
+    kind: pouf
+    room: pouf
+    position: [2.15, 25.68]
+    variant: block
+  - id: pouf_rail
+    kind: pouf
+    room: pouf
+    position: [3.3, 25.68]
+    variant: rail
+  - id: dining_table_viok
+    kind: dining_table
+    room: dining_table
+    position: [1.3, 27.98]
+    variant: viok
+  - id: dining_table_deva
+    kind: dining_table
+    room: dining_table
+    position: [3.5, 27.98]
+    variant: deva
+  - id: dining_table_spider
+    kind: dining_table
+    room: dining_table
+    position: [5.9, 27.98]
+    variant: spider
+  - id: coffee_table_slatted
+    kind: coffee_table
+    room: coffee_table
+    position: [10.75, 0.85]
+    variant: slatted
+  - id: coffee_table_lack
+    kind: coffee_table
+    room: coffee_table
+    position: [12.25, 0.85]
+    variant: lack
+  - id: coffee_table_tulip
+    kind: coffee_table
+    room: coffee_table
+    position: [13.73, 0.85]
+    variant: tulip
+  - id: coffee_table_frame
+    kind: coffee_table
+    room: coffee_table
+    position: [15.25, 0.85]
+    variant: frame
+  - id: side_table_shelf
+    kind: side_table
+    room: side_table
+    position: [10.43, 2.83]
+    variant: shelf
+  - id: side_table_nightstand
+    kind: side_table
+    room: side_table
+    position: [11.37, 2.83]
+    variant: nightstand
+  - id: side_table_tray
+    kind: side_table
+    room: side_table
+    position: [12.32, 2.83]
+    variant: tray
+  - id: desk_writing
+    kind: desk
+    room: desk
+    position: [10.9, 4.85]
+    variant: writing
+  - id: desk_office_table
+    kind: desk
+    room: desk
+    position: [12.9, 4.85]
+    variant: office_table
+  - id: desk_pedestal
+    kind: desk
+    room: desk
+    position: [14.9, 4.85]
+    variant: pedestal
+  - id: bookshelf_billy
+    kind: bookshelf
+    room: bookshelf
+    position: [10.65, 6.85]
+    variant: billy
+  - id: bookshelf_kallax
+    kind: bookshelf
+    room: bookshelf
+    position: [11.98, 6.85]
+    variant: kallax
+  - id: bookshelf_string
+    kind: bookshelf
+    room: bookshelf
+    position: [13.25, 6.85]
+    variant: string
+  - id: sideboard_oak
+    kind: sideboard
+    room: sideboard
+    position: [11, 8.68]
+    variant: oak
+  - id: sideboard_credenza
+    kind: sideboard
+    room: sideboard
+    position: [13.25, 8.68]
+    variant: credenza
+  - id: sideboard_besta
+    kind: sideboard
+    room: sideboard
+    position: [15.6, 8.68]
+    variant: besta
+  - id: wardrobe_hinged
+    kind: wardrobe
+    room: wardrobe
+    position: [10.8, 10.64]
+    variant: hinged
+  - id: wardrobe_sliding
+    kind: wardrobe
+    room: wardrobe
+    position: [12.65, 10.64]
+    variant: sliding
+  - id: wardrobe_rail
+    kind: wardrobe
+    room: wardrobe
+    position: [14.4, 10.64]
+    variant: rail
+  - id: dresser_oak
+    kind: dresser
+    room: dresser
+    position: [10.7, 12.61]
+    variant: oak
+  - id: dresser_malm
+    kind: dresser
+    room: dresser
+    position: [12.1, 12.61]
+    variant: malm
+  - id: dresser_hemnes
+    kind: dresser
+    room: dresser
+    position: [13.55, 12.61]
+    variant: hemnes
+  - id: shoe_rack_rungs
+    kind: shoe_rack
+    room: shoe_rack
+    position: [10.6, 14.46]
+    variant: rungs
+  - id: shoe_rack_cabinet
+    kind: shoe_rack
+    room: shoe_rack
+    position: [11.95, 14.46]
+    variant: cabinet
+  - id: shoe_rack_bench
+    kind: shoe_rack
+    room: shoe_rack
+    position: [13.3, 14.46]
+    variant: bench
+  - id: wall_shelf_floating
+    kind: wall_shelf
+    room: wall_shelf
+    position: [10.75, 15.56]
+    rotation: 180
+    variant: floating
+  - id: wall_shelf_ledge
+    kind: wall_shelf
+    room: wall_shelf
+    position: [12.25, 15.56]
+    rotation: 180
+    variant: ledge
+  - id: wall_shelf_string
+    kind: wall_shelf
+    room: wall_shelf
+    position: [13.5, 15.56]
+    rotation: 180
+    variant: string
+  - id: bed_double_headboard
+    kind: bed_double
+    room: bed_double
+    position: [11, 18.88]
+    variant: headboard
+  - id: bed_double_upholstered
+    kind: bed_double
+    room: bed_double
+    position: [13.1, 18.88]
+    variant: upholstered
+  - id: bed_double_low
+    kind: bed_double
+    room: bed_double
+    position: [15.2, 18.88]
+    variant: low
+  - id: kitchen_counter_run
+    kind: kitchen_counter
+    room: kitchen_counter
+    position: [11.1, 21.76]
+    variant: run
+  - id: kitchen_counter_island
+    kind: kitchen_counter
+    room: kitchen_counter
+    position: [13.4, 21.76]
+    variant: island
+  - id: upper_cabinets
+    kind: upper_cabinets
+    room: upper_cabinets
+    position: [11.1, 23.11]
+    rotation: 180
+  - id: fridge_bespoke
+    kind: fridge
+    room: fridge
+    position: [10.5, 25.76]
+    variant: bespoke
+  - id: fridge_side_by_side
+    kind: fridge
+    room: fridge
+    position: [11.75, 25.76]
+    variant: side_by_side
+  - id: oven
+    kind: oven
+    room: oven
+    position: [10.5, 27.79]
+  - id: hob_induction
+    kind: hob
+    room: hob
+    position: [18.8, 0.75]
+    variant: induction
+  - id: hob_gas
+    kind: hob
+    room: hob
+    position: [19.9, 0.75]
+    variant: gas
+  - id: extractor_hood
+    kind: extractor_hood
+    room: extractor_hood
+    position: [18.8, 2.65]
+  - id: ceiling_extractor
+    kind: ceiling_extractor
+    room: ceiling_extractor
+    position: [18.93, 4.55]
+  - id: dishwasher
+    kind: dishwasher
+    room: dishwasher
+    position: [18.8, 6.5]
+  - id: kitchen_sink_undermount
+    kind: kitchen_sink
+    room: kitchen_sink
+    position: [18.77, 8.45]
+    variant: undermount
+  - id: kitchen_sink_belfast
+    kind: kitchen_sink
+    room: kitchen_sink
+    position: [19.85, 8.45]
+    variant: belfast
+  - id: kitchen_sink_inset
+    kind: kitchen_sink
+    room: kitchen_sink
+    position: [21.15, 8.45]
+    variant: inset
+  - id: microwave
+    kind: microwave
+    room: microwave
+    position: [18.72, 10.3]
+  - id: coffee_machine_bambino
+    kind: coffee_machine
+    room: coffee_machine
+    position: [18.6, 12.12]
+    variant: bambino
+  - id: coffee_machine_linea
+    kind: coffee_machine
+    room: coffee_machine
+    position: [19.38, 12.12]
+    variant: linea
+  - id: coffee_machine_pod
+    kind: coffee_machine
+    room: coffee_machine
+    position: [20.1, 12.12]
+    variant: pod
+  - id: kettle_jug
+    kind: kettle
+    room: kettle
+    position: [18.58, 13.95]
+    variant: jug
+  - id: kettle_gooseneck
+    kind: kettle
+    room: kettle
+    position: [19.22, 13.95]
+    variant: gooseneck
+  - id: toaster_retro
+    kind: toaster
+    room: toaster
+    position: [18.66, 15.75]
+    variant: retro
+  - id: toaster_long
+    kind: toaster
+    room: toaster
+    position: [19.52, 15.75]
+    variant: long
+  - id: cooking_robot_jug
+    kind: cooking_robot
+    room: cooking_robot
+    position: [18.67, 17.55]
+    variant: jug
+  - id: cooking_robot_bowl
+    kind: cooking_robot
+    room: cooking_robot
+    position: [19.51, 17.55]
+    variant: bowl
+  - id: air_fryer_basket
+    kind: air_fryer
+    room: air_fryer
+    position: [18.64, 19.35]
+    variant: basket
+  - id: air_fryer_dual
+    kind: air_fryer
+    room: air_fryer
+    position: [19.48, 19.35]
+    variant: dual
+  - id: washing_machine
+    kind: washing_machine
+    room: washing_machine
+    position: [18.8, 21.25]
+  - id: dryer
+    kind: dryer
+    room: dryer
+    position: [18.8, 23.25]
+  - id: toilet_arc
+    kind: toilet
+    room: toilet
+    position: [18.68, 25.28]
+    variant: arc
+  - id: toilet_wall_hung
+    kind: toilet
+    room: toilet
+    position: [19.56, 25.28]
+    variant: wall_hung
+  - id: toilet_close_coupled
+    kind: toilet
+    room: toilet
+    position: [20.43, 25.28]
+    variant: close_coupled
+  - id: toilet_square
+    kind: toilet
+    room: toilet
+    position: [21.3, 25.28]
+    variant: square
+  - id: basin_vanity
+    kind: basin
+    room: basin
+    position: [18.9, 27.24]
+    variant: vanity
+  - id: basin_wall_hung
+    kind: basin
+    room: basin
+    position: [20.1, 27.24]
+    variant: wall_hung
+  - id: basin_pedestal
+    kind: basin
+    room: basin
+    position: [21.2, 27.24]
+    variant: pedestal
+  - id: bathtub_freestanding
+    kind: bathtub
+    room: bathtub
+    position: [24.08, 1.45]
+    variant: freestanding
+  - id: bathtub_built_in
+    kind: bathtub
+    room: bathtub
+    position: [25.38, 1.45]
+    variant: built_in
+  - id: bathtub_roll_top
+    kind: bathtub
+    room: bathtub
+    position: [26.7, 1.45]
+    variant: roll_top
+  - id: shower
+    kind: shower
+    room: shower
+    position: [24.1, 4.25]
+  - id: towel_rail_grouped
+    kind: towel_rail
+    room: towel_rail
+    position: [23.95, 5.6]
+    rotation: 180
+    variant: grouped
+  - id: towel_rail_ladder
+    kind: towel_rail
+    room: towel_rail
+    position: [25, 5.6]
+    rotation: 180
+    variant: ladder
+  - id: half_wall
+    kind: half_wall
+    room: half_wall
+    position: [24.65, 8.1]
+  - id: rug_shag
+    kind: rug
+    room: rug
+    position: [24.65, 10.5]
+    variant: shag
+  - id: rug_border
+    kind: rug
+    room: rug
+    position: [27.15, 10.5]
+    variant: border
+  - id: rug_kilim
+    kind: rug
+    room: rug
+    position: [29.8, 10.5]
+    variant: kilim
+  - id: rug_round
+    kind: rug
+    room: rug
+    position: [32.25, 10.5]
+    variant: round
+  - id: plant_large_fiddle
+    kind: plant_large
+    room: plant_large
+    position: [24.05, 13.35]
+    variant: fiddle
+  - id: plant_large_monstera
+    kind: plant_large
+    room: plant_large
+    position: [25.5, 13.35]
+    variant: monstera
+  - id: plant_large_kentia
+    kind: plant_large
+    room: plant_large
+    position: [27.2, 13.35]
+    variant: kentia
+  - id: plant_large_mango
+    kind: plant_large
+    room: plant_large
+    position: [28.78, 13.35]
+    variant: mango
+  - id: plant_large_bird
+    kind: plant_large
+    room: plant_large
+    position: [30.15, 13.35]
+    variant: bird
+  - id: plant_large_bamboo
+    kind: plant_large
+    room: plant_large
+    position: [31.45, 13.35]
+    variant: bamboo
+  - id: plant_large_ficus
+    kind: plant_large
+    room: plant_large
+    position: [32.8, 13.35]
+    variant: ficus
+  - id: plant_small_pothos
+    kind: plant_small
+    room: plant_small
+    position: [23.8, 15.6]
+    variant: pothos
+  - id: plant_small_pilea
+    kind: plant_small
+    room: plant_small
+    position: [24.6, 15.6]
+    variant: pilea
+  - id: plant_small_snake
+    kind: plant_small
+    room: plant_small
+    position: [25.35, 15.6]
+    variant: snake
+  - id: plant_wall_pothos
+    kind: plant_wall
+    room: plant_wall
+    position: [23.8, 16.7]
+    rotation: 180
+    variant: pothos
+  - id: plant_wall_pearls
+    kind: plant_wall
+    room: plant_wall
+    position: [24.57, 16.7]
+    rotation: 180
+    variant: pearls
+  - id: plant_wall_boston
+    kind: plant_wall
+    room: plant_wall
+    position: [25.33, 16.7]
+    rotation: 180
+    variant: boston
+  - id: wall_mirror_round
+    kind: wall_mirror
+    room: wall_mirror
+    position: [24, 18.5]
+    rotation: 180
+    variant: round
+  - id: wall_mirror_square
+    kind: wall_mirror
+    room: wall_mirror
+    position: [25.15, 18.5]
+    rotation: 180
+    variant: square
+  - id: wall_clock_oak
+    kind: wall_clock
+    room: wall_clock
+    position: [23.8, 20.6]
+    rotation: 180
+    variant: oak
+  - id: wall_clock_digital
+    kind: wall_clock
+    room: wall_clock
+    position: [24.65, 20.6]
+    rotation: 180
+    variant: digital
+  - id: wall_clock_ball
+    kind: wall_clock
+    room: wall_clock
+    position: [25.51, 20.6]
+    rotation: 180
+    variant: ball
+  - id: vase
+    kind: vase
+    room: vase
+    position: [23.74, 23.1]
+  - id: books
+    kind: books
+    room: books
+    position: [23.78, 24.9]
+  - id: curtain_eyelet
+    kind: curtain
+    room: curtain
+    position: [24.35, 26]
+    rotation: 180
+    variant: eyelet
+  - id: curtain_wave
+    kind: curtain
+    room: curtain
+    position: [26.25, 26]
+    rotation: 180
+    variant: wave
+  - id: tv
+    kind: tv
+    room: tv
+    position: [24.31, 28.5]
+  - id: tv_wall
+    kind: tv_wall
+    room: tv_wall
+    position: [35.96, 0]
+    rotation: 180
+  - id: soundbar_bar
+    kind: soundbar
+    room: soundbar
+    position: [35.75, 2.5]
+    variant: bar
+  - id: soundbar_arc
+    kind: soundbar
+    room: soundbar
+    position: [37.28, 2.5]
+    variant: arc
+  - id: speaker_pod
+    kind: speaker
+    room: speaker
+    position: [35.37, 4.3]
+    variant: pod
+  - id: speaker_mini
+    kind: speaker
+    room: speaker
+    position: [35.99, 4.3]
+    variant: mini
+  - id: speaker_drum
+    kind: speaker
+    room: speaker
+    position: [36.62, 4.3]
+    variant: drum
+  - id: floor_speaker_tower
+    kind: floor_speaker
+    room: floor_speaker
+    position: [35.41, 6.1]
+    variant: tower
+  - id: floor_speaker_column
+    kind: floor_speaker
+    room: floor_speaker
+    position: [36.1, 6.1]
+    variant: column
+  - id: monitor
+    kind: monitor
+    room: monitor
+    position: [35.6, 7.9]
+  - id: game_console_slim
+    kind: game_console
+    room: game_console
+    position: [35.44, 9.7]
+    variant: slim
+  - id: game_console_tower
+    kind: game_console
+    room: game_console
+    position: [36.16, 9.7]
+    variant: tower
+  - id: game_console_wing
+    kind: game_console
+    room: game_console
+    position: [36.78, 9.7]
+    variant: wing
+  - id: pc_tower_glass
+    kind: pc_tower
+    room: pc_tower
+    position: [35.42, 11.53]
+    variant: glass
+  - id: pc_tower_lattice
+    kind: pc_tower
+    room: pc_tower
+    position: [36.14, 11.53]
+    variant: lattice
+  - id: laptop_slim
+    kind: laptop
+    room: laptop
+    position: [35.46, 13.36]
+    variant: slim
+  - id: laptop_gaming
+    kind: laptop
+    room: laptop
+    position: [36.29, 13.36]
+    variant: gaming
+  - id: wireless_charger_phone
+    kind: wireless_charger
+    room: wireless_charger
+    position: [35.35, 15.16]
+    variant: phone
+  - id: wireless_charger_watch
+    kind: wireless_charger
+    room: wireless_charger
+    position: [35.93, 15.16]
+    variant: watch
+  - id: wireless_charger_earbuds
+    kind: wireless_charger
+    room: wireless_charger
+    position: [36.5, 15.16]
+    variant: earbuds
+  - id: wireless_charger_tablet
+    kind: wireless_charger
+    room: wireless_charger
+    position: [37.14, 15.16]
+    variant: tablet
+  - id: projector
+    kind: projector
+    room: projector
+    position: [35.43, 16.96]
+  - id: projector_portable
+    kind: projector_portable
+    room: projector_portable
+    position: [35.35, 18.76]
+  - id: projector_ust_box
+    kind: projector_ust
+    room: projector_ust
+    position: [36.41, 20.56]
+    variant: box
+  - id: projector_screen
+    kind: projector_screen
+    room: projector_screen
+    position: [36.41, 22.36]
+  - id: radiator_panel
+    kind: radiator
+    room: radiator
+    position: [35.75, 23.46]
+    rotation: 180
+    variant: panel
+  - id: radiator_column
+    kind: radiator
+    room: radiator
+    position: [37.1, 23.46]
+    rotation: 180
+    variant: column
+  - id: radiator_tube
+    kind: radiator
+    room: radiator
+    position: [38.22, 23.46]
+    rotation: 180
+    variant: tube
+  - id: ac_unit_split
+    kind: ac_unit
+    room: ac_unit
+    position: [35.75, 25.26]
+    rotation: 180
+    variant: split
+  - id: ac_unit_duct
+    kind: ac_unit
+    room: ac_unit
+    position: [36.87, 25.26]
+    rotation: 180
+    variant: duct
+  - id: fan_ceiling_classic
+    kind: fan_ceiling
+    room: fan_ceiling
+    position: [35.95, 28.21]
+    variant: classic
+  - id: fan_ceiling_haiku
+    kind: fan_ceiling
+    room: fan_ceiling
+    position: [37.65, 28.21]
+    variant: haiku
+  - id: fan_ceiling_loft
+    kind: fan_ceiling
+    room: fan_ceiling
+    position: [39.35, 28.21]
+    variant: loft
+  - id: fan_floor_pedestal
+    kind: fan_floor
+    room: fan_floor
+    position: [42.2, 0.7]
+    variant: pedestal
+  - id: fan_floor_disc
+    kind: fan_floor
+    room: fan_floor
+    position: [43.08, 0.7]
+    variant: disc
+  - id: fireplace_linear
+    kind: fireplace
+    room: fireplace
+    position: [42.6, 2.5]
+    variant: linear
+  - id: fireplace_stove
+    kind: fireplace
+    room: fireplace
+    position: [43.95, 2.5]
+    variant: stove
+  - id: air_purifier
+    kind: air_purifier
+    room: air_purifier
+    position: [42.14, 4.3]
+  - id: humidifier
+    kind: humidifier
+    room: humidifier
+    position: [42.1, 6.1]
+  - id: thermostat
+    kind: thermostat
+    room: thermostat
+    position: [42.06, 7.2]
+    rotation: 180
+  - id: blind_venetian
+    kind: blind
+    room: blind
+    position: [42.6, 9]
+    rotation: 180
+    variant: venetian
+  - id: blind_shutter
+    kind: blind
+    room: blind
+    position: [44.3, 9]
+    rotation: 180
+    variant: shutter
+  - id: window_casement
+    kind: window
+    room: window
+    position: [42.6, 10.8]
+    rotation: 180
+    variant: casement
+  - id: window_sash
+    kind: window
+    room: window
+    position: [44.3, 10.8]
+    rotation: 180
+    variant: sash
+  - id: window_slider
+    kind: window
+    room: window
+    position: [46, 10.8]
+    rotation: 180
+    variant: slider
+  - id: window_steel
+    kind: window
+    room: window
+    position: [47.7, 10.8]
+    rotation: 180
+    variant: steel
+  - id: door_flush
+    kind: door
+    room: door
+    position: [42.43, 12.6]
+    rotation: 180
+    variant: flush
+  - id: door_panel
+    kind: door
+    room: door
+    position: [43.78, 12.6]
+    rotation: 180
+    variant: panel
+  - id: door_glazed
+    kind: door
+    room: door
+    position: [45.13, 12.6]
+    rotation: 180
+    variant: glazed
+  - id: sliding_door_panel
+    kind: sliding_door
+    room: sliding_door
+    position: [42.9, 14.4]
+    rotation: 180
+    variant: panel
+  - id: sliding_door_glass
+    kind: sliding_door
+    room: sliding_door
+    position: [45.5, 14.4]
+    rotation: 180
+    variant: glass
+  - id: garage_door_sectional
+    kind: garage_door
+    room: garage_door
+    position: [43.25, 16.2]
+    rotation: 180
+    variant: sectional
+  - id: garage_door_roller
+    kind: garage_door
+    room: garage_door
+    position: [46.25, 16.2]
+    rotation: 180
+    variant: roller
+  - id: awning_folding
+    kind: awning
+    room: awning
+    position: [43, 18]
+    rotation: 180
+    variant: folding
+  - id: awning_pergola
+    kind: awning
+    room: awning
+    position: [46, 18]
+    rotation: 180
+    variant: pergola
+  - id: christmas_tree_fir
+    kind: christmas_tree
+    room: christmas_tree
+    position: [42.55, 20.9]
+    variant: fir
+  - id: christmas_tree_bare
+    kind: christmas_tree
+    room: christmas_tree
+    position: [44.2, 20.9]
+    variant: bare
+  - id: camera
+    kind: camera
+    room: camera
+    position: [42.05, 22.4]
+    rotation: 180
+  - id: doorbell
+    kind: doorbell
+    room: doorbell
+    position: [42.04, 24.2]
+    rotation: 180
+  - id: motion_sensor
+    kind: motion_sensor
+    room: motion_sensor
+    position: [42.04, 26]
+    rotation: 180
+  - id: smoke_detector
+    kind: smoke_detector
+    room: smoke_detector
+    position: [42.07, 28.5]
+  - id: alarm_panel
+    kind: alarm_panel
+    room: alarm_panel
+    position: [50.38, 0]
+    rotation: 180
+  - id: smart_lock
+    kind: smart_lock
+    room: smart_lock
+    position: [50.35, 1.8]
+    rotation: 180
+  - id: air_quality
+    kind: air_quality
+    room: air_quality
+    position: [50.35, 4.3]
+  - id: vacuum_robot
+    kind: vacuum_robot
+    room: vacuum_robot
+    position: [50.47, 6.1]
+  - id: pet_feeder_food
+    kind: pet_feeder
+    room: pet_feeder
+    position: [50.41, 7.9]
+    variant: food
+  - id: pet_feeder_fountain
+    kind: pet_feeder
+    room: pet_feeder
+    position: [51.13, 7.9]
+    variant: fountain
+  - id: litter_box_globe
+    kind: litter_box
+    room: litter_box
+    position: [50.58, 9.85]
+    variant: globe
+  - id: litter_box_moon
+    kind: litter_box
+    room: litter_box
+    position: [51.55, 9.85]
+    variant: moon
+  - id: water_heater_combi
+    kind: water_heater
+    room: water_heater
+    position: [50.51, 11.1]
+    rotation: 180
+    variant: combi
+  - id: water_heater_tank
+    kind: water_heater
+    room: water_heater
+    position: [51.47, 11.1]
+    rotation: 180
+    variant: tank
+  - id: hot_tub_spa
+    kind: hot_tub
+    room: hot_tub
+    position: [51.3, 14.4]
+    variant: spa
+  - id: hot_tub_barrel
+    kind: hot_tub
+    room: hot_tub
+    position: [53.7, 14.4]
+    variant: barrel
+  - id: louvred_pergola_alu
+    kind: louvred_pergola
+    room: louvred_pergola
+    position: [52.05, 18.3]
+    variant: alu
+  - id: louvred_pergola_timber
+    kind: louvred_pergola
+    room: louvred_pergola
+    position: [56.05, 18.3]
+    variant: timber
+  - id: sauna_barrel
+    kind: sauna
+    room: sauna
+    position: [51.3, 22.3]
+    variant: barrel
+  - id: sauna_cabin
+    kind: sauna
+    room: sauna
+    position: [53.9, 22.3]
+    variant: cabin
+  - id: pool_deck
+    kind: pool
+    room: pool
+    position: [52.3, 26.05]
+    variant: deck
+  - id: pool_frame
+    kind: pool
+    room: pool
+    position: [56.6, 26.05]
+    variant: frame
+  - id: sprinkler_rotor
+    kind: sprinkler
+    room: sprinkler
+    position: [61.9, 2]
+    variant: rotor
+  - id: sprinkler_oscillating
+    kind: sprinkler
+    room: sprinkler
+    position: [65.15, 2]
+    variant: oscillating
+  - id: sprinkler_drip
+    kind: sprinkler
+    room: sprinkler
+    position: [67.65, 2]
+    variant: drip

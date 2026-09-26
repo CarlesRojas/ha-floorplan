@@ -9,6 +9,7 @@ import {
 } from '#/constants.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import CameraRig from '#/scene/CameraRig.tsx'
+import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
@@ -19,8 +20,8 @@ import type { TryStates } from '#/editor/tryState.ts'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { MathUtils, PCFSoftShadowMap } from 'three'
-import { useCallback, useRef } from 'react'
+import { MathUtils, PCFShadowMap } from 'three'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 
 type Props = {
   hass: HomeAssistant | null
@@ -40,6 +41,8 @@ type Props = {
   // States the editor tries on pieces with no device. The card passes none.
   tries?: TryStates
   onTry?: (id: string) => void
+  // Stops drawing and holds the last frame, for a card nobody can see.
+  paused?: boolean
 }
 
 export default function Scene({
@@ -52,6 +55,7 @@ export default function Scene({
   selected,
   tries,
   onTry,
+  paused = false,
 }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
@@ -63,15 +67,22 @@ export default function Scene({
   const markFallback = useCallback(() => {
     fallbackAt.current = performance.now()
   }, [])
+  // The rooms are only drawn again when they change, so they are handed a
+  // pick that stays the same and calls whatever the editor passed last.
+  const latestPickRoom = useRef(onPickRoom)
+  useLayoutEffect(() => {
+    latestPickRoom.current = onPickRoom
+  })
+  const pickRoom = useCallback((id: string) => latestPickRoom.current?.(id), [])
 
   return (
     <Canvas
-      // Soft percentage closer filtering. The plain one takes a blur radius
-      // but spreads only a handful of taps to fill it, which at any width
-      // worth having reads as dots and dashes along the edge of a shadow.
-      // This one filters across the map instead, so the edge comes out soft
-      // and clean, and softness comes from how fine the map is.
-      shadows={{ type: PCFSoftShadowMap }}
+      // Percentage closer filtering across the map, so the edge comes out
+      // soft and clean, and softness comes from how fine the map is. This
+      // is what three's soft variant became: since 0.186 that name only
+      // warns and falls back to this one.
+      shadows={{ type: PCFShadowMap }}
+      frameloop={paused ? 'never' : 'always'}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
@@ -91,6 +102,7 @@ export default function Scene({
       {/* Everything solid casts and receives, so a lamp throws the things
           around it onto the floor. */}
       <Shadows />
+      <Cleanup />
       <CameraRig rooms={rooms} decorations={config.decorations ?? []} />
       <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
       {/* A press that misses everything looks around itself for something
@@ -98,7 +110,7 @@ export default function Scene({
       <PickFallback onHandled={markFallback} />
       {selected && <SelectionOutline target={selected} />}
       {rooms.map((room, i) => (
-        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom} />
+        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom && pickRoom} />
       ))}
       <OrbitControls
         makeDefault

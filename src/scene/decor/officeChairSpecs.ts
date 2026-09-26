@@ -33,6 +33,30 @@ export const TECK_BACK = { foot: 0.4, head: 0.46, y: 0.515, z: -0.25, lean: 0.12
 // The arm pads' height, how far out they stand, and their size.
 export const TECK_ARM = { y: 0.63, x: 0.265, pad: [0.08, 0.025, 0.25] as [number, number, number] }
 
+// Sling: after the Vitra Aluminium Chair EA 117. A single sling of ribbed
+// leather pads runs from the front of the seat up the back between two
+// cast aluminum side rails, with arms off the rails, on a polished five
+// star base. The side profile the rails follow, as height and depth pairs.
+export const SLING_STAR: Star = { reach: 0.3, wheel: 0.025, hub: 0.12, tip: 0.07 }
+export const SLING_PATH: [number, number][] = [
+  [0.47, 0.25],
+  [0.445, 0.2],
+  [0.435, 0.02],
+  [0.44, -0.13],
+  [0.49, -0.21],
+  [0.64, -0.255],
+  [0.8, -0.275],
+  [0.96, -0.285],
+]
+export const SLING_HALF = 0.24
+
+// Racer: a gaming chair after the racing bucket seats, 70 by 68 cm and
+// 132 cm tall. Its seat's top, and how far the back leans.
+export const RACER_STAR: Star = { reach: 0.34, wheel: 0.032, hub: 0.13, tip: 0.08 }
+export const RACER = { seat: 0.48, lean: 0.2 }
+
 export const OFFICE_CHAIRS: Record<string, OfficeChairSpec> = {
   teck: { width: 0.66, depth: 0.66, height: 0.99, seat: 0.49 },
+  sling: { width: 0.58, depth: 0.6, height: 0.98, seat: 0.46 },
+  racer: { width: 0.7, depth: 0.68, height: 1.32, seat: 0.48 },
 }

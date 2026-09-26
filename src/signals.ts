@@ -91,7 +91,9 @@ export function deviceSignals(hass: HomeAssistant, entityId: string): Signal[] {
       // A vacuum is started and sent home, which is a switch as far as the
       // models are concerned: running or not.
       return ['toggle']
+    // A climate device runs or not, and says in words what it runs as.
     case 'climate':
+      return ['toggle', 'enum']
     case 'select':
     case 'input_select':
       return ['enum']
@@ -112,7 +114,7 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
   switch (domainOf(entityId)) {
     case 'light': {
       const out: SignalValues = { on: state === 'on', state }
-      if (typeof attrs.brightness === 'number') out.level = attrs.brightness / 255
+      if (typeof attrs.brightness === 'number') out.level = Math.min(Math.max(attrs.brightness / 255, 0), 1)
       const rgb = attrs.rgb_color
       if (Array.isArray(rgb) && rgb.length >= 3) out.color = [rgb[0], rgb[1], rgb[2]] as [number, number, number]
       if (typeof attrs.color_temp_kelvin === 'number') out.warmth = attrs.color_temp_kelvin
@@ -142,10 +144,20 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
     // of them means it is out on the floor.
     case 'vacuum':
       return { on: state === 'cleaning', state }
+    // Its mode is the setting, heat or cool. What it is doing right now,
+    // heating or cooling, says more when the device reports it.
+    case 'climate': {
+      const action = attrs.hvac_action
+      const doing = action === 'heating' || action === 'cooling' ? action : undefined
+      return { on: !['off', 'unavailable', 'unknown'].includes(state), state: doing ?? state }
+    }
     case 'sensor':
     case 'number':
-    case 'input_number':
-      return { value: Number(state), state }
+    case 'input_number': {
+      // A sensor that is unavailable or unknown has no number to show.
+      const value = Number(state)
+      return { value: Number.isFinite(value) ? value : undefined, state }
+    }
     default:
       return { on: state === 'on', state }
   }
@@ -167,8 +179,10 @@ export function clickAction(entityId: string, state?: string): { domain: string;
       return { domain, service: 'toggle' }
     case 'vacuum':
       return { domain, service: state === 'cleaning' ? 'return_to_base' : 'start' }
+    // A lock is locked or unlocked by what it is now, so a click on an
+    // unlocked door locks it rather than asking it to unlock again.
     case 'lock':
-      return { domain, service: 'unlock' }
+      return { domain, service: state === 'unlocked' || state === 'open' ? 'lock' : 'unlock' }
     case 'button':
     case 'input_button':
       return { domain, service: 'press' }

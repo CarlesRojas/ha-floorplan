@@ -1,4 +1,5 @@
 import Card from '#/Card.tsx'
+import { decorationKind } from '#/decoration/catalog.ts'
 import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
@@ -10,20 +11,70 @@ const EDITOR_TYPE = `${CARD_TYPE}-editor`
 // Kinds that were renamed or folded into another one. A plan written
 // before the change still names the old one, and without this the piece
 // would quietly vanish from the plan: the catalog would not know it.
-const RENAMED: Record<string, { kind: string; variant?: string }> = {
+const RENAMED: Record<string, { kind: string; variant?: string; params?: Record<string, number> }> = {
   // The Globo Cesta was its own kind for a moment, then became a style of
-  // the pendant.
-  light_globe: { kind: 'light_pendant', variant: 'globo_cesta' },
+  // the pendant, since swapped for the smaller Globo Cestita.
+  light_globe: { kind: 'light_pendant', variant: 'globo_cestita' },
   // The office table became a style of the desk.
   office_table: { kind: 'desk', variant: 'office_table' },
+  // The armchair became a narrow sofa, at the armchair's old size unless it
+  // had one of its own.
+  armchair: { kind: 'sofa', variant: 'dresde', params: { width: 0.78, depth: 0.8 } },
+  // The island became a style of the counter.
+  kitchen_island: { kind: 'kitchen_counter', variant: 'island' },
+  // The crib was dropped, and a saved one becomes the narrowest bed.
+  crib: { kind: 'bed_double', params: { width: 0.9, length: 1.8 } },
+  // The nightstand became a style of the side table.
+  nightstand: { kind: 'side_table', variant: 'nightstand' },
+  // The standing fan and the tower fan became styles of the floor fan.
+  fan_standing: { kind: 'fan_floor', variant: 'pedestal' },
+  fan_tower: { kind: 'fan_floor', variant: 'disc' },
+  // The roller shutter became a style of the blind, and the sliding glass
+  // door a style of the sliding door.
+  roller_shutter: { kind: 'blind', variant: 'shutter' },
+  sliding_glass: { kind: 'sliding_door', variant: 'glass' },
+}
+
+// Kinds that were dropped with nothing to take their place. A saved one is
+// left out.
+const DROPPED = new Set(['picture', 'basket'])
+
+// Parameters that were split in two, per kind. The side table was square,
+// with one size for both sides, before it had a width and a depth.
+const SPLIT: Record<string, Record<string, string[]>> = {
+  side_table: { size: ['width', 'depth'] },
 }
 
 // Styles that were renamed, per kind. The pendant's first two were loose
-// takes on the Nagoya and the Globo Cesta, then became those lamps. The
-// dining chair's first style was a Pilma chair, then a molded shell.
-const RESTYLED: Record<string, Record<string, string>> = {
-  light_pendant: { slatted: 'nagoya', globe: 'globo_cesta' },
-  dining_chair: { aix: 'molded' },
+// takes on the Nagoya and the Globo Cesta, then became those lamps, and the
+// Globo Cesta gave way to the smaller Globo Cestita. The
+// dining chair's first style was a Pilma chair, then a molded shell, then
+// the Jin, and each of those is now the slab chair that took its place.
+// The toilet's back to wall style gave way to a square close coupled one.
+// The sofa's chaise was a style of its own before every style could have
+// one, and a saved one keeps its chaise and its old width. The curtain's
+// linen pleat was dropped for the sheer wave, and the station clock for a
+// digital one. Both rubber plants gave way to the mango plant, the tower
+// fan to the disc fan, the Dutch hood awning to the pergola, and the
+// swivel shell office chair to the racer. A style can bring parameters that
+// the item's own saved ones override.
+type Restyle = string | { variant: string; params: Record<string, number> }
+const RESTYLED: Record<string, Record<string, Restyle>> = {
+  light_pendant: { slatted: 'nagoya', globe: 'globo_cestita', globo_cesta: 'globo_cestita' },
+  dining_chair: { aix: 'oia', molded: 'oia', jin: 'oia' },
+  toilet: { back_to_wall: 'square' },
+  awning: { drop_arm: 'pergola', hood: 'pergola' },
+  plant_wall: { staghorn: 'pothos', moss: 'pearls' },
+  sofa: { dresde_chaise: { variant: 'dresde', params: { chaise: 1, width: 2.98 } } },
+  curtain: { pleat: 'wave' },
+  wall_clock: { station: 'digital' },
+  sideboard: { usm: 'credenza' },
+  bed_double: { platform: { variant: 'headboard', params: { headboard: 0 } } },
+  plant_large: { rubber: 'mango', rubber_full: 'mango' },
+  fan_floor: { tower: 'disc' },
+  office_chair: { shell: 'racer' },
+  christmas_tree: { slim: 'bare' },
+  projector_ust: { dark: 'box' },
 }
 
 function migrate(config: CardConfig): CardConfig {
@@ -34,14 +85,35 @@ function migrate(config: CardConfig): CardConfig {
     next.decorations = config.decorations
       // A piece whose room is gone has nowhere to be drawn. It is left out
       // rather than taken as a reason to refuse the whole card.
-      .filter(d => known.has(d.room))
+      .filter(d => known.has(d.room) && !DROPPED.has(d.kind))
       .map(d => {
         const now = RENAMED[d.kind]
-        return now ? { ...d, kind: now.kind, variant: d.variant ?? now.variant } : d
+        if (!now) return d
+        const params = now.params ? { ...now.params, ...d.params } : d.params
+        // A style the new kind does not know, and that no rename below will
+        // catch, is dropped for the one the rename names, so the piece is
+        // not drawn in the new kind's first style by accident.
+        const kept =
+          d.variant &&
+          (decorationKind(now.kind)?.variants?.some(v => v.id === d.variant) || RESTYLED[now.kind]?.[d.variant])
+        return { ...d, kind: now.kind, variant: kept ? d.variant : now.variant, params }
       })
       .map(d => {
         const style = d.variant ? RESTYLED[d.kind]?.[d.variant] : undefined
-        return style ? { ...d, variant: style } : d
+        if (!style) return d
+        if (typeof style === 'string') return { ...d, variant: style }
+        return { ...d, variant: style.variant, params: { ...style.params, ...d.params } }
+      })
+      .map(d => {
+        const split = SPLIT[d.kind]
+        if (!split || !d.params) return d
+        const params = { ...d.params }
+        for (const [old, now] of Object.entries(split)) {
+          if (params[old] === undefined) continue
+          for (const id of now) params[id] ??= params[old]
+          delete params[old]
+        }
+        return { ...d, params }
       })
   }
   if (Array.isArray(config.devices)) next.devices = config.devices.filter(d => known.has(d.room))
@@ -82,8 +154,11 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
 
   // Called by HA once with the YAML config for this card.
   setConfig(config: CardConfig) {
-    validate(config)
-    this._config = migrate(config)
+    // Migrated first, so a plan from an older version is checked in the
+    // shape it will be drawn in.
+    const next = migrate(config)
+    validate(next)
+    this._config = next
     this.render()
   }
 
@@ -97,20 +172,67 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
   }
 }
 
+// How long the editor waits for a slider or a color to settle before telling
+// Home Assistant. Every change it is told of rebuilds the dialog's own copy
+// of the card, a second 3D view, so a drag that told it on every step drew
+// the flat twice over on every step.
+const SETTLE_MS = 250
+
 class Floorplan3DEditor extends ReactHost<CardConfig> {
+  private pending: CardConfig | null = null
+  private timer: ReturnType<typeof setTimeout> | undefined
+
   setConfig(config: CardConfig) {
     this._config = migrate(config)
     this.render()
   }
 
+  // The editor itself follows every change at once. Home Assistant hears of
+  // the last one once they settle, when the press or the key is let go, and
+  // before anything saves.
   private emit = (config: CardConfig) => {
     this._config = config
     this.render()
+    this.pending = config
+    clearTimeout(this.timer)
+    this.timer = setTimeout(this.flush, SETTLE_MS)
+  }
+
+  private flush = () => {
+    clearTimeout(this.timer)
+    const config = this.pending
+    if (!config) return
+    this.pending = null
     this.dispatchEvent(new CustomEvent('config-changed', { detail: { config }, bubbles: true, composed: true }))
   }
 
+  connectedCallback() {
+    super.connectedCallback()
+    window.addEventListener('pointerup', this.flush, true)
+    window.addEventListener('keyup', this.flush, true)
+  }
+
+  disconnectedCallback() {
+    // A change still waiting to settle when the dialog closes is sent now,
+    // so nothing edited in the last moment is lost.
+    this.flush()
+    window.removeEventListener('pointerup', this.flush, true)
+    window.removeEventListener('keyup', this.flush, true)
+    super.disconnectedCallback()
+  }
+
   protected view() {
-    return <Editor hass={this._hass} config={this._config!} onChange={this.emit} onSave={() => persistCard(this)} />
+    return (
+      <Editor
+        hass={this._hass}
+        config={this._config!}
+        onChange={this.emit}
+        onSave={() => {
+          this.flush()
+          return persistCard(this)
+        }}
+      />
+    )
   }
 }
 
@@ -118,9 +240,12 @@ if (!customElements.get(CARD_TYPE)) customElements.define(CARD_TYPE, Floorplan3D
 if (!customElements.get(EDITOR_TYPE)) customElements.define(EDITOR_TYPE, Floorplan3DEditor)
 
 // Makes the card show up in the "add card" picker.
+// Loaded twice, once as a module and once by a resource of an older
+// version, it would otherwise show up twice in the picker.
 window.customCards = window.customCards ?? []
-window.customCards.push({
-  type: CARD_TYPE,
-  name: 'Floorplan 3D',
-  description: 'Interactive 3D model of the flat',
-})
+if (!window.customCards.some(card => card.type === CARD_TYPE))
+  window.customCards.push({
+    type: CARD_TYPE,
+    name: 'Floorplan 3D',
+    description: 'Interactive 3D model of the flat',
+  })

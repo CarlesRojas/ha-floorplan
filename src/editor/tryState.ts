@@ -38,32 +38,39 @@ export const isPositioned = (kind: DecorationKind) =>
 // Whether a piece has anything to try: more than the one look.
 export const canTry = (kind: DecorationKind) => kind.expresses.length > 0 || itemLevels(kind).length > 0
 
-// What a piece shows before it is touched: off, shut, at full level.
+// What a piece shows before it is touched: off, shut, every level at nothing.
 export function initialTry(kind: DecorationKind): TryState {
   const levels: Record<string, number> = {}
-  for (const level of itemLevels(kind)) levels[level.id] = isPositioned(kind) ? 0 : 1
+  for (const level of itemLevels(kind)) levels[level.id] = 0
   return { on: false, levels }
 }
 
 // A click on the piece in 3D, the way a click on a bound one toggles its
-// device. A positioned piece opens all the way or shuts.
+// device. It goes all the way on or all the way off.
 export function toggleTry(kind: DecorationKind, state: TryState): TryState {
   return switchTry(kind, state, !state.on)
 }
 
-// The switch, which on a positioned piece is fully open or fully shut, the
-// way a cover driven by a device that only switches is.
+// The switch and the main level are one thing: switching on takes the level
+// to full and switching off takes it to nothing, the way a cover driven by a
+// device that only switches is fully open or fully shut. A blind's slats
+// are left where they are.
 export function switchTry(kind: DecorationKind, state: TryState, on: boolean): TryState {
-  if (!isPositioned(kind) || !('open' in state.levels)) return { ...state, on }
-  return { ...state, on, levels: { ...state.levels, open: on ? 1 : 0 } }
+  if (!('open' in state.levels)) return { ...state, on }
+  return levelTry(kind, state, 'open', on ? 1 : 0)
 }
 
-// A level, which on a positioned piece is where it is, so anything open at
-// all counts as on, the way a cover reporting a position is.
+// A window's handle either opens it or tilts it, so opening one stands its
+// tilt back at nothing.
+const unTilt = (kind: DecorationKind, levels: Record<string, number>) =>
+  kind.id === 'window' && levels.open > 0 && 'tilt' in levels ? { ...levels, tilt: 0 } : levels
+
+// The main level, where anything above nothing counts as on and nothing at
+// all as off.
 export function levelTry(kind: DecorationKind, state: TryState, id: string, value: number): TryState {
   const levels = { ...state.levels, [id]: value }
-  if (!isPositioned(kind) || id !== 'open') return { ...state, levels }
-  return { ...state, on: value > 0, levels }
+  if (id !== 'open') return { ...state, levels }
+  return { ...state, on: value > 0, levels: unTilt(kind, levels) }
 }
 
 const fromSrgb = (r: number, g: number, b: number): [number, number, number] => {

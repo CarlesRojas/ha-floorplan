@@ -207,6 +207,11 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
           <cylinderGeometry args={[r * 0.16, r * 0.16, 0.006, SEG]} />
           {M('bumper')}
         </mesh>
+        {/* A ring of light round the button while it runs. */}
+        <mesh position={[0, h + 0.0055, r * 0.3]} rotation={[-Math.PI / 2, 0, 0]} visible={lit > 0.01}>
+          <ringGeometry args={[r * 0.17, r * 0.22, SEG]} />
+          <meshBasicMaterial color="#7fd0ff" transparent opacity={lit} />
+        </mesh>
         <Led on={on} position={[0, h + 0.008, r * 0.62]} radius={0.007} />
         <Spinner speed={9 * lit}>
           <mesh position={[r * 0.72, 0.01, 0]}>

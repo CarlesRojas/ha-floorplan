@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import { faCheck, faFloppyDisk, faPenRuler, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faFloppyDisk, faPenRuler, faSpinner, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
@@ -69,6 +69,9 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // Closed until Open editor is pressed, so editing the card lands on Home
   // Assistant's own dialog first, with its visibility and layout tabs.
   const [fullscreen, setFullscreen] = useState(false)
+  // Pressed, and the editor on its way. Its first draw builds the whole 3D
+  // view and takes a moment, during which the button shows it is working.
+  const [opening, setOpening] = useState(false)
   const [showLengths, setShowLengths] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
   // The hour the preview is lit at. The editor never follows the sun: what
@@ -474,6 +477,13 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     if (pending.current) clearTimeout(pending.current)
     pending.current = setTimeout(flushRename, EDITOR_TEXT_COMMIT_DELAY_MS)
   }
+  // A rename still on its pause when the editor goes is sent as it goes,
+  // rather than firing on an editor that is no longer there.
+  const latestFlush = useRef(flushRename)
+  useEffect(() => {
+    latestFlush.current = flushRename
+  })
+  useEffect(() => () => latestFlush.current(), [])
 
   const deleteRoom = (id: string) => {
     const gone = new Set(decorations.filter(d => d.room === id).map(d => d.id))
@@ -490,8 +500,18 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   const togglePreview = () => setShowPreview(!showPreview)
 
   const openEditor = () => {
-    setOpened({ rooms, devices, decorations })
-    setFullscreen(true)
+    if (opening) return
+    setOpening(true)
+    // The editor's first draw would land in the same paint as the button's
+    // change, so the button would never be seen loading. Two frames later
+    // the browser has shown it, and the editor can take its time.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        setOpened({ rooms, devices, decorations })
+        setFullscreen(true)
+        setOpening(false)
+      }),
+    )
   }
 
   // Saves the card to the dashboard and leaves, with Home Assistant's own
@@ -924,10 +944,12 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       <button
         type="button"
         onClick={openEditor}
-        className="flex h-10 items-center gap-2 rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white"
+        disabled={opening}
+        aria-busy={opening}
+        className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
       >
-        <FontAwesomeIcon icon={faPenRuler} className="size-3.5" />
-        Open editor
+        <FontAwesomeIcon icon={opening ? faSpinner : faPenRuler} spin={opening} className="size-3.5" />
+        {opening ? 'Opening…' : 'Open editor'}
       </button>
     </div>
   )

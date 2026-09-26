@@ -14,8 +14,11 @@ import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import { useEffect } from 'react'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
+
+// Rect area lights need their uniform tables built once, and they only
+// light standard materials, which is what every model here uses.
+RectAreaLightUniformsLib.init()
 
 type Props = {
   kind: DecorationKind
@@ -43,15 +46,16 @@ function Glow({
 }) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
-  // Rect area lights need their uniform tables built once, and they only
-  // light standard materials, which is what every model here uses.
-  useEffect(() => {
-    RectAreaLightUniformsLib.init()
-  }, [])
-  if (lit < 0.01) return null
+  // The lights stay mounted while the lamp is off but are hidden, which
+  // takes them out of the scene's light count. A light that is counted
+  // costs every material a share of its shader and its uniforms on every
+  // frame, at nothing as much as at full, and a flat of dark lamps was
+  // paying more for them than for everything it drew. Switching one does
+  // change the count and has the shaders built again, once.
+  const dark = lit < 0.01
   // Close to linear with the level: a lamp at a third still lights the
   // room around it, and still casts, instead of fading away first.
-  const total = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
+  const total = dark ? 0 : LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.
@@ -64,6 +68,7 @@ function Glow({
         height={0.06}
         color={[r, g, b]}
         intensity={total * 4}
+        visible={!dark}
       />
     )
   }
@@ -77,6 +82,7 @@ function Glow({
         intensity={total * LAMP_KEY_SHARE}
         distance={7}
         decay={1.15}
+        visible={!dark}
         castShadow
         shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
         // Small offsets: a big one pushes the sample past a thin top or
@@ -95,6 +101,7 @@ function Glow({
         intensity={total * LAMP_THROUGH_SHARE}
         distance={6}
         decay={1.25}
+        visible={!dark}
         userData={{ through: true }}
       />
     </>
@@ -178,20 +185,24 @@ export default function LightModel({ kind, item, state }: Props) {
     case 'light_strip':
     case 'light_strip_ceiling':
     case 'light_strip_wall': {
-      // An aluminium channel with a frosted diffuser in it. Lights place
-      // themselves, so the ceiling one goes up to the ceiling and the other
-      // two take their own height.
+      // An aluminium channel with a frosted diffuser under it. Lights place
+      // themselves, so the ceiling one goes up against the ceiling and the
+      // other two take their own height. The wall one stands off the wall
+      // on its channel instead of sinking into it.
       const length = p('length')
-      const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.04 : p('height')
-      glowAt = [0, height + 0.05, 0]
+      const height = kind.id === 'light_strip_ceiling' ? CEILING_HEIGHT_M - 0.046 : p('height')
+      const z = kind.id === 'light_strip_wall' ? 0.016 : 0
+      // The light comes from just under the diffuser, so the channel above
+      // it never shades the strip's own wash.
+      glowAt = [0, height + 0.005, z]
       glowSpread = length
       body = (
         <group>
-          <mesh position={[0, height + 0.035, 0]}>
+          <mesh position={[0, height + 0.035, z]}>
             <boxGeometry args={[length, 0.022, 0.03]} />
             <BaseMaterial color={c('channel')} material={m('channel')} />
           </mesh>
-          <mesh position={[0, height + 0.018, 0]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
+          <mesh position={[0, height + 0.018, z]} rotation={[0, 0, Math.PI / 2]} userData={{ transmits: true }}>
             <capsuleGeometry args={[0.016, Math.max(length - 0.032, 0.05), 8, 20]} />
             <ShadeMaterial color={c('diffuser')} material={m('diffuser')} state={state} />
           </mesh>

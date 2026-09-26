@@ -8,14 +8,17 @@ import { useEffect, useRef, useState } from 'react'
 // it looks the same whatever the frame rate, and it only asks for a new
 // render while it is actually moving.
 export function useEased(target: number, rate = 3) {
-  const [shown, setShown] = useState(target)
-  const from = useRef(target)
+  // A target that is not a number, a sensor reading of unknown say, would
+  // poison the eased value for good, so it is taken as nothing instead.
+  const aim = Number.isFinite(target) ? target : 0
+  const [shown, setShown] = useState(aim)
+  const from = useRef(aim)
   useFrame((_, delta) => {
-    if (from.current === target) return
+    if (from.current === aim) return
     const next =
-      Math.abs(target - from.current) < 0.001
-        ? target
-        : from.current + (target - from.current) * (1 - Math.exp(-rate * Math.min(delta, 0.1)))
+      Math.abs(aim - from.current) < 0.001
+        ? aim
+        : from.current + (aim - from.current) * (1 - Math.exp(-rate * Math.min(delta, 0.1)))
     from.current = next
     setShown(next)
   })
@@ -63,7 +66,7 @@ export function useTravel(target: number, fallback = 0.9) {
   }, [target, fallback])
 
   useFrame((_, delta) => {
-    const aim = Math.min(Math.max(target, 0), 1)
+    const aim = Number.isFinite(target) ? Math.min(Math.max(target, 0), 1) : value.current
     if (value.current === aim) return
     const step = report.current.speed * Math.min(delta, 0.1)
     const rest = aim - value.current

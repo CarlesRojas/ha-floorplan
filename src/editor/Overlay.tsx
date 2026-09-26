@@ -1,6 +1,7 @@
 import styles from '#/index.css?inline'
 import { useLayoutEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { holdEditorOpen } from '#/lib/editorOpen.ts'
 
 function createHost() {
   // A modal dialog lives in the browser's top layer, above anything HA stacks
@@ -75,7 +76,10 @@ export default function Overlay({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     document.body.appendChild(dialog)
     dialog.showModal()
+    // The cards under it stop drawing while it covers them.
+    const release = holdEditorOpen()
     return () => {
+      release()
       dialog.close()
       dialog.remove()
     }

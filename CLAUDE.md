@@ -21,3 +21,4 @@ Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bo
 - `dist/` is bind-mounted into the Home Assistant container. Never empty it from the build config.
 - Write in plain sentences. Never use em dashes, in code comments, commit messages, or docs.
 - When giving the user card YAML, always give the complete card config, never a fragment to merge.
+- `showroom.yaml` is a card with every decoration kind in its own row and each of its styles along it, at default sizes and colors. Run `pnpm showroom` to regenerate it after any change to the catalog, and commit it with that change. Do not send it to the user.

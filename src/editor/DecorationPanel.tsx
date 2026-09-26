@@ -1,5 +1,7 @@
 import {
+  adjustedCount,
   canRide,
+  cycleLength,
   DECORATION_KINDS,
   decorationKind,
   decorationVariant,
@@ -7,6 +9,7 @@ import {
   itemLevels,
   kindColors,
   paramValue,
+  styleParams,
   withoutStyleDefaults,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
@@ -31,7 +34,7 @@ import { deviceSignals, levelChannels } from '#/signals.ts'
 import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
-import { faPlus, faRotateLeft, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsRotate, faMinus, faPlus, faRotateLeft, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
 
@@ -163,7 +166,7 @@ export default function DecorationPanel({
           </label>
         )}
 
-        {kind.params.map(p => {
+        {styleParams(kind, item.variant).map(p => {
           // Read through the catalog, so a size saved before this slider's
           // steps changed shows on a stop rather than between two of them.
           const value = paramValue(kind, item.params, p.id, item.variant)
@@ -181,9 +184,83 @@ export default function DecorationPanel({
                 />
               </label>
             )
+          // A place in a row is stepped through with a button, and wraps
+          // round however many places there are now.
+          if (p.cycle) {
+            const count = cycleLength(kind, item.params, item.variant)
+            const at = ((Math.round(value) % count) + count) % count
+            return (
+              <div key={p.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                {p.label}
+                <button
+                  type="button"
+                  disabled={count < 2}
+                  onClick={() => onUpdate(item.id, { params: { ...item.params, [p.id]: (at + 1) % count } })}
+                  className="flex items-center gap-2 justify-self-start rounded-md border border-(--divider-color) px-2 py-1 text-xs hover:bg-(--secondary-background-color) disabled:opacity-50"
+                >
+                  <FontAwesomeIcon icon={faArrowsRotate} className="size-3" />
+                  {at + 1} of {count}
+                </button>
+              </div>
+            )
+          }
           // What the slider starts at for this style: a pendant's real size.
           const initial = paramValue(kind, undefined, p.id, item.variant)
           const { [p.id]: _, ...rest } = item.params ?? {}
+          // Back to the default, by forgetting the saved value, so the item
+          // follows its style again.
+          const reset = (
+            <button
+              type="button"
+              aria-label={`Reset ${p.label.toLowerCase()} to default`}
+              title="Reset to default"
+              disabled={value === initial}
+              onClick={e => {
+                e.preventDefault()
+                onUpdate(item.id, { params: Object.keys(rest).length > 0 ? rest : undefined })
+              }}
+              className="flex size-6 items-center justify-center rounded-md text-(--secondary-text-color) hover:bg-(--secondary-background-color) disabled:invisible"
+            >
+              <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
+            </button>
+          )
+          // A count the size gives, with parts added or taken away. The
+          // buttons show and step the count that results, and the value
+          // saved is how far it is from what the size gives.
+          if (p.adjust) {
+            const { count, max } = adjustedCount(kind, item.params, item.variant)
+            const step = (by: number) =>
+              onUpdate(item.id, { params: { ...item.params, [p.id]: Math.round(value) + by } })
+            const stepper =
+              'flex size-6 items-center justify-center rounded-md border border-(--divider-color) hover:bg-(--secondary-background-color) disabled:opacity-50'
+            return (
+              <div key={p.id} className="grid grid-cols-[96px_1fr_24px] items-center gap-2 text-sm">
+                {p.label}
+                <div className="flex items-center gap-2 justify-self-start">
+                  <button
+                    type="button"
+                    aria-label={`Fewer ${p.label.toLowerCase()}`}
+                    disabled={count <= 0 || value <= p.min}
+                    onClick={() => step(-1)}
+                    className={stepper}
+                  >
+                    <FontAwesomeIcon icon={faMinus} className="size-3" />
+                  </button>
+                  <span className="w-5 text-center text-xs">{count}</span>
+                  <button
+                    type="button"
+                    aria-label={`More ${p.label.toLowerCase()}`}
+                    disabled={count >= max || value >= p.max}
+                    onClick={() => step(1)}
+                    className={stepper}
+                  >
+                    <FontAwesomeIcon icon={faPlus} className="size-3" />
+                  </button>
+                </div>
+                {reset}
+              </div>
+            )
+          }
           return (
             <label key={p.id} className="grid grid-cols-[96px_1fr_56px_24px] items-center gap-2 text-sm">
               {p.label}
@@ -200,21 +277,7 @@ export default function DecorationPanel({
                 {/* The parameter says its unit, and means meters when silent. */}
                 {p.unit === undefined ? `${value.toFixed(2)} m` : `${value}${p.unit}`}
               </span>
-              {/* Back to the default, by forgetting the saved value, so the
-                  item follows its style again. */}
-              <button
-                type="button"
-                aria-label={`Reset ${p.label.toLowerCase()} to default`}
-                title="Reset to default"
-                disabled={value === initial}
-                onClick={e => {
-                  e.preventDefault()
-                  onUpdate(item.id, { params: Object.keys(rest).length > 0 ? rest : undefined })
-                }}
-                className="flex size-6 items-center justify-center rounded-md text-(--secondary-text-color) hover:bg-(--secondary-background-color) disabled:invisible"
-              >
-                <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
-              </button>
+              {reset}
             </label>
           )
         })}
