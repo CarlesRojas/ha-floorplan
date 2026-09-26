@@ -918,14 +918,11 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         buttons in the corner, over the view. */}
                     <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                       <PreviewButton
-                        icon={faCamera}
-                        label={config.camera ? 'Replace opening view' : 'Save opening view'}
-                        title={
-                          config.camera
-                            ? 'Replace the view the card opens with by where the camera stands now'
-                            : 'Open the card with the view the camera has now'
-                        }
-                        onClick={saveMainView}
+                        icon={faXmark}
+                        label="Forget view"
+                        title="Forget the saved view, the card frames the plan by itself again"
+                        disabled={!config.camera}
+                        onClick={clearMainView}
                       />
                       <PreviewButton
                         icon={faEye}
@@ -935,11 +932,14 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         onClick={showMainView}
                       />
                       <PreviewButton
-                        icon={faXmark}
-                        label="Forget view"
-                        title="Forget the saved view, the card frames the plan by itself again"
-                        disabled={!config.camera}
-                        onClick={clearMainView}
+                        icon={faCamera}
+                        label={config.camera ? 'Replace opening view' : 'Save opening view'}
+                        title={
+                          config.camera
+                            ? 'Replace the view the card opens with by where the camera stands now'
+                            : 'Open the card with the view the camera has now'
+                        }
+                        onClick={saveMainView}
                       />
                     </div>
                     <Scene
