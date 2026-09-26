@@ -5,6 +5,9 @@ import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
 import type { CardConfig } from '#/types.ts'
 
+// Baked in by the build from package.json.
+declare const __CARD_VERSION__: string
+
 const CARD_TYPE = 'floorplan-3d'
 const EDITOR_TYPE = `${CARD_TYPE}-editor`
 
@@ -235,6 +238,14 @@ class Floorplan3DEditor extends ReactHost<CardConfig> {
     )
   }
 }
+
+// Says which version is loaded, the way most custom cards do, so a stale
+// card.js in the browser's cache is easy to spot.
+console.info(
+  `%c FLOORPLAN-3D %c v${__CARD_VERSION__} `,
+  'color: white; background: #3f5f7a; font-weight: bold; border-radius: 4px 0 0 4px',
+  'color: #3f5f7a; background: #e6eef5; font-weight: bold; border-radius: 0 4px 4px 0',
+)
 
 if (!customElements.get(CARD_TYPE)) customElements.define(CARD_TYPE, Floorplan3DCard)
 if (!customElements.get(EDITOR_TYPE)) customElements.define(EDITOR_TYPE, Floorplan3DEditor)

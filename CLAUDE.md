@@ -14,7 +14,7 @@ Keep working on the same branch and pull request while it is open, whatever the 
 
 ## Project
 
-Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bound to objects. React + Three.js, Vite in lib mode building a single `dist/card.js`. See `README.md` for the local Home Assistant setup.
+Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bound to objects. React + Three.js, Vite in lib mode building a single `dist/card.js`. See `docs/GUIDE.md` for the local Home Assistant setup and the full reference; `README.md` is the short public pitch and install guide.
 
 - Package manager: pnpm. `pnpm build` runs tsc and vite, `pnpm lint` runs oxlint, `pnpm watch` rebuilds on change.
 - Styling: Tailwind v4, injected into the card's shadow root from `src/index.css`. Use the `cn` helper from `src/lib/utils.ts`.
