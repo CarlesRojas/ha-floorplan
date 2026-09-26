@@ -211,20 +211,40 @@ function Flue({ on, at, base, tall }: { on: boolean; at: [number, number]; base:
   )
 }
 
-// Thin wisps of hot air leaking from the top of a sauna door, drifting out
-// before they rise.
-function DoorWisps({ on, x, y, z, w }: { on: boolean; x: number; y: number; z: number; w: number }) {
+// Thin wisps of hot air leaking from the top of a sauna door. The roof runs
+// out over the door, `out` past it with its underside `head` above the leak,
+// so they are blown outwards and only climb as far as lets them clear its
+// edge on the way, instead of rising straight into it.
+function DoorWisps({
+  on,
+  x,
+  y,
+  z,
+  w,
+  out,
+  head,
+}: {
+  on: boolean
+  x: number
+  y: number
+  z: number
+  w: number
+  out: number
+  head: number
+}) {
+  const drift = out + 0.2
+  const rise = Math.min(0.4, ((head - 0.03) * drift) / out)
   return [-1, 0, 1].map(i => (
     <Steam
       key={i}
       on={on}
       position={[x + (i * w) / 3, y, z]}
       radius={0.028}
-      rise={0.4}
+      rise={rise}
       count={4}
       strength={0.28}
       speed={0.45 + scatter(i + 2, 31) * 0.15}
-      drift={[0, 0.16]}
+      drift={[0, drift]}
       phase={scatter(i + 2, 32)}
     />
   ))
@@ -473,7 +493,7 @@ function BarrelSauna({ p, c, M, on }: Look) {
         <Pane w={0.42} h={0.36} lit={lit} glass={c('glass')} frame={M('wood')} />
       </group>
       <Flue on={on} at={[flueX, flueZ]} base={cy + Math.sqrt(R * R - flueX * flueX) - 0.01} tall={0.55} />
-      <DoorWisps on={on} x={0} y={doorTop} z={front + 0.06} w={dw} />
+      <DoorWisps on={on} x={0} y={doorTop} z={front + 0.06} w={dw} out={inset} head={cy + ri - doorTop} />
       <Halo on={on} position={[0, doorY + doorH / 2, L / 2 + 0.4]} color={FIRE} intensity={0.6} distance={2.6} />
     </group>
   )
@@ -640,7 +660,7 @@ function CabinSauna({ p, c, M, on }: Look) {
         <Material color={PIPE} material="metal" />
       </mesh>
       <Flue on={on} at={[stove.x, flueZ]} base={roofTop(flueZ) - 0.01} tall={0.6} />
-      <DoorWisps on={on} x={gx1 - dw / 2} y={gy1} z={d / 2 + 0.05} w={dw} />
+      <DoorWisps on={on} x={gx1 - dw / 2} y={gy1} z={d / 2 + 0.05} w={dw} out={ohF} head={top(d / 2) - gy1} />
       <Halo on={on} position={[0, y0 + 1.2, 0]} color={FIRE} intensity={0.7} distance={2.8} />
       <Halo on={on} position={[0, y0 + 1, d / 2 + 0.5]} color={FIRE} intensity={0.4} distance={2.5} />
     </group>

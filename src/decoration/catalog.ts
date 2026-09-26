@@ -2330,28 +2330,6 @@ export const DECORATION_KINDS: DecorationKind[] = [
       },
     ],
   ),
-  kind(
-    'aquarium',
-    'decor',
-    'Aquarium',
-    'floor',
-    [width(1, 0.4, 2.4), depth(0.4, 0.25, 0.8), height(1.3, 0.8, 2.6)],
-    { cabinet: SCANDI.ink, frame: '#1d1f21', gravel: '#d8cdb8', plants: '#4f8a4a' },
-    { cabinet: 'matte', frame: 'matte', gravel: 'matte', plants: 'matte' },
-    TOGGLE,
-    [
-      { id: 'cabinet', label: 'Tank Cabinet' },
-      {
-        // Glass from a low plinth all the way up, as tall as it is set.
-        id: 'floor',
-        label: 'Reef Column',
-        params: { width: 0.8, depth: 0.5, height: 1.8 },
-        colors: { cabinet: '#2f3133', frame: '#1d1f21', gravel: '#d8cdb8', plants: '#4f8a4a' },
-        materials: { cabinet: 'metal', frame: 'matte', gravel: 'matte', plants: 'matte' },
-      },
-    ],
-  ),
-
   // Security and sensors
   kind(
     'camera',
@@ -2463,17 +2441,22 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'utility',
     'Litter box',
     'floor',
-    [width(0.6, 0.3, 1.2), depth(0.68, 0.3, 1.4), height(0.72, 0.35, 1.5)],
-    { body: '#e6e6e7', drum: '#3c3f42', trim: '#8b8f93' },
-    { body: 'matte', drum: 'matte', trim: 'metal' },
+    [width(0.54, 0.3, 1.2), depth(0.62, 0.3, 1.4), height(0.55, 0.35, 1.5)],
+    { body: '#f0f0ef', drum: '#3c3f42', trim: '#9a9da0' },
+    { body: 'matte', drum: 'matte', trim: 'matte' },
     TOGGLE,
     [
-      { id: 'globe', label: 'Orbit Globe' },
+      // A self cleaning cube: a white body with a low round entry in its
+      // front, the drum turning behind it and a waste drawer below.
+      { id: 'cube', label: 'Sift Cube' },
       {
-        id: 'drum',
-        label: 'Roller Drum',
-        params: { width: 0.52, depth: 0.7, height: 0.6 },
-        colors: { body: '#3c3f42', drum: '#e6e6e7', trim: '#3c3f42' },
+        // A wooden pod on a drawer base, rolled over by hand on its crank to
+        // sift the litter.
+        id: 'moon',
+        label: 'Moon Roller',
+        params: { width: 0.42, depth: 0.56, height: 0.71 },
+        colors: { body: '#b88a5e', drum: '#d6b98d', trim: '#3c3f42' },
+        materials: { body: 'wood', drum: 'wood', trim: 'matte' },
       },
     ],
   ),
