@@ -909,54 +909,60 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                   >
                     <span className="h-1 w-14 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
                   </div>
-                  <div
-                    className="relative min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
-                    style={{ flex: previewShare }}
-                  >
+                  <div className="flex min-h-0 flex-col gap-2" style={{ flex: previewShare }}>
+                    <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl bg-(--secondary-background-color)">
+                      <Scene
+                        hass={hass}
+                        config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
+                        sky={hour}
+                        onPickDecoration={pickDecoration}
+                        cameraRef={camera}
+                        tries={tries}
+                        onTry={stepTry}
+                        onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
+                        selected={
+                          selectedDecoration
+                            ? `decoration:${selectedDecoration}`
+                            : selection.roomId
+                              ? `room:${selection.roomId}`
+                              : null
+                        }
+                        onPickNothing={() => {
+                          setSelection({ roomId: null, vertex: null })
+                          setSelectedDecoration(null)
+                        }}
+                      />
+                    </div>
                     {/* The view the card opens with: saved from where the
-                        camera stands, shown again, or forgotten. */}
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-                      {config.camera && (
-                        <>
-                          <PreviewButton icon={faEye} label="Fly to the card's opening view" onClick={showMainView} />
-                          <PreviewButton
-                            icon={faXmark}
-                            label="Forget the card's opening view"
-                            onClick={clearMainView}
-                          />
-                        </>
-                      )}
+                        camera stands, flown back to, or forgotten. Sits under
+                        the view so it never covers the model. */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="mr-1 text-xs text-(--secondary-text-color)">Opening view</span>
                       <PreviewButton
                         icon={faCamera}
-                        label={
+                        label={config.camera ? 'Replace with current view' : 'Save current view'}
+                        title={
                           config.camera
-                            ? 'Replace the view the card opens with by this one'
-                            : 'Open the card with this view'
+                            ? 'Replace the view the card opens with by where the camera stands now'
+                            : 'Open the card with the view the camera has now'
                         }
                         onClick={saveMainView}
                       />
+                      <PreviewButton
+                        icon={faEye}
+                        label="Fly to view"
+                        title="Fly the camera to the view the card opens with"
+                        disabled={!config.camera}
+                        onClick={showMainView}
+                      />
+                      <PreviewButton
+                        icon={faXmark}
+                        label="Forget view"
+                        title="Forget the saved view, the card frames the plan by itself again"
+                        disabled={!config.camera}
+                        onClick={clearMainView}
+                      />
                     </div>
-                    <Scene
-                      hass={hass}
-                      config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
-                      sky={hour}
-                      onPickDecoration={pickDecoration}
-                      cameraRef={camera}
-                      tries={tries}
-                      onTry={stepTry}
-                      onPickRoom={id => pickRoom({ roomId: id, vertex: null })}
-                      selected={
-                        selectedDecoration
-                          ? `decoration:${selectedDecoration}`
-                          : selection.roomId
-                            ? `room:${selection.roomId}`
-                            : null
-                      }
-                      onPickNothing={() => {
-                        setSelection({ roomId: null, vertex: null })
-                        setSelectedDecoration(null)
-                      }}
-                    />
                   </div>
                 </>
               )}
@@ -1026,17 +1032,31 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   )
 }
 
-// A small button over the 3D view, named on hover.
-function PreviewButton({ icon, label, onClick }: { icon: IconDefinition; label: string; onClick: () => void }) {
+// A named button in the row under the 3D view. Greyed out when there is no
+// saved view for it to act on.
+function PreviewButton({
+  icon,
+  label,
+  title,
+  disabled,
+  onClick,
+}: {
+  icon: IconDefinition
+  label: string
+  title: string
+  disabled?: boolean
+  onClick: () => void
+}) {
   return (
     <button
       type="button"
-      aria-label={label}
-      title={label}
+      title={title}
+      disabled={disabled}
       onClick={onClick}
-      className="flex size-8 items-center justify-center rounded-lg border border-(--divider-color) bg-(--card-background-color) text-(--primary-text-color) shadow hover:bg-(--secondary-background-color)"
+      className="flex h-8 items-center gap-1.5 rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2.5 text-xs text-(--primary-text-color) hover:bg-(--secondary-background-color) disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-(--card-background-color)"
     >
       <FontAwesomeIcon icon={icon} className="size-3.5" />
+      <span>{label}</span>
     </button>
   )
 }

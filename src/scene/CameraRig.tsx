@@ -7,10 +7,12 @@ import { Vector3 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js'
 
 // What the outside can ask of the camera: where it is now, as a view that
-// can be saved, and to travel to a saved view.
+// can be saved, to travel to a saved view, and to go back to the view it
+// opened with.
 export type CameraHandle = {
   view: () => CameraView
   flyTo: (view: CameraView) => void
+  reset: () => void
 }
 
 type Props = {
@@ -19,6 +21,9 @@ type Props = {
   // The view to open with. Without one the camera frames the plan.
   view?: CameraView
   handle?: RefObject<CameraHandle | null>
+  // Told when the camera leaves the view it opened with, and when it is
+  // back there.
+  onAway?: (away: boolean) => void
 }
 
 // Scratch for the flight, so no frame allocates.
@@ -35,14 +40,27 @@ const triple = (v: Vector3): [number, number, number] => [round(v.x), round(v.y)
 // camera is theirs and is never moved again, so editing the plan does not
 // throw the view away. A flight to a saved view is the one exception, and
 // the camera is the viewer's again the moment it lands.
-export default function CameraRig({ rooms, decorations, view, handle }: Props) {
+export default function CameraRig({ rooms, decorations, view, handle, onAway }: Props) {
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const controls = useThree(state => state.controls) as OrbitControlsImpl | null
   const moved = useRef(false)
   // The flight under way, from where the camera was to where it is going,
-  // and how far along it is, 0 to 1.
-  const flight = useRef<{ from: CameraView; to: CameraView; t: number } | null>(null)
+  // and how far along it is, 0 to 1. A flight home lands the camera back
+  // on the view it opened with.
+  const flight = useRef<{ from: CameraView; to: CameraView; t: number; home: boolean } | null>(null)
+  // Whether the camera has left the view it opened with. Only a change is
+  // reported, and to whatever was passed last.
+  const away = useRef(false)
+  const latestAway = useRef(onAway)
+  useLayoutEffect(() => {
+    latestAway.current = onAway
+  })
+  const setAway = (value: boolean) => {
+    if (away.current === value) return
+    away.current = value
+    latestAway.current?.(value)
+  }
 
   const place = useCallback(
     (position: Vector3, target: Vector3) => {
@@ -64,12 +82,23 @@ export default function CameraRig({ rooms, decorations, view, handle }: Props) {
     return { position: triple(camera.position), target: triple(target) }
   }
 
+  // The view the camera opened with: the saved one, or the plan framed.
+  const home = (): CameraView => {
+    if (view) return view
+    const { position, target } = frameRooms(rooms, size.width / size.height, sceneHeight(decorations))
+    return { position: triple(position), target: triple(target) }
+  }
+
   useImperativeHandle(handle, () => ({
     view: current,
     flyTo: to => {
       moved.current = true
+      setAway(true)
       // Any input during a flight, an orbit or a wheel, takes it over.
-      flight.current = { from: current(), to, t: 0 }
+      flight.current = { from: current(), to, t: 0, home: false }
+    },
+    reset: () => {
+      flight.current = { from: current(), to: home(), t: 0, home: true }
     },
   }))
 
@@ -82,7 +111,13 @@ export default function CameraRig({ rooms, decorations, view, handle }: Props) {
     const position = A.set(...f.from.position).lerp(B.set(...f.to.position), k)
     const target = C.set(...f.from.target).lerp(D.set(...f.to.target), k)
     place(position, target)
-    if (f.t >= 1) flight.current = null
+    if (f.t < 1) return
+    flight.current = null
+    // Landed home, the camera frames the plan again as if never touched.
+    if (f.home) {
+      moved.current = false
+      setAway(false)
+    }
   })
 
   // OrbitControls only fires start on real input, never on our own update.
@@ -91,6 +126,7 @@ export default function CameraRig({ rooms, decorations, view, handle }: Props) {
     const onStart = () => {
       moved.current = true
       flight.current = null
+      setAway(true)
     }
     controls.addEventListener('start', onStart)
     return () => controls.removeEventListener('start', onStart)

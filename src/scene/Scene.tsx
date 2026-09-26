@@ -21,7 +21,7 @@ import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { MathUtils, PCFShadowMap } from 'three'
-import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react'
+import { useCallback, useRef, type RefObject } from 'react'
 
 export type { CameraHandle } from '#/scene/CameraRig.tsx'
 
@@ -47,6 +47,8 @@ type Props = {
   paused?: boolean
   // Filled with the camera's handle, to read the view or fly to one.
   cameraRef?: RefObject<CameraHandle | null>
+  // Told when the camera leaves the view it opened with, and when it is back.
+  onCameraAway?: (away: boolean) => void
 }
 
 export default function Scene({
@@ -61,6 +63,7 @@ export default function Scene({
   onTry,
   paused = false,
   cameraRef,
+  onCameraAway,
 }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
@@ -72,13 +75,6 @@ export default function Scene({
   const markFallback = useCallback(() => {
     fallbackAt.current = performance.now()
   }, [])
-  // The rooms are only drawn again when they change, so they are handed a
-  // pick that stays the same and calls whatever the editor passed last.
-  const latestPickRoom = useRef(onPickRoom)
-  useLayoutEffect(() => {
-    latestPickRoom.current = onPickRoom
-  })
-  const pickRoom = useCallback((id: string) => latestPickRoom.current?.(id), [])
 
   return (
     <Canvas
@@ -108,14 +104,21 @@ export default function Scene({
           around it onto the floor. */}
       <Shadows />
       <Cleanup />
-      <CameraRig rooms={rooms} decorations={config.decorations ?? []} view={config.camera} handle={cameraRef} />
+      <CameraRig
+        rooms={rooms}
+        decorations={config.decorations ?? []}
+        view={config.camera}
+        handle={cameraRef}
+        onAway={onCameraAway}
+      />
       <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
       {/* A press that misses everything looks around itself for something
-          to act on, so small things are still easy to hit. */}
-      <PickFallback onHandled={markFallback} />
+          to act on, so small things are still easy to hit, and only then
+          asks whether it landed on a room's floor. */}
+      <PickFallback onHandled={markFallback} onRoom={onPickRoom} />
       {selected && <SelectionOutline target={selected} />}
       {rooms.map((room, i) => (
-        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} onPick={onPickRoom && pickRoom} />
+        <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
       ))}
       <OrbitControls
         makeDefault

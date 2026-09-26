@@ -7,19 +7,16 @@ import type { RoomConfig } from '#/types.ts'
 import { memo, useMemo } from 'react'
 import { ExtrudeGeometry } from 'three'
 
-// A press that moves further than this before it is let go is a drag.
-const ROOM_CLICK_SLOP_PX = 8
-
 type Props = {
   room: RoomConfig
   index: number
   radius: number
   gap: number
-  // In the editor, clicking the bare floor picks the room.
-  onPick?: (id: string) => void
 }
 
-function Room({ room, index, radius, gap, onPick }: Props) {
+// Clicks on the floor are not taken here. The press fallback finds the room
+// under a press once the pieces around it have had their turn.
+function Room({ room, index, radius, gap }: Props) {
   // The bevel grows outward from the outline, so inset by it as well to keep
   // the visible edge where the gap says it should be.
   const points = useMemo(
@@ -65,21 +62,11 @@ function Room({ room, index, radius, gap, onPick }: Props) {
 
   return (
     <mesh
-      // Named so the editor's outline can find the room that is picked.
+      // Named so the outline and the press fallback can find the room.
       name={`room:${room.id}`}
       geometry={geometry}
       castShadow
       receiveShadow
-      onClick={
-        onPick &&
-        (e => {
-          e.stopPropagation()
-          // A press that travelled is the camera being orbited, and where
-          // it was let go says nothing about what was meant.
-          if (e.delta > ROOM_CLICK_SLOP_PX) return
-          onPick(room.id)
-        })
-      }
     >
       {floor ? (
         // Extrude UVs are plan meters, so the surface tiles at its own
