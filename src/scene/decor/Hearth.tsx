@@ -734,12 +734,11 @@ function TankHeater({ p, M, on }: Look) {
 const LITTER_TURN = 0.12
 const LITTER_HOME = 0.3
 
-// Moves its children about the x axis while `on`, and brings them back to
-// where they started once it stops, so the entry always ends up facing the
-// front again. `roll` rolls them right over and over. Otherwise they rock:
-// the entry lifts, goes over the back, and comes forward again the same way,
-// never passing underneath.
-function Cycling({ on, roll, children }: { on: boolean; roll?: boolean; children: ReactNode }) {
+// Rocks its children about the x axis while `on`: the entry lifts, goes
+// over the back, and comes forward again the same way, never passing
+// underneath. Once it stops they come back to where they started, so the
+// entry always ends up facing the front again.
+function Cycling({ on, children }: { on: boolean; children: ReactNode }) {
   const ref = useRef<Group>(null)
   const phase = useRef(0)
   useFrame((_, delta) => {
@@ -754,7 +753,7 @@ function Cycling({ on, roll, children }: { on: boolean; roll?: boolean; children
       else phase.current += Math.sign(gap) * Math.min(Math.abs(gap), LITTER_HOME * lap * delta)
     }
     // A rock lifts the front, which is a turn back about x.
-    ref.current.rotation.x = roll ? phase.current : (-Math.PI * (1 - Math.cos(phase.current))) / 2
+    ref.current.rotation.x = (-Math.PI * (1 - Math.cos(phase.current))) / 2
   })
   return <group ref={ref}>{children}</group>
 }
@@ -794,7 +793,7 @@ function GlobeLitterBox({ p, c, M, on }: Look) {
   const front = baseZ + baseD / 2
   // The opening: a cap this far round from the front pole is left off the
   // sphere, and the bezel rings its edge.
-  const cap = Math.PI * 0.32
+  const cap = Math.PI * 0.22
   const mouth = R * Math.sin(cap)
   const mouthZ = R * Math.cos(cap)
   return (
@@ -843,23 +842,21 @@ function GlobeLitterBox({ p, c, M, on }: Look) {
             <torusGeometry args={[mouth, 0.022, 12, SEG]} />
             {M('drum')}
           </mesh>
+          {/* The dark cap over the back of the globe, which rocks with it. */}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <sphereGeometry args={[R + 0.006, SEG, 16, 0, Math.PI * 2, Math.PI * 0.7, Math.PI * 0.3]} />
+            {M('drum')}
+          </mesh>
         </Cycling>
-        {/* The back of the globe sits in a dark collar that stays put, small
-            enough that the entry still shows round it when it is turned to
-            the back. */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <sphereGeometry args={[R + 0.006, SEG, 16, 0, Math.PI * 2, Math.PI * 0.78, Math.PI * 0.22]} />
-          {M('drum')}
-        </mesh>
       </group>
     </group>
   )
 }
 
 // A hand rolled litter box: a wooden pod lying across a drawer base, a round
-// entry in its front and a crank on its side. It sifts by rolling right over
-// about its length, so while it is on the whole pod turns, entry and all,
-// and it rolls on to face the front again when switched off.
+// entry in its front and a crank on its side. It sifts by rocking back on
+// its axle, so while it is on the whole pod rocks, entry and all, and it
+// comes forward to face the front again when switched off.
 function MoonLitterBox({ p, M, on }: Look) {
   const w = p('width')
   const d = p('depth')
@@ -890,7 +887,7 @@ function MoonLitterBox({ p, M, on }: Look) {
         </mesh>
       ))}
       <group position={[0, cy, 0]}>
-        <Cycling on={on} roll>
+        <Cycling on={on}>
           <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
             <cylinderGeometry args={[R, R, len, SEG]} />
             {M('drum')}
