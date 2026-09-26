@@ -43,7 +43,11 @@ const SWEEP_S = 0.25
 
 function clear(material: Material | Material[]) {
   const all = Array.isArray(material) ? material : [material]
-  return all.some(m => m.transparent && ((m as { opacity?: number }).opacity ?? 1) < CLEAR_ENOUGH)
+  // Something that does not write depth is a flame, a puff of steam, a
+  // ring of water: drawn over the room, not part of it. It moves every
+  // frame, and were it a caster every shadow map in reach would be drawn
+  // again on every frame for as long as it ran.
+  return all.some(m => !m.depthWrite || (m.transparent && ((m as { opacity?: number }).opacity ?? 1) < CLEAR_ENOUGH))
 }
 
 // A shadow map only changes when something that casts into it moves, turns,
@@ -243,7 +247,9 @@ export default function Shadows() {
     // the dimmer ones past the budget give theirs up until they are needed.
     lamps.sort((a, b) => b.intensity - a.intensity)
     lamps.forEach((lamp, i) => {
-      const cast = i < MAX_SHADOW_LAMPS
+      // A lamp that is off, or that stands in a part of the plan that is
+      // hidden, has nothing to throw.
+      const cast = i < MAX_SHADOW_LAMPS && lamp.intensity > 0.001 && lamp.visible
       if (lamp.castShadow !== cast) lamp.castShadow = cast
     })
   })

@@ -8,6 +8,7 @@ import {
 } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { Glass, Halo, Led, Material, SEG, Slab, Spinner, Tube } from '#/scene/decor/parts.tsx'
+import { useBeamScene } from '#/scene/decor/beam.ts'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
@@ -19,7 +20,10 @@ import {
   DoubleSide,
   Float32BufferAttribute,
   Object3D,
+  type Group,
   type InstancedMesh,
+  type Material as ThreeMaterial,
+  type Mesh,
 } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
@@ -545,12 +549,27 @@ function ChargeRing({ r, y, lit, color }: { r: number; y: number; lit: number; c
   )
 }
 
-// What is on the pad comes down onto it as it starts to charge and lifts
-// away and is gone when it stops, since a charger that is off is one with
-// nothing on it.
+// What is on the pad fades in as it comes down onto it to charge and fades
+// out as it lifts away when it stops, since a charger that is off is one
+// with nothing on it. Every material under it is its own, so they can be
+// faded in place; while it is solid they write depth again, so it never
+// shows through itself.
 function Arriving({ lit, children }: { lit: number; children: ReactNode }) {
+  const group = useRef<Group>(null)
+  useLayoutEffect(() => {
+    group.current?.traverse(o => {
+      const mesh = o as Mesh
+      if (!mesh.isMesh) return
+      for (const mat of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        const m = mat as ThreeMaterial
+        m.transparent = lit < 0.98
+        m.opacity = lit
+        m.depthWrite = lit >= 0.98
+      }
+    })
+  }, [lit])
   return (
-    <group position={[0, (1 - lit) * 0.02, 0]} visible={lit > 0.02}>
+    <group ref={group} position={[0, (1 - lit) * 0.02, 0]} visible={lit > 0.02}>
       {children}
     </group>
   )
@@ -746,11 +765,13 @@ function TabletEasel({ p, c, M, on }: Look) {
 }
 
 // The light an ultra short throw projector sends up the wall: a fan from
-// the slot of its lens, `from` wide and at `lens`, spreading to the edges
-// of the picture `pw` by `ph` with its bottom at `y0` on the plane `z`. It
-// adds to what is behind it and fades as it climbs, carrying the fade in
-// its vertex alpha the way the ceiling projector's beam does, so its far
-// end never shows as a dark box on the card's see through canvas.
+// the slot of its lens, `from` wide and at `lens`, spreading toward the
+// edges of a picture `pw` by `ph` with its bottom at `y0` on the plane
+// `z`, and gone before it lands there. It adds to what is behind it and
+// fades as it climbs, carrying the fade in its vertex alpha the way the
+// ceiling projector's beam does, so its far end never shows as a dark box
+// on the card's see through canvas, and it cuts and shimmers like that
+// beam, since the same kind of picture is playing.
 function WallThrow({
   lens,
   from,
@@ -768,8 +789,9 @@ function WallThrow({
   z: number
   strength: number
 }) {
+  const material = useBeamScene(0.24 * strength)
   const geometry = useMemo(() => {
-    const rows = 16
+    const rows = 24
     const positions: number[] = []
     const colors: number[] = []
     const index: number[] = []
@@ -786,9 +808,13 @@ function WallThrow({
       [pw / 2, y0 + ph, z],
       [-pw / 2, y0 + ph, z],
     ]
+    // Drawn most of the way to the picture, brightest just out of the
+    // slot and faded to nothing before the end.
+    const reach = 0.85
     for (let i = 0; i <= rows; i++) {
-      const k = i / rows
-      const fade = (0.25 + 0.75 * Math.pow(1 - k, 1.5)) * Math.min(1, k * 8 + 0.15)
+      const t = i / rows
+      const k = t * reach
+      const fade = Math.pow(1 - t, 1.8) * Math.min(1, t * 5 + 0.2)
       for (let q = 0; q < 4; q++) {
         positions.push(
           near[q][0] + (far[q][0] - near[q][0]) * k,
@@ -815,10 +841,11 @@ function WallThrow({
   return (
     <mesh geometry={geometry} renderOrder={2}>
       <meshBasicMaterial
+        ref={material}
         color="#eef3ff"
         vertexColors
         transparent
-        opacity={0.14 * strength}
+        opacity={0.24 * strength}
         blending={AdditiveBlending}
         depthWrite={false}
         side={DoubleSide}
@@ -831,16 +858,16 @@ function WallThrow({
 // An ultra short throw projector: a low rounded box on a cabinet a hand
 // from the wall, a fabric grille across its front, and at the back of its
 // top a dark recessed window the light leaves by, straight up. When it is
-// on the picture lands on the wall above it, its bottom a little over the
-// box, with a faint fan of light between the two.
-function ShortThrow({ p, c, M, style, on }: Look) {
+// on a fan of light climbs the wall above it, widening toward where the
+// picture would land, the way the ceiling projector's beam does.
+function ShortThrow({ p, c, M, on }: Look) {
   const lit = useEased(on ? 1 : 0, 3)
   const W = 0.6
   const D = 0.35
   const H = 0.13
   const foot = 0.008
   const top = foot + H
-  const r = style === 'dark' ? 0.07 : 0.05
+  const r = 0.05
   const [pw, ph] = screenSize(p('inches'))
   const wallZ = -(D / 2 + 0.08)
   const y0 = top + 0.25
@@ -882,11 +909,7 @@ function ShortThrow({ p, c, M, style, on }: Look) {
         />
       </Slab>
       <Led on={on} position={[W * 0.38, top, D / 2 - 0.04]} color="#e8f2f6" radius={0.003} />
-      {/* The picture on the wall and the light on its way up to it. */}
-      <mesh position={[0, y0 + ph / 2, wallZ]} visible={lit > 0.05}>
-        <planeGeometry args={[pw, ph]} />
-        <ScreenMaterial />
-      </mesh>
+      {/* The light on its way up the wall. */}
       <WallThrow lens={lens} from={W * 0.28} pw={pw} ph={ph} y0={y0} z={wallZ + 0.002} strength={lit} />
       <Halo on={on} position={[0, y0 + ph * 0.35, wallZ + 0.35]} color="#dfe8ff" intensity={0.3} distance={3} />
     </group>

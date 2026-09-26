@@ -1,17 +1,15 @@
 import { Halo, Led, Material, SEG, Slab, Spinner, Waves } from '#/scene/decor/parts.tsx'
-import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useBeamScene } from '#/scene/decor/beam.ts'
+import { useMemo, type ReactNode } from 'react'
 import {
   AdditiveBlending,
   BufferGeometry,
-  Color,
   DoubleSide,
   ExtrudeGeometry,
   Float32BufferAttribute,
   LatheGeometry,
   Shape,
   Vector2,
-  type MeshBasicMaterial,
 } from 'three'
 
 // The speakers, the game consoles and the projector's beam, each in the
@@ -34,30 +32,8 @@ export type Look = {
 // How far along the throw the beam is drawn before it has faded away.
 const BEAM_REACH = 0.85
 
-// The tints a picture cuts between, whites from cool to warm and a few
-// scenes with a color of their own.
-const BEAM_WHITES = ['#c9d6f2', '#eef3ff', '#fff4e6', '#ffffff', '#9fc0ff', '#ffc98a', '#b8f0c8', '#e6b8ff']
-
 export function Beam({ length, width, strength }: { length: number; width: number; strength: number }) {
-  const material = useRef<MeshBasicMaterial>(null)
-  // The scene now on screen: its brightness and tint, and when it cuts.
-  const scene = useRef({ level: 1, target: 1, color: new Color('#eef3ff'), next: 0 })
-  useFrame(({ clock }, delta) => {
-    const mat = material.current
-    if (!mat) return
-    const now = clock.elapsedTime
-    const at = scene.current
-    if (now >= at.next) {
-      at.target = 0.55 + Math.random() * 0.45
-      at.color.set(BEAM_WHITES[Math.floor(Math.random() * BEAM_WHITES.length)])
-      at.next = now + 0.25 + Math.random() * 0.9
-    }
-    // A cut lands fast, and the picture shimmers a little while it plays.
-    at.level += (at.target - at.level) * Math.min(1, delta * 14)
-    const shimmer = 1 + Math.sin(now * 23) * 0.03 + Math.sin(now * 37.3) * 0.02
-    mat.opacity = 0.28 * strength * at.level * shimmer
-    mat.color.lerp(at.color, Math.min(1, delta * 14))
-  })
+  const material = useBeamScene(0.28 * strength)
   const geometry = useMemo(() => {
     const rows = 24
     const lens = 0.012

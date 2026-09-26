@@ -1,5 +1,5 @@
 import { surface, type SurfaceKind } from '#/materials/textures.ts'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { DoubleSide, Matrix3, Vector2 } from 'three'
 
 type Props = {
@@ -59,16 +59,29 @@ export default function SurfaceMaterial({
       t.anisotropy = 8
       t.matrixAutoUpdate = false
       t.matrix.copy(matrix)
-      t.needsUpdate = true
+      // No needsUpdate: the clone shares the surface's pixels, which are
+      // already on the graphics card. Asking for an upload here sent the
+      // whole canvas up again for every piece that wore it.
     }
     return { map, normalMap }
   }, [s, repeat, scale, rotation, span])
+  // A clone is a texture of its own as far as three is concerned, and one
+  // that was swapped for another, by a slider or a style change, must be
+  // let go of or it stays on the graphics card.
+  useEffect(
+    () => () => {
+      maps.map.dispose()
+      maps.normalMap.dispose()
+    },
+    [maps],
+  )
+  const normalScale = useMemo(() => new Vector2(s.normalScale, s.normalScale), [s.normalScale])
   return (
     <meshStandardMaterial
       color={color}
       map={maps.map}
       normalMap={maps.normalMap}
-      normalScale={new Vector2(s.normalScale, s.normalScale)}
+      normalScale={normalScale}
       roughness={s.roughness}
       side={doubleSide ? DoubleSide : undefined}
       emissive={emissive ?? [0, 0, 0]}

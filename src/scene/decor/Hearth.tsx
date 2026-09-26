@@ -1,13 +1,14 @@
 import { colorValue, decorationVariant, materialValue, paramValue, type DecorationKind } from '#/decoration/catalog.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { Bubbles, FairyLights, Falling, Flames, Spray } from '#/scene/decor/effects.tsx'
+import { Foliage, heading, place, random } from '#/scene/decor/foliage.ts'
 import { scatter } from '#/scene/decor/scatter.ts'
 import { Glass, Halo, Led, Material, SEG, Slab, Waves } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
-import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
-import { Color, Object3D, Vector3, type Group, type InstancedMesh } from 'three'
+import { useMemo, useRef, type ReactNode } from 'react'
+import { Color, Vector3, type Group } from 'three'
 
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null }
 
@@ -255,90 +256,162 @@ function Stove({ p, c, M, on }: Look) {
   )
 }
 
-// A tree grown the way a real one is: whorls of branches up a trunk, each
-// branch with two side shoots, drooping on a fir and reaching up on a
-// pencil pine, set round a little from the whorl below and every one a
-// slightly different length and shade. Warm white fairy lights are
-// scattered over it, thicker lower down where there is more tree, and run
-// through their patterns while it is on. It stands in a woven basket, rows
-// of rattan round a core with a thick rim at the top.
-function ChristmasTree({ p, M, style, on }: Look) {
+// The outline of a fir frond: full near its base, tapering to the tip,
+// with the needles along its edge as saw teeth.
+const FROND = (t: number) => {
+  const shape = t < 0.12 ? 0.55 + (t / 0.12) * 0.45 : Math.max(0, 1 - ((t - 0.12) / 0.88) ** 1.25)
+  return shape * (0.7 + 0.3 * Math.abs(Math.sin(t * 47)))
+}
+
+// A fir: whorls of branches up the trunk, each a drooping frond with two
+// side fronds and a short one on top for depth, set round a little from the
+// whorl below, every one a slightly different length and one of two shades.
+// All the fronds of a shade are one geometry, so the tree costs three
+// draws whatever its size.
+function firTree(R: number, y0: number, crown: number) {
+  const rnd = random(11)
+  const light = new Foliage()
+  const dark = new Foliage()
+  const twigs = new Foliage()
+  const frond = (f: Foliage, at: Vector3, a: number, lift: number, len: number) => {
+    const dir = heading(a, lift)
+    f.blade(
+      { length: len, width: len * 0.44, outline: FROND, rows: 26, cols: 3, droop: len * 0.2, fold: 0.22 },
+      place(at, dir),
+    )
+    // The side fronds, from a little under half way out and drooping a
+    // touch more, and a short one lying over the top.
+    const fork = at.clone().addScaledVector(dir, len * 0.42)
+    fork.y -= len * 0.2 * 0.42 ** 2
+    for (const s of [-1, 1]) {
+      const side = heading(a + s * 0.62, lift - 0.12)
+      f.blade(
+        { length: len * 0.5, width: len * 0.24, outline: FROND, rows: 18, cols: 3, droop: len * 0.1, fold: 0.22 },
+        place(fork, side),
+      )
+    }
+    const over = at.clone()
+    over.y += 0.012
+    f.blade(
+      { length: len * 0.6, width: len * 0.26, outline: FROND, rows: 18, cols: 3, droop: len * 0.1, fold: 0.3 },
+      place(over, heading(a, lift + 0.15)),
+    )
+    twigs.stem([at.toArray() as Vec3, fork.toArray() as Vec3], 0.009, 0.005)
+  }
+  const whorls = Math.max(7, Math.round(crown / 0.115))
+  for (let k = 0; k < whorls; k++) {
+    const t = k / whorls
+    const at = new Vector3(0, y0 + crown * t, 0)
+    const reach = R * (1 - t) * 0.98 + 0.04
+    const n = Math.max(3, Math.round(9 * (1 - t * 0.55)))
+    for (let j = 0; j < n; j++) {
+      const a = (j / n) * Math.PI * 2 + k * 2.4 + (rnd() - 0.5) * 0.5
+      const len = Math.max(0.08, reach * (0.85 + rnd() * 0.3))
+      const lift = -0.08 + (rnd() - 0.5) * 0.24
+      frond(rnd() < 0.5 ? light : dark, at, a, lift, len)
+    }
+  }
+  // The leader, a few short fronds standing up round the top.
+  const top = new Vector3(0, y0 + crown - 0.08, 0)
+  for (let j = 0; j < 4; j++) {
+    frond(j % 2 ? light : dark, top, (j / 4) * Math.PI * 2 + 0.4, 1.1 + rnd() * 0.2, 0.14)
+  }
+  return { light: light.geometry(), dark: dark.geometry(), twigs: twigs.geometry() }
+}
+
+// A bare tree, the kind sold for winter with its lights already on: a
+// trunk forking three ways, each limb forking again and again, reaching
+// out and up into a rounded crown as a real tree does, with fairy lights
+// wound along every branch. All of it is one geometry.
+function bareTree(R: number, y0: number, h: number) {
+  const rnd = random(23)
+  const wood = new Foliage()
+  const bulbs: Vec3[] = []
+  const UP = new Vector3(0, 1, 0)
+  const grow = (from: Vector3, dir: Vector3, len: number, r: number, depth: number) => {
+    // A little bow in each limb, so none is a straight rod.
+    const side = new Vector3().crossVectors(dir, Math.abs(dir.y) > 0.9 ? new Vector3(1, 0, 0) : UP).normalize()
+    const mid = from
+      .clone()
+      .addScaledVector(dir, len * 0.5)
+      .addScaledVector(side, (rnd() - 0.5) * len * 0.2)
+    const end = from.clone().addScaledVector(dir, len)
+    wood.stem([from.toArray() as Vec3, mid.toArray() as Vec3, end.toArray() as Vec3], r, r * 0.62, undefined, 7)
+    if (depth > 0) {
+      const count = Math.max(1, Math.round(len / 0.08))
+      for (let i = 0; i < count; i++) {
+        const t = (i + 0.5) / count
+        // A point on the bow, and the bulb hung a little off the bark.
+        const at = from
+          .clone()
+          .multiplyScalar((1 - t) ** 2)
+          .addScaledVector(mid, 2 * (1 - t) * t)
+          .addScaledVector(end, t * t)
+        const off = (rnd() - 0.5) * 2 * Math.PI
+        at.addScaledVector(side, Math.cos(off) * r * 1.6).y += Math.sin(off) * r * 1.6
+        bulbs.push(at.toArray() as Vec3)
+      }
+    }
+    if (depth >= 4 || len < 0.1) return
+    const kids = depth === 0 ? 3 : rnd() < 0.4 ? 3 : 2
+    const spin = rnd() * Math.PI * 2
+    for (let i = 0; i < kids; i++) {
+      const turn = spin + (i / kids) * Math.PI * 2 + (rnd() - 0.5) * 0.8
+      // The limb leaves at an angle from its parent, reaching out and up.
+      const out = new Vector3().crossVectors(dir, UP).normalize().applyAxisAngle(dir, turn)
+      if (out.lengthSq() < 0.5) out.set(Math.cos(turn), 0, Math.sin(turn))
+      const tilt = (depth === 0 ? 0.55 : 0.45) + rnd() * 0.45
+      const next = dir
+        .clone()
+        .multiplyScalar(Math.cos(tilt))
+        .addScaledVector(out, Math.sin(tilt))
+        .addScaledVector(UP, 0.18)
+        .normalize()
+      const nlen = len * (0.7 + rnd() * 0.16)
+      // A limb that would reach out past the crown turns up instead.
+      const reach = end.clone().addScaledVector(next, nlen)
+      if (Math.hypot(reach.x, reach.z) > R * 0.92) next.addScaledVector(UP, 1.5).normalize()
+      grow(end, next, nlen, r * 0.62, depth + 1)
+    }
+  }
+  const lean = heading(rnd() * Math.PI * 2, Math.PI / 2 - 0.04)
+  grow(new Vector3(0, y0 - 0.06, 0), lean, (h - y0) * 0.27, 0.032, 0)
+  return { wood: wood.geometry(), bulbs }
+}
+
+// A Christmas tree standing in a woven basket, rows of rattan round a core
+// with a thick rim at the top: a fir with warm white fairy lights scattered
+// over it, thicker lower down where there is more tree, or a bare tree
+// with the lights wound along its branches. The lights run through their
+// patterns while it is on.
+function ChristmasTree({ p, c, M, style, on }: Look) {
   const size = p('size')
   const h = p('height')
   const R = size / 2
-  const slim = style === 'slim'
+  const bare = style === 'bare'
   const potH = Math.min(0.24, h * 0.13)
-  const basketTop = R * 0.36
-  const basketBottom = R * 0.3
+  const basketTop = R * (bare ? 0.3 : 0.36)
+  const basketBottom = basketTop * 0.83
   const rows = Math.max(5, Math.round(potH / 0.03))
   const stakes = Math.max(12, Math.round(basketTop * 60))
   const lean = Math.atan2(basketTop - basketBottom, potH)
   // The lowest whorl, a little clear of the pot.
   const y0 = potH + Math.min(0.1, h * 0.05)
   const crown = h - y0
-  const branches = useMemo(() => {
-    const out: { at: Vec3; dir: Vec3; len: number; wid: number; shade: number }[] = []
-    const shoot = (from: Vec3, a: number, lift: number, len: number, wid: number, shade: number) => {
-      const dir: Vec3 = [Math.cos(a) * Math.cos(lift), Math.sin(lift), Math.sin(a) * Math.cos(lift)]
-      out.push({
-        at: [from[0] + (dir[0] * len) / 2, from[1] + (dir[1] * len) / 2, from[2] + (dir[2] * len) / 2],
-        dir,
-        len,
-        wid,
-        shade,
-      })
-      return dir
-    }
-    const whorls = Math.max(8, Math.round(crown / (slim ? 0.07 : 0.085)))
-    for (let k = 0; k < whorls; k++) {
-      const t = k / whorls
-      const y = y0 + crown * t
-      const reach = R * (1 - t) ** (slim ? 0.8 : 1)
-      const n = Math.max(3, Math.round((slim ? 5 : 8) * (1 - t * 0.6)))
-      for (let j = 0; j < n; j++) {
-        const i = k * 16 + j
-        const a = (j / n) * Math.PI * 2 + k * 2.4 + (scatter(i, 31) - 0.5) * 0.6
-        const len = Math.max(0.05, reach * (0.8 + scatter(i, 32) * 0.3))
-        const lift = (slim ? 0.35 : -0.2) + (scatter(i, 33) - 0.5) * 0.25
-        const shade = 0.8 + scatter(i, 34) * 0.35
-        const dir = shoot([0, y, 0], a, lift, len, len * (slim ? 0.3 : 0.38), shade)
-        const fork: Vec3 = [dir[0] * len * 0.5, y + dir[1] * len * 0.5, dir[2] * len * 0.5]
-        for (const s of [-1, 1]) shoot(fork, a + s * 0.6, lift - 0.1, len * 0.45, len * 0.2, shade * 0.95)
-      }
-    }
-    // The leader, standing up out of the last whorl.
-    shoot([0, h - 0.26, 0], 0, Math.PI / 2, 0.26, 0.05, 1)
-    return out
-  }, [R, y0, crown, h, slim])
+  const fir = useMemo(() => (bare ? null : firTree(R, y0, crown)), [bare, R, y0, crown])
+  const winter = useMemo(() => (bare ? bareTree(R, y0, h) : null), [bare, R, y0, h])
   const bulbs = useMemo(
     () =>
+      winter?.bulbs ??
       Array.from({ length: Math.max(30, Math.round(60 * size * h)) }, (_, i): Vec3 => {
         const t = 1 - Math.sqrt(scatter(i, 35)) * 0.97
         const a = scatter(i, 36) * Math.PI * 2
-        const r = R * (1 - t) ** (slim ? 0.8 : 1) * (0.72 + scatter(i, 37) * 0.22)
-        return [Math.cos(a) * r, y0 + crown * t - (slim ? 0 : r * 0.1), Math.sin(a) * r]
+        const r = R * (1 - t) * (0.72 + scatter(i, 37) * 0.22)
+        return [Math.cos(a) * r, y0 + crown * t - r * 0.1, Math.sin(a) * r]
       }),
-    [R, y0, crown, size, h, slim],
+    [winter, R, y0, crown, size, h],
   )
-  const needles = useRef<InstancedMesh>(null)
-  useLayoutEffect(() => {
-    const m = needles.current
-    if (!m) return
-    const o = new Object3D()
-    const up = new Vector3(0, 1, 0)
-    const v = new Vector3()
-    const shade = new Color()
-    branches.forEach((b, i) => {
-      o.position.set(...b.at)
-      o.quaternion.setFromUnitVectors(up, v.set(...b.dir))
-      o.scale.set(b.wid, b.len, b.wid)
-      o.updateMatrix()
-      m.setMatrixAt(i, o.matrix)
-      m.setColorAt(i, shade.setScalar(b.shade))
-    })
-    m.instanceMatrix.needsUpdate = true
-    if (m.instanceColor) m.instanceColor.needsUpdate = true
-  }, [branches])
+  const shade = useMemo(() => `#${new Color(c('needles')).multiplyScalar(0.78).getHexString()}`, [c])
   return (
     <group>
       <mesh position={[0, potH / 2, 0]} castShadow>
@@ -383,24 +456,35 @@ function ChristmasTree({ p, M, style, on }: Look) {
       {/* Bark mulch over the top, round the foot of the trunk. */}
       <mesh position={[0, potH - 0.01, 0]}>
         <cylinderGeometry args={[basketTop - 0.01, basketTop - 0.01, 0.01, SEG]} />
-        {M('trunk')}
+        <Material color="#5a4030" material="matte" />
       </mesh>
-      {/* The trunk, all the way up into the leader. */}
-      <mesh position={[0, (potH + h - 0.2) / 2, 0]}>
-        <cylinderGeometry args={[0.012, 0.035, h - 0.2 - potH, 10]} />
-        {M('trunk')}
-      </mesh>
-      {/* A dark core, so no light shows through between the branches, and
-          narrowing right up to the top whorls so none of them hang loose. */}
-      <mesh position={[0, y0 + crown * 0.47, 0]}>
-        <coneGeometry args={[R * 0.45, crown * 0.94, 12]} />
-        {M('needles')}
-      </mesh>
-      <instancedMesh key={branches.length} ref={needles} args={[undefined, undefined, branches.length]} castShadow>
-        <coneGeometry args={[0.5, 1, 7]} />
-        {M('needles')}
-      </instancedMesh>
-      <FairyLights on={on} points={bulbs} radius={0.011} />
+      {winter && (
+        <mesh geometry={winter.wood} castShadow>
+          {M('trunk')}
+        </mesh>
+      )}
+      {fir && (
+        <>
+          {/* The trunk, all the way up into the leader. */}
+          <mesh position={[0, (potH + h - 0.1) / 2, 0]}>
+            <cylinderGeometry args={[0.012, 0.035, h - 0.1 - potH, 10]} />
+            {M('trunk')}
+          </mesh>
+          {/* A dark core, so no light shows through between the fronds. */}
+          <mesh position={[0, y0 + crown * 0.45, 0]}>
+            <coneGeometry args={[R * 0.38, crown * 0.9, 12]} />
+            <Material color={shade} material="matte" />
+          </mesh>
+          <mesh geometry={fir.twigs}>{M('trunk')}</mesh>
+          <mesh geometry={fir.light} castShadow>
+            <Material color={c('needles')} material="matte" doubleSide />
+          </mesh>
+          <mesh geometry={fir.dark} castShadow>
+            <Material color={shade} material="matte" doubleSide />
+          </mesh>
+        </>
+      )}
+      <FairyLights on={on} points={bulbs} radius={bare ? 0.012 : 0.011} />
       <Halo on={on} position={[0, y0 + crown * 0.4, R + 0.35]} color="#ffd9a0" intensity={0.25} distance={2.2} />
     </group>
   )

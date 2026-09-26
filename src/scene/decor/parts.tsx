@@ -367,7 +367,9 @@ export function Cushion({
 // much, the loose creases of a cover that has been sat on, so no two parts
 // of it catch the light quite the same.
 function softBox([w, h, d]: Vec3, [rx, ry, rz]: Vec3, [px, py, pz]: Vec3, wrinkle = 0) {
-  const sphere = new SphereGeometry(1, SEG * 4, SEG * 2)
+  // Two full turns of segments were eight thousand points a cushion, four
+  // times what a rounded edge this small can show.
+  const sphere = new SphereGeometry(1, SEG * 2, SEG)
   sphere.deleteAttribute('uv')
   sphere.deleteAttribute('normal')
   const geometry = mergeVertices(sphere)
@@ -659,6 +661,10 @@ export function Steam({
   const lit = useEased(on ? 1 : 0, 3)
   const puffs = useRef<(Mesh | null)[]>([])
   useFrame(({ clock }) => {
+    if (lit < 0.01) {
+      for (const puff of puffs.current) if (puff?.visible) puff.visible = false
+      return
+    }
     const t = clock.elapsedTime
     puffs.current.forEach((puff, i) => {
       if (!puff) return
@@ -706,7 +712,8 @@ export function Steam({
  * that grow from `from` to `from + reach` and fade as they go, each on its
  * own turn of a shared loop. They lie in the group's XY plane, so turn the
  * group to lay them flat round a body or stand them in front of a baffle,
- * and `stretch` pulls them into an oval for a long bar.
+ * and `stretch` pulls them into an oval for a long bar. `phase` shifts
+ * the loop, so several sets never rise in step.
  */
 export function Waves({
   on,
@@ -718,6 +725,7 @@ export function Waves({
   stretch = [1, 1],
   strength = 0.75,
   speed = 0.7,
+  phase = 0,
   color = '#6aaeff',
 }: {
   on: boolean
@@ -729,15 +737,20 @@ export function Waves({
   stretch?: [number, number]
   strength?: number
   speed?: number
+  phase?: number
   color?: string
 }) {
   const lit = useEased(on ? 1 : 0, 4)
   const rings = useRef<(Mesh | null)[]>([])
   useFrame(({ clock }) => {
+    if (lit < 0.01) {
+      for (const ring of rings.current) if (ring?.visible) ring.visible = false
+      return
+    }
     const t = clock.elapsedTime
     rings.current.forEach((ring, i) => {
       if (!ring) return
-      const f = (t * speed + i / count) % 1
+      const f = (t * speed + i / count + phase) % 1
       const r = from + reach * f
       ring.scale.set(r * stretch[0], r * stretch[1], 1)
       ring.visible = lit > 0.01
@@ -789,7 +802,7 @@ export function Stream({
   const body = useRef<Mesh>(null)
   useFrame(({ clock }) => {
     const m = body.current
-    if (!m) return
+    if (!m || lit < 0.01) return
     const t = clock.elapsedTime
     const k = 1 + 0.16 * Math.sin(t * 41) + 0.08 * Math.sin(t * 67)
     m.scale.x = k
@@ -868,6 +881,10 @@ export function Rain({
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
+    if (lit < 0.01) {
+      if (m.visible) m.visible = false
+      return
+    }
     const t = clock.elapsedTime
     drops.forEach((d, i) => {
       const f = (t * 1.6 + d.phase) % 1

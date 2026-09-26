@@ -78,6 +78,15 @@ export function Flames({
   ]
   const sparkCount = sparks ? Math.max(3, Math.round(count * 0.7)) : 0
   useFrame(({ clock }) => {
+    // Out, and hidden: nothing to move until it is lit again.
+    if (lit < 0.01) {
+      if (bed.current?.visible) {
+        bed.current.visible = false
+        for (const m of tongues.current) if (m) m.visible = false
+        for (const m of embers.current) if (m) m.visible = false
+      }
+      return
+    }
     const t = clock.elapsedTime
     tongues.current.forEach((m, j) => {
       if (!m) return
@@ -195,6 +204,9 @@ export function FairyLights({
   const warm = useMemo(() => new Color(color), [color])
   const dim = useMemo(() => new Color('#4a4844'), [])
   const shade = useMemo(() => new Color(), [])
+  // Whether every bulb has been set to its off grey, so a dark string is
+  // left alone rather than shaded again every frame.
+  const dimmed = useRef(false)
   useLayoutEffect(() => {
     const m = mesh.current
     if (!m) return
@@ -209,6 +221,15 @@ export function FairyLights({
   useFrame(({ clock }, delta) => {
     const m = mesh.current
     if (!m) return
+    if (lit < 0.01) {
+      if (dimmed.current) return
+      for (let i = 0; i < points.length; i++) m.setColorAt(i, dim)
+      level.current.fill(0)
+      if (m.instanceColor) m.instanceColor.needsUpdate = true
+      dimmed.current = true
+      return
+    }
+    dimmed.current = false
     const t = clock.elapsedTime
     const pattern = Math.floor(t / 7) % 4
     points.forEach(([, y], i) => {
@@ -271,6 +292,10 @@ export function Spray({
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
+    if (lit < 0.01) {
+      if (m.visible) m.visible = false
+      return
+    }
     const t = clock.elapsedTime
     for (let i = 0; i < total; i++) {
       const f = (t * speed + scatter(i, 4)) % 1
@@ -328,6 +353,10 @@ export function Bubbles({
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
+    if (lit < 0.01) {
+      if (m.visible) m.visible = false
+      return
+    }
     const t = clock.elapsedTime
     for (let i = 0; i < count; i++) {
       const f = (t * speed * (0.7 + scatter(i, 7) * 0.6) + scatter(i, 8)) % 1
@@ -384,6 +413,10 @@ export function Falling({
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
+    if (lit < 0.01) {
+      if (m.visible) m.visible = false
+      return
+    }
     const t = clock.elapsedTime
     for (let i = 0; i < total; i++) {
       const p = points[i % points.length]

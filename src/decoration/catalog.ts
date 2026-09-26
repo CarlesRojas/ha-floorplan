@@ -1950,7 +1950,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
         label: 'Raptor Pro',
         // A thicker black one, its keys lit when it runs.
         params: { width: 0.36 },
-        colors: { body: '#1c1d1f', keys: '#141517', screen: SCREEN_OFF_COLOR, accent: '#ff3b5c' },
+        colors: { body: '#1c1d1f', keys: '#141517', screen: SCREEN_OFF_COLOR, accent: '#3b8bff' },
         materials: { body: 'matte', keys: 'matte', screen: 'ceramic', accent: 'ceramic' },
       },
     ],
@@ -2020,16 +2020,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     { body: '#e9e8e4', grille: '#b9bab8', lens: '#2f3336' },
     { body: 'matte', grille: 'fabric', lens: 'ceramic' },
     TOGGLE,
-    [
-      // A low box set close to the wall, throwing the picture up it.
-      { id: 'box', label: 'Wall Beam' },
-      {
-        id: 'dark',
-        label: 'Shadow Beam',
-        colors: { body: '#2b2e31', grille: '#3a3d40', lens: '#1c1d1f' },
-        materials: { body: 'matte', grille: 'fabric', lens: 'ceramic' },
-      },
-    ],
+    // A low box set close to the wall, throwing its light up it.
+    [{ id: 'box', label: 'Wall Beam' }],
   ),
   kind(
     'projector_screen',
@@ -2085,7 +2077,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       {
         id: 'duct',
         label: 'Slot Vent',
-        params: { width: 0.8, height: 2.3 },
+        params: { width: 0.45, height: 2.3 },
         colors: { body: SCANDI.offWhite, grille: '#3a3d40', display: '#20262a' },
         materials: { body: 'matte', grille: 'matte', display: 'matte' },
       },
@@ -2328,12 +2320,13 @@ export const DECORATION_KINDS: DecorationKind[] = [
     TOGGLE,
     [
       { id: 'fir', label: 'Nordic Fir' },
+      // A bare branching tree strung with lights, no needles at all.
       {
-        id: 'slim',
-        label: 'Pencil Pine',
-        params: { size: 0.7, height: 2.1 },
-        colors: { needles: '#3d6048', trunk: '#6b4a32', stand: '#cdb68f' },
-        materials: { needles: 'matte', trunk: 'wood', stand: 'fabric' },
+        id: 'bare',
+        label: 'Winter Birch',
+        params: { size: 1.2, height: 2 },
+        colors: { needles: '#e8e3da', trunk: '#e8e3da', stand: '#cdb68f' },
+        materials: { needles: 'matte', trunk: 'matte', stand: 'wood' },
       },
     ],
   ),
@@ -2386,8 +2379,8 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Motion sensor',
     'wall',
     [size(0.07, 0.04, 0.14), height(2.3, 1.2, 2.5)],
-    // The ball's accent color, which glows red while it sees someone.
-    { body: SCANDI.offWhite, accent: '#3d7fd6' },
+    // The ball's color, which turns light teal while it sees someone.
+    { body: SCANDI.offWhite, accent: '#ffffff' },
     { body: 'matte', accent: 'ceramic' },
     TOGGLE,
   ),

@@ -474,6 +474,13 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     if (pending.current) clearTimeout(pending.current)
     pending.current = setTimeout(flushRename, EDITOR_TEXT_COMMIT_DELAY_MS)
   }
+  // A rename still on its pause when the editor goes is sent as it goes,
+  // rather than firing on an editor that is no longer there.
+  const latestFlush = useRef(flushRename)
+  useEffect(() => {
+    latestFlush.current = flushRename
+  })
+  useEffect(() => () => latestFlush.current(), [])
 
   const deleteRoom = (id: string) => {
     const gone = new Set(decorations.filter(d => d.room === id).map(d => d.id))

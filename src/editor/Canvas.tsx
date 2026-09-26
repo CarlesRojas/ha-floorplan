@@ -424,6 +424,14 @@ export default function Canvas({
     if (autopan.current) cancelAnimationFrame(autopan.current.raf)
     autopan.current = null
   }
+  // The pan must not run on after the canvas has gone.
+  useEffect(
+    () => () => {
+      if (autopan.current) cancelAnimationFrame(autopan.current.raf)
+      autopan.current = null
+    },
+    [],
+  )
 
   const autopanTick = (time: number) => {
     const state = autopan.current

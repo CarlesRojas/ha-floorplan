@@ -58,11 +58,17 @@ export default function SelectionOutline({ target }: Props) {
     composer.addPass(outline)
     // Tone mapping and the screen's colour space, which drawing straight to
     // the screen applied on its own. Without it the room comes out flat.
-    composer.addPass(new OutputPass())
+    const output = new OutputPass()
+    composer.addPass(output)
     pipeline.current = { composer, outline }
     found.current = null
     return () => {
       pipeline.current = null
+      // The composer only lets go of its own buffers. The outline pass
+      // holds several of its own, and its materials, which would otherwise
+      // stay on the graphics card each time something else is picked.
+      outline.dispose()
+      output.dispose()
       composer.dispose()
     }
   }, [gl, scene, camera])

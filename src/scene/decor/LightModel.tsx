@@ -14,8 +14,11 @@ import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import { useEffect } from 'react'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
+
+// Rect area lights need their uniform tables built once, and they only
+// light standard materials, which is what every model here uses.
+RectAreaLightUniformsLib.init()
 
 type Props = {
   kind: DecorationKind
@@ -43,15 +46,15 @@ function Glow({
 }) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
-  // Rect area lights need their uniform tables built once, and they only
-  // light standard materials, which is what every model here uses.
-  useEffect(() => {
-    RectAreaLightUniformsLib.init()
-  }, [])
-  if (lit < 0.01) return null
+  // The lights stay mounted at nothing while the lamp is off. Adding or
+  // removing a light changes the count every material's shader is built
+  // for, so every one of them was compiled again each time a lamp was
+  // switched, a stall of a second or more on a full flat. The shadow sweep
+  // takes a dark lamp's shadow away, so one at nothing costs nothing.
+  const dark = lit < 0.01
   // Close to linear with the level: a lamp at a third still lights the
   // room around it, and still casts, instead of fading away first.
-  const total = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
+  const total = dark ? 0 : LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.

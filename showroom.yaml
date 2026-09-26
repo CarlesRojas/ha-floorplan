@@ -487,8 +487,8 @@ rooms:
     name: "Short throw projector"
     points:
       - [34.8, 19.86]
-      - [40.73, 19.86]
-      - [40.73, 21.26]
+      - [38.01, 19.86]
+      - [38.01, 21.26]
       - [34.8, 21.26]
   - id: projector_screen
     name: "Projector screen"
@@ -508,8 +508,8 @@ rooms:
     name: "Air conditioner"
     points:
       - [34.8, 25.26]
-      - [38, 25.26]
-      - [38, 26.66]
+      - [37.65, 25.26]
+      - [37.65, 26.66]
       - [34.8, 26.66]
   - id: fan_ceiling
     name: "Ceiling fan"
@@ -521,199 +521,199 @@ rooms:
   - id: fan_floor
     name: "Floor fan"
     points:
-      - [41.73, 0]
-      - [43.99, 0]
-      - [43.99, 1.4]
-      - [41.73, 1.4]
+      - [41.5, 0]
+      - [43.76, 0]
+      - [43.76, 1.4]
+      - [41.5, 1.4]
   - id: fireplace
     name: "Fireplace"
     points:
-      - [41.73, 1.8]
-      - [44.93, 1.8]
-      - [44.93, 3.2]
-      - [41.73, 3.2]
+      - [41.5, 1.8]
+      - [44.7, 1.8]
+      - [44.7, 3.2]
+      - [41.5, 3.2]
   - id: air_purifier
     name: "Air purifier"
     points:
-      - [41.73, 3.6]
-      - [43.01, 3.6]
-      - [43.01, 5]
-      - [41.73, 5]
+      - [41.5, 3.6]
+      - [42.78, 3.6]
+      - [42.78, 5]
+      - [41.5, 5]
   - id: humidifier
     name: "Humidifier"
     points:
-      - [41.73, 5.4]
-      - [42.93, 5.4]
-      - [42.93, 6.8]
-      - [41.73, 6.8]
+      - [41.5, 5.4]
+      - [42.7, 5.4]
+      - [42.7, 6.8]
+      - [41.5, 6.8]
   - id: thermostat
     name: "Thermostat"
     points:
-      - [41.73, 7.2]
-      - [42.84, 7.2]
-      - [42.84, 8.6]
-      - [41.73, 8.6]
+      - [41.5, 7.2]
+      - [42.61, 7.2]
+      - [42.61, 8.6]
+      - [41.5, 8.6]
   - id: blind
     name: "Blind"
     points:
-      - [41.73, 9]
-      - [45.63, 9]
-      - [45.63, 10.4]
-      - [41.73, 10.4]
+      - [41.5, 9]
+      - [45.4, 9]
+      - [45.4, 10.4]
+      - [41.5, 10.4]
   - id: window
     name: "Window"
     points:
-      - [41.73, 10.8]
-      - [49.03, 10.8]
-      - [49.03, 12.2]
-      - [41.73, 12.2]
+      - [41.5, 10.8]
+      - [48.8, 10.8]
+      - [48.8, 12.2]
+      - [41.5, 12.2]
   - id: door
     name: "Door"
     points:
-      - [41.73, 12.6]
-      - [46.28, 12.6]
-      - [46.28, 14]
-      - [41.73, 14]
+      - [41.5, 12.6]
+      - [46.05, 12.6]
+      - [46.05, 14]
+      - [41.5, 14]
   - id: sliding_door
     name: "Sliding door"
     points:
-      - [41.73, 14.4]
-      - [47.43, 14.4]
-      - [47.43, 15.8]
-      - [41.73, 15.8]
+      - [41.5, 14.4]
+      - [47.2, 14.4]
+      - [47.2, 15.8]
+      - [41.5, 15.8]
   - id: garage_door
     name: "Garage door"
     points:
-      - [41.73, 16.2]
-      - [48.23, 16.2]
-      - [48.23, 17.6]
-      - [41.73, 17.6]
+      - [41.5, 16.2]
+      - [48, 16.2]
+      - [48, 17.6]
+      - [41.5, 17.6]
   - id: awning
     name: "Awning"
     points:
-      - [41.73, 18]
-      - [48.23, 18]
-      - [48.23, 19.4]
-      - [41.73, 19.4]
+      - [41.5, 18]
+      - [48, 18]
+      - [48, 19.4]
+      - [41.5, 19.4]
   - id: christmas_tree
     name: "Christmas tree"
     points:
-      - [41.73, 19.8]
-      - [45.03, 19.8]
-      - [45.03, 21.9]
-      - [41.73, 21.9]
+      - [41.5, 19.8]
+      - [45.3, 19.8]
+      - [45.3, 22]
+      - [41.5, 22]
   - id: aquarium
     name: "Aquarium"
     points:
-      - [41.73, 22.3]
-      - [45.03, 22.3]
-      - [45.03, 23.8]
-      - [41.73, 23.8]
+      - [41.5, 22.4]
+      - [44.8, 22.4]
+      - [44.8, 23.9]
+      - [41.5, 23.9]
   - id: camera
     name: "Camera"
     points:
-      - [41.73, 24.2]
-      - [42.83, 24.2]
-      - [42.83, 25.6]
-      - [41.73, 25.6]
+      - [41.5, 24.3]
+      - [42.6, 24.3]
+      - [42.6, 25.7]
+      - [41.5, 25.7]
   - id: doorbell
     name: "Doorbell"
     points:
-      - [41.73, 26]
-      - [42.8, 26]
-      - [42.8, 27.4]
-      - [41.73, 27.4]
+      - [41.5, 26.1]
+      - [42.57, 26.1]
+      - [42.57, 27.5]
+      - [41.5, 27.5]
   - id: motion_sensor
     name: "Motion sensor"
     points:
-      - [41.73, 27.8]
-      - [42.8, 27.8]
-      - [42.8, 29.2]
-      - [41.73, 29.2]
+      - [41.5, 27.9]
+      - [42.57, 27.9]
+      - [42.57, 29.3]
+      - [41.5, 29.3]
   - id: smoke_detector
     name: "Smoke detector"
     points:
-      - [50.03, 0]
-      - [51.17, 0]
-      - [51.17, 1.4]
-      - [50.03, 1.4]
+      - [49.8, 0]
+      - [50.94, 0]
+      - [50.94, 1.4]
+      - [49.8, 1.4]
   - id: alarm_panel
     name: "Alarm panel"
     points:
-      - [50.03, 1.8]
-      - [51.19, 1.8]
-      - [51.19, 3.2]
-      - [50.03, 3.2]
+      - [49.8, 1.8]
+      - [50.96, 1.8]
+      - [50.96, 3.2]
+      - [49.8, 3.2]
   - id: smart_lock
     name: "Smart lock"
     points:
-      - [50.03, 3.6]
-      - [51.12, 3.6]
-      - [51.12, 5]
-      - [50.03, 5]
+      - [49.8, 3.6]
+      - [50.89, 3.6]
+      - [50.89, 5]
+      - [49.8, 5]
   - id: air_quality
     name: "Air quality sensor"
     points:
-      - [50.03, 5.4]
-      - [51.13, 5.4]
-      - [51.13, 6.8]
-      - [50.03, 6.8]
+      - [49.8, 5.4]
+      - [50.9, 5.4]
+      - [50.9, 6.8]
+      - [49.8, 6.8]
   - id: vacuum_robot
     name: "Robot vacuum"
     points:
-      - [50.03, 7.2]
-      - [51.38, 7.2]
-      - [51.38, 8.6]
-      - [50.03, 8.6]
+      - [49.8, 7.2]
+      - [51.15, 7.2]
+      - [51.15, 8.6]
+      - [49.8, 8.6]
   - id: pet_feeder
     name: "Pet feeder"
     points:
-      - [50.03, 9]
-      - [51.97, 9]
-      - [51.97, 10.4]
-      - [50.03, 10.4]
+      - [49.8, 9]
+      - [51.74, 9]
+      - [51.74, 10.4]
+      - [49.8, 10.4]
   - id: water_heater
     name: "Water heater"
     points:
-      - [50.03, 10.8]
-      - [52.45, 10.8]
-      - [52.45, 12.2]
-      - [50.03, 12.2]
+      - [49.8, 10.8]
+      - [52.22, 10.8]
+      - [52.22, 12.2]
+      - [49.8, 12.2]
   - id: hot_tub
     name: "Hot tub"
     points:
-      - [50.03, 12.6]
-      - [55.33, 12.6]
-      - [55.33, 15.6]
-      - [50.03, 15.6]
+      - [49.8, 12.6]
+      - [55.1, 12.6]
+      - [55.1, 15.6]
+      - [49.8, 15.6]
   - id: louvred_pergola
     name: "Louvred pergola"
     points:
-      - [50.03, 16]
-      - [58.53, 16]
-      - [58.53, 20]
-      - [50.03, 20]
+      - [49.8, 16]
+      - [58.3, 16]
+      - [58.3, 20]
+      - [49.8, 20]
   - id: sauna
     name: "Sauna"
     points:
-      - [50.03, 20.4]
-      - [55.73, 20.4]
-      - [55.73, 23.6]
-      - [50.03, 23.6]
+      - [49.8, 20.4]
+      - [55.5, 20.4]
+      - [55.5, 23.6]
+      - [49.8, 23.6]
   - id: pool
     name: "Pool"
     points:
-      - [50.03, 24]
-      - [59.13, 24]
-      - [59.13, 27.5]
-      - [50.03, 27.5]
+      - [49.8, 24]
+      - [58.9, 24]
+      - [58.9, 27.5]
+      - [49.8, 27.5]
   - id: sprinkler
     name: "Sprinkler"
     points:
-      - [60.13, 0]
-      - [69.13, 0]
-      - [69.13, 4]
-      - [60.13, 4]
+      - [59.9, 0]
+      - [68.9, 0]
+      - [68.9, 4]
+      - [59.9, 4]
 decorations:
   - id: light_ceiling
     kind: light_ceiling
@@ -1520,11 +1520,6 @@ decorations:
     room: projector_ust
     position: [36.41, 20.56]
     variant: box
-  - id: projector_ust_dark
-    kind: projector_ust
-    room: projector_ust
-    position: [39.12, 20.56]
-    variant: dark
   - id: projector_screen
     kind: projector_screen
     room: projector_screen
@@ -1556,7 +1551,7 @@ decorations:
   - id: ac_unit_duct
     kind: ac_unit
     room: ac_unit
-    position: [37.1, 25.26]
+    position: [36.92, 25.26]
     rotation: 180
     variant: duct
   - id: fan_ceiling_classic
@@ -1577,257 +1572,257 @@ decorations:
   - id: fan_floor_pedestal
     kind: fan_floor
     room: fan_floor
-    position: [42.43, 0.7]
+    position: [42.2, 0.7]
     variant: pedestal
   - id: fan_floor_disc
     kind: fan_floor
     room: fan_floor
-    position: [43.31, 0.7]
+    position: [43.08, 0.7]
     variant: disc
   - id: fireplace_linear
     kind: fireplace
     room: fireplace
-    position: [42.83, 2.5]
+    position: [42.6, 2.5]
     variant: linear
   - id: fireplace_stove
     kind: fireplace
     room: fireplace
-    position: [44.18, 2.5]
+    position: [43.95, 2.5]
     variant: stove
   - id: air_purifier
     kind: air_purifier
     room: air_purifier
-    position: [42.37, 4.3]
+    position: [42.14, 4.3]
   - id: humidifier
     kind: humidifier
     room: humidifier
-    position: [42.33, 6.1]
+    position: [42.1, 6.1]
   - id: thermostat
     kind: thermostat
     room: thermostat
-    position: [42.28, 7.2]
+    position: [42.06, 7.2]
     rotation: 180
   - id: blind_venetian
     kind: blind
     room: blind
-    position: [42.83, 9]
+    position: [42.6, 9]
     rotation: 180
     variant: venetian
   - id: blind_shutter
     kind: blind
     room: blind
-    position: [44.53, 9]
+    position: [44.3, 9]
     rotation: 180
     variant: shutter
   - id: window_casement
     kind: window
     room: window
-    position: [42.83, 10.8]
+    position: [42.6, 10.8]
     rotation: 180
     variant: casement
   - id: window_sash
     kind: window
     room: window
-    position: [44.53, 10.8]
+    position: [44.3, 10.8]
     rotation: 180
     variant: sash
   - id: window_slider
     kind: window
     room: window
-    position: [46.23, 10.8]
+    position: [46, 10.8]
     rotation: 180
     variant: slider
   - id: window_steel
     kind: window
     room: window
-    position: [47.93, 10.8]
+    position: [47.7, 10.8]
     rotation: 180
     variant: steel
   - id: door_flush
     kind: door
     room: door
-    position: [42.65, 12.6]
+    position: [42.43, 12.6]
     rotation: 180
     variant: flush
   - id: door_panel
     kind: door
     room: door
-    position: [44, 12.6]
+    position: [43.78, 12.6]
     rotation: 180
     variant: panel
   - id: door_glazed
     kind: door
     room: door
-    position: [45.35, 12.6]
+    position: [45.13, 12.6]
     rotation: 180
     variant: glazed
   - id: sliding_door_panel
     kind: sliding_door
     room: sliding_door
-    position: [43.13, 14.4]
+    position: [42.9, 14.4]
     rotation: 180
     variant: panel
   - id: sliding_door_glass
     kind: sliding_door
     room: sliding_door
-    position: [45.73, 14.4]
+    position: [45.5, 14.4]
     rotation: 180
     variant: glass
   - id: garage_door_sectional
     kind: garage_door
     room: garage_door
-    position: [43.48, 16.2]
+    position: [43.25, 16.2]
     rotation: 180
     variant: sectional
   - id: garage_door_roller
     kind: garage_door
     room: garage_door
-    position: [46.48, 16.2]
+    position: [46.25, 16.2]
     rotation: 180
     variant: roller
   - id: awning_folding
     kind: awning
     room: awning
-    position: [43.23, 18]
+    position: [43, 18]
     rotation: 180
     variant: folding
   - id: awning_pergola
     kind: awning
     room: awning
-    position: [46.23, 18]
+    position: [46, 18]
     rotation: 180
     variant: pergola
   - id: christmas_tree_fir
     kind: christmas_tree
     room: christmas_tree
-    position: [42.78, 20.85]
+    position: [42.55, 20.9]
     variant: fir
-  - id: christmas_tree_slim
+  - id: christmas_tree_bare
     kind: christmas_tree
     room: christmas_tree
-    position: [44.18, 20.85]
-    variant: slim
+    position: [44.2, 20.9]
+    variant: bare
   - id: aquarium_cabinet
     kind: aquarium
     room: aquarium
-    position: [42.73, 23.05]
+    position: [42.5, 23.15]
     variant: cabinet
   - id: aquarium_floor
     kind: aquarium
     room: aquarium
-    position: [44.13, 23.05]
+    position: [43.9, 23.15]
     variant: floor
   - id: camera
     kind: camera
     room: camera
-    position: [42.28, 24.2]
+    position: [42.05, 24.3]
     rotation: 180
   - id: doorbell
     kind: doorbell
     room: doorbell
-    position: [42.26, 26]
+    position: [42.04, 26.1]
     rotation: 180
   - id: motion_sensor
     kind: motion_sensor
     room: motion_sensor
-    position: [42.26, 27.8]
+    position: [42.04, 27.9]
     rotation: 180
   - id: smoke_detector
     kind: smoke_detector
     room: smoke_detector
-    position: [50.6, 0.7]
+    position: [50.37, 0.7]
   - id: alarm_panel
     kind: alarm_panel
     room: alarm_panel
-    position: [50.61, 1.8]
+    position: [50.38, 1.8]
     rotation: 180
   - id: smart_lock
     kind: smart_lock
     room: smart_lock
-    position: [50.57, 3.6]
+    position: [50.35, 3.6]
     rotation: 180
   - id: air_quality
     kind: air_quality
     room: air_quality
-    position: [50.58, 6.1]
+    position: [50.35, 6.1]
   - id: vacuum_robot
     kind: vacuum_robot
     room: vacuum_robot
-    position: [50.7, 7.9]
+    position: [50.47, 7.9]
   - id: pet_feeder_food
     kind: pet_feeder
     room: pet_feeder
-    position: [50.64, 9.7]
+    position: [50.41, 9.7]
     variant: food
   - id: pet_feeder_fountain
     kind: pet_feeder
     room: pet_feeder
-    position: [51.36, 9.7]
+    position: [51.13, 9.7]
     variant: fountain
   - id: water_heater_combi
     kind: water_heater
     room: water_heater
-    position: [50.74, 10.8]
+    position: [50.51, 10.8]
     rotation: 180
     variant: combi
   - id: water_heater_tank
     kind: water_heater
     room: water_heater
-    position: [51.7, 10.8]
+    position: [51.47, 10.8]
     rotation: 180
     variant: tank
   - id: hot_tub_spa
     kind: hot_tub
     room: hot_tub
-    position: [51.53, 14.1]
+    position: [51.3, 14.1]
     variant: spa
   - id: hot_tub_barrel
     kind: hot_tub
     room: hot_tub
-    position: [53.93, 14.1]
+    position: [53.7, 14.1]
     variant: barrel
   - id: louvred_pergola_alu
     kind: louvred_pergola
     room: louvred_pergola
-    position: [52.28, 18]
+    position: [52.05, 18]
     variant: alu
   - id: louvred_pergola_timber
     kind: louvred_pergola
     room: louvred_pergola
-    position: [56.28, 18]
+    position: [56.05, 18]
     variant: timber
   - id: sauna_barrel
     kind: sauna
     room: sauna
-    position: [51.53, 22]
+    position: [51.3, 22]
     variant: barrel
   - id: sauna_cabin
     kind: sauna
     room: sauna
-    position: [54.13, 22]
+    position: [53.9, 22]
     variant: cabin
   - id: pool_deck
     kind: pool
     room: pool
-    position: [52.53, 25.75]
+    position: [52.3, 25.75]
     variant: deck
   - id: pool_frame
     kind: pool
     room: pool
-    position: [56.83, 25.75]
+    position: [56.6, 25.75]
     variant: frame
   - id: sprinkler_rotor
     kind: sprinkler
     room: sprinkler
-    position: [62.13, 2]
+    position: [61.9, 2]
     variant: rotor
   - id: sprinkler_oscillating
     kind: sprinkler
     room: sprinkler
-    position: [65.38, 2]
+    position: [65.15, 2]
     variant: oscillating
   - id: sprinkler_drip
     kind: sprinkler
     room: sprinkler
-    position: [67.88, 2]
+    position: [67.65, 2]
     variant: drip

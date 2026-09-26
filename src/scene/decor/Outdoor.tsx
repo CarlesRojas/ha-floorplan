@@ -56,7 +56,8 @@ export default function OutdoorModel({ kind, item, state }: Props) {
 }
 
 // The water in a tub or pool: a sheet at its surface that lights up from
-// below while it runs, with rings spreading across it.
+// below while it runs, with round ripples spreading from a few spots on it,
+// each set on its own beat, as if something stirred the water there.
 function Surface({
   on,
   w,
@@ -73,6 +74,32 @@ function Surface({
   jets?: boolean
 }) {
   const lit = useEased(on ? 1 : 0, 2)
+  const spots = useMemo(() => {
+    const short = Math.min(w, d)
+    const reach = short * (jets ? 0.22 : 0.26)
+    // Spread over the water on a loose grid, each spot nudged off its cell
+    // and kept a ring's reach in from the edge; on a round basin, round
+    // the middle inside its circle.
+    if (round) {
+      return Array.from({ length: 3 }, (_, i) => {
+        const a = (i / 3) * Math.PI * 2 + scatter(i, 51)
+        const rr = (w / 2 - reach) * (0.4 + scatter(i, 52) * 0.5)
+        return { at: [Math.cos(a) * rr, 0.004, Math.sin(a) * rr] as Vec3, reach, phase: scatter(i, 55) }
+      })
+    }
+    const cols = Math.max(1, Math.round((w - reach) / (reach * 2.4)))
+    const rows = Math.max(1, Math.round((d - reach) / (reach * 2.4)))
+    const out: { at: Vec3; reach: number; phase: number }[] = []
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const k = i * rows + j
+        const x = -w / 2 + reach + ((w - reach * 2) * (i + 0.25 + scatter(k, 53) * 0.5)) / cols
+        const z = -d / 2 + reach + ((d - reach * 2) * (j + 0.25 + scatter(k, 54) * 0.5)) / rows
+        out.push({ at: [x, 0.004, z], reach, phase: scatter(k, 55) })
+      }
+    }
+    return out
+  }, [w, d, round, jets])
   return (
     <group position={[0, y, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
@@ -87,17 +114,20 @@ function Surface({
           emissiveIntensity={0.55 * lit}
         />
       </mesh>
-      <Waves
-        on={on}
-        position={[0, 0.004, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        from={0.05}
-        reach={Math.min(w, d) * (jets ? 0.3 : 0.45)}
-        stretch={round ? [1, 1] : [w / Math.min(w, d), d / Math.min(w, d)]}
-        strength={0.35}
-        speed={jets ? 0.9 : 0.35}
-        color="#eaf8ff"
-      />
+      {spots.map((s, i) => (
+        <Waves
+          key={i}
+          on={on}
+          position={s.at}
+          rotation={[-Math.PI / 2, 0, 0]}
+          from={0.03}
+          reach={s.reach}
+          strength={0.32}
+          speed={jets ? 0.8 : 0.3}
+          phase={s.phase}
+          color="#eaf8ff"
+        />
+      ))}
     </group>
   )
 }

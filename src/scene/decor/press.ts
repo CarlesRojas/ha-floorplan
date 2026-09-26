@@ -1,5 +1,5 @@
 import type { ThreeEvent } from '@react-three/fiber'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 // How a click and a press are told apart in 3D. A click acts on the device.
 // A right click, or a long press on a touch screen, asks Home Assistant for
@@ -13,12 +13,24 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const from = useRef<[number, number] | null>(null)
   const opened = useRef(false)
+  const hovered = useRef(false)
 
   const cancel = () => {
     if (timer.current !== null) clearTimeout(timer.current)
     timer.current = null
     from.current = null
   }
+
+  // A piece that leaves the scene mid press must not open its dialog
+  // later, nor leave the pointer as a hand.
+  useEffect(
+    () => () => {
+      if (timer.current !== null) clearTimeout(timer.current)
+      timer.current = null
+      if (hovered.current) document.body.style.cursor = ''
+    },
+    [],
+  )
 
   if (!onClick && !onOpen) return {}
 
@@ -55,9 +67,13 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       if (Math.hypot(dx, dy) > SLOP_PX) cancel()
     },
     onPointerUp: cancel,
-    onPointerOver: () => (document.body.style.cursor = 'pointer'),
+    onPointerOver: () => {
+      hovered.current = true
+      document.body.style.cursor = 'pointer'
+    },
     onPointerOut: () => {
       cancel()
+      hovered.current = false
       document.body.style.cursor = ''
     },
   }

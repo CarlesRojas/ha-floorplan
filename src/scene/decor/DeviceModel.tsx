@@ -85,15 +85,19 @@ function Rod({ from, to, radius, children }: { from: Vec3; to: Vec3; radius: num
   )
 }
 
-// A smoke alarm going off: its ring and a red light on the ceiling below
-// flash twice a second, bright enough to see across the room.
+// A smoke alarm going off: its ring flashes twice a second and a strong
+// red light under it washes the floor and the furniture round it, the way
+// a lamp would, so the alarm reads from across the flat.
 function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
   const ring = useRef<MeshStandardMaterial>(null)
   const light = useRef<PointLight>(null)
+  const shown = useRef(-1)
   useFrame(({ clock }) => {
     const flash = on && clock.elapsedTime % 0.5 < 0.25 ? 1 : 0
+    if (flash === shown.current) return
+    shown.current = flash
     if (ring.current) ring.current.emissiveIntensity = 3.5 * flash
-    if (light.current) light.current.intensity = 0.6 * flash
+    if (light.current) light.current.intensity = 4 * flash
   })
   return (
     <group>
@@ -101,7 +105,7 @@ function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
         <torusGeometry args={[s * 0.13, s * 0.018, 10, SEG * 2]} />
         <meshStandardMaterial ref={ring} color="#f2d0cc" emissive="#ff2a1a" emissiveIntensity={0} />
       </mesh>
-      <pointLight ref={light} position={[0, y - 0.15, 0]} color="#ff3020" intensity={0} distance={2.5} decay={1} />
+      <pointLight ref={light} position={[0, y - 0.15, 0]} color="#ff3020" intensity={0} distance={5} decay={1} />
     </group>
   )
 }
@@ -1470,18 +1474,18 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <sphereGeometry args={[s * 0.2, SEG, SEG]} />
             {M('body')}
           </mesh>
-          {/* The whole ball glows red while it sees someone, so the alert
-              reads from every angle. */}
+          {/* The whole ball turns light teal while it sees someone, so the
+              alert reads from every angle. */}
           <mesh position={[0, 0, t + s * 0.62]}>
             <sphereGeometry args={[s * 0.5, SEG, SEG]} />
             <meshStandardMaterial
               color={c('accent')}
               roughness={0.35}
-              emissive="#ff3a2a"
-              emissiveIntensity={1.6 * lit}
+              emissive="#5fd3c8"
+              emissiveIntensity={1.4 * lit}
             />
           </mesh>
-          <Halo on={on} position={[0, 0, t + s * 1.3]} color="#ff5040" intensity={0.08} />
+          <Halo on={on} position={[0, 0, t + s * 1.3]} color="#7fe0d6" intensity={0.08} />
         </group>
       )
     }

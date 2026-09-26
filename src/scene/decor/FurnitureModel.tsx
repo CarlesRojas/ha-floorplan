@@ -552,19 +552,18 @@ export default function FurnitureModel({ kind, item, state }: Props) {
           >
             {bedding()}
           </Soft>
-          {/* Pillows thin at the seams and full in the middle, leaning back
-              against the head of the bed. */}
+          {/* Pillows thin at the seams and full in the middle, lying flat
+              on the mattress up at the head of the bed. */}
           {Array.from({ length: pillows }).map((_, i) => (
             <Soft
               key={i}
               size={[pillowW, 0.05, pillowD]}
               round={[0.05, 0.025, 0.05]}
-              puff={[0.012, 0.055, 0.012]}
+              puff={[0.006, 0.04, 0.006]}
               wrinkle={0.004}
-              rotation={[-0.22, 0, 0]}
               position={[
                 -w / 2 + 0.05 + ((w - 0.1) / pillows) * (i + 0.5),
-                frameH + mattress + 0.07,
+                frameH + mattress + 0.045,
                 -l / 2 + 0.07 + pillowD / 2,
               ]}
             >

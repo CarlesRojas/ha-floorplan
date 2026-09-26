@@ -16,14 +16,17 @@ export default function Cleanup() {
   const frame = useRef(0)
   const since = useRef(0)
   useFrame(({ scene }, delta) => {
+    // The scene is only walked when it is about to be swept. A shape that
+    // came and went between two sweeps was never uploaded to begin with,
+    // three uploads on first draw, so nothing is missed by looking less.
+    since.current += delta
+    if (since.current < SWEEP_S) return
+    since.current = 0
     const now = ++frame.current
     scene.traverse(object => {
       const geometry = (object as Mesh).geometry
       if (geometry?.isBufferGeometry) seen.set(geometry, now)
     })
-    since.current += delta
-    if (since.current < SWEEP_S) return
-    since.current = 0
     for (const [geometry, at] of seen)
       if (at !== now) {
         geometry.dispose()

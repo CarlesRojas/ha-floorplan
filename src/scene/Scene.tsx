@@ -20,7 +20,7 @@ import type { TryStates } from '#/editor/tryState.ts'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { MathUtils, PCFSoftShadowMap } from 'three'
+import { MathUtils, PCFShadowMap } from 'three'
 import { useCallback, useLayoutEffect, useRef } from 'react'
 
 type Props = {
@@ -77,12 +77,11 @@ export default function Scene({
 
   return (
     <Canvas
-      // Soft percentage closer filtering. The plain one takes a blur radius
-      // but spreads only a handful of taps to fill it, which at any width
-      // worth having reads as dots and dashes along the edge of a shadow.
-      // This one filters across the map instead, so the edge comes out soft
-      // and clean, and softness comes from how fine the map is.
-      shadows={{ type: PCFSoftShadowMap }}
+      // Percentage closer filtering across the map, so the edge comes out
+      // soft and clean, and softness comes from how fine the map is. This
+      // is what three's soft variant became: since 0.186 that name only
+      // warns and falls back to this one.
+      shadows={{ type: PCFShadowMap }}
       frameloop={paused ? 'never' : 'always'}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}

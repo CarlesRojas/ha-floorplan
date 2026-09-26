@@ -178,9 +178,14 @@ function Hands({ z, hour, minute, second }: { z: number; hour: ReactNode; minute
   const h = useRef<Group>(null)
   const m = useRef<Group>(null)
   const sec = useRef<Group>(null)
+  // The hands only move when the second does. A minute hand's share of a
+  // second is nothing to see, and this leaves the frame alone in between.
+  const shown = useRef(-1)
   useFrame(() => {
     const now = new Date()
-    const s = now.getSeconds() + now.getMilliseconds() / 1000
+    const s = now.getSeconds()
+    if (s === shown.current) return
+    shown.current = s
     const min = now.getMinutes() + s / 60
     const hr = (now.getHours() % 12) + min / 60
     if (h.current) h.current.rotation.z = -(hr / 12) * Math.PI * 2
@@ -229,8 +234,13 @@ function DigitalTime({ w, h, z, glow }: { w: number; h: number; z: number; glow:
   const dw = w / 5.2
   const t = Math.min(dw, h) * 0.16
   const xs = [-1.95, -0.85, 0.85, 1.95].map(k => k * dw)
+  const shown = useRef(-1)
   useFrame(() => {
     const now = new Date()
+    // Nothing on it changes within a second.
+    const s = now.getSeconds()
+    if (s === shown.current) return
+    shown.current = s
     const text = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
     for (let d = 0; d < 4; d++) {
       const mask = DIGITS[Number(text[d])]

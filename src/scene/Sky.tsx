@@ -20,7 +20,7 @@ import {
 } from '#/theme.ts'
 import type { HomeAssistant, RoomConfig } from '#/types.ts'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Color, MathUtils, Object3D, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
 
 // What the room is lit as: whatever the sun at the home says, or an hour of
@@ -55,6 +55,11 @@ export default function Sky({
   const { center, reach } = useMemo(() => planBounds(rooms), [rooms])
   const aim = useMemo(() => new Object3D(), [])
   const extent = Math.max(reach * 1.2 + 1, 3)
+  // The shadow camera's edges are set as props, and three only rebuilds its
+  // projection when told, so a plan that grew kept the old, smaller map.
+  useLayoutEffect(() => {
+    sun.current?.shadow.camera.updateProjectionMatrix()
+  }, [extent])
   // The sun stands on its bearing, at the height it keeps all day, far
   // enough out that its shadow camera clears the flat.
   const where = useMemo(() => {
@@ -83,7 +88,12 @@ export default function Sky({
   )
 
   // Eased, so sunset arrives as a fade and not as a switch.
+  const settled = useRef(false)
   useFrame((_, delta) => {
+    // Once the light has arrived it is left alone until the sun moves.
+    const arrived = Math.abs(target.level - level.current) < 1e-4 && Math.abs(target.height - height.current) < 1e-4
+    if (arrived && settled.current) return
+    settled.current = arrived
     const k = 1 - Math.exp(-delta / DAYLIGHT_EASE_S)
     level.current += (target.level - level.current) * k
     height.current += (target.height - height.current) * k
@@ -105,13 +115,15 @@ export default function Sky({
     if (sun.current) {
       sun.current.intensity = between(NIGHT_SUN_INTENSITY, DAY_SUN_INTENSITY)
       sun.current.color.copy(tint(colors.sun))
-      // The light is aimed at the middle of the flat rather than at the
-      // scene's origin, which a flat drawn off to one side is not.
-      aim.position.set(center[0], center[1], center[2])
-      aim.updateMatrixWorld()
-      sun.current.target = aim
     }
   })
+  // The light is aimed at the middle of the flat rather than at the
+  // scene's origin, which a flat drawn off to one side is not.
+  useLayoutEffect(() => {
+    aim.position.set(center[0], center[1], center[2])
+    aim.updateMatrixWorld()
+    if (sun.current) sun.current.target = aim
+  }, [aim, center])
 
   return (
     <>

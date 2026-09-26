@@ -275,8 +275,13 @@ function LouvredPergola({ p, M, style, level }: Look) {
     geo.rotateY(Math.PI / 2)
     return geo
   }, [bladeW, bladeL])
-  // Up to a few degrees short of upright, as the real ones stop.
-  const turn = level * 1.48
+  // The timber louvres turn, up to a few degrees short of upright, as the
+  // real ones stop. The aluminium roof slides instead: its slats run along
+  // the rails to the back and pack there on edge, and the roof is open
+  // to the sky from the front as far as they have gone.
+  const turn = timber ? level * 1.48 : level * 1.4
+  const packPitch = 0.032
+  const packZ = (i: number) => -inD / 2 + 0.03 + (i + 0.5) * packPitch
   const [px, pz] = [w / 2 - post / 2, d / 2 - post / 2]
   return (
     <group>
@@ -347,18 +352,15 @@ function LouvredPergola({ p, M, style, level }: Look) {
         <boxGeometry args={[0.06, 0.03, 0.05]} />
         {M('frame')}
       </mesh>
-      {Array.from({ length: n }, (_, i) => (
-        <mesh
-          key={i}
-          geometry={blade}
-          position={[0, pivotY, -inD / 2 + (i + 0.5) * pitch]}
-          rotation={[turn, 0, 0]}
-          castShadow
-          receiveShadow
-        >
-          {M('louvres')}
-        </mesh>
-      ))}
+      {Array.from({ length: n }, (_, i) => {
+        const shut = -inD / 2 + (i + 0.5) * pitch
+        const z = timber ? shut : shut + (packZ(i) - shut) * level
+        return (
+          <mesh key={i} geometry={blade} position={[0, pivotY, z]} rotation={[turn, 0, 0]} castShadow receiveShadow>
+            {M('louvres')}
+          </mesh>
+        )
+      })}
     </group>
   )
 }
@@ -586,7 +588,7 @@ function CabinSauna({ p, c, M, on }: Look) {
       <group position={[w / 2 + 0.001, y0 + 1.25, -d * 0.15]} rotation={[0, Math.PI / 2, 0]}>
         <Pane w={0.5} h={0.35} lit={lit} glass={c('glass')} frame={wood} />
       </group>
-      <group position={[0, (yF + yB) / 2, 0]} rotation={[slope, 0, 0]}>
+      <group position={[0, (yF + yB) / 2, 0]} rotation={[-slope, 0, 0]}>
         <Slab
           size={[w + ohS * 2, roofT, d / Math.cos(slope) + ohF + ohB]}
           radius={0.01}

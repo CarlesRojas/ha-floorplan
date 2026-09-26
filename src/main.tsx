@@ -1,4 +1,5 @@
 import Card from '#/Card.tsx'
+import { decorationKind } from '#/decoration/catalog.ts'
 import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
@@ -72,6 +73,8 @@ const RESTYLED: Record<string, Record<string, Restyle>> = {
   plant_large: { rubber: 'mango', rubber_full: 'mango' },
   fan_floor: { tower: 'disc' },
   office_chair: { shell: 'racer' },
+  christmas_tree: { slim: 'bare' },
+  projector_ust: { dark: 'box' },
 }
 
 function migrate(config: CardConfig): CardConfig {
@@ -87,7 +90,13 @@ function migrate(config: CardConfig): CardConfig {
         const now = RENAMED[d.kind]
         if (!now) return d
         const params = now.params ? { ...now.params, ...d.params } : d.params
-        return { ...d, kind: now.kind, variant: d.variant ?? now.variant, params }
+        // A style the new kind does not know, and that no rename below will
+        // catch, is dropped for the one the rename names, so the piece is
+        // not drawn in the new kind's first style by accident.
+        const kept =
+          d.variant &&
+          (decorationKind(now.kind)?.variants?.some(v => v.id === d.variant) || RESTYLED[now.kind]?.[d.variant])
+        return { ...d, kind: now.kind, variant: kept ? d.variant : now.variant, params }
       })
       .map(d => {
         const style = d.variant ? RESTYLED[d.kind]?.[d.variant] : undefined
@@ -145,8 +154,11 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
 
   // Called by HA once with the YAML config for this card.
   setConfig(config: CardConfig) {
-    validate(config)
-    this._config = migrate(config)
+    // Migrated first, so a plan from an older version is checked in the
+    // shape it will be drawn in.
+    const next = migrate(config)
+    validate(next)
+    this._config = next
     this.render()
   }
 
@@ -201,6 +213,9 @@ class Floorplan3DEditor extends ReactHost<CardConfig> {
   }
 
   disconnectedCallback() {
+    // A change still waiting to settle when the dialog closes is sent now,
+    // so nothing edited in the last moment is lost.
+    this.flush()
     window.removeEventListener('pointerup', this.flush, true)
     window.removeEventListener('keyup', this.flush, true)
     super.disconnectedCallback()
@@ -225,9 +240,12 @@ if (!customElements.get(CARD_TYPE)) customElements.define(CARD_TYPE, Floorplan3D
 if (!customElements.get(EDITOR_TYPE)) customElements.define(EDITOR_TYPE, Floorplan3DEditor)
 
 // Makes the card show up in the "add card" picker.
+// Loaded twice, once as a module and once by a resource of an older
+// version, it would otherwise show up twice in the picker.
 window.customCards = window.customCards ?? []
-window.customCards.push({
-  type: CARD_TYPE,
-  name: 'Floorplan 3D',
-  description: 'Interactive 3D model of the flat',
-})
+if (!window.customCards.some(card => card.type === CARD_TYPE))
+  window.customCards.push({
+    type: CARD_TYPE,
+    name: 'Floorplan 3D',
+    description: 'Interactive 3D model of the flat',
+  })

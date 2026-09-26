@@ -26,6 +26,10 @@ type Props = {
 // jumps to the default warm glow for the length of the fade out: a flicker
 // of the wrong color on the way down.
 const lastGlow = new Map<string, [number, number, number]>()
+// The default glow, and a scratch color for converting Home Assistant's,
+// built once rather than on every state change of every light.
+const baseGlow = new Color(LIGHT_GLOW_COLOR)
+const scratch = new Color()
 
 // What a bound device tells its decoration items. Null when the device says
 // nothing a model can draw, so the item stays neutral.
@@ -34,13 +38,12 @@ function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null 
   const signals = deviceSignals(hass, entityId)
   if (signals.length === 0) return null
   const v = signalValues(hass, entityId)
-  const base = new Color(LIGHT_GLOW_COLOR)
-  let glow: [number, number, number] = [base.r, base.g, base.b]
+  let glow: [number, number, number] = [baseGlow.r, baseGlow.g, baseGlow.b]
   // Home Assistant's colors are sRGB. Handing the raw numbers to three,
   // which works in linear, washed every color out toward white: a magenta
   // light came out pale pink.
   const fromSrgb = ([r, g, b]: [number, number, number]): [number, number, number] => {
-    const c = new Color().setRGB(r, g, b, SRGBColorSpace)
+    const c = scratch.setRGB(r, g, b, SRGBColorSpace)
     return [c.r, c.g, c.b]
   }
   if (v.color) glow = fromSrgb([v.color[0] / 255, v.color[1] / 255, v.color[2] / 255])
@@ -85,10 +88,17 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
   const rooms = config.rooms ?? []
   const boundTo = new Map<string, DeviceConfig>()
   for (const device of devices) for (const id of device.decorations ?? []) boundTo.set(id, device)
+  // By id, so a plan of a few hundred pieces is not searched end to end
+  // for every one of them on every state change.
+  const byId = new Map(decorations.map(d => [d.id, d]))
+  const roomById = new Map(rooms.map(r => [r.id, r]))
 
   const act = (entityId: string) => {
     const action = clickAction(entityId, hass?.states[entityId]?.state)
-    if (hass && action) void hass.callService(action.domain, action.service, { entity_id: entityId })
+    if (!hass || !action) return
+    // A call Home Assistant refuses must not surface as an unhandled
+    // rejection in the dashboard. Its own toast already says what went wrong.
+    hass.callService(action.domain, action.service, { entity_id: entityId }).catch(() => {})
   }
 
   // Home Assistant's own dialog for the entity, which carries the controls a
@@ -132,7 +142,7 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
     let total = 0
     let at = item
     for (let depth = 0; at.on && depth < 6; depth++) {
-      const below = decorations.find(d => d.id === at.on)
+      const below = byId.get(at.on)
       if (!below) break
       if (below.kind === 'desk') total += deskRise(states.get(below.id)?.state ?? null)
       at = below
@@ -162,7 +172,7 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
             key={item.id}
             item={item}
             all={decorations}
-            room={rooms.find(r => r.id === item.room)}
+            room={roomById.get(item.room)}
             state={state}
             raise={raise(item)}
             onClick={onClick && h.click}
