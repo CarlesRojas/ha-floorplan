@@ -823,8 +823,10 @@ function GlobeLitterBox({ p, c, M, on }: Look) {
       >
         {M('trim')}
       </Slab>
-      <mesh position={[0, cy - R * 0.55, -R * 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[R * 0.8, SEG]} />
+      {/* Low enough to lie under the bottom of the entry, and as wide as the
+          globe is there. */}
+      <mesh position={[0, cy - R * 0.76, -R * 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[R * 0.64, SEG]} />
         <Material color="#cdbfa6" material="matte" />
       </mesh>
       <group position={[0, cy, -R * 0.1]}>
