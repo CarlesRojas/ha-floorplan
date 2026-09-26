@@ -8,6 +8,8 @@ import {
   CatmullRomCurve3,
   DoubleSide,
   ExtrudeGeometry,
+  FrontSide,
+  MeshStandardMaterial,
   Quaternion,
   Shape,
   SphereGeometry,
@@ -18,7 +20,6 @@ import {
   type InstancedMesh,
   type Mesh,
   type MeshBasicMaterial,
-  type MeshStandardMaterial,
 } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
@@ -33,6 +34,24 @@ type Vec3 = [number, number, number]
 // slab's own frame, `w` along x and `d` along z before it turns `turn`
 // radians the way a piece turns on the plan, and `r` its corner radius.
 export type Hole = { x: number; z: number; w: number; d: number; r: number; turn?: number }
+
+// Plain paint is the same wherever it is, so every part painted the same
+// shares one material. Three sets a material's uniforms up once and then
+// draws every mesh that carries it, where each mesh with a material of its
+// own paid for that setup on its own: a flat of a few thousand parts drew
+// in a fraction of the time. A part that glows or is see through keeps a
+// material of its own, since its values move.
+const shared = new Map<string, MeshStandardMaterial>()
+
+function sharedMaterial(color: string, roughness: number, doubleSide: boolean) {
+  const key = `${color}|${roughness}|${doubleSide ? 2 : 1}`
+  let found = shared.get(key)
+  if (!found) {
+    found = new MeshStandardMaterial({ color, roughness, side: doubleSide ? DoubleSide : FrontSide })
+    shared.set(key, found)
+  }
+  return found
+}
 
 export function Material({
   color,
@@ -53,10 +72,13 @@ export function Material({
   // Plain paint. Decorations carry no pattern: the surface only decides how
   // matte or how polished the part is, and the color does the rest. Floors
   // are the only thing in the room with a texture on it.
+  const roughness = surfaceRoughness(material as SurfaceKind)
+  if (opacity >= 1 && emissiveIntensity === 0)
+    return <primitive object={sharedMaterial(color, roughness, doubleSide)} attach="material" dispose={null} />
   return (
     <meshStandardMaterial
       color={color}
-      roughness={surfaceRoughness(material as SurfaceKind)}
+      roughness={roughness}
       side={doubleSide ? DoubleSide : undefined}
       transparent={opacity < 1}
       opacity={opacity}
@@ -620,7 +642,18 @@ export function Halo({
   distance?: number
 }) {
   const lit = useEased(on ? 1 : 0, 9)
-  return <pointLight position={position} color={color} intensity={intensity * lit} distance={distance} decay={1} />
+  // A light in the scene costs every material its share of the shader and
+  // its uniforms each frame, lit or not, so a dark one is taken out of it.
+  return (
+    <pointLight
+      position={position}
+      color={color}
+      intensity={intensity * lit}
+      distance={distance}
+      decay={1}
+      visible={lit > 0.01}
+    />
+  )
 }
 
 /**

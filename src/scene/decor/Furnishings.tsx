@@ -164,8 +164,10 @@ function Hand({
   z: number
   children: ReactNode
 }) {
+  // A hand is a sliver that throws nothing worth seeing, and it moves every
+  // second; as a caster it would have the sun's shadow drawn again each time.
   return (
-    <mesh position={[0, (len - tail) / 2, z]}>
+    <mesh position={[0, (len - tail) / 2, z]} userData={NO_SHADOW}>
       <boxGeometry args={[w, len + tail, 0.003]} />
       {children}
     </mesh>
@@ -227,7 +229,10 @@ const DIGITS = [
 ]
 
 // Four seven segment digits and a blinking colon showing the hours and
-// minutes, `w` wide and `h` tall, their unlit segments faintly there.
+// minutes, `w` wide and `h` tall, their unlit segments faintly there. The
+// segments are two millimetres of light on a face: no shadow to throw, and
+// as casters the colon would have the sun's map drawn again every second.
+const NO_SHADOW = { noShadow: true }
 function DigitalTime({ w, h, z, glow }: { w: number; h: number; z: number; glow: string }) {
   const lit = useRef<(Mesh | null)[]>([])
   const colon = useRef<Group>(null)
@@ -267,6 +272,7 @@ function DigitalTime({ w, h, z, glow }: { w: number; h: number; z: number; glow:
                 lit.current[d * 7 + k] = el
               }}
               position={[0, 0, 0.001]}
+              userData={NO_SHADOW}
             >
               <boxGeometry args={segment(flat)} />
               <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} toneMapped={false} />
@@ -276,7 +282,7 @@ function DigitalTime({ w, h, z, glow }: { w: number; h: number; z: number; glow:
       )}
       <group ref={colon}>
         {[-1, 1].map(s => (
-          <mesh key={s} position={[0, s * h * 0.2, 0.001]}>
+          <mesh key={s} position={[0, s * h * 0.2, 0.001]} userData={NO_SHADOW}>
             <boxGeometry args={[t, t, 0.002]} />
             <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} toneMapped={false} />
           </mesh>

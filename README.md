@@ -179,7 +179,7 @@ A bound device drives what the item does in 3D, when its signals match:
 - Desks rise to standing height, taking everything on them along.
 - Fireplaces and stoves burn inside their firebox behind clear glass, a Christmas tree runs warm white fairy lights through patterns of steady, blinking, rolling and alternating, an aquarium lights up with fish swimming and bubbles rising, a pet feeder drops kibble into its bowl, a fountain spouts water up from its dome, and a water heater lights its flame or display.
 - Hot tubs light up, bubble and steam, pools light their water and ripple out in round rings from several spots, sprinklers throw a sweeping arc or slow drops from each drip emitter, a louvred pergola opens by the cover's position, the slat roof sliding its slats to the back and the cedar one turning its blades, and a sauna lights its stove and lets off vapor.
-- Thermostats, alarm panels and air quality sensors light their display. A smart lock turns its knob upright when locked, a motion sensor's white dome turns light teal when it sees someone, a smoke detector blinks red and throws that red on the floor and furniture around it when it raises the alarm, and a camera lights its LED.
+- Thermostats, alarm panels and air quality sensors light their display. A smart lock turns its knob upright when locked, a motion sensor's white dome turns teal when it sees someone, a smoke detector blinks red and throws that red on the floor and furniture around it when it raises the alarm, and a camera lights its LED.
 
 Only entities that drive at least one of the things an item can show are on offer for it, so an item is never bound to something it cannot express.
 

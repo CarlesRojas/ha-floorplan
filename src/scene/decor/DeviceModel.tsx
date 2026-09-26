@@ -105,7 +105,15 @@ function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
         <torusGeometry args={[s * 0.13, s * 0.018, 10, SEG * 2]} />
         <meshStandardMaterial ref={ring} color="#f2d0cc" emissive="#ff2a1a" emissiveIntensity={0} />
       </mesh>
-      <pointLight ref={light} position={[0, y - 0.15, 0]} color="#ff3020" intensity={0} distance={5} decay={1} />
+      <pointLight
+        ref={light}
+        position={[0, y - 0.15, 0]}
+        color="#ff3020"
+        intensity={0}
+        distance={5}
+        decay={1}
+        visible={on}
+      />
     </group>
   )
 }
@@ -1474,18 +1482,18 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <sphereGeometry args={[s * 0.2, SEG, SEG]} />
             {M('body')}
           </mesh>
-          {/* The whole ball turns light teal while it sees someone, so the
-              alert reads from every angle. */}
+          {/* The whole ball turns teal while it sees someone, so the alert
+              reads from every angle. */}
           <mesh position={[0, 0, t + s * 0.62]}>
             <sphereGeometry args={[s * 0.5, SEG, SEG]} />
             <meshStandardMaterial
               color={c('accent')}
               roughness={0.35}
-              emissive="#5fd3c8"
-              emissiveIntensity={1.4 * lit}
+              emissive="#1ed4bf"
+              emissiveIntensity={1.8 * lit}
             />
           </mesh>
-          <Halo on={on} position={[0, 0, t + s * 1.3]} color="#7fe0d6" intensity={0.08} />
+          <Halo on={on} position={[0, 0, t + s * 1.3]} color="#2fdccb" intensity={0.1} />
         </group>
       )
     }

@@ -46,11 +46,12 @@ function Glow({
 }) {
   const lit = useEased(state?.on ? (state.level ?? 1) : 0, 9)
   const [r, g, b] = state?.glow ?? [1, 1, 1]
-  // The lights stay mounted at nothing while the lamp is off. Adding or
-  // removing a light changes the count every material's shader is built
-  // for, so every one of them was compiled again each time a lamp was
-  // switched, a stall of a second or more on a full flat. The shadow sweep
-  // takes a dark lamp's shadow away, so one at nothing costs nothing.
+  // The lights stay mounted while the lamp is off but are hidden, which
+  // takes them out of the scene's light count. A light that is counted
+  // costs every material a share of its shader and its uniforms on every
+  // frame, at nothing as much as at full, and a flat of dark lamps was
+  // paying more for them than for everything it drew. Switching one does
+  // change the count and has the shaders built again, once.
   const dark = lit < 0.01
   // Close to linear with the level: a lamp at a third still lights the
   // room around it, and still casts, instead of fading away first.
@@ -67,6 +68,7 @@ function Glow({
         height={0.06}
         color={[r, g, b]}
         intensity={total * 4}
+        visible={!dark}
       />
     )
   }
@@ -80,6 +82,7 @@ function Glow({
         intensity={total * LAMP_KEY_SHARE}
         distance={7}
         decay={1.15}
+        visible={!dark}
         castShadow
         shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
         // Small offsets: a big one pushes the sample past a thin top or
@@ -98,6 +101,7 @@ function Glow({
         intensity={total * LAMP_THROUGH_SHARE}
         distance={6}
         decay={1.25}
+        visible={!dark}
         userData={{ through: true }}
       />
     </>

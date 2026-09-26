@@ -39,36 +39,55 @@ export default function CameraRig({ rooms, decorations }: Props) {
     if (!controls) return
     const element = controls.domElement as HTMLElement | null
     if (!element) return
-    // The controls' own release handler and the pointers they hold down.
-    const inner = controls as unknown as { _onPointerUp: (event: PointerEvent) => void; _pointers: number[] }
-    const held = (event: PointerEvent) => event.pointerType === 'mouse' && inner._pointers.includes(event.pointerId)
     const page = element.ownerDocument
     const view = page.defaultView
+    // The mouse buttons the controls were told went down and have not yet
+    // been told came up. The controls keep their own list, but out of reach,
+    // so this one is kept alongside from the same events.
+    const held = new Map<number, { x: number; y: number }>()
+    const onDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') held.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    }
+    const onUp = (event: PointerEvent) => held.delete(event.pointerId)
+    // Tells the controls the button came up, the way the browser would have.
+    // They listen for it on the document once a button is down.
+    const release = (pointerId: number, at: { x: number; y: number }) => {
+      held.delete(pointerId)
+      page.dispatchEvent(
+        new PointerEvent('pointerup', { pointerId, pointerType: 'mouse', clientX: at.x, clientY: at.y, bubbles: true }),
+      )
+    }
     const outside = (event: PointerEvent) =>
       !!view &&
       (event.clientX <= 0 ||
         event.clientY <= 0 ||
         event.clientX >= view.innerWidth ||
         event.clientY >= view.innerHeight)
+    const at = (event: PointerEvent) => ({ x: event.clientX, y: event.clientY })
     const onMove = (event: PointerEvent) => {
-      if (!held(event)) return
+      if (!held.has(event.pointerId)) return
       // The left button is bit one; anything else held is a pan or zoom.
-      if (event.buttons === 0 || ((event.buttons & ~1) !== 0 && outside(event))) inner._onPointerUp(event)
+      if (event.buttons === 0 || ((event.buttons & ~1) !== 0 && outside(event))) release(event.pointerId, at(event))
+      else held.set(event.pointerId, at(event))
     }
     const onLeave = (event: PointerEvent) => {
-      if (held(event) && (event.buttons & ~1) !== 0) inner._onPointerUp(event)
+      if (held.has(event.pointerId) && (event.buttons & ~1) !== 0) release(event.pointerId, at(event))
     }
     const onBlur = () => {
-      for (const id of [...inner._pointers]) inner._onPointerUp({ pointerId: id } as PointerEvent)
+      for (const [id, last] of [...held]) release(id, last)
     }
     // The controls follow a drag on the whole document, and once the pointer
     // comes back it may be over anything, so the checks listen there too and
     // run ahead of them.
+    element.addEventListener('pointerdown', onDown, { capture: true })
+    page.addEventListener('pointerup', onUp, { capture: true })
     page.addEventListener('pointermove', onMove, { capture: true })
     page.addEventListener('pointerleave', onLeave, { capture: true })
     page.addEventListener('pointercancel', onLeave, { capture: true })
     view?.addEventListener('blur', onBlur)
     return () => {
+      element.removeEventListener('pointerdown', onDown, { capture: true })
+      page.removeEventListener('pointerup', onUp, { capture: true })
       page.removeEventListener('pointermove', onMove, { capture: true })
       page.removeEventListener('pointerleave', onLeave, { capture: true })
       page.removeEventListener('pointercancel', onLeave, { capture: true })

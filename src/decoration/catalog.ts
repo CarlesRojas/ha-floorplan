@@ -2067,7 +2067,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'climate',
     'Air conditioner',
     'wall',
-    [width(0.9, 0.6, 1.3), height(2.1, 1.5, 2.5)],
+    [width(0.9, 0.3, 1.3), height(2.1, 1.5, 2.5)],
     { body: SCANDI.offWhite, grille: SCANDI.mist, display: '#20262a' },
     { body: 'matte', grille: 'ceramic', display: 'matte' },
     TOGGLE_LEVEL,
@@ -2077,7 +2077,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
       {
         id: 'duct',
         label: 'Slot Vent',
-        params: { width: 0.45, height: 2.3 },
+        params: { width: 0.35, height: 2.3 },
         colors: { body: SCANDI.offWhite, grille: '#3a3d40', display: '#20262a' },
         materials: { body: 'matte', grille: 'matte', display: 'matte' },
       },
@@ -2379,7 +2379,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'Motion sensor',
     'wall',
     [size(0.07, 0.04, 0.14), height(2.3, 1.2, 2.5)],
-    // The ball's color, which turns light teal while it sees someone.
+    // The ball's color, which turns teal while it sees someone.
     { body: SCANDI.offWhite, accent: '#ffffff' },
     { body: 'matte', accent: 'ceramic' },
     TOGGLE,

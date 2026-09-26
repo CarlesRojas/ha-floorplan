@@ -508,8 +508,8 @@ rooms:
     name: "Air conditioner"
     points:
       - [34.8, 25.26]
-      - [37.65, 25.26]
-      - [37.65, 26.66]
+      - [37.55, 25.26]
+      - [37.55, 26.66]
       - [34.8, 26.66]
   - id: fan_ceiling
     name: "Ceiling fan"
@@ -1551,7 +1551,7 @@ decorations:
   - id: ac_unit_duct
     kind: ac_unit
     room: ac_unit
-    position: [36.92, 25.26]
+    position: [36.87, 25.26]
     rotation: 180
     variant: duct
   - id: fan_ceiling_classic

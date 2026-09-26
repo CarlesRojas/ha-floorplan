@@ -490,6 +490,10 @@ function ChristmasTree({ p, c, M, style, on }: Look) {
   )
 }
 
+// A fish is too small to throw a shadow, and swims all day; as a caster it
+// would have the sun's shadow drawn again on every frame.
+const NO_SHADOW = { noShadow: true }
+
 // A tank of fish on a cabinet, or a tall one standing on the floor on a low
 // plinth, glass all the way up to its height. The light over the water
 // comes on with the switch, and so does the air stone, and the fish swim
@@ -633,11 +637,16 @@ function Aquarium({ p, M, style, on }: Look) {
           }}
           scale={f.scale}
         >
-          <mesh scale={[0.028, 0.013, 0.007]}>
+          <mesh scale={[0.028, 0.013, 0.007]} userData={NO_SHADOW}>
             <sphereGeometry args={[1, 12, 8]} />
             <Material color={f.color} material="ceramic" />
           </mesh>
-          <mesh position={[-0.03, 0, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.012, 0.012, 0.003]}>
+          <mesh
+            position={[-0.03, 0, 0]}
+            rotation={[0, 0, Math.PI / 2]}
+            scale={[0.012, 0.012, 0.003]}
+            userData={NO_SHADOW}
+          >
             <coneGeometry args={[1, 1.4, 4]} />
             <Material color={f.color} material="ceramic" />
           </mesh>

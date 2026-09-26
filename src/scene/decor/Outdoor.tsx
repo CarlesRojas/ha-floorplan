@@ -77,13 +77,13 @@ function Surface({
   const spots = useMemo(() => {
     const short = Math.min(w, d)
     const reach = short * (jets ? 0.22 : 0.26)
-    // Spread over the water on a loose grid, each spot nudged off its cell
-    // and kept a ring's reach in from the edge; on a round basin, round
-    // the middle inside its circle.
+    // Spread over the water on a loose grid, each spot anywhere in its cell
+    // and kept a ring's reach in from the edge; on a round basin, anywhere
+    // round the middle inside its circle.
     if (round) {
       return Array.from({ length: 3 }, (_, i) => {
-        const a = (i / 3) * Math.PI * 2 + scatter(i, 51)
-        const rr = (w / 2 - reach) * (0.4 + scatter(i, 52) * 0.5)
+        const a = (i / 3) * Math.PI * 2 + (scatter(i, 51) - 0.5) * 1.8
+        const rr = (w / 2 - reach) * (0.1 + scatter(i, 52) * 0.85)
         return { at: [Math.cos(a) * rr, 0.004, Math.sin(a) * rr] as Vec3, reach, phase: scatter(i, 55) }
       })
     }
@@ -93,8 +93,8 @@ function Surface({
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         const k = i * rows + j
-        const x = -w / 2 + reach + ((w - reach * 2) * (i + 0.25 + scatter(k, 53) * 0.5)) / cols
-        const z = -d / 2 + reach + ((d - reach * 2) * (j + 0.25 + scatter(k, 54) * 0.5)) / rows
+        const x = -w / 2 + reach + ((w - reach * 2) * (i + 0.05 + scatter(k, 53) * 0.9)) / cols
+        const z = -d / 2 + reach + ((d - reach * 2) * (j + 0.05 + scatter(k, 54) * 0.9)) / rows
         out.push({ at: [x, 0.004, z], reach, phase: scatter(k, 55) })
       }
     }

@@ -237,8 +237,10 @@ export default function Shadows() {
       }
       if (!(object instanceof Mesh)) return
       // A lamp shade is the one thing that is meant to pass light on: its
-      // frame casts, the parchment or opal in it does not.
-      const solid = !object.userData.transmits && !clear(object.material)
+      // frame casts, the parchment or opal in it does not. A fish or a
+      // clock hand is too small to throw anything, and moves all day, so
+      // as a caster it would have the sun's map drawn again on every frame.
+      const solid = !object.userData.transmits && !object.userData.noShadow && !clear(object.material)
       if (object.castShadow !== solid) object.castShadow = solid
       if (!object.receiveShadow) object.receiveShadow = true
     })

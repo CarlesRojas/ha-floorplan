@@ -493,6 +493,8 @@ export default function FurnitureModel({ kind, item, state }: Props) {
       const duvetL = l / 2 - duvetZ
       const duvetT = 0.03
       const fold = l * 0.12
+      // How far the duvet hangs down the sides and the foot of the mattress.
+      const drop = mattress + 0.06
       const bedding = () => <Material color={c('bedding')} material={m('bedding')} />
       return (
         <group>
@@ -535,11 +537,39 @@ export default function FurnitureModel({ kind, item, state }: Props) {
               head edge toward the foot. Both are soft and a little rucked,
               the way a made bed is. */}
           <Soft
-            size={[w + 0.03, duvetT, duvetL]}
+            size={[w + duvetT * 2, duvetT, duvetL + duvetT]}
             round={[0.015, duvetT / 2, 0.015]}
             puff={[0, 0.008, 0]}
             wrinkle={0.005}
-            position={[0, frameH + mattress + duvetT / 2, duvetZ + duvetL / 2]}
+            position={[0, frameH + mattress + duvetT / 2, duvetZ + (duvetL + duvetT) / 2]}
+          >
+            {bedding()}
+          </Soft>
+          {/* The duvet falls over both sides and the foot of the mattress
+              and hangs a little way down past it, bellying out as it goes
+              so it reads as cloth over the edge, not a thicker mattress. */}
+          {[-1, 1].map(s => (
+            <Soft
+              key={s}
+              size={[duvetT, drop, duvetL + duvetT]}
+              round={[duvetT / 2, 0.015, 0.015]}
+              puff={[0.02 * s, 0, 0]}
+              wrinkle={0.006}
+              position={[
+                s * (w / 2 + duvetT / 2),
+                frameH + mattress + duvetT - drop / 2,
+                duvetZ + (duvetL + duvetT) / 2,
+              ]}
+            >
+              {bedding()}
+            </Soft>
+          ))}
+          <Soft
+            size={[w + duvetT * 2, drop, duvetT]}
+            round={[0.015, 0.015, duvetT / 2]}
+            puff={[0, 0, 0.02]}
+            wrinkle={0.006}
+            position={[0, frameH + mattress + duvetT - drop / 2, l / 2 + duvetT / 2]}
           >
             {bedding()}
           </Soft>

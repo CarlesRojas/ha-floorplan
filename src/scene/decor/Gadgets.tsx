@@ -551,21 +551,25 @@ function ChargeRing({ r, y, lit, color }: { r: number; y: number; lit: number; c
 
 // What is on the pad fades in as it comes down onto it to charge and fades
 // out as it lifts away when it stops, since a charger that is off is one
-// with nothing on it. Every material under it is its own, so they can be
-// faded in place; while it is solid they write depth again, so it never
-// shows through itself.
+// with nothing on it. Plain paint is shared across the whole scene, so each
+// part under here is given a copy of its own to fade; while it is solid the
+// copy writes depth again, so it never shows through itself.
 function Arriving({ lit, children }: { lit: number; children: ReactNode }) {
   const group = useRef<Group>(null)
   useLayoutEffect(() => {
     group.current?.traverse(o => {
       const mesh = o as Mesh
-      if (!mesh.isMesh) return
-      for (const mat of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-        const m = mat as ThreeMaterial
-        m.transparent = lit < 0.98
-        m.opacity = lit
-        m.depthWrite = lit >= 0.98
+      if (!mesh.isMesh || Array.isArray(mesh.material)) return
+      const own = mesh.userData.own as ThreeMaterial | undefined
+      if (mesh.material !== own) {
+        own?.dispose()
+        mesh.material = mesh.material.clone()
+        mesh.userData.own = mesh.material
       }
+      const m = mesh.material as ThreeMaterial
+      m.transparent = lit < 0.98
+      m.opacity = lit
+      m.depthWrite = lit >= 0.98
     })
   }, [lit])
   return (
