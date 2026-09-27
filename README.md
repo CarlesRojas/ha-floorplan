@@ -1,3 +1,5 @@
+<img src="docs/images/icon.svg" width="128" alt="A lit opal globe table lamp in a wooden cradle, the Floorplan 3D icon">
+
 # Floorplan 3D
 
 A Home Assistant card that turns your home into a small 3D model you can click.

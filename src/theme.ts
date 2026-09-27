@@ -18,6 +18,10 @@ export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a
 // Card
 
 export const CARD_CORNER_RADIUS_PX = 24
+// Behind the scene, in the card and in the editor's preview. Always dark,
+// whatever the Home Assistant theme: the home is lit from inside, and a
+// white card around it washed the lamps out.
+export const SCENE_BACKGROUND_COLOR = '#161a2b'
 
 // Editor
 

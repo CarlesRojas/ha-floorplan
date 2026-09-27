@@ -9,6 +9,10 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The card's background is always dark, whatever the Home Assistant theme, so the lights in the home stand out.
+
 ## [1.0.0] - 2026-09-27
 
 ### Added

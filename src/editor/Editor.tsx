@@ -10,7 +10,7 @@ import { snapToWall } from '#/editor/walls.ts'
 import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
 import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
-import { DEFAULT_FLOOR_MATERIAL } from '#/theme.ts'
+import { DEFAULT_FLOOR_MATERIAL, SCENE_BACKGROUND_COLOR } from '#/theme.ts'
 import { useFlash } from '#/lib/flash.ts'
 import { cn } from '#/lib/utils.ts'
 import {
@@ -916,8 +916,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                     <span className="h-1 w-14 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
                   </div>
                   <div
-                    className="relative min-h-0 overflow-hidden rounded-xl bg-(--secondary-background-color)"
-                    style={{ flex: previewShare }}
+                    className="relative min-h-0 overflow-hidden rounded-xl"
+                    style={{ flex: previewShare, background: SCENE_BACKGROUND_COLOR }}
                   >
                     {/* The view the card opens with: saved from where the
                         camera stands, flown back to, or forgotten. Named
