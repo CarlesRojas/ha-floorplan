@@ -65,7 +65,10 @@ jobs:
           git add package.json CHANGELOG.md
           git commit -m "Release v${{ steps.bump.outputs.version }}"
           git tag "v${{ steps.bump.outputs.version }}"
-          git push origin HEAD:main --follow-tags
+          # The tag is named outright: --follow-tags only carries annotated
+          # tags, and this one is plain, so it stayed behind and the release
+          # had nothing to hang on.
+          git push origin HEAD:main "refs/tags/v${{ steps.bump.outputs.version }}"
 
       - name: Publish the GitHub release
         env:
