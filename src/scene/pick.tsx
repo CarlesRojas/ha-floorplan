@@ -75,12 +75,20 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       return null
     }
 
-    // The room whose floor is the first thing under the press, if any.
+    // The room the first thing under the press belongs to, if any: its
+    // floor, or a piece standing in it that has nothing of its own to do,
+    // which is taken as the floor it stands on.
     const roomAt = (x: number, y: number): string | null => {
       if (!ray(x, y)) return null
       const hit = raycaster.intersectObjects(scene.children, true)[0]
-      if (!hit || !hit.object.name.startsWith(ROOM_NAME)) return null
-      return hit.object.name.slice(ROOM_NAME.length)
+      if (!hit) return null
+      for (let node: Object3D | null = hit.object; node; node = node.parent) {
+        if (node.name.startsWith(ROOM_NAME)) return node.name.slice(ROOM_NAME.length)
+        if (node.userData?.pick) return null
+        const room = node.userData?.room as string | undefined
+        if (room) return room
+      }
+      return null
     }
 
     // The press itself first, then wider and wider rings around it. The
