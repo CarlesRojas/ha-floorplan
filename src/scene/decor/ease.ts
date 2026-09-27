@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 
 // Eases a value toward its target instead of letting it jump. Home Assistant
@@ -13,8 +13,13 @@ export function useEased(target: number, rate = 3) {
   const aim = Number.isFinite(target) ? target : 0
   const [shown, setShown] = useState(aim)
   const from = useRef(aim)
+  const invalidate = useThree(state => state.invalidate)
+  useEffect(() => {
+    if (from.current !== aim) invalidate()
+  }, [aim, invalidate])
   useFrame((_, delta) => {
     if (from.current === aim) return
+    invalidate()
     const next =
       Math.abs(aim - from.current) < 0.001
         ? aim
@@ -65,9 +70,14 @@ export function useTravel(target: number, fallback = 0.9) {
     report.current = { target, at: now, speed: Math.min(Math.max(paced, SLOWEST), FASTEST) }
   }, [target, fallback])
 
+  const invalidate = useThree(state => state.invalidate)
+  useEffect(() => {
+    invalidate()
+  }, [target, invalidate])
   useFrame((_, delta) => {
     const aim = Number.isFinite(target) ? Math.min(Math.max(target, 0), 1) : value.current
     if (value.current === aim) return
+    invalidate()
     const step = report.current.speed * Math.min(delta, 0.1)
     const rest = aim - value.current
     value.current = Math.abs(rest) <= step ? aim : value.current + Math.sign(rest) * step

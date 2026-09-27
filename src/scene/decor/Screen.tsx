@@ -1,4 +1,5 @@
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useMemo, useRef } from 'react'
 import type { ShaderMaterial } from 'three'
 
@@ -35,6 +36,8 @@ void main() {
 export default function ScreenMaterial() {
   const ref = useRef<ShaderMaterial>(null)
   const uniforms = useMemo(() => ({ uTime: { value: 0 } }), [])
+  // Only shown while the screen is on, so it plays for as long as it is.
+  useLive(true)
   useFrame((_, delta) => {
     if (ref.current) ref.current.uniforms.uTime.value += delta
   })

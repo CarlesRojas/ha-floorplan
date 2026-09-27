@@ -6,8 +6,12 @@ export const DEFAULT_ASPECT_RATIO = '4 / 3'
 
 // Rooms
 
-export const SLAB_BEVEL_SEGMENTS = 32
-export const SLAB_CURVE_SEGMENTS = 32
+// The rounded edge of a slab is five centimeters, and the corners a little
+// more: this many steps round each comes out smooth at any distance the
+// card is looked at from, and each step is a strip of triangles round the
+// whole room.
+export const SLAB_BEVEL_SEGMENTS = 8
+export const SLAB_CURVE_SEGMENTS = 16
 
 // Camera
 
@@ -22,8 +26,10 @@ export const CAMERA_MIN_POLAR_DEG = 6
 export const CAMERA_MAX_POLAR_DEG = 82
 export const CAMERA_NEAR_M = 0.1
 export const CAMERA_FAR_M = 200
-// How long the camera takes to travel to a saved view.
+// How long the camera takes to travel to a saved view, and how much longer
+// for a flight that has to turn all the way round the home on top.
 export const CAMERA_FLIGHT_S = 0.9
+export const CAMERA_TURN_S = 0.8
 
 // Lights
 
@@ -39,6 +45,9 @@ export const SUN_SHADOW_MAP_PX = 1024
 // among. Each one costs six shadow renders, so only the first few get them.
 export const LAMP_SHADOW_MAP_PX = 512
 export const MAX_SHADOW_LAMPS = 4
+// Every shadowed lamp is looked up in every pixel drawn, which a phone or
+// a tablet can afford fewer of.
+export const MAX_SHADOW_LAMPS_TOUCH = 2
 // The hour the editor lights its preview at, and the one its N key flips to.
 export const EDITOR_HOUR = 13
 export const EDITOR_NIGHT_HOUR = 23

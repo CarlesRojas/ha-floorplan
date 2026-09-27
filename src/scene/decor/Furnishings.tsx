@@ -1,5 +1,6 @@
 import { Bar, SEG, Slab } from '#/scene/decor/parts.tsx'
 import { useFrame } from '@react-three/fiber'
+import { useEverySecond } from '#/scene/live.ts'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import type { Group, Mesh } from 'three'
 
@@ -183,6 +184,7 @@ function Hands({ z, hour, minute, second }: { z: number; hour: ReactNode; minute
   // The hands only move when the second does. A minute hand's share of a
   // second is nothing to see, and this leaves the frame alone in between.
   const shown = useRef(-1)
+  useEverySecond()
   useFrame(() => {
     const now = new Date()
     const s = now.getSeconds()
@@ -240,6 +242,7 @@ function DigitalTime({ w, h, z, glow }: { w: number; h: number; z: number; glow:
   const t = Math.min(dw, h) * 0.16
   const xs = [-1.95, -0.85, 0.85, 1.95].map(k => k * dw)
   const shown = useRef(-1)
+  useEverySecond()
   useFrame(() => {
     const now = new Date()
     // Nothing on it changes within a second.

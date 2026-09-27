@@ -28,7 +28,8 @@ import {
 } from '#/scene/decor/Kitchen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useMemo, useRef } from 'react'
 import { Color, Shape, type Group, type Mesh } from 'three'
 
@@ -95,6 +96,7 @@ function Led({ on, position, color = LED_ON }: { on: boolean; position: [number,
 // turning.
 function Drum({ running, position, radius }: { running: boolean; position: [number, number, number]; radius: number }) {
   const ref = useRef<Group>(null)
+  useLive(running)
   useFrame((_, delta) => {
     if (running && ref.current) ref.current.rotation.z += delta * 2.2
   })
@@ -155,9 +157,13 @@ function Laundry({
   const refs = useRef<(Group | null)[]>([])
   const clock = useRef(0)
   const blend = useRef(0)
+  const invalidate = useThree(state => state.invalidate)
+  useLive(running)
   useFrame((_, delta) => {
     const target = running ? 1 : 0
     blend.current += (target - blend.current) * Math.min(1, delta * 3)
+    // Slowing to a stop once switched off.
+    if (!running && blend.current > 0.001) invalidate()
     clock.current += delta * blend.current * (wet ? 0.35 : 0.5)
     const orbit = radius * 0.6
     const bottom = -Math.PI / 2
@@ -231,6 +237,7 @@ function Water({
     s.closePath()
     return s
   }, [radius])
+  useLive(running)
   useFrame(({ clock }) => {
     if (ref.current) ref.current.rotation.z = running ? Math.sin(clock.elapsedTime * 2.2) * 0.12 : 0
   })

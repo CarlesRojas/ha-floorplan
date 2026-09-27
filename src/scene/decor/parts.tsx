@@ -1,7 +1,9 @@
 import { roundedShape } from '#/geometry/polygon.ts'
 import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
 import { useEased } from '#/scene/decor/ease.ts'
+import { useWarmed } from '#/scene/warm.ts'
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useMemo, useRef, type ReactNode } from 'react'
 import {
@@ -20,6 +22,7 @@ import {
   type InstancedMesh,
   type Mesh,
   type MeshBasicMaterial,
+  type PointLight,
 } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
@@ -169,8 +172,8 @@ export function Slab({
       bevelEnabled: b > 0.002,
       bevelThickness: b,
       bevelSize: b,
-      bevelSegments: 8,
-      curveSegments: 24,
+      bevelSegments: 4,
+      curveSegments: 12,
     })
     // The shape is drawn on XY and extruded along +z. Rotating -90 about x
     // turns that into +y spanning [-b, h - b], so lift it by b to sit on the
@@ -389,9 +392,9 @@ export function Cushion({
 // much, the loose creases of a cover that has been sat on, so no two parts
 // of it catch the light quite the same.
 function softBox([w, h, d]: Vec3, [rx, ry, rz]: Vec3, [px, py, pz]: Vec3, wrinkle = 0) {
-  // Two full turns of segments were eight thousand points a cushion, four
-  // times what a rounded edge this small can show.
-  const sphere = new SphereGeometry(1, SEG * 2, SEG)
+  // One turn of segments is what a rounded edge this small can show: two
+  // turns were eight thousand points a cushion and looked the same.
+  const sphere = new SphereGeometry(1, SEG, SEG / 2)
   sphere.deleteAttribute('uv')
   sphere.deleteAttribute('normal')
   const geometry = mergeVertices(sphere)
@@ -595,6 +598,7 @@ export function Glass({ color, opacity = 0.22 }: { color: string; opacity?: numb
 // Blades that spin while the device runs, faster at a higher level.
 export function Spinner({ speed, children }: { speed: number; children: ReactNode }) {
   const ref = useRef<Group>(null)
+  useLive(speed > 0)
   useFrame((_, delta) => {
     if (ref.current && speed > 0) ref.current.rotation.y += delta * speed
   })
@@ -643,15 +647,21 @@ export function Halo({
 }) {
   const lit = useEased(on ? 1 : 0, 9)
   // A light in the scene costs every material its share of the shader and
-  // its uniforms each frame, lit or not, so a dark one is taken out of it.
+  // its uniforms each frame, lit or not, so a dark one is taken out of it,
+  // once the shaders for the scene without it are built.
+  const light = useRef<PointLight>(null)
+  const shown = useWarmed(lit > 0.01, on => {
+    if (light.current) light.current.visible = on
+  })
   return (
     <pointLight
+      ref={light}
       position={position}
       color={color}
       intensity={intensity * lit}
       distance={distance}
       decay={1}
-      visible={lit > 0.01}
+      visible={shown}
     />
   )
 }
@@ -693,6 +703,7 @@ export function Steam({
 }) {
   const lit = useEased(on ? 1 : 0, 3)
   const puffs = useRef<(Mesh | null)[]>([])
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     if (lit < 0.01) {
       for (const puff of puffs.current) if (puff?.visible) puff.visible = false
@@ -775,6 +786,7 @@ export function Waves({
 }) {
   const lit = useEased(on ? 1 : 0, 4)
   const rings = useRef<(Mesh | null)[]>([])
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     if (lit < 0.01) {
       for (const ring of rings.current) if (ring?.visible) ring.visible = false
@@ -833,6 +845,7 @@ export function Stream({
 }) {
   const lit = useEased(on ? 1 : 0, 6)
   const body = useRef<Mesh>(null)
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     const m = body.current
     if (!m || lit < 0.01) return
@@ -911,6 +924,7 @@ export function Rain({
   const dummy = useMemo(() => new Object3D(), [])
   // Each drop hangs below its point, so none pokes up through the head.
   const len = Math.min(0.16, fall * 0.09)
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return

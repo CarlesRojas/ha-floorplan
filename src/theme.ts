@@ -21,7 +21,10 @@ export const CARD_CORNER_RADIUS_PX = 24
 // Behind the scene, in the card and in the editor's preview. Always dark,
 // whatever the Home Assistant theme: the home is lit from inside, and a
 // white card around it washed the lamps out.
-export const SCENE_BACKGROUND_COLOR = '#161a2b'
+export const SCENE_BACKGROUND_COLOR = '#1c1c1c'
+// The darkening of the card's corners, laid over the picture and the space
+// around it alike.
+export const VIGNETTE_CSS = 'radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%)'
 
 // Editor
 
@@ -103,13 +106,15 @@ export const NIGHT_SKY_COLOR = '#e9ddcd'
 export const NIGHT_GROUND_COLOR = '#b9ad9e'
 export const NIGHT_SUN_COLOR = '#e6dccd'
 // Ambient and sky fill, day and night.
-export const DAY_AMBIENT_INTENSITY = 0.12
-export const DAY_HEMISPHERE_INTENSITY = 0.6
+export const DAY_AMBIENT_INTENSITY = 0.07
+export const DAY_HEMISPHERE_INTENSITY = 0.32
 export const NIGHT_AMBIENT_INTENSITY = 0.07
 export const NIGHT_HEMISPHERE_INTENSITY = 0.18
 // The sun itself. It is kept gentle, and its shadow map is deliberately
 // coarse, so daylight models the room without cutting hard edges into it.
-export const DAY_SUN_INTENSITY = 1.35
+// Daytime is kept on the dim side on purpose, so the lamps still read as
+// lit and the model stays moody rather than washed out.
+export const DAY_SUN_INTENSITY = 0.72
 export const NIGHT_SUN_INTENSITY = 0.05
 
 // How far from a press the card looks for something to act on, in pixels.

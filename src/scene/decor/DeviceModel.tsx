@@ -13,6 +13,7 @@ import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
+import { useWarmed } from '#/scene/warm.ts'
 import Vacuum from '#/scene/decor/Vacuum.tsx'
 import PergolaAwning from '#/scene/decor/Pergola.tsx'
 import { CeilingFan, FloorFan, Radiator } from '#/scene/decor/Climate.tsx'
@@ -20,6 +21,7 @@ import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene
 import type { RoomConfig } from '#/types.ts'
 import { useMemo, useRef, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3, type MeshStandardMaterial, type PointLight } from 'three'
 
 type Props = {
@@ -91,11 +93,17 @@ function Rod({ from, to, radius, children }: { from: Vec3; to: Vec3; radius: num
 function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
   const ring = useRef<MeshStandardMaterial>(null)
   const light = useRef<PointLight>(null)
-  const shown = useRef(-1)
+  const last = useRef(-1)
+  // The light joins the scene once the shaders for a scene with it in are
+  // built, so the first flash does not stall the frame.
+  const shown = useWarmed(on, visible => {
+    if (light.current) light.current.visible = visible
+  })
+  useLive(on)
   useFrame(({ clock }) => {
     const flash = on && clock.elapsedTime % 0.5 < 0.25 ? 1 : 0
-    if (flash === shown.current) return
-    shown.current = flash
+    if (flash === last.current) return
+    last.current = flash
     if (ring.current) ring.current.emissiveIntensity = 3.5 * flash
     if (light.current) light.current.intensity = 4 * flash
   })
@@ -112,7 +120,7 @@ function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
         intensity={0}
         distance={5}
         decay={1}
-        visible={on}
+        visible={shown}
       />
     </group>
   )

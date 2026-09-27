@@ -6,7 +6,8 @@ import { scatter } from '#/scene/decor/scatter.ts'
 import { Glass, Halo, Led, Material, SEG, Slab, Waves } from '#/scene/decor/parts.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useMemo, useRef, type ReactNode } from 'react'
 import { Color, Vector3, type Group } from 'three'
 
@@ -741,6 +742,8 @@ const LITTER_HOME = 0.3
 function Cycling({ on, children }: { on: boolean; children: ReactNode }) {
   const ref = useRef<Group>(null)
   const phase = useRef(0)
+  const invalidate = useThree(state => state.invalidate)
+  useLive(on)
   useFrame((_, delta) => {
     if (!ref.current) return
     const lap = Math.PI * 2
@@ -750,7 +753,10 @@ function Cycling({ on, children }: { on: boolean; children: ReactNode }) {
       const rest = Math.round(phase.current / lap) * lap
       const gap = rest - phase.current
       if (Math.abs(gap) < 0.0005) phase.current = rest
-      else phase.current += Math.sign(gap) * Math.min(Math.abs(gap), LITTER_HOME * lap * delta)
+      else {
+        phase.current += Math.sign(gap) * Math.min(Math.abs(gap), LITTER_HOME * lap * delta)
+        invalidate()
+      }
     }
     // A rock lifts the front, which is a turn back about x.
     ref.current.rotation.x = (-Math.PI * (1 - Math.cos(phase.current))) / 2

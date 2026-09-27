@@ -1,4 +1,5 @@
 import Canvas from '#/editor/Canvas.tsx'
+import ControlsGuide from '#/editor/ControlsGuide.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
@@ -955,6 +956,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       hass={hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
+                      wheelZoom
                       onPickDecoration={pickDecoration}
                       cameraRef={camera}
                       tries={tries}
@@ -1037,6 +1039,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         <FontAwesomeIcon icon={opening ? faSpinner : faPenRuler} spin={opening} className="size-3.5" />
         {opening ? 'Opening…' : 'Open editor'}
       </button>
+      <ControlsGuide className="mt-4" />
     </div>
   )
 }

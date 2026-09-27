@@ -1,6 +1,7 @@
 import { Bar, Halo, Led, Material, Panel, SEG, Slab, Steam, Tube } from '#/scene/decor/parts.tsx'
 import { CEILING_HEIGHT_M } from '#/theme.ts'
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useRef, type ReactNode } from 'react'
 import type { Group } from 'three'
 
@@ -706,6 +707,7 @@ function Rail({ from, to, y, fit }: { from: [number, number]; to: [number, numbe
 function GasFlame({ radius, y, level }: { radius: number; y: number; level: number }) {
   const count = Math.max(14, Math.round(radius * 900))
   const tongues = useRef<(Group | null)[]>([])
+  useLive(level > 0.001)
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     tongues.current.forEach((g, i) => {

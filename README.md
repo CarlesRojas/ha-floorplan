@@ -30,20 +30,13 @@ Everything is built inside Home Assistant, in the card's own full-screen editor.
 
 ## Install
 
-1. In Home Assistant open **HACS**, search for **Floorplan 3D** and download it. HACS registers the card's resource for you.
-2. Reload the browser.
-3. Edit a dashboard, choose **Add card** and search for **Floorplan 3D**.
+1. In Home Assistant open **HACS**, open the three-dot menu in the top right and choose **Custom repositories**.
+2. Paste `https://github.com/CarlesRojas/ha-floorplan`, pick the **Dashboard** type and add it.
+3. Search for **Floorplan 3D** in HACS and download it. HACS registers the card's resource for you.
+4. Reload the browser.
+5. Edit a dashboard, choose **Add card** and search for **Floorplan 3D**.
 
 Updates arrive through HACS like any other card. If a new version does not show up after updating, clear the browser cache. The card logs its version in the browser console on load, so a stale copy is easy to spot.
-
-<details>
-<summary>Not in your HACS search yet? Add it as a custom repository</summary>
-
-1. In HACS open the three-dot menu in the top right and choose **Custom repositories**.
-2. Paste `https://github.com/CarlesRojas/ha-floorplan`, pick the **Dashboard** type and add it.
-3. Search for **Floorplan 3D** in HACS and download it, then follow the steps above.
-
-</details>
 
 <details>
 <summary>Install by hand, without HACS</summary>

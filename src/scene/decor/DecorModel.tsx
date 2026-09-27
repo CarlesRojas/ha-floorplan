@@ -59,7 +59,7 @@ function Fringe({ width, depth, children }: { width: number; depth: number; chil
   }, [tufts, width, depth])
   return (
     <instancedMesh key={tufts} ref={mesh} args={[undefined, undefined, tufts * 2]}>
-      <capsuleGeometry args={[0.004, 0.05, 4, 10]} />
+      <capsuleGeometry args={[0.004, 0.05, 1, 5]} />
       {children}
     </instancedMesh>
   )
