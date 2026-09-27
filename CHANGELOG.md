@@ -21,9 +21,12 @@ moves that section under the new version and uses it as the release notes.
 
 - Moving the camera with the right or middle button no longer toggles the piece under the pointer or opens its dialog. A right click still opens the dialog once let go.
 - The robot vacuum drives straight off its dock and backs onto it, instead of turning on the spot when it leaves or comes home, and it always swings round the shorter way.
+- A lamp casts its shadows from the moment it starts to come on, not once it is fully bright.
+- A click on a piece no longer nudges the camera or shows the back button. The camera turns only once the pointer is dragged.
 
 ### Changed
 
 - The camera view buttons in the editor light up under the pointer, and saving a view says so for a moment.
+- Lamps with no color temperature to read glow a little warmer.
 
 [Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/main...HEAD

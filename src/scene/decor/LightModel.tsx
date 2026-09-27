@@ -13,6 +13,8 @@ import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGH
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
+import { useLayoutEffect, useRef } from 'react'
+import type { PointLight } from 'three'
 import type { ItemState } from '#/scene/decor/state.ts'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 
@@ -56,6 +58,19 @@ function Glow({
   // Close to linear with the level: a lamp at a third still lights the
   // room around it, and still casts, instead of fading away first.
   const total = dark ? 0 : LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * lit) * lit
+  // What the bulb is heading for, so the lamps that may cast are ranked by
+  // where they will be and not by where the fade has got to. Ranked by the
+  // moment's intensity, a lamp coming on stood behind every lamp already
+  // on until it was nearly full, and its shadows arrived only then.
+  const level = state?.on ? (state.level ?? 1) : 0
+  const rank = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * level) * level * LAMP_KEY_SHARE
+  // The bulb casts from the first frame it is lit. The shadow sweep hands
+  // out the casters only now and then, and within its budget, so it has
+  // the last word, but it should not be waited for.
+  const bulb = useRef<PointLight>(null)
+  useLayoutEffect(() => {
+    if (!dark && bulb.current && rank > 0) bulb.current.castShadow = true
+  }, [dark, rank])
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.
@@ -77,6 +92,7 @@ function Glow({
       {/* The bulb. What the shade stops on its way out lands as a shadow of
           whatever stands around the lamp. */}
       <pointLight
+        ref={bulb}
         position={at}
         color={[r, g, b]}
         intensity={total * LAMP_KEY_SHARE}
@@ -84,6 +100,7 @@ function Glow({
         decay={1.15}
         visible={!dark}
         castShadow
+        userData={{ rank }}
         shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
         // Small offsets: a big one pushes the sample past a thin top or
         // panel and lets the light through the middle of it.
