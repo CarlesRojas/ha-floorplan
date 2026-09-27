@@ -1,23 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- A corner of a room seen from above, with one light on inside. -->
-  <defs>
-    <radialGradient id="pool" cx="256" cy="336" r="110" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffd9a0"/>
-      <stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="halo" cx="256" cy="262" r="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffe8ca" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#ffe8ca" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <!-- Back walls. -->
-  <polygon points="80,208 256,110 256,224 80,322" fill="#3d4d73"/>
-  <polygon points="256,110 432,208 432,322 256,224" fill="#2b3856"/>
-  <!-- Floor. -->
-  <polygon points="80,322 256,224 432,322 256,420" fill="#e9e3d6"/>
-  <!-- The light thrown on the floor, then the lamp itself. -->
-  <polygon points="80,322 256,224 432,322 256,420" fill="url(#pool)"/>
-  <circle cx="256" cy="262" r="64" fill="url(#halo)"/>
-  <circle cx="256" cy="262" r="26" fill="#ffd27a"/>
-  <circle cx="256" cy="262" r="13" fill="#fff6e6"/>
+<!-- Two rooms of a small home seen from above, with the light on in one of them. Drawn in isometric projection. -->
+<defs><radialGradient id="glow" cx="257.3" cy="264.4" r="105" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffe3b0" stop-opacity="0.95"/><stop offset="0.5" stop-color="#ffc978" stop-opacity="0.35"/><stop offset="1" stop-color="#ffc978" stop-opacity="0"/></radialGradient></defs>
+<rect width="512" height="512" rx="112" fill="#141a2e"/>
+<polygon points="268.0,252.0 482.8,376.0 321.7,469.0 106.9,345.0" fill="#2a3554" />
+<polygon points="106.9,345.0 321.7,469.0 321.7,493.8 106.9,369.8" fill="#1c2440" />
+<polygon points="482.8,376.0 321.7,469.0 321.7,493.8 482.8,400.8" fill="#222c4b" />
+<polygon points="268.0,252.0 386.1,320.2 225.0,413.2 106.9,345.0" fill="#f4dfb4" />
+<polygon points="386.1,320.2 482.8,376.0 321.7,469.0 225.0,413.2" fill="#33406a" />
+<polygon points="268.0,252.0 386.1,320.2 225.0,413.2 106.9,345.0" fill="url(#glow)" />
+<polygon points="268.0,216.3 482.8,340.4 472.0,346.5 257.3,222.6" fill="#8b97b8" />
+<polygon points="257.3,222.6 472.0,346.5 472.0,382.2 257.3,258.2" fill="#5d6a8f" />
+<polygon points="482.8,340.4 472.0,346.5 472.0,382.2 482.8,376.0" fill="#6e7ca3" />
+<polygon points="268.0,216.3 278.7,222.6 117.7,315.6 106.9,309.3" fill="#8b97b8" />
+<polygon points="106.9,309.3 117.7,315.6 117.7,351.2 106.9,345.0" fill="#5d6a8f" />
+<polygon points="278.7,222.6 117.7,315.6 117.7,351.2 278.7,258.2" fill="#6e7ca3" />
+<polygon points="380.8,281.4 391.5,287.6 302.9,338.8 292.2,332.6" fill="#8b97b8" />
+<polygon points="292.2,332.6 302.9,338.8 302.9,374.4 292.2,368.2" fill="#5d6a8f" />
+<polygon points="391.5,287.6 302.9,338.8 302.9,374.4 391.5,323.3" fill="#6e7ca3" />
+<circle cx="257.3" cy="264.4" r="58" fill="url(#glow)"/>
+<circle cx="257.3" cy="264.4" r="18" fill="#ffd27a"/>
+<circle cx="257.3" cy="264.4" r="8" fill="#fff8ea"/>
 </svg>
