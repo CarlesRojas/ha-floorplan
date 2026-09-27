@@ -11,6 +11,8 @@ import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
 import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
 import { DEFAULT_FLOOR_MATERIAL } from '#/theme.ts'
+import { useFlash } from '#/lib/flash.ts'
+import { cn } from '#/lib/utils.ts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -141,9 +143,13 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // Null while the view is closed.
   const camera = useRef<CameraHandle | null>(null)
   // The view the card opens with, taken from where the camera stands now.
+  // The save button shows for a moment that the view was taken.
+  const [mainViewSaved, flashMainViewSaved] = useFlash()
   const saveMainView = () => {
     const view = camera.current?.view()
-    if (view) onChange({ ...config, camera: view })
+    if (!view) return
+    onChange({ ...config, camera: view })
+    flashMainViewSaved()
   }
   const clearMainView = () => {
     const { camera: _dropped, ...rest } = config
@@ -932,13 +938,16 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         onClick={showMainView}
                       />
                       <PreviewButton
-                        icon={faCamera}
-                        label={config.camera ? 'Replace opening view' : 'Save opening view'}
+                        icon={mainViewSaved ? faCheck : faCamera}
+                        label={
+                          mainViewSaved ? 'View saved' : config.camera ? 'Replace opening view' : 'Save opening view'
+                        }
                         title={
                           config.camera
                             ? 'Replace the view the card opens with by where the camera stands now'
                             : 'Open the card with the view the camera has now'
                         }
+                        done={mainViewSaved}
                         onClick={saveMainView}
                       />
                     </div>
@@ -1039,12 +1048,15 @@ function PreviewButton({
   label,
   title,
   disabled,
+  done,
   onClick,
 }: {
   icon: IconDefinition
   label: string
   title: string
   disabled?: boolean
+  // For a moment after it did its thing, the button says so in green.
+  done?: boolean
   onClick: () => void
 }) {
   return (
@@ -1053,7 +1065,10 @@ function PreviewButton({
       title={title}
       disabled={disabled}
       onClick={onClick}
-      className="flex h-8 items-center gap-1.5 rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2.5 text-xs text-(--primary-text-color) shadow hover:bg-(--secondary-background-color) disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-(--card-background-color)"
+      className={cn(
+        'flex h-8 items-center gap-1.5 rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2.5 text-xs text-(--primary-text-color) shadow transition-colors hover:bg-(--secondary-background-color) disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-(--card-background-color)',
+        done && 'border-emerald-600 text-emerald-600',
+      )}
     >
       <FontAwesomeIcon icon={icon} className="size-3.5" />
       <span>{label}</span>

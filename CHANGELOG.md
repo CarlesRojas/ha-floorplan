@@ -17,4 +17,12 @@ moves that section under the new version and uses it as the release notes.
 - A visual editor inside the card's dialog: draw rooms, place and move pieces, bind devices, try states.
 - Saved camera views: the one the card opens with and one per room that a click on its floor flies to.
 
+### Fixed
+
+- Moving the camera with the right or middle button no longer toggles the piece under the pointer or opens its dialog. A right click still opens the dialog once let go.
+
+### Changed
+
+- The camera view buttons in the editor light up under the pointer, and saving a view says so for a moment.
+
 [Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/main...HEAD

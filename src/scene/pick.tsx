@@ -107,6 +107,8 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
     }
 
     let from: { x: number; y: number; at: number } | null = null
+    // Where the right button went down, until it drags or comes up.
+    let rightFrom: { x: number; y: number } | null = null
     let timer: ReturnType<typeof setTimeout> | null = null
     let opened = false
     const stop = () => {
@@ -115,9 +117,17 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
     }
 
     const onDown = (e: PointerEvent) => {
-      from = { x: e.clientX, y: e.clientY, at: performance.now() }
+      from = null
+      rightFrom = null
       opened = false
       stop()
+      if (e.button === 2) {
+        rightFrom = { x: e.clientX, y: e.clientY }
+        return
+      }
+      // Only the left button presses. Any other is the camera's.
+      if (e.button !== 0) return
+      from = { x: e.clientX, y: e.clientY, at: performance.now() }
       timer = setTimeout(() => {
         const found = near(e.clientX, e.clientY, false)
         // A direct hit is the object's own business, it has handlers of its
@@ -131,17 +141,31 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
     }
 
     const onMove = (e: PointerEvent) => {
-      if (!from) return
-      if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > SLOP_PX) {
+      const start = from ?? rightFrom
+      if (!start) return
+      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) {
         stop()
         from = null
+        rightFrom = null
       }
     }
 
     const onUp = (e: PointerEvent) => {
       stop()
       const start = from
+      const right = rightFrom
       from = null
+      rightFrom = null
+      // A right click let go where it went down asks for the dialog of
+      // whatever is near. A right drag has moved the camera and asks nothing.
+      if (right && e.button === 2) {
+        const found = near(e.clientX, e.clientY, false)
+        if (found?.kind === 'pick' && !found.direct) {
+          onHandled?.()
+          found.pick.open()
+        }
+        return
+      }
       if (!start || opened) return
       if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) return
       if (performance.now() - start.at > LONG_PRESS_MS) return
@@ -155,13 +179,11 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       }
     }
 
+    // The menu is kept away from anything that has a dialog to open instead.
+    // The opening itself waits for the button to come up, above.
     const onContext = (e: MouseEvent) => {
       const found = near(e.clientX, e.clientY, false)
-      if (found?.kind === 'pick' && !found.direct) {
-        e.preventDefault()
-        onHandled?.()
-        found.pick.open()
-      }
+      if (found?.kind === 'pick' && !found.direct) e.preventDefault()
     }
 
     el.addEventListener('pointerdown', onDown)
