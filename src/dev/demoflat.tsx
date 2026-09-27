@@ -7,14 +7,17 @@
 // entities on, open or unlocked; `camera=x,y,z,tx,ty,tz` overrides the
 // opening view; `sun=6` puts the sun at that elevation in degrees, so the
 // room can be shot at dusk; `dark` uses Home Assistant's dark theme colors;
-// `editor` shows the editor instead of the card.
+// `editor` shows the editor instead of the card; `merge=0` draws every piece
+// on its own, to compare against the merged room.
 // A click on a piece flips its entity, the way Home Assistant would.
+import { setMerging } from '#/scene/Merged.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { DEMO_AREAS, DEMO_ENTITIES, DEMO_FLAT, DEMO_STATES, flip } from '../../scripts/demoflat.plan.ts'
 
 await import('#/main.tsx')
 
 const params = new URLSearchParams(location.search)
+if (params.get('merge') === '0') setMerging(false)
 if (params.has('dark')) {
   const dark: Record<string, string> = {
     '--primary-text-color': '#e1e1e1',

@@ -71,8 +71,17 @@ type Flight = {
   around: number
   duration: number
   t: number
+  // When the flight last moved, in milliseconds. Frames are drawn only when
+  // asked for, so the frame that starts a flight may come seconds after the
+  // one before it, and the time between the two is not time flown: counted
+  // as such, the camera jumped most of the way and only flew the rest.
+  last: number
   home: boolean
 }
+
+// The most a single frame may carry a flight forward, in seconds. A stall
+// mid flight picks up where it was rather than skipping ahead.
+const MAX_STEP_S = 0.1
 
 // The shortest way round from one heading to another, in radians.
 const turn = (from: number, to: number) => MathUtils.euclideanModulo(to - from + Math.PI, 2 * Math.PI) - Math.PI
@@ -150,6 +159,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       around,
       duration: CAMERA_FLIGHT_S + (CAMERA_TURN_S * Math.abs(around)) / Math.PI,
       t: 0,
+      last: performance.now(),
       home: isHome,
     }
   }
@@ -169,10 +179,13 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     },
   }))
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     const f = flight.current
     if (!f) return
-    f.t = Math.min(1, f.t + delta / f.duration)
+    const now = performance.now()
+    const step = Math.min(MAX_STEP_S, (now - f.last) / 1000)
+    f.last = now
+    f.t = Math.min(1, f.t + step / f.duration)
     // Eases out of the start and into the landing.
     const k = f.t * f.t * (3 - 2 * f.t)
     const target = C.set(...f.from.target).lerp(D.set(...f.to.target), k)

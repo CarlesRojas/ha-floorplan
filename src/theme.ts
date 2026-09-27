@@ -23,8 +23,15 @@ export const CARD_CORNER_RADIUS_PX = 24
 // white card around it washed the lamps out.
 export const SCENE_BACKGROUND_COLOR = '#1c1c1c'
 // The darkening of the card's corners, laid over the picture and the space
-// around it alike.
-export const VIGNETTE_CSS = 'radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%)'
+// around it alike. Over a background this dark the shade has only a few
+// dozen steps of grey to climb through, and a plain gradient showed each as
+// a ring, so a faint grain lies over it: at every pixel the shade lands a
+// little above or below, and the rings dissolve into it.
+const GRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.12 0 0 0 0"/></filter><rect width="160" height="160" filter="url(#g)"/></svg>`
+export const VIGNETTE_CSS = [
+  `url("data:image/svg+xml,${encodeURIComponent(GRAIN_SVG)}") repeat`,
+  'radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.1) 58%, rgba(0, 0, 0, 0.3) 78%, rgba(0, 0, 0, 0.55) 100%)',
+].join(', ')
 
 // Editor
 
