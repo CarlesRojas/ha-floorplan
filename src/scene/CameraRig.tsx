@@ -1,10 +1,10 @@
-import { CAMERA_FLIGHT_S } from '#/constants.ts'
+import { CAMERA_FLIGHT_S, CAMERA_TURN_S } from '#/constants.ts'
 import { frameRooms, sceneHeight } from '#/scene/framing.ts'
 import { multiTouchSince } from '#/scene/touches.ts'
 import type { CameraView, DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type RefObject } from 'react'
-import { Vector3 } from 'three'
+import { MathUtils, Spherical, Vector3 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js'
 
 // What the outside can ask of the camera: where it is now, as a view that
@@ -47,6 +47,35 @@ const A = new Vector3()
 const B = new Vector3()
 const C = new Vector3()
 const D = new Vector3()
+const S = new Spherical()
+
+// Where the camera stands around what it looks at: how far, how high up
+// and which way round. A flight moves each on its own, so a view from the
+// other side of the home is reached by going round it, at the height the
+// camera is at, rather than straight across, which passed over the top.
+type Stance = { radius: number; phi: number; theta: number }
+
+const stance = (view: CameraView): Stance => {
+  S.setFromVector3(A.set(...view.position).sub(B.set(...view.target)))
+  return { radius: S.radius, phi: S.phi, theta: S.theta }
+}
+
+// A flight under way: where from, where to, the stance at each end, how far
+// round to turn, how long it takes and how far along it is, 0 to 1. A flight
+// home lands the camera back on the view it opened with.
+type Flight = {
+  from: CameraView
+  to: CameraView
+  a: Stance
+  b: Stance
+  around: number
+  duration: number
+  t: number
+  home: boolean
+}
+
+// The shortest way round from one heading to another, in radians.
+const turn = (from: number, to: number) => MathUtils.euclideanModulo(to - from + Math.PI, 2 * Math.PI) - Math.PI
 
 const round = (v: number) => Math.round(v * 100) / 100
 const triple = (v: Vector3): [number, number, number] => [round(v.x), round(v.y), round(v.z)]
@@ -64,10 +93,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   // canvas that three fiber listens on.
   const canvas = useThree(state => (state.events.connected as HTMLElement | undefined) ?? state.gl.domElement)
   const moved = useRef(false)
-  // The flight under way, from where the camera was to where it is going,
-  // and how far along it is, 0 to 1. A flight home lands the camera back
-  // on the view it opened with.
-  const flight = useRef<{ from: CameraView; to: CameraView; t: number; home: boolean } | null>(null)
+  const flight = useRef<Flight | null>(null)
   // Whether the camera has left the view it opened with. Only a change is
   // reported, and to whatever was passed last.
   const away = useRef(false)
@@ -108,27 +134,49 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     return { position: triple(position), target: triple(target) }
   }
 
+  // A flight that turns further round the home takes longer, so it moves
+  // no faster than a short one.
+  const plan = (to: CameraView, isHome: boolean): Flight => {
+    const from = current()
+    const a = stance(from)
+    const b = stance(to)
+    const around = turn(a.theta, b.theta)
+    return {
+      from,
+      to,
+      a,
+      b,
+      around,
+      duration: CAMERA_FLIGHT_S + (CAMERA_TURN_S * Math.abs(around)) / Math.PI,
+      t: 0,
+      home: isHome,
+    }
+  }
+
   useImperativeHandle(handle, () => ({
     view: current,
     flyTo: to => {
       moved.current = true
       setAway(true)
       // Any input during a flight, an orbit or a wheel, takes it over.
-      flight.current = { from: current(), to, t: 0, home: false }
+      flight.current = plan(to, false)
     },
     reset: () => {
-      flight.current = { from: current(), to: home(), t: 0, home: true }
+      flight.current = plan(home(), true)
     },
   }))
 
   useFrame((_, delta) => {
     const f = flight.current
     if (!f) return
-    f.t = Math.min(1, f.t + delta / CAMERA_FLIGHT_S)
+    f.t = Math.min(1, f.t + delta / f.duration)
     // Eases out of the start and into the landing.
     const k = f.t * f.t * (3 - 2 * f.t)
-    const position = A.set(...f.from.position).lerp(B.set(...f.to.position), k)
     const target = C.set(...f.from.target).lerp(D.set(...f.to.target), k)
+    S.radius = MathUtils.lerp(f.a.radius, f.b.radius, k)
+    S.phi = MathUtils.lerp(f.a.phi, f.b.phi, k)
+    S.theta = f.a.theta + f.around * k
+    const position = A.setFromSpherical(S).add(target)
     place(position, target)
     if (f.t < 1) return
     flight.current = null

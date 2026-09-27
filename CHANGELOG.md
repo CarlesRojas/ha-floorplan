@@ -21,6 +21,7 @@ moves that section under the new version and uses it as the release notes.
 - The space around the home is a dark gray instead of a dark blue.
 - Daylight is dimmer, so the lamps still stand out during the day.
 - Scrolling over the card no longer zooms it, so a page can be scrolled past it. The mouse zooms by dragging with the wheel pressed, and the wheel still zooms the editor's preview.
+- Flying to a room seen from the other side of the home now goes round the home at the camera's height, taking a little longer, instead of swinging over the top and looking down.
 
 ### Fixed
 
