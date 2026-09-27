@@ -4,7 +4,7 @@ A Home Assistant card that turns your home into a small 3D model you can click.
 
 Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, appliances and sensors, then bind the pieces to your real Home Assistant devices. The model shows what your home is doing right now: a lamp glows when the light is on, a blind sits where the cover is, a door swings open when the sensor says so. Click a piece and the device behind it toggles.
 
-![The demo flat at dusk with one lamp on in each room](docs/images/hero.png)
+![The living room and kitchen at dusk, the floor lamp and the pendants on](docs/images/living-dusk.png)
 
 ## What you get
 
@@ -14,19 +14,9 @@ Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, app
 - **Camera views.** Save the view the card opens with and one per room. Clicking a room's floor flies there, and a reset button brings you back.
 - **Light that matters.** Lights cast real light and shadows in their room, with brightness and color temperature taken from the entity.
 
-| Lights off                                                              | Lights on                                                            |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| ![The demo flat at dusk with every light off](docs/images/hero-off.png) | ![The same view with one lamp on in each room](docs/images/hero.png) |
-
-## A closer look
-
-The same flat from inside. Each room has a saved camera view, so a click on its floor flies here.
-
-![Living room and kitchen close-up](docs/images/living.png)
-
-![Bedroom close-up with the bedside lamps on](docs/images/bedroom.png)
-
-![Bathroom close-up](docs/images/bathroom.png)
+| Lights off                                                                | Lights on                                                                 |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| ![The demo flat at dusk with every light off](docs/images/lights-off.png) | ![The same view with one lamp on in each room](docs/images/lights-on.png) |
 
 ## The editor
 
@@ -76,8 +66,12 @@ When you update, bump a `?v=` query on the resource URL so browsers pick up the 
 
 ## Start building
 
-Add the card, press **Open editor** and trace your first room. Then open the catalog, drop in a ceiling light, pick the entity it stands for in the side panel, and save. Click the light in the card.
+1. Add the card to a dashboard and press **Open editor**.
+2. Trace your first room on the grid.
+3. Open the catalog and drop in a ceiling light and a sofa.
+4. Select the light and pick the Home Assistant entity it stands for.
+5. Save, then click the light in the card. It lights up, and so does the real one.
 
 For a furnished starting point, paste [demoflat.yaml](demoflat.yaml) into a card's YAML editor. It is the flat in the screenshots above, with entity ids you can swap for your own.
 
-Changes are listed in the [changelog](CHANGELOG.md). If you want to work on the card itself, the [development guide](docs/DEVELOPMENT.md) covers the local setup, the editor internals, the catalog and the card config format.
+Changes are listed in the [changelog](CHANGELOG.md).

@@ -139,7 +139,7 @@ devices:
         8: b
   - entity_id: light.bathroom
     room: bathroom
-    position: [5.6, 1]
+    position: [5.2, 1.5]
     decorations:
       - 0: b
         1: a
@@ -150,11 +150,42 @@ devices:
         6: o
         7: m
         8: "_"
-        9: l
-        10: i
-        11: g
-        12: h
-        13: t
+        9: s
+        10: p
+        11: o
+        12: t
+        13: "_"
+        14: a
+      - 0: b
+        1: a
+        2: t
+        3: h
+        4: r
+        5: o
+        6: o
+        7: m
+        8: "_"
+        9: s
+        10: p
+        11: o
+        12: t
+        13: "_"
+        14: b
+      - 0: b
+        1: a
+        2: t
+        3: h
+        4: r
+        5: o
+        6: o
+        7: m
+        8: "_"
+        9: s
+        10: p
+        11: o
+        12: t
+        13: "_"
+        14: c
   - entity_id: cover.living_blind
     room: living
     position: [0, 3.9]
@@ -694,10 +725,18 @@ decorations:
     position: [7.8, 0.5]
     rotation: 270
     variant: ladder
-  - id: bathroom_light
+  - id: bathroom_spot_a
     kind: light_ceiling
     room: bathroom
-    position: [5.6, 1]
+    position: [5.2, 1.5]
+  - id: bathroom_spot_b
+    kind: light_ceiling
+    room: bathroom
+    position: [6.3, 0.8]
+  - id: bathroom_spot_c
+    kind: light_ceiling
+    room: bathroom
+    position: [7.15, 1.6]
   - id: bathroom_door
     kind: door
     room: bathroom

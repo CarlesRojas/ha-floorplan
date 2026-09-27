@@ -137,7 +137,10 @@ item('basin', 'basin', 'bathroom', [5.2, 1.94], { variant: 'vanity', params: { w
 item('basin_plant', 'plant_small', 'bathroom', [5.65, 1.94], { variant: 'snake', on: 'basin' })
 wall('bathroom_mirror', 'wall_mirror', 'bathroom', [5.2, 2.2], { variant: 'round' })
 wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.5], { variant: 'ladder' })
-item('bathroom_light', 'light_ceiling', 'bathroom', [5.6, 1.0])
+// Three spots on one circuit: over the vanity, the middle and the shower.
+item('bathroom_spot_a', 'light_ceiling', 'bathroom', [5.2, 1.5])
+item('bathroom_spot_b', 'light_ceiling', 'bathroom', [6.3, 0.8])
+item('bathroom_spot_c', 'light_ceiling', 'bathroom', [7.15, 1.6])
 wall('bathroom_door', 'door', 'bathroom', [4.2, 1.3], { variant: 'flush' })
 
 // The devices behind the pieces. The entity ids are made up: in your own
@@ -148,7 +151,7 @@ device('light.kitchen_island', 'pendant_a', 'pendant_b')
 device('light.bedroom', 'bedroom_light')
 device('light.bedside_left', 'bedside_a')
 device('light.bedside_right', 'bedside_b')
-device('light.bathroom', 'bathroom_light')
+device('light.bathroom', 'bathroom_spot_a', 'bathroom_spot_b', 'bathroom_spot_c')
 device('cover.living_blind', 'living_blind')
 device('cover.bedroom_blind', 'bedroom_blind')
 device('media_player.living_tv', 'tv', 'soundbar')
