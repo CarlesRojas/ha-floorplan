@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/images/icon.svg" width="128" alt="A lit opal globe table lamp in a wooden cradle, the Floorplan 3D icon"></p>
+<img src="docs/images/icon.svg" width="128" alt="A lit opal globe table lamp in a wooden cradle, the Floorplan 3D icon">
 
 # Floorplan 3D
 
