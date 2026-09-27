@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/images/icon.svg" width="128" alt="A small house seen from above at an angle, the Floorplan 3D icon"></p>
+<p align="center"><img src="docs/images/icon.svg" width="128" alt="A lit opal globe table lamp in a wooden cradle, the Floorplan 3D icon"></p>
 
 # Floorplan 3D
 
