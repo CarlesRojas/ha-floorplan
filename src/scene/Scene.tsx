@@ -30,6 +30,9 @@ type Props = {
   config: CardConfig
   // The editor can hold the room at day or at night to see how it looks.
   sky?: SkyMode
+  // Whether the wheel zooms the view. Off in the card, where it scrolls
+  // the dashboard past it, on in the editor's preview.
+  wheelZoom?: boolean
   // In the editor, a press in 3D also picks what it landed on, so the plan
   // and the sidebar follow the view.
   onPickDecoration?: (id: string) => void
@@ -55,6 +58,7 @@ export default function Scene({
   hass,
   config,
   sky = 'auto',
+  wheelZoom = false,
   onPickDecoration,
   onPickRoom,
   onPickNothing,
@@ -116,6 +120,7 @@ export default function Scene({
           view={config.camera}
           handle={cameraRef}
           onAway={onCameraAway}
+          wheelZoom={wheelZoom}
         />
         <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
         {/* A press that misses everything looks around itself for something

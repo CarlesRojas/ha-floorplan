@@ -34,14 +34,14 @@ export default function ControlsGuide({ className }: { className?: string }) {
   return (
     <div className={cn('flex flex-wrap justify-center gap-x-10 gap-y-4', className)}>
       {mouse && (
-        <Section title="Mouse">
+        <Section title={touch ? 'Mouse' : undefined}>
           <Row icon={<Mouse button="left" />} action="Rotate" how="Drag with the left button" />
           <Row icon={<Mouse button="right" />} action="Pan" how="Drag with the right button" />
           <Row icon={<Mouse button="middle" />} action="Zoom" how="Drag with the wheel pressed" />
         </Section>
       )}
       {touch && (
-        <Section title="Touch">
+        <Section title={mouse ? 'Touch' : undefined}>
           <Row icon={<Fingers gesture="rotate" />} action="Rotate" how="Drag with one finger" />
           <Row icon={<Fingers gesture="pan" />} action="Pan" how="Slide two fingers together" />
           <Row icon={<Fingers gesture="zoom" />} action="Zoom" how="Pinch with two fingers" />
@@ -51,10 +51,12 @@ export default function ControlsGuide({ className }: { className?: string }) {
   )
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+// The title says which kind of pointer a section is for, so it is only
+// there when both kinds are shown.
+function Section({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 text-left">
-      <p className="text-xs font-semibold tracking-wide text-(--secondary-text-color) uppercase">{title}</p>
+      {title && <p className="text-xs font-semibold tracking-wide text-(--secondary-text-color) uppercase">{title}</p>}
       {children}
     </div>
   )

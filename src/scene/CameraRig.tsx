@@ -19,6 +19,8 @@ export type CameraHandle = {
 type Props = {
   rooms: RoomConfig[]
   decorations: DecorationConfig[]
+  // Whether the wheel zooms. In the card it scrolls the page instead.
+  wheelZoom?: boolean
   // The view to open with. Without one the camera frames the plan.
   view?: CameraView
   handle?: RefObject<CameraHandle | null>
@@ -34,6 +36,11 @@ const DRAG_SLOP_PX = 6
 const PAIR_SLOP_PX = 12
 // How fast a finger turns the camera, against a mouse at 1.
 const TOUCH_ROTATE_SPEED = 0.5
+// How far the mouse drags with the wheel pressed to halve or double the
+// camera's distance. The controls would step the zoom by a fixed part on
+// every move event, whatever the distance dragged, which is quick or wild
+// depending on the mouse, so the drag is measured here instead.
+const MOUSE_ZOOM_HALVE_PX = 400
 
 // Scratch for the flight, so no frame allocates.
 const A = new Vector3()
@@ -49,7 +56,7 @@ const triple = (v: Vector3): [number, number, number] => [round(v.x), round(v.y)
 // camera is theirs and is never moved again, so editing the plan does not
 // throw the view away. A flight to a saved view is the one exception, and
 // the camera is the viewer's again the moment it lands.
-export default function CameraRig({ rooms, decorations, view, handle, onAway }: Props) {
+export default function CameraRig({ rooms, decorations, view, handle, onAway, wheelZoom = false }: Props) {
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const controls = useThree(state => state.controls) as OrbitControlsImpl | null
@@ -178,6 +185,8 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
     const presses = new Map<number, Press>()
     // The pointers the controls have been handed and not yet given back.
     const given = new Set<number>()
+    // The middle button drags zooming here, by the pixel, and their last y.
+    const zooms = new Map<number, number>()
     // Two fingers held until their gesture is read: where they started.
     let pair: { a: Press; b: Press; distance: number; cx: number; cy: number } | null = null
     // Whether the controls are held to one of zoom or pan for a gesture.
@@ -227,6 +236,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
       controls.enablePan = pannable
     }
     const forget = (id: number) => {
+      zooms.delete(id)
       const press = presses.get(id)
       presses.delete(id)
       given.delete(id)
@@ -296,7 +306,24 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
       if (given.has(press.id)) return
       // A move with nothing held is a release that was never heard.
       if (event.pointerType !== 'touch' && event.buttons === 0) return forget(press.id)
+      const last = zooms.get(press.id)
+      if (last !== undefined) {
+        const dy = event.clientY - last
+        zooms.set(press.id, event.clientY)
+        const scale = Math.pow(0.5, Math.abs(dy) / MOUSE_ZOOM_HALVE_PX)
+        if (dy > 0) controls.dollyOut(scale)
+        else if (dy < 0) controls.dollyIn(scale)
+        return
+      }
       if (Math.hypot(press.x - press.sx, press.y - press.sy) < DRAG_SLOP_PX) return
+      // Dragging with the wheel pressed zooms, and the controls step that by
+      // a fixed part on every move event, so it is done here by the pixel.
+      if (press.event.pointerType === 'mouse' && press.event.button === 1) {
+        zooms.set(press.id, event.clientY)
+        // The camera is the viewer's from here, as any orbit makes it.
+        controls.dispatchEvent({ type: 'start' })
+        return
+      }
       hand(press)
     }
     const onUp = (event: PointerEvent) => {
@@ -330,13 +357,13 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
   // card, so the event is stopped before it reaches them and left to the
   // browser. Zoom by mouse is the middle button dragged.
   useEffect(() => {
-    if (!controls) return
+    if (!controls || wheelZoom) return
     const element = controls.domElement as HTMLElement | null
     if (!element) return
     const onWheel = (event: WheelEvent) => event.stopImmediatePropagation()
     element.addEventListener('wheel', onWheel, { capture: true, passive: true })
     return () => element.removeEventListener('wheel', onWheel, { capture: true })
-  }, [controls])
+  }, [controls, wheelZoom])
 
   // A right or middle drag let go outside the window never hears its button
   // come up in some browsers, and the pan or zoom it started would carry on

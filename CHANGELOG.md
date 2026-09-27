@@ -17,10 +17,11 @@ moves that section under the new version and uses it as the release notes.
 
 - The space around the home is a dark gray instead of a dark blue.
 - Daylight is dimmer, so the lamps still stand out during the day.
-- Scrolling over the card no longer zooms it, so a page can be scrolled past it. The mouse zooms by dragging with the wheel pressed.
+- Scrolling over the card no longer zooms it, so a page can be scrolled past it. The mouse zooms by dragging with the wheel pressed, and the wheel still zooms the editor's preview.
 
 ### Fixed
 
+- Zooming by dragging with the wheel pressed follows the distance dragged instead of leaping on fast mice.
 - Dragging with a finger turns the camera at half the speed it did, so a touch drag no longer spins the home around.
 - A two finger gesture now either pans or zooms, chosen by how it starts, instead of doing both at once.
 - Starting a pinch no longer jumps the camera back to its saved view.

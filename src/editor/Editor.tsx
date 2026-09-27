@@ -956,6 +956,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       hass={hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
+                      wheelZoom
                       onPickDecoration={pickDecoration}
                       cameraRef={camera}
                       tries={tries}
