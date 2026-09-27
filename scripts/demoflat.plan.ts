@@ -60,88 +60,86 @@ function device(entity_id: string, ...ids: string[]) {
 }
 
 // Living room, along the bottom half of the room. The sofa faces the TV on
-// the bottom wall over a rug, with the bookshelf and a window on the left
-// wall and the front door beside it.
-item('sofa', 'sofa', 'living', [2.3, 2.5], { variant: 'dresde' })
+// the bottom wall over a rug, with a window on the left wall and the front
+// door in the bottom right corner.
+item('sofa', 'sofa', 'living', [2.3, 2.5], { variant: 'block' })
 item('rug', 'rug', 'living', [2.3, 1.4], { variant: 'kilim' })
 item('coffee_table', 'coffee_table', 'living', [2.3, 1.3], { variant: 'slatted' })
-item('books', 'books', 'living', [2.05, 1.3], { on: 'coffee_table' })
-item('coffee_plant', 'plant_small', 'living', [2.6, 1.3], { variant: 'pilea', on: 'coffee_table' })
+item('books', 'books', 'living', [2.0, 1.25], { on: 'coffee_table', rotation: 300 })
+item('coffee_plant', 'plant_small', 'living', [2.6, 1.4], { variant: 'pilea', on: 'coffee_table' })
 item('sideboard', 'sideboard', 'living', [2.3, 0.21], { variant: 'oak', rotation: 180 })
 wall('tv', 'tv_wall', 'living', [2.3, 0])
 item('soundbar', 'soundbar', 'living', [2.3, 0.21], { variant: 'bar', on: 'sideboard', rotation: 180 })
 item('speaker', 'speaker', 'living', [3.0, 0.21], { variant: 'pod', on: 'sideboard' })
-item('living_plant', 'plant_large', 'living', [3.75, 0.45], { variant: 'fiddle' })
-wall('bookshelf', 'bookshelf', 'living', [0, 1.5], { variant: 'billy' })
+item('living_plant', 'plant_large', 'living', [0.4, 0.4], { variant: 'fiddle' })
 item('floor_lamp', 'light_floor', 'living', [0.4, 3.1], { variant: 'tmm' })
-wall('living_window', 'window', 'living', [0, 3.9], { variant: 'casement' })
+wall('living_window', 'window', 'living', [0, 3.9], { variant: 'casement', params: { height: 1.45, sill: 0.65 } })
 wall('living_blind', 'blind', 'living', [0, 3.9], { variant: 'venetian' })
-wall('front_door', 'door', 'living', [0.7, 0], { variant: 'panel' })
-wall('front_lock', 'smart_lock', 'living', [1.05, 0])
-wall('clock', 'wall_clock', 'living', [1.4, 0], { variant: 'oak' })
-wall('thermostat', 'thermostat', 'living', [3.5, 0])
+wall('front_door', 'door', 'living', [3.7, 0], { variant: 'panel' })
+wall('front_lock', 'smart_lock', 'living', [3.15, 0])
+wall('thermostat', 'thermostat', 'living', [0, 1.2])
 item('living_light', 'light_ceiling', 'living', [2.3, 1.8])
-item('vacuum', 'vacuum_robot', 'living', [0.45, 4.6])
+item('vacuum', 'vacuum_robot', 'living', [4.0, 2.0], { rotation: 270 })
 
 // Kitchen, along the top wall of the same room, with an island and two
 // stools between it and the sofa.
 item('counter_a', 'kitchen_counter', 'living', [0.9, 5.3], { variant: 'run' })
 item('counter_b', 'kitchen_counter', 'living', [2.7, 5.3], { variant: 'run' })
 item('hob', 'hob', 'living', [0.9, 5.3], { variant: 'induction', on: 'counter_a' })
-item('hood', 'extractor_hood', 'living', [0.9, 5.3])
 item('kettle', 'kettle', 'living', [0.3, 5.3], { variant: 'gooseneck', on: 'counter_a' })
-item('coffee_machine', 'coffee_machine', 'living', [1.55, 5.3], { variant: 'bambino', on: 'counter_a' })
-item('sink', 'kitchen_sink', 'living', [2.5, 5.3], { variant: 'undermount', on: 'counter_b' })
-item('toaster', 'toaster', 'living', [3.3, 5.3], { variant: 'retro', on: 'counter_b' })
+item('coffee_machine', 'coffee_machine', 'living', [1.9, 5.45], { variant: 'bambino', on: 'counter_b' })
+item('sink', 'kitchen_sink', 'living', [2.7, 5.3], { variant: 'undermount', on: 'counter_b' })
+item('toaster', 'toaster', 'living', [1.55, 5.45], { variant: 'retro', on: 'counter_a' })
 wall('cabinets_a', 'upper_cabinets', 'living', [0.9, 5.6])
 wall('cabinets_b', 'upper_cabinets', 'living', [2.7, 5.6])
-item('fridge', 'fridge', 'living', [3.9, 5.27], { variant: 'bespoke' })
+item('fridge', 'fridge', 'living', [3.9, 5.27], {
+  variant: 'bespoke',
+  params: { flip: 1 },
+  colors: { body: '#9d9c9b', doors: '#acabaa' },
+})
 item('island', 'kitchen_counter', 'living', [2.1, 4.1], { variant: 'island' })
-item('island_vase', 'vase', 'living', [2.7, 4.1], { on: 'island' })
+item('island_vase', 'vase', 'living', [2.65, 4.15], { on: 'island', params: { height: 0.21, size: 0.16 } })
 item('stool_a', 'stool', 'living', [1.7, 3.4], { variant: 'lauta', rotation: 180 })
 item('stool_b', 'stool', 'living', [2.5, 3.4], { variant: 'lauta', rotation: 180 })
 item('pendant_a', 'light_pendant', 'living', [1.65, 4.1], { variant: 'globo_cestita' })
 item('pendant_b', 'light_pendant', 'living', [2.55, 4.1], { variant: 'globo_cestita' })
 item('smoke', 'smoke_detector', 'living', [3.2, 4.6])
 
-// Bedroom: the bed against the top wall with a lamp on each nightstand, a
-// wardrobe and a window on the right wall, a dresser and a mirror on the
-// left wall, and the door from the living room.
+// Bedroom: the bed against the top wall with a lamp on each nightstand and
+// a fan above it, a wardrobe and a window on the right wall, a dresser on
+// the left wall, and the door from the living room.
 item('bed', 'bed_double', 'bedroom', [6.0, 4.58], { variant: 'upholstered' })
 item('nightstand_a', 'side_table', 'bedroom', [4.95, 5.35], { variant: 'nightstand' })
 item('nightstand_b', 'side_table', 'bedroom', [7.05, 5.35], { variant: 'nightstand' })
 item('bedside_a', 'light_table', 'bedroom', [4.95, 5.35], { variant: 'cestita', on: 'nightstand_a' })
 item('bedside_b', 'light_table', 'bedroom', [7.05, 5.35], { variant: 'cestita', on: 'nightstand_b' })
+item('ceiling_fan', 'fan_ceiling', 'bedroom', [6.0, 4.6], { variant: 'classic' })
 item('bedroom_rug', 'rug', 'bedroom', [6.0, 3.1], { variant: 'round' })
 item('bedroom_light', 'light_ceiling', 'bedroom', [6.0, 3.6])
-wall('wardrobe', 'wardrobe', 'bedroom', [7.8, 3.0], { variant: 'sliding' })
-wall('bedroom_window', 'window', 'bedroom', [7.8, 4.5], { variant: 'sash' })
-wall('bedroom_blind', 'blind', 'bedroom', [7.8, 4.5], { variant: 'shutter' })
-wall('radiator', 'radiator', 'bedroom', [7.8, 4.5], { variant: 'panel' })
+wall('wardrobe', 'wardrobe', 'bedroom', [7.8, 3.0], { variant: 'hinged', colors: { cabinet: '#dcc3a0' } })
+wall('bedroom_window', 'window', 'bedroom', [7.8, 4.5], { variant: 'casement', params: { height: 1.4, sill: 0.7 } })
 wall('dresser', 'dresser', 'bedroom', [4.2, 3.0], { variant: 'oak' })
 item('dresser_plant', 'plant_small', 'bedroom', [4.45, 3.3], { variant: 'pothos', on: 'dresser' })
-wall('bedroom_mirror', 'wall_mirror', 'bedroom', [4.2, 3.0], { variant: 'round' })
 wall('bedroom_door', 'door', 'bedroom', [4.2, 4.4], { variant: 'flush' })
 wall('motion', 'motion_sensor', 'bedroom', [6.0, 2.2])
 
-// Bathroom: shower in the far corner, toilet and washing machine on the
-// bottom wall, the basin under a mirror on the top wall, and the door from
-// the living room.
-// A walk-in shower fills the far right corner, a wide vanity the wall
-// across from the door, and the toilet and the washer share the near wall.
-// Flipped so the glass faces the room and the fittings hang on the wall.
-item('shower', 'shower', 'bathroom', [7.15, 1.65], { params: { width: 1.3, depth: 1.1, flip: 1 } })
-item('toilet', 'toilet', 'bathroom', [6.7, 0.28], { variant: 'wall_hung', rotation: 180 })
-item('washer', 'washing_machine', 'bathroom', [4.55, 0.3], { rotation: 180 })
-item('basin', 'basin', 'bathroom', [5.2, 1.94], { variant: 'vanity', params: { width: 1.2, depth: 0.52 } })
+// Bathroom: a walk-in shower in the far right corner, a wide vanity under a
+// square mirror on the top wall, the toilet on the near wall, a towel rail
+// by the shower, and the door from the living room.
+item('shower', 'shower', 'bathroom', [7.1, 1.75], { params: { width: 1.4, depth: 0.9, flip: 0 } })
+item('toilet', 'toilet', 'bathroom', [5.85, 0.3], { variant: 'wall_hung', rotation: 180, params: { depth: 0.6 } })
+item('basin', 'basin', 'bathroom', [5.2, 1.95], { variant: 'vanity', params: { width: 1.2, depth: 0.52 } })
 item('basin_plant', 'plant_small', 'bathroom', [5.65, 1.94], { variant: 'snake', on: 'basin' })
-wall('bathroom_mirror', 'wall_mirror', 'bathroom', [5.2, 2.2], { variant: 'round' })
-wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.5], { variant: 'ladder' })
-// Three spots on one circuit: over the vanity, the middle and the shower.
-item('bathroom_spot_a', 'light_ceiling', 'bathroom', [5.2, 1.5])
-item('bathroom_spot_b', 'light_ceiling', 'bathroom', [6.3, 0.8])
-item('bathroom_spot_c', 'light_ceiling', 'bathroom', [7.15, 1.6])
-wall('bathroom_door', 'door', 'bathroom', [4.2, 1.3], { variant: 'flush' })
+wall('bathroom_mirror', 'wall_mirror', 'bathroom', [5.2, 2.2], {
+  variant: 'square',
+  params: { size: 0.85, height: 1.5 },
+})
+wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.5], { variant: 'grouped', colors: { rail: '#353636' } })
+// Two spots on one circuit, over the vanity and the toilet.
+item('bathroom_spot_a', 'light_ceiling', 'bathroom', [5.15, 1.0])
+item('bathroom_spot_b', 'light_ceiling', 'bathroom', [6.15, 1.0])
+// The door hangs on the living room side of the shared wall.
+item('bathroom_door', 'door', 'living', [4.2, 1.1], { variant: 'flush', rotation: 270 })
 
 // The devices behind the pieces. The entity ids are made up: in your own
 // card the editor binds the pieces to your real entities.
@@ -151,18 +149,15 @@ device('light.kitchen_island', 'pendant_a', 'pendant_b')
 device('light.bedroom', 'bedroom_light')
 device('light.bedside_left', 'bedside_a')
 device('light.bedside_right', 'bedside_b')
-device('light.bathroom', 'bathroom_spot_a', 'bathroom_spot_b', 'bathroom_spot_c')
+device('light.bathroom', 'bathroom_spot_a', 'bathroom_spot_b')
 device('cover.living_blind', 'living_blind')
-device('cover.bedroom_blind', 'bedroom_blind')
 device('media_player.living_tv', 'tv', 'soundbar')
 device('media_player.kitchen_speaker', 'speaker')
 device('climate.living_room', 'thermostat')
-device('switch.bedroom_radiator', 'radiator')
 device('switch.towel_rail', 'towel_rail')
-device('switch.washing_machine', 'washer')
 device('switch.coffee_machine', 'coffee_machine')
 device('switch.kettle', 'kettle')
-device('fan.extractor_hood', 'hood')
+device('fan.ceiling_fan', 'ceiling_fan')
 device('lock.front_door', 'front_lock')
 device('binary_sensor.front_door', 'front_door')
 device('vacuum.robot', 'vacuum')
@@ -179,7 +174,7 @@ export const DEMO_FLAT: CardConfig = {
       points: LIVING,
       floor: { material: 'wood' },
       // A click on the floor flies to a close-up of the room.
-      camera: { position: [0.9, 4.2, 0.8], target: [2.9, 0.4, -3.4] },
+      camera: { position: [0.5, 4.2, 1.0], target: [2.4, 0.4, -3.4] },
     },
     {
       id: 'bedroom',
@@ -215,16 +210,13 @@ const NAMES: Record<string, string> = {
   'light.bedside_right': 'Right bedside lamp',
   'light.bathroom': 'Bathroom light',
   'cover.living_blind': 'Living room blind',
-  'cover.bedroom_blind': 'Bedroom shutter',
   'media_player.living_tv': 'Living room TV',
   'media_player.kitchen_speaker': 'Kitchen speaker',
   'climate.living_room': 'Thermostat',
-  'switch.bedroom_radiator': 'Bedroom radiator',
   'switch.towel_rail': 'Towel rail',
-  'switch.washing_machine': 'Washing machine',
   'switch.coffee_machine': 'Coffee machine',
   'switch.kettle': 'Kettle',
-  'fan.extractor_hood': 'Extractor hood',
+  'fan.ceiling_fan': 'Ceiling fan',
   'lock.front_door': 'Front door lock',
   'binary_sensor.front_door': 'Front door',
   'vacuum.robot': 'Robot vacuum',

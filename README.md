@@ -11,7 +11,7 @@ Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, app
 - **Your own layout.** Trace each room on a grid in the visual editor. Walls, floor materials and openings follow.
 - **A furnished home, not a floor plan.** Around a hundred pieces in several styles each: sofas, beds, kitchens, plants, rugs, mirrors, radiators, TVs, speakers, vacuum robots and more, each with its own size and color options.
 - **Pieces that are devices.** Most pieces can stand for a Home Assistant entity. Lights, switches, covers, media players, fans, locks, climate, vacuums and binary sensors are all understood. The piece shows the entity's state, and a click calls the matching service: toggle, open or close, lock or unlock, start or dock.
-- **Camera views.** Save the view the card opens with and one per room. Clicking a room's floor flies there, and a reset button brings you back.
+- **Camera views.** Save the view the card opens with and one per room. Clicking a room's floor flies there. Click it again, click the empty space around the home or press the reset button to come back.
 - **Light that matters.** Lights cast real light and shadows in their room, with brightness and color temperature taken from the entity.
 
 | Lights off                                                                | Lights on                                                                 |

@@ -159,15 +159,19 @@ export function roamKey(room: RoomConfig | undefined, all: DecorationConfig[], s
   const pieces = all
     .filter(d => d.id !== self.id && d.room === room.id)
     .map(d => `${d.kind}:${d.position}:${d.rotation ?? 0}:${d.on ?? ''}:${JSON.stringify(d.params ?? {})}`)
-  return `${room.points}|${self.position}|${radius}|${pieces.join('|')}`
+  return `${room.points}|${self.position}|${self.rotation ?? 0}|${radius}|${pieces.join('|')}`
 }
 
 // A robot's round: the sweep it drives while it is running, and the way
-// back to the dock from wherever it has got to when it stops.
+// back to the dock from wherever it has got to when it stops. The last leg
+// of the way home is the one it backs onto the dock along.
 export type Round = {
   sweep: Point[]
   home: (from: Point) => Point[]
 }
+
+// How far out from the dock the robot looks for the floor, in its own radii.
+const DOCK_REACH = 4
 
 export function roamRound(room: RoomConfig, all: DecorationConfig[], self: DecorationConfig, radius: number): Round {
   const others = all.filter(d => d.id !== self.id && d.room === room.id)
@@ -201,15 +205,29 @@ export function roamRound(room: RoomConfig, all: DecorationConfig[], self: Decor
   }
 
   // The dock stands against a wall, where the robot itself does not fit, so
-  // the round starts at the dock's own spot and joins the floor at the free
-  // cell nearest to it.
+  // the round starts at the dock's own spot and joins the floor straight
+  // ahead of it: the first free cell out along the dock's front, so the
+  // robot drives off the ramp the way it is facing and backs onto it the
+  // same way, with no turn on the dock. Only a dock with nothing free ahead
+  // of it settles for the free cell nearest to it.
   const origin = at(0, 0)
   const cellOf = (q: Point): Cell => [Math.round((q[0] - origin[0]) / step), Math.round((q[1] - origin[1]) / step)]
+  const ahead = (): Cell | null => {
+    const a = ((self.rotation ?? 0) * Math.PI) / 180
+    // The piece's front, on the plan: the way a wall piece faces into the room.
+    const dir: Point = [Math.sin(a), -Math.cos(a)]
+    const reach = Math.ceil((radius * DOCK_REACH) / step)
+    for (let k = 1; k <= reach; k++) {
+      const cell = cellOf([self.position[0] + dir[0] * k * step, self.position[1] + dir[1] * k * step])
+      if (ok(cell[0], cell[1])) return cell
+    }
+    return null
+  }
   // Every move is routed across the free floor, so no leg goes through the
   // furniture between its ends.
   const leg = (from: Cell, to: Cell) =>
     sightLine(floor, from, to) ? [to] : straighten(floor, route(floor, from, to), from)
-  const dock = nearestFree(floor, cellOf(self.position))
+  const dock = ahead() ?? nearestFree(floor, cellOf(self.position))
   // The shortest way back to the dock from anywhere on the floor, which is
   // what it drives when it is switched off partway through a round.
   const home = (from: Point): Point[] => {
