@@ -1,4 +1,5 @@
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useRef } from 'react'
 import { Color, type MeshBasicMaterial } from 'three'
 
@@ -13,6 +14,7 @@ const BEAM_WHITES = ['#c9d6f2', '#eef3ff', '#fff4e6', '#ffffff', '#9fc0ff', '#ff
 export function useBeamScene(base: number) {
   const material = useRef<MeshBasicMaterial>(null)
   const scene = useRef({ level: 1, target: 1, color: new Color('#eef3ff'), next: 0 })
+  useLive(base > 0.001)
   useFrame(({ clock }, delta) => {
     const mat = material.current
     if (!mat) return

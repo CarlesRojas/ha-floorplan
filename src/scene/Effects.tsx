@@ -1,3 +1,4 @@
+import { coarseOnly } from '#/scene/device.ts'
 import { EDITOR_SELECTED_COLOR } from '#/theme.ts'
 import { setComposed } from '#/scene/warm.ts'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -12,7 +13,6 @@ import {
   SMAAPreset,
   ToneMappingEffect,
   ToneMappingMode,
-  VignetteEffect,
 } from 'postprocessing'
 import { useEffect, useRef } from 'react'
 import { Color, HalfFloatType, type Object3D } from 'three'
@@ -27,9 +27,6 @@ import { Color, HalfFloatType, type Object3D } from 'three'
 // show. Three applied the same filmic curve on its own when it drew to the
 // screen; drawing into a buffer turns that off, so it is done here.
 //
-// A light vignette darkens the corners of the frame a touch, so the eye
-// settles on the home rather than the space around it.
-//
 // Drawing into a buffer loses the antialiasing the screen gave for free, so
 // edges are smoothed again at the end.
 //
@@ -43,20 +40,10 @@ import { Color, HalfFloatType, type Object3D } from 'three'
 const AO_RADIUS_M = 0.35
 const AO_FALLOFF = 1
 const AO_INTENSITY = 2.5
-// Where the vignette begins, from the middle out, and how dark it gets.
-const VIGNETTE_OFFSET = 0.35
-const VIGNETTE_DARKNESS = 0.7
 // The outline's thickness and the edge where something stands in front of
 // the picked one.
 const OUTLINE_STRENGTH = 4
 const OUTLINE_HIDDEN_SHARE = 0.35
-
-// A device with only a touch screen is taken to be a phone or a tablet, and
-// gets the occlusion at half resolution and with fewer samples.
-function coarseOnly(): boolean {
-  if (typeof matchMedia !== 'function') return false
-  return matchMedia('(any-pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches
-}
 
 type Props = {
   // The name of the object to outline, as the scene gives it, `null` for
@@ -75,6 +62,7 @@ export default function Effects({ selected }: Props) {
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const dpr = useThree(state => state.viewport.dpr)
+  const invalidate = useThree(state => state.invalidate)
 
   // The picked object is found by name, and found again whenever the one in
   // hand has left the scene, which happens when a model is rebuilt.
@@ -87,6 +75,8 @@ export default function Effects({ selected }: Props) {
     // Half float, so the scene keeps its range until it is tone mapped.
     const composer = new EffectComposer(gl, { frameBufferType: HalfFloatType })
     composer.addPass(new RenderPass(scene, camera))
+    // A phone or a tablet gets the occlusion at half resolution and with
+    // fewer samples.
     const ao = new N8AOPostPass(scene, camera)
     ao.setQualityMode(coarseOnly() ? 'Low' : 'Medium')
     ao.configuration.halfRes = coarseOnly()
@@ -113,7 +103,6 @@ export default function Effects({ selected }: Props) {
         ...(outline ? [outline] : []),
         new SMAAEffect({ preset: SMAAPreset.HIGH }),
         new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }),
-        new VignetteEffect({ offset: VIGNETTE_OFFSET, darkness: VIGNETTE_DARKNESS }),
       ),
     )
     pipeline.current = { composer, outline }
@@ -134,6 +123,11 @@ export default function Effects({ selected }: Props) {
     // pixel ratio, and this only tells it the canvas has changed.
     pipeline.current?.composer.setSize(size.width, size.height, false)
   }, [gl, scene, camera, outlined, size.width, size.height, dpr])
+
+  // Frames are drawn on request, and a new pick or a new size is one.
+  useEffect(() => {
+    invalidate()
+  }, [selected, size.width, size.height, dpr, invalidate])
 
   useFrame((_, delta) => {
     const run = pipeline.current

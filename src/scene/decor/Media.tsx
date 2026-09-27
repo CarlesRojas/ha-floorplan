@@ -94,7 +94,7 @@ function Turned({ profile, children }: { profile: [number, number][]; children: 
   const geometry = useMemo(() => {
     const at = key.split(',').map(Number)
     const points = Array.from({ length: at.length / 2 }, (_, i) => new Vector2(at[i * 2], at[i * 2 + 1]))
-    return new LatheGeometry(points, SEG * 2)
+    return new LatheGeometry(points, SEG)
   }, [key])
   return (
     <mesh geometry={geometry} castShadow>

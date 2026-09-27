@@ -21,6 +21,7 @@ import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene
 import type { RoomConfig } from '#/types.ts'
 import { useMemo, useRef, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { DoubleSide, ExtrudeGeometry, Quaternion, Vector3, type MeshStandardMaterial, type PointLight } from 'three'
 
 type Props = {
@@ -98,6 +99,7 @@ function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
   const shown = useWarmed(on, visible => {
     if (light.current) light.current.visible = visible
   })
+  useLive(on)
   useFrame(({ clock }) => {
     const flash = on && clock.elapsedTime % 0.5 < 0.25 ? 1 : 0
     if (flash === last.current) return

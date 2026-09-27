@@ -250,7 +250,7 @@ function Wally({ c, m, state, up, out }: ModelProps) {
         </Tube>
       </group>
       <mesh position={[0, globeY, globeZ]} scale={k} userData={{ transmits: true }}>
-        <latheGeometry args={[WALLY_GLOBE_PROFILE, SEG * 4]} />
+        <latheGeometry args={[WALLY_GLOBE_PROFILE, Math.round(SEG * 1.5)]} />
         <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
       </mesh>
       <mesh position={[0, discY, globeZ]}>

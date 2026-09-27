@@ -89,6 +89,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const controls = useThree(state => state.controls) as OrbitControlsImpl | null
+  const invalidate = useThree(state => state.invalidate)
   // Where the scene hears its pointer events: the element around the
   // canvas that three fiber listens on.
   const canvas = useThree(state => (state.events.connected as HTMLElement | undefined) ?? state.gl.domElement)
@@ -160,9 +161,11 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       setAway(true)
       // Any input during a flight, an orbit or a wheel, takes it over.
       flight.current = plan(to, false)
+      invalidate()
     },
     reset: () => {
       flight.current = plan(home(), true)
+      invalidate()
     },
   }))
 
@@ -178,7 +181,10 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     S.theta = f.a.theta + f.around * k
     const position = A.setFromSpherical(S).add(target)
     place(position, target)
-    if (f.t < 1) return
+    if (f.t < 1) {
+      invalidate()
+      return
+    }
     flight.current = null
     // Landed home, the camera frames the plan again as if never touched.
     if (f.home) {

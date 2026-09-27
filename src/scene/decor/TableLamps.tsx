@@ -260,7 +260,7 @@ function Cestita({ c, m, state, up }: ModelProps) {
       ))}
       {/* The globe, its neck and cap, and the lamp holder under it. */}
       <mesh userData={{ transmits: true }}>
-        <latheGeometry args={[CESTITA_GLOBE_PROFILE, SEG * 4]} />
+        <latheGeometry args={[CESTITA_GLOBE_PROFILE, Math.round(SEG * 1.5)]} />
         <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
       </mesh>
       <mesh position={[0, (CESTITA_CAP[1] + CESTITA_CAP[2]) / 2, 0]} userData={{ transmits: true }}>
@@ -318,7 +318,7 @@ function Sylvestrina({ c, m, state, up }: ModelProps) {
         {base}
       </mesh>
       <mesh>
-        <latheGeometry args={[SYLVESTRINA_DISC_PROFILE, SEG * 4]} />
+        <latheGeometry args={[SYLVESTRINA_DISC_PROFILE, Math.round(SEG * 1.5)]} />
         {base}
       </mesh>
       <mesh position={[0, (discTop + SYLVESTRINA_SLEEVE_TOP) / 2, 0]}>
@@ -332,7 +332,7 @@ function Sylvestrina({ c, m, state, up }: ModelProps) {
       {/* Drawn last, so the lit diffuser, which turns see through as well,
           still shows behind the glass. */}
       <mesh userData={{ transmits: true }} renderOrder={1}>
-        <latheGeometry args={[tube, SEG * 2]} />
+        <latheGeometry args={[tube, SEG]} />
         <Glass color={c('glass')} />
       </mesh>
     </group>

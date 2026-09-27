@@ -316,7 +316,7 @@ function Lamina({ c, m, state, up, out }: ModelProps) {
   return (
     <group>
       <mesh>
-        <latheGeometry args={[LAMINA_BASE, SEG * 4]} />
+        <latheGeometry args={[LAMINA_BASE, Math.round(SEG * 1.5)]} />
         {black}
       </mesh>
       <mesh position={[0, LAMINA_BASE_H + LAMINA_COLLAR[1] / 2, 0]}>

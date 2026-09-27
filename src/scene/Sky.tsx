@@ -19,8 +19,8 @@ import {
   NIGHT_SUN_INTENSITY,
 } from '#/theme.ts'
 import type { HomeAssistant, RoomConfig } from '#/types.ts'
-import { useFrame } from '@react-three/fiber'
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { Color, MathUtils, Object3D, type AmbientLight, type DirectionalLight, type HemisphereLight } from 'three'
 
 // What the room is lit as: whatever the sun at the home says, or an hour of
@@ -87,13 +87,20 @@ export default function Sky({
     [],
   )
 
-  // Eased, so sunset arrives as a fade and not as a switch.
+  // Eased, so sunset arrives as a fade and not as a switch. Frames are
+  // drawn on request, so the sun moving asks for one, and the fade asks
+  // for the next until it has arrived.
+  const invalidate = useThree(state => state.invalidate)
+  useEffect(() => {
+    invalidate()
+  }, [target.level, target.height, invalidate])
   const settled = useRef(false)
   useFrame((_, delta) => {
     // Once the light has arrived it is left alone until the sun moves.
     const arrived = Math.abs(target.level - level.current) < 1e-4 && Math.abs(target.height - height.current) < 1e-4
     if (arrived && settled.current) return
     settled.current = arrived
+    if (!arrived) invalidate()
     const k = 1 - Math.exp(-delta / DAYLIGHT_EASE_S)
     level.current += (target.level - level.current) * k
     height.current += (target.height - height.current) * k

@@ -3,7 +3,8 @@ import { Led, Material, SEG, Slab, Spinner } from '#/scene/decor/parts.tsx'
 import { alongPath, legLengths, roamKey, roamRound } from '#/scene/decor/roam.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig, Point, RoomConfig } from '#/types.ts'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useMemo, useRef } from 'react'
 import { MathUtils, type Group } from 'three'
 
@@ -96,10 +97,14 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
     travelled.current = 0
   }
 
+  const invalidate = useThree(state => state.invalidate)
+  useLive(on)
   useFrame((_, delta) => {
     const g = rig.current
     if (!g) return
     const dt = Math.min(delta, 0.1)
+    // Off, it still has to drive home and turn to face the room.
+    if (!on && going.current !== 'parked') invalidate()
 
     if (on && going.current !== 'sweep') {
       // Back to sweeping, from wherever it had got to.

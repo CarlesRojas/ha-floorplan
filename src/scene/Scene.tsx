@@ -7,7 +7,8 @@ import {
   CAMERA_MIN_POLAR_DEG,
   CAMERA_NEAR_M,
 } from '#/constants.ts'
-import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
+import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M, VIGNETTE_CSS } from '#/theme.ts'
+import Adaptive from '#/scene/Adaptive.tsx'
 import CameraRig, { type CameraHandle } from '#/scene/CameraRig.tsx'
 import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
@@ -86,16 +87,19 @@ export default function Scene({
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
 
   return (
-    <div ref={setFrame} className="h-full w-full">
+    <div ref={setFrame} className="relative h-full w-full">
       <Canvas
         // Percentage closer filtering across the map, so the edge comes out
         // soft and clean, and softness comes from how fine the map is. This
         // is what three's soft variant became: since 0.186 that name only
         // warns and falls back to this one.
         shadows={{ type: PCFShadowMap }}
-        frameloop={paused ? 'never' : 'always'}
+        // A frame is drawn only when something has changed, see live.ts.
+        frameloop={paused ? 'never' : 'demand'}
         dpr={[1, 2]}
-        gl={{ alpha: true, antialias: true }}
+        // The frame is finished from a buffer and smoothed there, so the
+        // screen's own smoothing would only cost.
+        gl={{ alpha: true, antialias: false }}
         camera={{ fov: CAMERA_FOV_DEG, near: CAMERA_NEAR_M, far: CAMERA_FAR_M }}
         // Three only calls a press missed when it barely moved, so letting go
         // of the camera after orbiting never counts. A right click is left
@@ -114,6 +118,7 @@ export default function Scene({
           around it onto the floor. */}
         <Shadows />
         <Cleanup />
+        <Adaptive />
         <CameraRig
           rooms={rooms}
           decorations={config.decorations ?? []}
@@ -149,6 +154,9 @@ export default function Scene({
           />
         )}
       </Canvas>
+      {/* The vignette lies over the whole card, the space around the home
+        included, which the effects cannot reach: the canvas is clear there. */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: VIGNETTE_CSS }} />
     </div>
   )
 }

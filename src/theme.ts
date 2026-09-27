@@ -22,6 +22,9 @@ export const CARD_CORNER_RADIUS_PX = 24
 // whatever the Home Assistant theme: the home is lit from inside, and a
 // white card around it washed the lamps out.
 export const SCENE_BACKGROUND_COLOR = '#1c1c1c'
+// The darkening of the card's corners, laid over the picture and the space
+// around it alike.
+export const VIGNETTE_CSS = 'radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%)'
 
 // Editor
 

@@ -208,7 +208,7 @@ function GloboCestita({ k, top, c, m, state }: ModelProps) {
     <>
       <group position={[0, top, 0]} scale={k}>
         <mesh position={[0, -capH, 0]} scale={CESTITA_PENDANT_SCALE} userData={{ transmits: true }}>
-          <latheGeometry args={[CESTITA_PENDANT_PROFILE, SEG * 4]} />
+          <latheGeometry args={[CESTITA_PENDANT_PROFILE, Math.round(SEG * 1.5)]} />
           <ShadeMaterial color={c('globe')} material={m('globe')} state={state} />
         </mesh>
         <mesh position={[0, -CESTITA_PENDANT_H + lipH / 2, 0]} userData={{ transmits: true }}>
@@ -264,11 +264,11 @@ function HeadhatBowl({ k, top, c, m, state }: ModelProps) {
         <Capsule c={c('capsule')} m={m('capsule')} state={state} />
         {/* Ceramic is opaque: the outside stays white and the inside is lit. */}
         <mesh>
-          <latheGeometry args={[HEADHAT_OUTSIDE, SEG * 2]} />
+          <latheGeometry args={[HEADHAT_OUTSIDE, SEG]} />
           <Material color={c('shade')} material={m('shade')} doubleSide />
         </mesh>
         <mesh userData={{ transmits: true }}>
-          <latheGeometry args={[HEADHAT_INSIDE, SEG * 2]} />
+          <latheGeometry args={[HEADHAT_INSIDE, SEG]} />
           <ShadeMaterial color={c('inside')} material={m('inside')} state={state} />
         </mesh>
         <mesh position={[0, -HEADHAT_H, 0]} rotation={[Math.PI / 2, 0, 0]}>

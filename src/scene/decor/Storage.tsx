@@ -29,7 +29,7 @@ function Turned({
   const geometry = useMemo(() => {
     const at = key.split(',').map(Number)
     const points = range(at.length / 2).map(i => new Vector2(at[i * 2], at[i * 2 + 1]))
-    return new LatheGeometry(points, 64)
+    return new LatheGeometry(points, 32)
   }, [key])
   return (
     <mesh geometry={geometry} scale={scale} position={position} castShadow receiveShadow>

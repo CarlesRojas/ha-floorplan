@@ -14,6 +14,7 @@ moves that section under the new version and uses it as the release notes.
 - The card's editor tab shows how to rotate, pan and zoom the view, with the mouse buttons or the finger gestures the device uses.
 - Corners and edges where things meet are shaded darker, so the furniture sits in the room instead of floating on the floor.
 - The corners of the card are darkened, to draw the eye to the home.
+- A device that cannot keep up while the camera moves draws the picture a little softer, and goes back to full sharpness once it can.
 
 ### Changed
 
@@ -22,6 +23,9 @@ moves that section under the new version and uses it as the release notes.
 - Daylight is dimmer, so the lamps still stand out during the day.
 - Scrolling over the card no longer zooms it, so a page can be scrolled past it. The mouse zooms by dragging with the wheel pressed, and the wheel still zooms the editor's preview.
 - Flying to a room seen from the other side of the home now goes round the home at the camera's height, taking a little longer, instead of swinging over the top and looking down.
+- The card only redraws when something in it changes, a light, a door, the camera, so a still home no longer keeps the graphics chip busy or drains a tablet's battery.
+- Rounded edges, lamp shades, cushions and rug fringes are built from far fewer triangles, which look the same at the card's size but draw much faster on a phone or a tablet.
+- On a phone or a tablet only the two brightest lamps cast shadows, instead of four.
 
 ### Fixed
 

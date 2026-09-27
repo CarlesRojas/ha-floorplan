@@ -1,6 +1,7 @@
 import { useEased } from '#/scene/decor/ease.ts'
 import { scatter } from '#/scene/decor/scatter.ts'
 import { useFrame } from '@react-three/fiber'
+import { useLive } from '#/scene/live.ts'
 import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import {
   AdditiveBlending,
@@ -77,6 +78,7 @@ export function Flames({
     { color: inner, opacity: 0.85, wide: 0.36, tall: 0.42 },
   ]
   const sparkCount = sparks ? Math.max(3, Math.round(count * 0.7)) : 0
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     // Out, and hidden: nothing to move until it is lit again.
     if (lit < 0.01) {
@@ -218,6 +220,7 @@ export function FairyLights({
     })
     m.instanceMatrix.needsUpdate = true
   }, [points])
+  useLive(lit >= 0.01)
   useFrame(({ clock }, delta) => {
     const m = mesh.current
     if (!m) return
@@ -289,6 +292,7 @@ export function Spray({
   const mesh = useRef<InstancedMesh>(null)
   const total = count * lanes.length
   const dummy = useMemo(() => new Object3D(), [])
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
@@ -350,6 +354,7 @@ export function Bubbles({
   const lit = useEased(on ? 1 : 0, 3)
   const mesh = useRef<InstancedMesh>(null)
   const dummy = useMemo(() => new Object3D(), [])
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
@@ -410,6 +415,7 @@ export function Falling({
   const mesh = useRef<InstancedMesh>(null)
   const total = points.length * per
   const dummy = useMemo(() => new Object3D(), [])
+  useLive(lit >= 0.01)
   useFrame(({ clock }) => {
     const m = mesh.current
     if (!m) return
@@ -458,6 +464,7 @@ export function Sweep({
 }) {
   const ref = useRef<Group>(null)
   const clock = useRef(0)
+  useLive(on)
   useFrame((_, delta) => {
     const g = ref.current
     if (!g || !on) return
