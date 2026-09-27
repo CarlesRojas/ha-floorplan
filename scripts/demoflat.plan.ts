@@ -179,7 +179,7 @@ export const DEMO_FLAT: CardConfig = {
       points: LIVING,
       floor: { material: 'wood' },
       // A click on the floor flies to a close-up of the room.
-      camera: { position: [0.9, 3.4, 2.8], target: [2.7, 0.5, -3.2] },
+      camera: { position: [0.9, 4.6, 3.0], target: [2.7, 0.5, -3.2] },
     },
     {
       id: 'bedroom',
