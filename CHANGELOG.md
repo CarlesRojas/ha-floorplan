@@ -9,6 +9,8 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-27
+
 ### Added
 
 - A 3D model of your home drawn from rooms you trace on a plan.
@@ -21,5 +23,5 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-
-[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/main...HEAD
+[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/CarlesRojas/ha-floorplan/releases/tag/v1.0.0
