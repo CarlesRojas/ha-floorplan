@@ -2,7 +2,7 @@
   "name": "floorplan-3d",
   "private": true,
   "license": "MIT",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
   "packageManager": "pnpm@10.31.0",
   "scripts": {
