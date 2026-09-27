@@ -1,4 +1,5 @@
 import { MAX_SHADOW_LAMPS } from '#/constants.ts'
+import { useWarm } from '#/scene/warm.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import {
@@ -221,6 +222,7 @@ export default function Shadows() {
     }
   }, [get])
 
+  const warm = useWarm()
   const since = useRef(SWEEP_S)
   useFrame((three, delta) => {
     armed.current = true
@@ -252,10 +254,31 @@ export default function Shadows() {
     const rank = (lamp: PointLight): number => lamp.userData.rank ?? lamp.intensity
     lamps.sort((a, b) => rank(b) - rank(a))
     lamps.forEach((lamp, i) => {
-      // A lamp that is off, or that stands in a part of the plan that is
-      // hidden, has nothing to throw.
-      const cast = i < MAX_SHADOW_LAMPS && rank(lamp) > 0.001 && lamp.visible
-      if (lamp.castShadow !== cast) lamp.castShadow = cast
+      // A lamp that is hidden is not counted, and casts nothing whatever it
+      // says, so it is left as it is: it comes on with its shadow already
+      // asked for, and the shaders built for that.
+      if (!lamp.visible) return
+      // A lamp that is off has nothing to throw.
+      const cast = i < MAX_SHADOW_LAMPS && rank(lamp) > 0.001
+      if (lamp.castShadow === cast) return
+      // Whether a lamp casts is in every shader, like whether it is lit, so
+      // the switch waits for the shaders too. Asked once: the next sweep
+      // asks again if it is still wanted.
+      warm(
+        lamp,
+        {
+          apply: () => {
+            lamp.castShadow = cast
+          },
+          revert: () => {
+            lamp.castShadow = !cast
+          },
+          commit: () => {
+            if (lamp.visible) lamp.castShadow = cast
+          },
+        },
+        false,
+      )
     })
   })
   return null

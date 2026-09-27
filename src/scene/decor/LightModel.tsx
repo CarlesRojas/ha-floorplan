@@ -13,8 +13,9 @@ import { CEILING_HEIGHT_M, LAMP_KEY_SHARE, LAMP_OUTPUT, LAMP_THROUGH_SHARE, LIGH
 import type { DecorationConfig } from '#/types.ts'
 
 import { useEased } from '#/scene/decor/ease.ts'
+import { useWarmed } from '#/scene/warm.ts'
 import { useLayoutEffect, useRef } from 'react'
-import type { PointLight } from 'three'
+import type { PointLight, RectAreaLight } from 'three'
 import type { ItemState } from '#/scene/decor/state.ts'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 
@@ -53,7 +54,9 @@ function Glow({
   // costs every material a share of its shader and its uniforms on every
   // frame, at nothing as much as at full, and a flat of dark lamps was
   // paying more for them than for everything it drew. Switching one does
-  // change the count and has the shaders built again, once.
+  // change the count and has the shaders built again, so they are shown or
+  // hidden only once those are ready, and the frame that shows them does
+  // not stall.
   const dark = lit < 0.01
   // Close to linear with the level: a lamp at a third still lights the
   // room around it, and still casts, instead of fading away first.
@@ -66,24 +69,34 @@ function Glow({
   const rank = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * level) * level * LAMP_KEY_SHARE
   // The bulb casts from the first frame it is lit. The shadow sweep hands
   // out the casters only now and then, and within its budget, so it has
-  // the last word, but it should not be waited for.
+  // the last word, but it should not be waited for. It is only ever
+  // switched on here: switching it off while the lamp is lit would change
+  // the count of shadows behind the sweep's back.
+  const strip = useRef<RectAreaLight>(null)
   const bulb = useRef<PointLight>(null)
+  const through = useRef<PointLight>(null)
+  const latestRank = useRef(rank)
   useLayoutEffect(() => {
-    if (!dark && bulb.current && rank > 0) bulb.current.castShadow = true
-  }, [dark, rank])
+    latestRank.current = rank
+  })
+  const shown = useWarmed(!dark, on => {
+    for (const light of [strip.current, bulb.current, through.current]) if (light) light.visible = on
+    if (on && bulb.current && latestRank.current > 0) bulb.current.castShadow = true
+  })
   // A strip is a line of light, not a point. A rect area light is one
   // continuous source, so the wash along a long strip is even instead of
   // beading wherever a point happens to sit.
   if (spread > 0.4) {
     return (
       <rectAreaLight
+        ref={strip}
         position={[at[0], at[1] - 0.02, at[2]]}
         rotation={[-Math.PI / 2, 0, 0]}
         width={spread}
         height={0.06}
         color={[r, g, b]}
         intensity={total * 4}
-        visible={!dark}
+        visible={shown}
       />
     )
   }
@@ -98,8 +111,7 @@ function Glow({
         intensity={total * LAMP_KEY_SHARE}
         distance={7}
         decay={1.15}
-        visible={!dark}
-        castShadow
+        visible={shown}
         userData={{ rank }}
         shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
         // Small offsets: a big one pushes the sample past a thin top or
@@ -113,12 +125,13 @@ function Glow({
           not walls: they glow, so this part reaches past the shade and casts
           nothing. */}
       <pointLight
+        ref={through}
         position={at}
         color={[r, g, b]}
         intensity={total * LAMP_THROUGH_SHARE}
         distance={6}
         decay={1.25}
-        visible={!dark}
+        visible={shown}
         userData={{ through: true }}
       />
     </>

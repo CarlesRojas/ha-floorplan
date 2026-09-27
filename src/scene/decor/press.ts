@@ -1,3 +1,4 @@
+import { multiTouchSince } from '#/scene/touches.ts'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 
@@ -65,7 +66,12 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       // Only the left button presses. Any other is the camera's.
       if (e.nativeEvent.button !== 0) return
       from.current = [e.nativeEvent.clientX, e.nativeEvent.clientY]
+      const at = performance.now()
       timer.current = setTimeout(() => {
+        timer.current = null
+        // Two fingers held still on a piece are a pinch about to start,
+        // not a long press on it.
+        if (multiTouchSince(at)) return
         opened.current = true
         onOpen()
       }, LONG_PRESS_MS)

@@ -1,6 +1,7 @@
 import { roundedShape } from '#/geometry/polygon.ts'
 import { surfaceRoughness, type SurfaceKind } from '#/materials/textures.ts'
 import { useEased } from '#/scene/decor/ease.ts'
+import { useWarmed } from '#/scene/warm.ts'
 import { useFrame } from '@react-three/fiber'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useMemo, useRef, type ReactNode } from 'react'
@@ -20,6 +21,7 @@ import {
   type InstancedMesh,
   type Mesh,
   type MeshBasicMaterial,
+  type PointLight,
 } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
@@ -643,15 +645,21 @@ export function Halo({
 }) {
   const lit = useEased(on ? 1 : 0, 9)
   // A light in the scene costs every material its share of the shader and
-  // its uniforms each frame, lit or not, so a dark one is taken out of it.
+  // its uniforms each frame, lit or not, so a dark one is taken out of it,
+  // once the shaders for the scene without it are built.
+  const light = useRef<PointLight>(null)
+  const shown = useWarmed(lit > 0.01, on => {
+    if (light.current) light.current.visible = on
+  })
   return (
     <pointLight
+      ref={light}
       position={position}
       color={color}
       intensity={intensity * lit}
       distance={distance}
       decay={1}
-      visible={lit > 0.01}
+      visible={shown}
     />
   )
 }

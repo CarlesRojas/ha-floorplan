@@ -9,6 +9,13 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Dragging with a finger turns the camera at half the speed it did, so a touch drag no longer spins the home around.
+- A two finger gesture now either pans or zooms, chosen by how it starts, instead of doing both at once.
+- Starting a pinch no longer jumps the camera back to its saved view.
+- Turning a light on or off no longer freezes the card for a moment while the shaders for the new lighting are built.
+
 ## [1.0.1] - 2026-09-27
 
 ### Changed

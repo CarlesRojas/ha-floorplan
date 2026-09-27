@@ -1,5 +1,6 @@
 import { CAMERA_FLIGHT_S } from '#/constants.ts'
 import { frameRooms, sceneHeight } from '#/scene/framing.ts'
+import { multiTouchSince } from '#/scene/touches.ts'
 import type { CameraView, DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type RefObject } from 'react'
@@ -28,6 +29,11 @@ type Props = {
 
 // How far the pointer has to come, in pixels, before a press is a drag.
 const DRAG_SLOP_PX = 6
+// How far two fingers have to spread or slide before they are read as a
+// pinch or a drag.
+const PAIR_SLOP_PX = 12
+// How fast a finger turns the camera, against a mouse at 1.
+const TOUCH_ROTATE_SPEED = 0.5
 
 // Scratch for the flight, so no frame allocates.
 const A = new Vector3()
@@ -143,19 +149,47 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
   // as leaving the opening view. The controls listen on an element around
   // the one the scene hears on, so a press reaches them only by bubbling,
   // and here it is stopped before it does, once the scene has had it. It is
-  // held until the pointer has come a few pixels from where
-  // it went down, and handed to the controls from there, as a press at that
-  // spot, so the turn starts under the pointer with no jump. A press let go
-  // before that never reaches them. A second finger hands the first over at
-  // once, so a pinch is a pinch from the start.
+  // held until the pointer has come a few pixels from where it went down,
+  // and handed to the controls from there, as a press at that spot, so the
+  // turn starts under the pointer with no jump. A press let go before that
+  // never reaches them.
+  //
+  // Two fingers are held together until they have shown what they are
+  // doing. Fingers moving apart or together are a pinch, and only zoom.
+  // Fingers moving the same way are a drag, and only pan. The controls would
+  // do both at once from any two fingers, and a pan always carried a bit of
+  // zoom with it. If the first finger was already turning the camera, it is
+  // taken back from the controls first, so the pair starts clean. The two
+  // are then handed over as presses where they are now, so nothing jumps.
+  //
+  // A finger covers more of a small screen than a mouse does of a big one,
+  // so a finger turns the camera at half the pace.
   useEffect(() => {
     if (!controls) return
     const element = controls.domElement as HTMLElement | null
     if (!element || element === canvas) return
     const page = element.ownerDocument
-    let pending: PointerEvent | null = null
-    const hand = (event: PointerEvent, x: number, y: number) => {
-      pending = null
+    const mouseRotateSpeed = controls.rotateSpeed
+    const zoomable = controls.enableZoom
+    const pannable = controls.enablePan
+    // Every pointer that went down on the canvas and is still down: the
+    // press as it came, where it started and where it is now.
+    type Press = { event: PointerEvent; id: number; sx: number; sy: number; x: number; y: number }
+    const presses = new Map<number, Press>()
+    // The pointers the controls have been handed and not yet given back.
+    const given = new Set<number>()
+    // Two fingers held until their gesture is read: where they started.
+    let pair: { a: Press; b: Press; distance: number; cx: number; cy: number } | null = null
+    // Whether the controls are held to one of zoom or pan for a gesture.
+    let exclusive = false
+    // When the pointers last started from none down, for the clicks after.
+    let pressAt = 0
+
+    const touches = () => [...presses.values()].filter(p => p.event.pointerType === 'touch')
+    const hand = (press: Press) => {
+      given.add(press.id)
+      controls.rotateSpeed = press.event.pointerType === 'touch' ? TOUCH_ROTATE_SPEED : mouseRotateSpeed
+      const { event } = press
       element.dispatchEvent(
         new PointerEvent('pointerdown', {
           pointerId: event.pointerId,
@@ -163,42 +197,126 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
           isPrimary: event.isPrimary,
           button: event.button,
           buttons: event.buttons,
-          clientX: x,
-          clientY: y,
+          clientX: press.x,
+          clientY: press.y,
           ctrlKey: event.ctrlKey,
           metaKey: event.metaKey,
           shiftKey: event.shiftKey,
         }),
       )
     }
+    // Tells the controls a pointer they were handed came up, the way the
+    // browser would. They listen for it on the document once a pointer is
+    // down.
+    const takeBack = (press: Press) => {
+      given.delete(press.id)
+      page.dispatchEvent(
+        new PointerEvent('pointerup', {
+          pointerId: press.id,
+          pointerType: press.event.pointerType,
+          clientX: press.x,
+          clientY: press.y,
+          bubbles: true,
+        }),
+      )
+    }
+    const free = () => {
+      if (!exclusive) return
+      exclusive = false
+      controls.enableZoom = zoomable
+      controls.enablePan = pannable
+    }
+    const forget = (id: number) => {
+      const press = presses.get(id)
+      presses.delete(id)
+      given.delete(id)
+      if (press && pair && (pair.a === press || pair.b === press)) {
+        // The pair broke before it was read. The finger left is a press of
+        // its own from where it is now.
+        const other = pair.a === press ? pair.b : pair.a
+        other.sx = other.x
+        other.sy = other.y
+        pair = null
+      }
+      if (touches().length < 2) free()
+    }
     const drop = () => {
-      pending = null
+      presses.clear()
+      given.clear()
+      pair = null
+      free()
     }
     const onDown = (event: PointerEvent) => {
-      if (pending) {
-        hand(pending, pending.clientX, pending.clientY)
-        return
-      }
-      pending = event
+      if (!event.isTrusted) return
       event.stopPropagation()
+      if (presses.size === 0) pressAt = performance.now()
+      const press: Press = {
+        event,
+        id: event.pointerId,
+        sx: event.clientX,
+        sy: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+      }
+      const before = event.pointerType === 'touch' ? touches() : []
+      presses.set(press.id, press)
+      if (before.length !== 1) return
+      // A second finger. Whatever the first was doing, the two are read
+      // together from here.
+      const first = before[0]
+      if (given.has(first.id)) takeBack(first)
+      pair = {
+        a: first,
+        b: press,
+        distance: Math.hypot(press.x - first.x, press.y - first.y),
+        cx: (first.x + press.x) / 2,
+        cy: (first.y + press.y) / 2,
+      }
     }
     const onMove = (event: PointerEvent) => {
-      if (!pending || event.pointerId !== pending.pointerId) return
+      if (!event.isTrusted) return
+      const press = presses.get(event.pointerId)
+      if (!press) return
+      press.x = event.clientX
+      press.y = event.clientY
+      if (pair) {
+        if (press !== pair.a && press !== pair.b) return
+        const { a, b } = pair
+        const spread = Math.abs(Math.hypot(b.x - a.x, b.y - a.y) - pair.distance)
+        const slide = Math.hypot((a.x + b.x) / 2 - pair.cx, (a.y + b.y) / 2 - pair.cy)
+        if (Math.max(spread, slide) < PAIR_SLOP_PX) return
+        pair = null
+        exclusive = true
+        controls.enableZoom = spread >= slide
+        controls.enablePan = spread < slide
+        hand(a)
+        hand(b)
+        return
+      }
+      if (given.has(press.id)) return
       // A move with nothing held is a release that was never heard.
-      if (event.buttons === 0) return drop()
-      if (Math.hypot(event.clientX - pending.clientX, event.clientY - pending.clientY) < DRAG_SLOP_PX) return
-      hand(pending, event.clientX, event.clientY)
+      if (event.pointerType !== 'touch' && event.buttons === 0) return forget(press.id)
+      if (Math.hypot(press.x - press.sx, press.y - press.sy) < DRAG_SLOP_PX) return
+      hand(press)
     }
     const onUp = (event: PointerEvent) => {
-      if (pending && event.pointerId === pending.pointerId) drop()
+      if (event.isTrusted) forget(event.pointerId)
+    }
+    // A pinch ends with one finger lifting last, and some browsers make a
+    // click of that. Nothing was clicked: not a piece, not a room's floor,
+    // and not the air around the home, which would take the camera back.
+    const onClick = (event: MouseEvent) => {
+      if (multiTouchSince(pressAt)) event.stopPropagation()
     }
     canvas.addEventListener('pointerdown', onDown)
+    element.addEventListener('click', onClick, { capture: true })
     page.addEventListener('pointermove', onMove, { capture: true })
     page.addEventListener('pointerup', onUp, { capture: true })
     page.addEventListener('pointercancel', onUp, { capture: true })
     page.defaultView?.addEventListener('blur', drop)
     return () => {
       canvas.removeEventListener('pointerdown', onDown)
+      element.removeEventListener('click', onClick, { capture: true })
       page.removeEventListener('pointermove', onMove, { capture: true })
       page.removeEventListener('pointerup', onUp, { capture: true })
       page.removeEventListener('pointercancel', onUp, { capture: true })
