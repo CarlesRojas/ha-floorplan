@@ -13,7 +13,7 @@ moves that section under the new version and uses it as the release notes.
 
 - The card's editor tab shows how to rotate, pan and zoom the view, with the mouse buttons or the finger gestures the device uses.
 - Corners and edges where things meet are shaded darker, so the furniture sits in the room instead of floating on the floor.
-- The corners of the card are darkened a touch, to draw the eye to the home.
+- The corners of the card are darkened, to draw the eye to the home.
 
 ### Changed
 

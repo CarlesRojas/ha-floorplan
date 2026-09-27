@@ -44,8 +44,8 @@ const AO_RADIUS_M = 0.35
 const AO_FALLOFF = 1
 const AO_INTENSITY = 2.5
 // Where the vignette begins, from the middle out, and how dark it gets.
-const VIGNETTE_OFFSET = 0.3
-const VIGNETTE_DARKNESS = 0.4
+const VIGNETTE_OFFSET = 0.35
+const VIGNETTE_DARKNESS = 0.7
 // The outline's thickness and the edge where something stands in front of
 // the picked one.
 const OUTLINE_STRENGTH = 4
