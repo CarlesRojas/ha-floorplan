@@ -9,6 +9,8 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-27
+
 ### Changed
 
 - The card's background is always dark, whatever the Home Assistant theme, so the lights in the home stand out.
@@ -27,5 +29,6 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/CarlesRojas/ha-floorplan/releases/tag/v1.0.0
