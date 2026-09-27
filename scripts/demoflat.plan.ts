@@ -179,7 +179,7 @@ export const DEMO_FLAT: CardConfig = {
       points: LIVING,
       floor: { material: 'wood' },
       // A click on the floor flies to a close-up of the room.
-      camera: { position: [2.1, 3.8, 1.6], target: [2.1, 0.4, -4.4] },
+      camera: { position: [0.9, 3.4, 2.8], target: [2.7, 0.5, -3.2] },
     },
     {
       id: 'bedroom',
@@ -268,11 +268,9 @@ export function flip(entity: EntityState) {
       if (entity.state === 'on') {
         entity.state = 'off'
         delete a.brightness
-        delete a.color_temp_kelvin
       } else {
         entity.state = 'on'
         a.brightness = 255
-        a.color_temp_kelvin = 2700
       }
       break
     case 'cover':

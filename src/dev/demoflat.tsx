@@ -6,7 +6,8 @@
 // Query parameters: `flip=light.bedroom,cover.living_blind` starts those
 // entities on, open or unlocked; `camera=x,y,z,tx,ty,tz` overrides the
 // opening view; `sun=6` puts the sun at that elevation in degrees, so the
-// room can be shot at dusk; `editor` shows the editor instead of the card.
+// room can be shot at dusk; `dark` uses Home Assistant's dark theme colors;
+// `editor` shows the editor instead of the card.
 // A click on a piece flips its entity, the way Home Assistant would.
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { DEMO_AREAS, DEMO_ENTITIES, DEMO_FLAT, DEMO_STATES, flip } from '../../scripts/demoflat.plan.ts'
@@ -14,6 +15,17 @@ import { DEMO_AREAS, DEMO_ENTITIES, DEMO_FLAT, DEMO_STATES, flip } from '../../s
 await import('#/main.tsx')
 
 const params = new URLSearchParams(location.search)
+if (params.has('dark')) {
+  const dark: Record<string, string> = {
+    '--primary-text-color': '#e1e1e1',
+    '--secondary-text-color': '#9b9b9b',
+    '--card-background-color': '#1c1c1c',
+    '--secondary-background-color': '#202020',
+    '--divider-color': 'rgba(225, 225, 225, 0.12)',
+  }
+  for (const [name, value] of Object.entries(dark)) document.documentElement.style.setProperty(name, value)
+  document.body.style.background = '#111111'
+}
 const states = structuredClone(DEMO_STATES)
 for (const id of (params.get('flip') ?? '').split(',')) if (states[id]) flip(states[id])
 const sun = Number(params.get('sun'))
