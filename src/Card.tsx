@@ -1,5 +1,5 @@
 import { aspectRatioCss } from '#/lib/aspect.ts'
-import { CARD_CORNER_RADIUS_PX } from '#/theme.ts'
+import { CARD_CORNER_RADIUS_PX, SCENE_BACKGROUND_COLOR } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import type { CameraView, CardConfig, HomeAssistant } from '#/types.ts'
@@ -47,7 +47,11 @@ export default function Card({ hass, config }: Props) {
     <ha-card style={{ '--ha-card-border-radius': `${CARD_CORNER_RADIUS_PX}px` } as CSSProperties}>
       <div
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: aspectRatioCss(config.aspect_ratio), borderRadius: CARD_CORNER_RADIUS_PX }}
+        style={{
+          aspectRatio: aspectRatioCss(config.aspect_ratio),
+          borderRadius: CARD_CORNER_RADIUS_PX,
+          background: hasRooms ? SCENE_BACKGROUND_COLOR : undefined,
+        }}
       >
         {hasRooms ? (
           <>
