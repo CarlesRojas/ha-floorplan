@@ -4,7 +4,12 @@ A Home Assistant card that turns your home into a small 3D model you can click.
 
 Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, appliances and sensors, then bind the pieces to your real Home Assistant devices. The model shows what your home is doing right now: a lamp glows when the light is on, a blind sits where the cover is, a door swings open when the sensor says so. Click a piece and the device behind it toggles.
 
-![The living room at dusk with the lamps on, the kitchen ahead and the lit bedroom through the open door](docs/images/living-dusk.png)
+<picture>
+  <source srcset="docs/images/demo.gif" type="image/gif" />
+  <img src="docs/images/cover.png" alt="Turning lights on in the card, then placing a ceiling fan in the editor and binding it to a device" />
+</picture>
+
+A sharper version of the clip is in [docs/video/demo.mp4](docs/video/demo.mp4).
 
 ## What you get
 
@@ -23,18 +28,6 @@ Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, app
 Everything is built inside Home Assistant, in the card's own full-screen editor. The plan sits on top, a live 3D preview below and the catalog on the right. Draw rooms, drop pieces in, drag them, snap them to walls, tweak their style and colors, and pick the entity each one stands for.
 
 ![The editor with the sofa selected](docs/images/editor.png)
-
-<!--
-VIDEO PLACEHOLDER. Replace this comment with a short GIF or MP4 named docs/images/demo.gif (or .mp4) and the line:
-![Demo](docs/images/demo.gif)
-
-How to record it (about 30 seconds, no audio):
-1. Run `pnpm dev` and open http://localhost:5173/src/dev/demoflat.html in a browser window sized about 1280x800. This is the demo flat with fake entities, so clicks work without a Home Assistant instance.
-2. Start a screen recording of that window (macOS: Shift+Cmd+5, record selected portion).
-3. Card half, about 12 seconds: orbit the flat a little with the mouse, then click the floor lamp, the pendants over the island and the bedside lamps so they light up, click the living room blind so it rolls up, and click the front door so it opens.
-4. Editor half, about 18 seconds: open http://localhost:5173/src/dev/demoflat.html?editor and click "Open editor". Choose the room tool and trace a small square room next to the flat. Pick a ceiling light from the catalog and drop it in the room, then pick a sofa, drop it, drag it to a wall and change its style in the side panel. Hover the light in the 3D preview and click it to see it turn on.
-5. Stop, trim the ends, and convert to a GIF under 10 MB, for example with `ffmpeg -i demo.mov -vf "fps=15,scale=960:-1" docs/images/demo.gif`, or keep the MP4 and link it instead.
--->
 
 ## Install
 
