@@ -195,6 +195,19 @@ export function clickAction(entityId: string, state?: string): { domain: string;
   }
 }
 
+// What a click is expected to leave the device: on or off, before Home
+// Assistant says so. From what the device is now, or what the caller takes
+// it to be, when an earlier click is still waiting on its answer. Undefined
+// when the click does not flip that, a scene or a button, or a device that
+// is not on or off to begin with.
+export function clickOutcome(hass: HomeAssistant, entityId: string, on?: boolean): boolean | undefined {
+  const domain = domainOf(entityId)
+  if (domain === 'button' || domain === 'input_button' || domain === 'scene' || domain === 'script') return undefined
+  if (!clickAction(entityId, hass.states[entityId]?.state)) return undefined
+  const now = on ?? signalValues(hass, entityId).on
+  return now === undefined ? undefined : !now
+}
+
 // Approximate RGB of a black body at the given temperature, 0 to 1 each.
 export function kelvinToRgb(kelvin: number): [number, number, number] {
   const t = Math.min(Math.max(kelvin, 1000), 12000) / 100

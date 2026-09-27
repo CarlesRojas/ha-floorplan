@@ -3,11 +3,11 @@ import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { deskRise } from '#/scene/decor/state.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import { clickAction, deviceSignals, kelvinToRgb, levelChannels, levelValues, signalValues } from '#/signals.ts'
+import { clickAction, clickOutcome, deviceSignals, kelvinToRgb, levelChannels, levelValues, signalValues } from '#/signals.ts'
 import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Color, SRGBColorSpace } from 'three'
 
 type Props = {
@@ -31,13 +31,23 @@ const lastGlow = new Map<string, [number, number, number]>()
 const baseGlow = new Color(LIGHT_GLOW_COLOR)
 const scratch = new Color()
 
+// What a click said a device would be, until Home Assistant reports it or
+// this long goes by. Home Assistant's own toggles do the same: they flip at
+// once and fall back if nothing confirms them. Without it a piece sat still
+// for as long as the device took to answer, which for a lamp on a cloud
+// account can be a second or two.
+const GUESS_MS = 2000
+
 // What a bound device tells its decoration items. Null when the device says
 // nothing a model can draw, so the item stays neutral.
-function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null {
+function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<string, boolean>): ItemState | null {
   const entityId = device.entity_id
   const signals = deviceSignals(hass, entityId)
   if (signals.length === 0) return null
   const v = signalValues(hass, entityId)
+  // A guess stands until the device agrees with it, or its timer ends it.
+  if (guesses.get(entityId) === v.on) guesses.delete(entityId)
+  const on = guesses.get(entityId) ?? v.on ?? false
   let glow: [number, number, number] = [baseGlow.r, baseGlow.g, baseGlow.b]
   // Home Assistant's colors are sRGB. Handing the raw numbers to three,
   // which works in linear, washed every color out toward white: a magenta
@@ -48,11 +58,11 @@ function itemState(hass: HomeAssistant, device: DeviceConfig): ItemState | null 
   }
   if (v.color) glow = fromSrgb([v.color[0] / 255, v.color[1] / 255, v.color[2] / 255])
   else if (v.warmth) glow = fromSrgb(kelvinToRgb(v.warmth))
-  const on = v.on ?? false
   if (v.color || v.warmth) lastGlow.set(entityId, glow)
-  // Off, and saying nothing about its color: it fades out in the color it
-  // was lit with.
-  else if (!on) glow = lastGlow.get(entityId) ?? glow
+  // Saying nothing about its color: off, or guessed on before Home Assistant
+  // has said what color it is. Either way it shows the color it was last
+  // lit with.
+  else glow = lastGlow.get(entityId) ?? glow
 
   // Which of the device's percentages feeds each of the item's. What the
   // device was told to use wins, then one of the same name, then its first
@@ -93,9 +103,41 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
   const byId = new Map(decorations.map(d => [d.id, d]))
   const roomById = new Map(rooms.map(r => [r.id, r]))
 
+  // The guesses clicks have made, by entity, and the timers that end them.
+  // A guess that runs out has to be drawn again to fall back, and nothing
+  // else prompts a render just then.
+  const [guesses] = useState(() => new Map<string, boolean>())
+  const [timers] = useState(() => new Map<string, ReturnType<typeof setTimeout>>())
+  const [, redraw] = useState(0)
+  useEffect(
+    () => () => {
+      for (const timer of timers.values()) clearTimeout(timer)
+      timers.clear()
+    },
+    [timers],
+  )
+
   const act = (entityId: string) => {
     const action = clickAction(entityId, hass?.states[entityId]?.state)
     if (!hass || !action) return
+    // A second click before the first is answered flips the guess, not the
+    // device, so two quick clicks show what two toggles leave.
+    const outcome = clickOutcome(hass, entityId, guesses.get(entityId))
+    if (outcome !== undefined) {
+      guesses.set(entityId, outcome)
+      // A second click on the same piece starts its wait over.
+      const earlier = timers.get(entityId)
+      if (earlier !== undefined) clearTimeout(earlier)
+      timers.set(
+        entityId,
+        setTimeout(() => {
+          timers.delete(entityId)
+          guesses.delete(entityId)
+          redraw(n => n + 1)
+        }, GUESS_MS),
+      )
+      redraw(n => n + 1)
+    }
     // A call Home Assistant refuses must not surface as an unhandled
     // rejection in the dashboard. Its own toast already says what went wrong.
     hass.callService(action.domain, action.service, { entity_id: entityId }).catch(() => {})
@@ -132,7 +174,7 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
     // the one tried last, and a click steps it.
     const tried = !device && onTry && kind && canTry(kind)
     const tryState = tried ? tries?.[item.id] : undefined
-    const state = device && hass ? itemState(hass, device) : kind && tryState ? tryItemState(kind, tryState) : null
+    const state = device && hass ? itemState(hass, device, guesses) : kind && tryState ? tryItemState(kind, tryState) : null
     return { device, kind, tried, state }
   }
   const states = new Map(decorations.map(item => [item.id, stateOf(item)]))

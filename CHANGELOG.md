@@ -19,6 +19,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Fixed
 
+- A click on a piece shows the new state at once, instead of waiting for the device to report it. If Home Assistant does not confirm it within two seconds, the piece goes back.
 - Moving the camera with the right or middle button no longer toggles the piece under the pointer or opens its dialog. A right click still opens the dialog once let go.
 - The robot vacuum drives straight off its dock and backs onto it, instead of turning on the spot when it leaves or comes home, and it always swings round the shorter way.
 - A lamp casts its shadows from the moment it starts to come on, not once it is fully bright.
