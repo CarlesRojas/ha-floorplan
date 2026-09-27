@@ -325,6 +325,19 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
     }
   }, [controls, canvas])
 
+  // The wheel scrolls the page, as it does everywhere else on a dashboard.
+  // The controls would zoom on it, which caught anyone scrolling past the
+  // card, so the event is stopped before it reaches them and left to the
+  // browser. Zoom by mouse is the middle button dragged.
+  useEffect(() => {
+    if (!controls) return
+    const element = controls.domElement as HTMLElement | null
+    if (!element) return
+    const onWheel = (event: WheelEvent) => event.stopImmediatePropagation()
+    element.addEventListener('wheel', onWheel, { capture: true, passive: true })
+    return () => element.removeEventListener('wheel', onWheel, { capture: true })
+  }, [controls])
+
   // A right or middle drag let go outside the window never hears its button
   // come up in some browsers, and the pan or zoom it started would carry on
   // with no button held. So such a drag ends the moment the pointer leaves

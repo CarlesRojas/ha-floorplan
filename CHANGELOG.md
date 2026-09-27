@@ -9,6 +9,16 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- The card's editor tab shows how to rotate, pan and zoom the view, with the mouse buttons or the finger gestures the device uses.
+
+### Changed
+
+- The space around the home is a dark gray instead of a dark blue.
+- Daylight is dimmer, so the lamps still stand out during the day.
+- Scrolling over the card no longer zooms it, so a page can be scrolled past it. The mouse zooms by dragging with the wheel pressed.
+
 ### Fixed
 
 - Dragging with a finger turns the camera at half the speed it did, so a touch drag no longer spins the home around.
