@@ -153,7 +153,11 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
     if (run && going.current === 'home' && travelled.current > run.total - run.legs[run.legs.length - 1]) {
       want += Math.PI
     }
-    const turn = ((want - facing.current + Math.PI) % (Math.PI * 2)) - Math.PI
+    // The shorter way round to the wanted facing, never more than half a
+    // turn either way. A plain remainder keeps the sign of a negative
+    // difference, which sent it the long way round for a small swing left.
+    const gap = want - facing.current
+    const turn = Math.atan2(Math.sin(gap), Math.cos(gap))
     facing.current += turn * Math.min(TURN_RATE * dt, 1)
     g.rotation.y = facing.current
   })
