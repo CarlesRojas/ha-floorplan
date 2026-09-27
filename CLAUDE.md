@@ -14,7 +14,7 @@ Keep working on the same branch and pull request while it is open, whatever the 
 
 ## Project
 
-Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bound to objects. React + Three.js, Vite in lib mode building a single `dist/card.js`. See `README.md` for the local Home Assistant setup.
+Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bound to objects. React + Three.js, Vite in lib mode building a single `dist/card.js`. See `docs/DEVELOPMENT.md` for the local Home Assistant setup and the full reference; `README.md` is the short public pitch and install guide for people who are not developers.
 
 - Package manager: pnpm. `pnpm build` runs tsc and vite, `pnpm lint` runs oxlint, `pnpm watch` rebuilds on change.
 - Styling: Tailwind v4, injected into the card's shadow root from `src/index.css`. Use the `cn` helper from `src/lib/utils.ts`.
@@ -22,3 +22,7 @@ Custom Lovelace card for Home Assistant: a 3D model of the flat with entities bo
 - Write in plain sentences. Never use em dashes, in code comments, commit messages, or docs.
 - When giving the user card YAML, always give the complete card config, never a fragment to merge.
 - `showroom.yaml` is a card with every decoration kind in its own row and each of its styles along it, at default sizes and colors. Run `pnpm showroom` to regenerate it after any change to the catalog, and commit it with that change. Do not send it to the user.
+
+## Changelog
+
+`CHANGELOG.md` follows Keep a Changelog. Every change a user of the card would notice goes under `## [Unreleased]` in the same commit as the change: a new feature or piece under `### Added`, a change in behavior under `### Changed`, a bug fix under `### Fixed`, something taken away under `### Removed`. Write each entry as one plain sentence about what the user sees, not about the code. Internal refactors, tooling and dev pages do not go in. Never add a version heading by hand: the Release workflow moves the Unreleased entries under the new version when it publishes.

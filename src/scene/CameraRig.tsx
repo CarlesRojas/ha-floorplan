@@ -26,6 +26,9 @@ type Props = {
   onAway?: (away: boolean) => void
 }
 
+// How far the pointer has to come, in pixels, before a press is a drag.
+const DRAG_SLOP_PX = 6
+
 // Scratch for the flight, so no frame allocates.
 const A = new Vector3()
 const B = new Vector3()
@@ -44,6 +47,9 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const controls = useThree(state => state.controls) as OrbitControlsImpl | null
+  // Where the scene hears its pointer events: the element around the
+  // canvas that three fiber listens on.
+  const canvas = useThree(state => (state.events.connected as HTMLElement | undefined) ?? state.gl.domElement)
   const moved = useRef(false)
   // The flight under way, from where the camera was to where it is going,
   // and how far along it is, 0 to 1. A flight home lands the camera back
@@ -132,6 +138,75 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
     return () => controls.removeEventListener('start', onStart)
   }, [controls])
 
+  // A click is not a drag. The controls take any press as the start of a
+  // turn, so a click on a lamp nudged the camera a hair, and that counted
+  // as leaving the opening view. The controls listen on an element around
+  // the one the scene hears on, so a press reaches them only by bubbling,
+  // and here it is stopped before it does, once the scene has had it. It is
+  // held until the pointer has come a few pixels from where
+  // it went down, and handed to the controls from there, as a press at that
+  // spot, so the turn starts under the pointer with no jump. A press let go
+  // before that never reaches them. A second finger hands the first over at
+  // once, so a pinch is a pinch from the start.
+  useEffect(() => {
+    if (!controls) return
+    const element = controls.domElement as HTMLElement | null
+    if (!element || element === canvas) return
+    const page = element.ownerDocument
+    let pending: PointerEvent | null = null
+    const hand = (event: PointerEvent, x: number, y: number) => {
+      pending = null
+      element.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          pointerId: event.pointerId,
+          pointerType: event.pointerType,
+          isPrimary: event.isPrimary,
+          button: event.button,
+          buttons: event.buttons,
+          clientX: x,
+          clientY: y,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+          shiftKey: event.shiftKey,
+        }),
+      )
+    }
+    const drop = () => {
+      pending = null
+    }
+    const onDown = (event: PointerEvent) => {
+      if (pending) {
+        hand(pending, pending.clientX, pending.clientY)
+        return
+      }
+      pending = event
+      event.stopPropagation()
+    }
+    const onMove = (event: PointerEvent) => {
+      if (!pending || event.pointerId !== pending.pointerId) return
+      // A move with nothing held is a release that was never heard.
+      if (event.buttons === 0) return drop()
+      if (Math.hypot(event.clientX - pending.clientX, event.clientY - pending.clientY) < DRAG_SLOP_PX) return
+      hand(pending, event.clientX, event.clientY)
+    }
+    const onUp = (event: PointerEvent) => {
+      if (pending && event.pointerId === pending.pointerId) drop()
+    }
+    canvas.addEventListener('pointerdown', onDown)
+    page.addEventListener('pointermove', onMove, { capture: true })
+    page.addEventListener('pointerup', onUp, { capture: true })
+    page.addEventListener('pointercancel', onUp, { capture: true })
+    page.defaultView?.addEventListener('blur', drop)
+    return () => {
+      canvas.removeEventListener('pointerdown', onDown)
+      page.removeEventListener('pointermove', onMove, { capture: true })
+      page.removeEventListener('pointerup', onUp, { capture: true })
+      page.removeEventListener('pointercancel', onUp, { capture: true })
+      page.defaultView?.removeEventListener('blur', drop)
+      drop()
+    }
+  }, [controls, canvas])
+
   // A right or middle drag let go outside the window never hears its button
   // come up in some browsers, and the pan or zoom it started would carry on
   // with no button held. So such a drag ends the moment the pointer leaves
@@ -182,14 +257,16 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway }: 
     // The controls follow a drag on the whole document, and once the pointer
     // comes back it may be over anything, so the checks listen there too and
     // run ahead of them.
-    element.addEventListener('pointerdown', onDown, { capture: true })
+    // Only the presses that reach the controls count, so this listens where
+    // they do, and not ahead of them.
+    element.addEventListener('pointerdown', onDown)
     page.addEventListener('pointerup', onUp, { capture: true })
     page.addEventListener('pointermove', onMove, { capture: true })
     page.addEventListener('pointerleave', onLeave, { capture: true })
     page.addEventListener('pointercancel', onLeave, { capture: true })
     view?.addEventListener('blur', onBlur)
     return () => {
-      element.removeEventListener('pointerdown', onDown, { capture: true })
+      element.removeEventListener('pointerdown', onDown)
       page.removeEventListener('pointerup', onUp, { capture: true })
       page.removeEventListener('pointermove', onMove, { capture: true })
       page.removeEventListener('pointerleave', onLeave, { capture: true })

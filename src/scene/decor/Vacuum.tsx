@@ -118,13 +118,15 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
     if (run && run.total > 0) {
       if (going.current === 'sweep') {
         // Out to the far end of the round and back again, for as long as it
-        // is running.
+        // is running. The way back stops short of the dock, at the end of
+        // the leg that leaves it, so a running robot never climbs onto the
+        // dock and spins round on it.
         travelled.current += (forward.current ? 1 : -1) * SPEED * dt
         if (travelled.current >= run.total) {
           travelled.current = run.total
           forward.current = false
-        } else if (travelled.current <= 0) {
-          travelled.current = 0
+        } else if (!forward.current && travelled.current <= run.legs[0]) {
+          travelled.current = run.legs[0]
           forward.current = true
         }
       } else {
@@ -144,9 +146,18 @@ export default function Vacuum({ kind, item, state, room, all, lit }: Props) {
     g.position.z = dx * Math.sin(rotation) + dz * Math.cos(rotation)
     // Facing the way it drives, and turning into it rather than snapping.
     // Parked, it faces straight out of the dock, which is the piece's own
-    // front, so its brushes point into the room and not at the wall.
-    const want = going.current === 'parked' ? 0 : here.heading - rotation
-    const turn = ((want - facing.current + Math.PI) % (Math.PI * 2)) - Math.PI
+    // front, so its brushes point into the room and not at the wall. The
+    // last leg home, onto the dock, is the one leg it drives in reverse,
+    // so it backs onto the ramp still facing the room.
+    let want = going.current === 'parked' ? 0 : here.heading - rotation
+    if (run && going.current === 'home' && travelled.current > run.total - run.legs[run.legs.length - 1]) {
+      want += Math.PI
+    }
+    // The shorter way round to the wanted facing, never more than half a
+    // turn either way. A plain remainder keeps the sign of a negative
+    // difference, which sent it the long way round for a small swing left.
+    const gap = want - facing.current
+    const turn = Math.atan2(Math.sin(gap), Math.cos(gap))
     facing.current += turn * Math.min(TURN_RATE * dt, 1)
     g.rotation.y = facing.current
   })

@@ -63,9 +63,9 @@ export const LIGHT_SHADE_COLOR = '#f4eee3'
 export const LIGHT_BASE_COLOR = '#d8b98e'
 export const LIGHT_CORD_COLOR = '#8f877b'
 // Glow of a light that is on, before level and color are applied. A lamp
-// with no color temperature to read sits around 3000 K: warm white, not the
-// amber of a candle.
-export const LIGHT_GLOW_COLOR = '#ffe3bd'
+// with no color temperature to read sits around 3200 K: warm white, well
+// short of the amber of a candle.
+export const LIGHT_GLOW_COLOR = '#ffe8ca'
 // How much light a lamp at full brightness puts into the room. Kept low, so
 // a lamp lights the things around it and a few of them together still
 // leave the room its shadows.

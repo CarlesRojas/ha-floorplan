@@ -247,11 +247,14 @@ export default function Shadows() {
     // A lamp asks for its shadow itself, so it casts from the frame it
     // lights up. Six renders each is too much for a room full of them, so
     // the dimmer ones past the budget give theirs up until they are needed.
-    lamps.sort((a, b) => b.intensity - a.intensity)
+    // Ranked by the intensity a lamp is heading for, when it says, so one
+    // fading in is placed by what it will be rather than by the fade.
+    const rank = (lamp: PointLight): number => lamp.userData.rank ?? lamp.intensity
+    lamps.sort((a, b) => rank(b) - rank(a))
     lamps.forEach((lamp, i) => {
       // A lamp that is off, or that stands in a part of the plan that is
       // hidden, has nothing to throw.
-      const cast = i < MAX_SHADOW_LAMPS && lamp.intensity > 0.001 && lamp.visible
+      const cast = i < MAX_SHADOW_LAMPS && rank(lamp) > 0.001 && lamp.visible
       if (lamp.castShadow !== cast) lamp.castShadow = cast
     })
   })

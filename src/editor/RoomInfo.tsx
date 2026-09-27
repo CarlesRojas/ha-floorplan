@@ -1,7 +1,9 @@
 import { SelectedHeader } from '#/editor/panel.tsx'
 import { EDITOR_ACCENT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, RoomConfig } from '#/types.ts'
-import { faCamera, faEye, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { useFlash } from '#/lib/flash.ts'
+import { cn } from '#/lib/utils.ts'
+import { faCamera, faCheck, faEye, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
@@ -25,6 +27,8 @@ type Props = {
 
 const input =
   'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
+const cameraButton =
+  'flex h-8 items-center justify-center rounded border border-(--divider-color) transition-colors hover:bg-(--secondary-background-color) disabled:opacity-50 disabled:hover:bg-transparent'
 
 // The selected room: its name, the area it stands for, the floor under it,
 // and the way to be rid of it.
@@ -43,6 +47,8 @@ export default function RoomInfo({
   onDelete,
   onDeselect,
 }: Props) {
+  // The save button shows for a moment that the view was taken.
+  const [saved, flashSaved] = useFlash()
   const accent = EDITOR_ACCENT_COLOR
   const index = rooms.findIndex(r => r.id === room.id)
   const sorted = [...areas].sort((a, b) => a.name.localeCompare(b.name))
@@ -145,11 +151,18 @@ export default function RoomInfo({
             type="button"
             disabled={!hasPreview}
             title={hasPreview ? "Save where the 3D view stands now as this room's view" : 'Open the 3D view first'}
-            onClick={() => onSaveCamera(room.id)}
-            className="flex h-8 min-w-0 flex-1 items-center justify-center gap-2 rounded border border-(--divider-color) px-2 text-sm disabled:opacity-50"
+            onClick={() => {
+              onSaveCamera(room.id)
+              flashSaved()
+            }}
+            className={cn(
+              cameraButton,
+              'min-w-0 flex-1 gap-2 px-2 text-sm',
+              saved && 'border-emerald-600 text-emerald-600',
+            )}
           >
-            <FontAwesomeIcon icon={faCamera} className="size-3.5" />
-            <span className="truncate">{room.camera ? 'Replace view' : 'Use current view'}</span>
+            <FontAwesomeIcon icon={saved ? faCheck : faCamera} className="size-3.5" />
+            <span className="truncate">{saved ? 'View saved' : room.camera ? 'Replace view' : 'Use current view'}</span>
           </button>
           {room.camera && (
             <>
@@ -159,7 +172,7 @@ export default function RoomInfo({
                 aria-label="Fly to this room's view"
                 title="Fly to this room's view"
                 onClick={() => onShowCamera(room.id)}
-                className="flex size-8 shrink-0 items-center justify-center rounded border border-(--divider-color) disabled:opacity-50"
+                className={cn(cameraButton, 'size-8 shrink-0')}
               >
                 <FontAwesomeIcon icon={faEye} className="size-3.5" />
               </button>
@@ -168,7 +181,7 @@ export default function RoomInfo({
                 aria-label="Forget this room's view"
                 title="Forget this room's view"
                 onClick={() => onClearCamera(room.id)}
-                className="flex size-8 shrink-0 items-center justify-center rounded border border-(--divider-color)"
+                className={cn(cameraButton, 'size-8 shrink-0')}
               >
                 <FontAwesomeIcon icon={faXmark} className="size-3.5" />
               </button>

@@ -2,7 +2,7 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin } from 'vite'
-import { mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 // dist is bind mounted into Home Assistant, which serves card.js to the
@@ -14,6 +14,10 @@ import { join } from 'node:path'
 // the same filesystem. A reader sees the old file or the new one, never
 // half of either.
 const STAGING = '.staging'
+
+// The version from package.json, baked into the card so the console says
+// which one is loaded. The release workflow raises it before building.
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
 function atomicOutput(): Plugin {
   let dist = ''
@@ -41,7 +45,7 @@ function atomicOutput(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [tailwindcss(), react(), babel({ presets: [reactCompilerPreset()] }), atomicOutput()],
-  define: { 'process.env.NODE_ENV': '"production"' },
+  define: { 'process.env.NODE_ENV': '"production"', __CARD_VERSION__: JSON.stringify(version) },
   server: {
     port: 5173,
     strictPort: true,
