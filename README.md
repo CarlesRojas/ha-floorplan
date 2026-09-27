@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/icon.svg" width="128" alt="A lit corner of a room, the Floorplan 3D icon"></p>
+
 # Floorplan 3D
 
 A Home Assistant card that turns your home into a small 3D model you can click.

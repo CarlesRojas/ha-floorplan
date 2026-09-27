@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- A corner of a room seen from above, with one light on inside. -->
+  <defs>
+    <radialGradient id="pool" cx="256" cy="336" r="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd9a0"/>
+      <stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="256" cy="262" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe8ca" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffe8ca" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- Back walls. -->
+  <polygon points="80,208 256,110 256,224 80,322" fill="#3d4d73"/>
+  <polygon points="256,110 432,208 432,322 256,224" fill="#2b3856"/>
+  <!-- Floor. -->
+  <polygon points="80,322 256,224 432,322 256,420" fill="#e9e3d6"/>
+  <!-- The light thrown on the floor, then the lamp itself. -->
+  <polygon points="80,322 256,224 432,322 256,420" fill="url(#pool)"/>
+  <circle cx="256" cy="262" r="64" fill="url(#halo)"/>
+  <circle cx="256" cy="262" r="26" fill="#ffd27a"/>
+  <circle cx="256" cy="262" r="13" fill="#fff6e6"/>
+</svg>
