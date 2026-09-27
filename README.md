@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/images/icon.svg" width="128" alt="Two rooms of a small home with the light on in one, the Floorplan 3D icon"></p>
+<p align="center"><img src="docs/images/icon.svg" width="128" alt="A small house seen from above at an angle, the Floorplan 3D icon"></p>
 
 # Floorplan 3D
 
