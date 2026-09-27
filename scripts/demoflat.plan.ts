@@ -127,14 +127,17 @@ wall('motion', 'motion_sensor', 'bedroom', [6.0, 2.2])
 // Bathroom: shower in the far corner, toilet and washing machine on the
 // bottom wall, the basin under a mirror on the top wall, and the door from
 // the living room.
-item('shower', 'shower', 'bathroom', [7.35, 1.75])
-item('toilet', 'toilet', 'bathroom', [6.3, 0.28], { variant: 'wall_hung', rotation: 180 })
+// A walk-in shower fills the far right corner, a wide vanity the wall
+// across from the door, and the toilet and the washer share the near wall.
+// Flipped so the glass faces the room and the fittings hang on the wall.
+item('shower', 'shower', 'bathroom', [7.15, 1.65], { params: { width: 1.3, depth: 1.1, flip: 1 } })
+item('toilet', 'toilet', 'bathroom', [6.7, 0.28], { variant: 'wall_hung', rotation: 180 })
 item('washer', 'washing_machine', 'bathroom', [4.55, 0.3], { rotation: 180 })
-item('basin', 'basin', 'bathroom', [5.4, 1.96], { variant: 'vanity' })
-item('basin_plant', 'plant_small', 'bathroom', [5.7, 1.96], { variant: 'snake', on: 'basin' })
-wall('bathroom_mirror', 'wall_mirror', 'bathroom', [5.4, 2.2], { variant: 'round' })
-wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.7], { variant: 'ladder' })
-item('bathroom_light', 'light_ceiling', 'bathroom', [6.0, 1.1])
+item('basin', 'basin', 'bathroom', [5.2, 1.94], { variant: 'vanity', params: { width: 1.2, depth: 0.52 } })
+item('basin_plant', 'plant_small', 'bathroom', [5.65, 1.94], { variant: 'snake', on: 'basin' })
+wall('bathroom_mirror', 'wall_mirror', 'bathroom', [5.2, 2.2], { variant: 'round' })
+wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.5], { variant: 'ladder' })
+item('bathroom_light', 'light_ceiling', 'bathroom', [5.6, 1.0])
 wall('bathroom_door', 'door', 'bathroom', [4.2, 1.3], { variant: 'flush' })
 
 // The devices behind the pieces. The entity ids are made up: in your own
@@ -195,7 +198,7 @@ export const DEMO_FLAT: CardConfig = {
   devices,
   decorations,
   // The view the card opens with: the whole flat from the front left corner.
-  camera: { position: [-2.5, 7.5, 6.5], target: [3.9, 0, -2.6] },
+  camera: { position: [-0.3, 5.0, 3.6], target: [3.9, 0.3, -2.8] },
 }
 
 // What the made up devices report, for the dev page. Every entity starts

@@ -1,6 +1,8 @@
-# Floorplan 3D guide
+# Floorplan 3D development guide
 
-The long version: local development against a Home Assistant instance, every editor command, the catalog, how pieces show device state, and the full card config. For what the card is and how to install it from HACS, see the [README](../README.md).
+This guide is for people working on the card's code. If you only want to use the card in your Home Assistant, you do not need it: install it from HACS as the [README](../README.md) explains, and build your home in the card's own editor.
+
+It covers running the card from source against a local Home Assistant, the editor's commands, the catalog, how pieces show device state, and the card config format that the editor writes.
 
 Custom Lovelace card for Home Assistant: an interactive 3D model of the flat with lights, blinds and sensors bound to entities. React + Three.js, built with Vite into a single `dist/card.js`.
 

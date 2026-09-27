@@ -5,8 +5,9 @@
 //
 // Query parameters: `flip=light.bedroom,cover.living_blind` starts those
 // entities on, open or unlocked; `camera=x,y,z,tx,ty,tz` overrides the
-// opening view; `editor` shows the editor instead of the card. A click on a
-// piece flips its entity, the way Home Assistant would.
+// opening view; `sun=6` puts the sun at that elevation in degrees, so the
+// room can be shot at dusk; `editor` shows the editor instead of the card.
+// A click on a piece flips its entity, the way Home Assistant would.
 import type { CardConfig, HomeAssistant } from '#/types.ts'
 import { DEMO_AREAS, DEMO_ENTITIES, DEMO_FLAT, DEMO_STATES, flip } from '../../scripts/demoflat.plan.ts'
 
@@ -15,6 +16,17 @@ await import('#/main.tsx')
 const params = new URLSearchParams(location.search)
 const states = structuredClone(DEMO_STATES)
 for (const id of (params.get('flip') ?? '').split(',')) if (states[id]) flip(states[id])
+const sun = Number(params.get('sun'))
+if (params.has('sun') && Number.isFinite(sun)) {
+  const now = new Date().toISOString()
+  states['sun.sun'] = {
+    entity_id: 'sun.sun',
+    state: sun > 0 ? 'above_horizon' : 'below_horizon',
+    attributes: { elevation: sun },
+    last_changed: now,
+    last_updated: now,
+  }
+}
 
 const config: CardConfig = { ...DEMO_FLAT, aspect_ratio: `${innerWidth} / ${innerHeight}` }
 const camera = params.get('camera')?.split(',').map(Number)

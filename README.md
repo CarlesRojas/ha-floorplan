@@ -4,7 +4,7 @@ A Home Assistant card that turns your home into a small 3D model you can click.
 
 Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, appliances and sensors, then bind the pieces to your real Home Assistant devices. The model shows what your home is doing right now: a lamp glows when the light is on, a blind sits where the cover is, a door swings open when the sensor says so. Click a piece and the device behind it toggles.
 
-![The demo flat in the evening, every light on](docs/images/hero.png)
+![The demo flat at dusk with one lamp on in each room](docs/images/hero.png)
 
 ## What you get
 
@@ -14,9 +14,9 @@ Draw your rooms, furnish them from a catalog of sofas, lamps, doors, blinds, app
 - **Camera views.** Save the view the card opens with and one per room. Clicking a room's floor flies there, and a reset button brings you back.
 - **Light that matters.** Lights cast real light and shadows in their room, with brightness and color temperature taken from the entity.
 
-| Everything off                                                                      | Everything on                                                                |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| ![The demo flat with every light off and the blinds down](docs/images/hero-off.png) | ![The demo flat with every light on and the blinds up](docs/images/hero.png) |
+| Lights off                                                              | Lights on                                                            |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| ![The demo flat at dusk with every light off](docs/images/hero-off.png) | ![The same view with one lamp on in each room](docs/images/hero.png) |
 
 ## A closer look
 
@@ -48,22 +48,31 @@ How to record it (about 30 seconds, no audio):
 
 ## Install
 
-### HACS
+1. In Home Assistant open **HACS**, search for **Floorplan 3D** and download it. HACS registers the card's resource for you.
+2. Reload the browser.
+3. Edit a dashboard, choose **Add card** and search for **Floorplan 3D**.
 
-Until the card is in the HACS default list, add it as a custom repository.
+Updates arrive through HACS like any other card. If a new version does not show up after updating, clear the browser cache. The card logs its version in the browser console on load, so a stale copy is easy to spot.
+
+<details>
+<summary>Not in your HACS search yet? Add it as a custom repository</summary>
 
 1. In HACS open the three-dot menu in the top right and choose **Custom repositories**.
 2. Paste `https://github.com/CarlesRojas/ha-floorplan`, pick the **Dashboard** type and add it.
-3. Search for **Floorplan 3D** in HACS and download it. HACS registers the `card.js` resource for you.
-4. Reload the browser, edit a dashboard, **Add card** and search for **Floorplan 3D**.
+3. Search for **Floorplan 3D** in HACS and download it, then follow the steps above.
 
-### Manual
+</details>
+
+<details>
+<summary>Install by hand, without HACS</summary>
 
 1. Download `card.js` from the [latest release](https://github.com/CarlesRojas/ha-floorplan/releases/latest) into `config/www/floorplan-3d/card.js`.
 2. In **Settings > Dashboards**, open the three-dot menu, choose **Resources** and add `/local/floorplan-3d/card.js` as a **JavaScript module**.
-3. Edit a dashboard, **Add card** and search for **Floorplan 3D**.
+3. Edit a dashboard, choose **Add card** and search for **Floorplan 3D**.
 
-When you update, bump the `?v=` query on the resource URL or clear the browser cache. The card logs its version in the browser console on load, so a stale copy is easy to spot.
+When you update, bump a `?v=` query on the resource URL so browsers pick up the new file.
+
+</details>
 
 ## Start building
 
@@ -71,4 +80,4 @@ Add the card, press **Open editor** and trace your first room. Then open the cat
 
 For a furnished starting point, paste [demoflat.yaml](demoflat.yaml) into a card's YAML editor. It is the flat in the screenshots above, with entity ids you can swap for your own.
 
-The full reference, from every editor command to the card config and local development, is in the [guide](docs/GUIDE.md). Changes are listed in the [changelog](CHANGELOG.md).
+Changes are listed in the [changelog](CHANGELOG.md). If you want to work on the card itself, the [development guide](docs/DEVELOPMENT.md) covers the local setup, the editor internals, the catalog and the card config format.
