@@ -12,9 +12,12 @@ moves that section under the new version and uses it as the release notes.
 ### Added
 
 - The card's editor tab shows how to rotate, pan and zoom the view, with the mouse buttons or the finger gestures the device uses.
+- Corners and edges where things meet are shaded darker, so the furniture sits in the room instead of floating on the floor.
+- The corners of the card are darkened a touch, to draw the eye to the home.
 
 ### Changed
 
+- A click on a piece that stands for no device does what a click on the floor of its room does: the camera flies to that room's view, or back to the opening view when it was already there.
 - The space around the home is a dark gray instead of a dark blue.
 - Daylight is dimmer, so the lamps still stand out during the day.
 - Scrolling over the card no longer zooms it, so a page can be scrolled past it. The mouse zooms by dragging with the wheel pressed, and the wheel still zooms the editor's preview.

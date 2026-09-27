@@ -61,6 +61,9 @@ type Warmer = {
   // by whether one is bound, so one is bound while their shaders are asked
   // for.
   target: WebGLRenderTarget
+  // Whether the scene itself is drawn into a buffer and finished from there,
+  // in which case its shaders are keyed that way too.
+  composed: boolean
 }
 
 const warmers = new WeakMap<WebGLRenderer, Warmer>()
@@ -74,6 +77,7 @@ function of(gl: WebGLRenderer): Warmer {
       busy: false,
       shadowMaterials: new Map(),
       target: new WebGLRenderTarget(4, 4),
+      composed: false,
     }
     warmers.set(gl, w)
   }
@@ -175,11 +179,14 @@ async function flush(w: Warmer, get: () => RootState) {
   for (const c of changes) c.apply()
   try {
     // The shadow pass first, with a target bound as the maps have, then the
-    // scene as it is drawn. Both see the lights as the change leaves them.
+    // scene as it is drawn, which is into a buffer of its own when the frame
+    // is finished from one. Both see the lights as the change leaves them.
     gl.setRenderTarget(w.target)
     const shadows = gl.compileAsync(standIns(w, gl, scene), camera, scene)
+    if (!w.composed) gl.setRenderTarget(null)
+    const drawn = gl.compileAsync(scene, camera)
     gl.setRenderTarget(null)
-    ready = Promise.all([shadows, gl.compileAsync(scene, camera)])
+    ready = Promise.all([shadows, drawn])
   } catch (error) {
     console.warn('floorplan-3d: could not build shaders ahead', error)
   } finally {
@@ -194,6 +201,12 @@ async function flush(w: Warmer, get: () => RootState) {
   for (const c of changes) if (!c.cancelled) c.commit()
   w.busy = false
   void flush(w, get)
+}
+
+// Tells the warmer whether the scene is drawn into a buffer, as it is while
+// the frame is finished by the effects, rather than straight to the screen.
+export function setComposed(gl: WebGLRenderer, composed: boolean) {
+  of(gl).composed = composed
 }
 
 // Asks for a change to the scene's lights to be tried before it is made. A

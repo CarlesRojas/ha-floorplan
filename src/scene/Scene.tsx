@@ -11,10 +11,10 @@ import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import CameraRig, { type CameraHandle } from '#/scene/CameraRig.tsx'
 import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
+import Effects from '#/scene/Effects.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
 import Shadows from '#/scene/shadows.tsx'
-import SelectionOutline from '#/scene/SelectionOutline.tsx'
 import Sky, { type SkyMode } from '#/scene/Sky.tsx'
 import type { TryStates } from '#/editor/tryState.ts'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
@@ -127,7 +127,10 @@ export default function Scene({
           to act on, so small things are still easy to hit, and only then
           asks whether it landed on a room's floor. */}
         <PickFallback onHandled={markFallback} onRoom={onPickRoom} />
-        {selected && <SelectionOutline target={selected} />}
+        {/* The frame is finished from a buffer: shaded where things meet,
+          tone mapped, softly darkened at the corners, and in the editor with
+          the picked thing outlined. */}
+        <Effects selected={selected} />
         {rooms.map((room, i) => (
           <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
         ))}
