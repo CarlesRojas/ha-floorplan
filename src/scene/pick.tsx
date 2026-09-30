@@ -1,6 +1,6 @@
 import { useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { PICK_RADIUS_PX, PICK_ROOM_AT } from '#/theme.ts'
+import { PICK_RADIUS_PX, PICK_RADIUS_TOUCH_PX, PICK_ROOM_AT, PICK_ROOM_AT_TOUCH } from '#/theme.ts'
 import { Vector2, type Object3D } from 'three'
 
 // What a click on an object does. Models carry it in their userData so a
@@ -20,7 +20,12 @@ const SLOP_PX = 8
 const LONG_PRESS_MS = 500
 // The point in the ring search, counted in rays, at which the floor under
 // the press gets its turn. Rounded so 0 and 1 mean exactly first and last.
-const ROOM_AT = Math.round(Math.min(1, Math.max(0, PICK_ROOM_AT)) * RINGS.length * SAMPLES)
+const roomTurn = (share: number) => Math.round(Math.min(1, Math.max(0, share)) * RINGS.length * SAMPLES)
+// How far a press reaches and when the floor gets its turn, for a mouse and
+// for a finger. Both search the same way, a finger only further.
+const MOUSE = { radius: PICK_RADIUS_PX, roomAt: roomTurn(PICK_ROOM_AT) }
+const TOUCH = { radius: PICK_RADIUS_TOUCH_PX, roomAt: roomTurn(PICK_ROOM_AT_TOUCH) }
+const reachOf = (e: { pointerType?: string }) => (e.pointerType === 'touch' ? TOUCH : MOUSE)
 const ROOM_NAME = 'room:'
 
 // What a press found: a piece, hit outright or nearby, or the floor of a room.
@@ -96,15 +101,15 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
     // PICK_ROOM_AT says, so pieces near the press come before the room they
     // stand in. A long press or a right click has nothing to do with the
     // floor, so those skip it.
-    const near = (x: number, y: number, withRoom: boolean): Found | null => {
+    const near = (x: number, y: number, withRoom: boolean, reach = MOUSE): Found | null => {
       const direct = at(x, y)
       if (direct) return { kind: 'pick', pick: direct, direct: true }
       const room = withRoom && latestRoom.current ? roomAt(x, y) : null
       let tried = 0
       for (const step of RINGS) {
-        const radius = step * PICK_RADIUS_PX
+        const radius = step * reach.radius
         for (let i = 0; i < SAMPLES; i++) {
-          if (room && tried === ROOM_AT) return { kind: 'room', id: room }
+          if (room && tried === reach.roomAt) return { kind: 'room', id: room }
           const angle = ((i + 0.5) / SAMPLES) * Math.PI * 2
           const pick = at(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius)
           if (pick) return { kind: 'pick', pick, direct: false }
@@ -137,7 +142,7 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       if (e.button !== 0) return
       from = { x: e.clientX, y: e.clientY, at: performance.now() }
       timer = setTimeout(() => {
-        const found = near(e.clientX, e.clientY, false)
+        const found = near(e.clientX, e.clientY, false, reachOf(e))
         // A direct hit is the object's own business, it has handlers of its
         // own. This only speaks for presses that landed on nothing.
         if (found?.kind === 'pick' && !found.direct) {
@@ -177,7 +182,7 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       if (!start || opened) return
       if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) return
       if (performance.now() - start.at > LONG_PRESS_MS) return
-      const found = near(e.clientX, e.clientY, true)
+      const found = near(e.clientX, e.clientY, true, reachOf(e))
       if (found?.kind === 'room') {
         onHandled?.()
         latestRoom.current?.(found.id)

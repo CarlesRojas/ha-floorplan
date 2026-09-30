@@ -134,6 +134,11 @@ export const PICK_RADIUS_PX = 42
 // and not to the room under it. At 0 the floor is checked before the first
 // ring, at 1 only once every point has been tried.
 export const PICK_ROOM_AT = 0.5
+// The same two for a finger, which lands less exactly than a mouse and
+// covers what it presses. The devices keep a touch out to about twice as
+// far before the floor takes it.
+export const PICK_RADIUS_TOUCH_PX = 44
+export const PICK_ROOM_AT_TOUCH = 0.8
 // Radius of the sphere shown for a device with no decoration bound.
 export const DEVICE_SPHERE_RADIUS_M = 0.12
 export const DEVICE_SPHERE_COLOR = '#ffffff'

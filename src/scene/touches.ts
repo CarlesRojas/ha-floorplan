@@ -3,18 +3,21 @@
 // pinch or a two finger drag, never a tap, whatever the browser makes of the
 // finger that lifts last. Only the browser's own events count: the camera
 // rig sends the controls presses and releases of its own, and those are not
-// fingers.
+// fingers. The rig lists the ones it sends here, which tells them from the
+// browser's and still lets a test send fingers of its own.
+export const sent = new WeakSet<Event>()
+
 const down = new Set<number>()
 let multiAt = -Infinity
 
 if (typeof document !== 'undefined') {
   const onDown = (event: PointerEvent) => {
-    if (!event.isTrusted || event.pointerType !== 'touch') return
+    if (sent.has(event) || event.pointerType !== 'touch') return
     down.add(event.pointerId)
     if (down.size > 1) multiAt = performance.now()
   }
   const onUp = (event: PointerEvent) => {
-    if (event.isTrusted) down.delete(event.pointerId)
+    if (!sent.has(event)) down.delete(event.pointerId)
   }
   document.addEventListener('pointerdown', onDown, { capture: true, passive: true })
   document.addEventListener('pointerup', onUp, { capture: true, passive: true })
