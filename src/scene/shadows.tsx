@@ -1,5 +1,6 @@
 import { MAX_SHADOW_LAMPS, MAX_SHADOW_LAMPS_TOUCH } from '#/constants.ts'
 import { coarseOnly } from '#/scene/device.ts'
+import { ahead, balance, isPad } from '#/scene/pad.ts'
 import { useWarm } from '#/scene/warm.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
@@ -42,6 +43,8 @@ function edits(position?: BufferAttribute | InterleavedBufferAttribute) {
 // follows whatever is switched on.
 const CLEAR_ENOUGH = 0.6
 const SWEEP_S = 0.25
+// The pause before each round of shaders built ahead.
+const AHEAD_MS = 600
 
 function clear(material: Material | Material[]) {
   const all = Array.isArray(material) ? material : [material]
@@ -210,6 +213,8 @@ export default function Shadows() {
     const before = scene.onBeforeRender
     scene.onBeforeRender = (...args) => {
       before.apply(scene, args)
+      // Before three counts the lights, they are topped up to their step.
+      balance(scene)
       if (!armed.current) return
       armed.current = false
       check()
@@ -231,6 +236,38 @@ export default function Shadows() {
   // a lamp switched on in a single frame still has to be handed its shadow.
   const owed = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => clearTimeout(owed.current ?? undefined), [])
+  // In the background, a little after the card is up, the shaders for the
+  // steps of lights next to the one it is at are built, so the lamp that
+  // crosses into one comes on at once. Each one built books the next, until
+  // every step a single lamp or strip away is ready, and each sweep looks
+  // again in case the lamps have moved the scene to another step since.
+  const built = useRef(new Set<string>())
+  const looking = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const building = useRef(false)
+  const padKey = useRef({})
+  const look = useRef(() => {})
+  useEffect(() => {
+    look.current = () => {
+      if (looking.current !== null || building.current) return
+      looking.current = setTimeout(() => {
+        looking.current = null
+        const next = ahead(get().scene, built.current)
+        if (!next) return
+        building.current = true
+        warm(padKey.current, {
+          apply: next.apply,
+          revert: next.revert,
+          alone: true,
+          commit: () => {
+            built.current.add(next.key)
+            building.current = false
+            look.current()
+          },
+        })
+      }, AHEAD_MS)
+    }
+    return () => clearTimeout(looking.current ?? undefined)
+  }, [get, warm])
   useFrame((three, delta) => {
     armed.current = true
     since.current += delta
@@ -247,12 +284,13 @@ export default function Shadows() {
       return
     }
     since.current = 0
+    look.current()
     const lamps: PointLight[] = []
     three.scene.traverse(object => {
       if (object instanceof PointLight) {
         // The light that comes through a shade never casts: that is the
         // whole point of a shade you can see the bulb through.
-        if (!object.userData.through) lamps.push(object)
+        if (!object.userData.through && !isPad(object)) lamps.push(object)
         return
       }
       if (!(object instanceof Mesh)) return
