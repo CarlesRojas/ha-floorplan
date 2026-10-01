@@ -9,6 +9,17 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The furniture that stands for no device is drawn a room at a time instead of a part at a time, so the card moves more smoothly on a phone or a tablet and looks the same.
+- A click or a tap near a device goes to the device, and only a press with nothing at all around it goes to the floor of the room. A tap with a finger reaches a little further than a click.
+
+### Fixed
+
+- The darkening at the corners of the card showed as rings of gray instead of a smooth shade.
+- Flying to a room's view no longer starts with a jump: the camera moves in one continuous motion from where it stands to the view.
+- On a dashboard scrolled down, a gesture with one or two fingers no longer opens with a leap of the camera, a sudden zoom, slide or tilt.
+
 ## [1.1.0] - 2026-09-27
 
 ### Added

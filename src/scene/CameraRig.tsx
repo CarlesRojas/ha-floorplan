@@ -1,6 +1,6 @@
 import { CAMERA_FLIGHT_S, CAMERA_TURN_S } from '#/constants.ts'
 import { frameRooms, sceneHeight } from '#/scene/framing.ts'
-import { multiTouchSince } from '#/scene/touches.ts'
+import { multiTouchSince, sent } from '#/scene/touches.ts'
 import type { CameraView, DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type RefObject } from 'react'
@@ -71,8 +71,17 @@ type Flight = {
   around: number
   duration: number
   t: number
+  // When the flight last moved, in milliseconds. Frames are drawn only when
+  // asked for, so the frame that starts a flight may come seconds after the
+  // one before it, and the time between the two is not time flown: counted
+  // as such, the camera jumped most of the way and only flew the rest.
+  last: number
   home: boolean
 }
+
+// The most a single frame may carry a flight forward, in seconds. A stall
+// mid flight picks up where it was rather than skipping ahead.
+const MAX_STEP_S = 0.1
 
 // The shortest way round from one heading to another, in radians.
 const turn = (from: number, to: number) => MathUtils.euclideanModulo(to - from + Math.PI, 2 * Math.PI) - Math.PI
@@ -150,6 +159,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       around,
       duration: CAMERA_FLIGHT_S + (CAMERA_TURN_S * Math.abs(around)) / Math.PI,
       t: 0,
+      last: performance.now(),
       home: isHome,
     }
   }
@@ -169,10 +179,13 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     },
   }))
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     const f = flight.current
     if (!f) return
-    f.t = Math.min(1, f.t + delta / f.duration)
+    const now = performance.now()
+    const step = Math.min(MAX_STEP_S, (now - f.last) / 1000)
+    f.last = now
+    f.t = Math.min(1, f.t + step / f.duration)
     // Eases out of the start and into the landing.
     const k = f.t * f.t * (3 - 2 * f.t)
     const target = C.set(...f.from.target).lerp(D.set(...f.to.target), k)
@@ -253,35 +266,42 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       given.add(press.id)
       controls.rotateSpeed = press.event.pointerType === 'touch' ? TOUCH_ROTATE_SPEED : mouseRotateSpeed
       const { event } = press
-      element.dispatchEvent(
-        new PointerEvent('pointerdown', {
-          pointerId: event.pointerId,
-          pointerType: event.pointerType,
-          isPrimary: event.isPrimary,
-          button: event.button,
-          buttons: event.buttons,
-          clientX: press.x,
-          clientY: press.y,
-          ctrlKey: event.ctrlKey,
-          metaKey: event.metaKey,
-          shiftKey: event.shiftKey,
-        }),
-      )
+      // The controls read where a pointer is on the page, scroll included,
+      // and an event made here only knows the scroll when it is given the
+      // window. Without it, on a dashboard scrolled down, this press sat
+      // above every move that followed by the distance scrolled, and the
+      // gesture opened with a leap: a zoom, a pan or a tilt.
+      const down = new PointerEvent('pointerdown', {
+        view: page.defaultView,
+        pointerId: event.pointerId,
+        pointerType: event.pointerType,
+        isPrimary: event.isPrimary,
+        button: event.button,
+        buttons: event.buttons,
+        clientX: press.x,
+        clientY: press.y,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        shiftKey: event.shiftKey,
+      })
+      sent.add(down)
+      element.dispatchEvent(down)
     }
     // Tells the controls a pointer they were handed came up, the way the
     // browser would. They listen for it on the document once a pointer is
     // down.
     const takeBack = (press: Press) => {
       given.delete(press.id)
-      page.dispatchEvent(
-        new PointerEvent('pointerup', {
-          pointerId: press.id,
-          pointerType: press.event.pointerType,
-          clientX: press.x,
-          clientY: press.y,
-          bubbles: true,
-        }),
-      )
+      const up = new PointerEvent('pointerup', {
+        view: page.defaultView,
+        pointerId: press.id,
+        pointerType: press.event.pointerType,
+        clientX: press.x,
+        clientY: press.y,
+        bubbles: true,
+      })
+      sent.add(up)
+      page.dispatchEvent(up)
     }
     const free = () => {
       if (!exclusive) return
@@ -311,7 +331,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       free()
     }
     const onDown = (event: PointerEvent) => {
-      if (!event.isTrusted) return
+      if (sent.has(event)) return
       event.stopPropagation()
       if (presses.size === 0) pressAt = performance.now()
       const press: Press = {
@@ -338,7 +358,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       }
     }
     const onMove = (event: PointerEvent) => {
-      if (!event.isTrusted) return
+      if (sent.has(event)) return
       const press = presses.get(event.pointerId)
       if (!press) return
       press.x = event.clientX
@@ -381,7 +401,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       hand(press)
     }
     const onUp = (event: PointerEvent) => {
-      if (event.isTrusted) forget(event.pointerId)
+      if (!sent.has(event)) forget(event.pointerId)
     }
     // A pinch ends with one finger lifting last, and some browsers make a
     // click of that. Nothing was clicked: not a piece, not a room's floor,
@@ -443,9 +463,16 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     // They listen for it on the document once a button is down.
     const release = (pointerId: number, at: { x: number; y: number }) => {
       held.delete(pointerId)
-      page.dispatchEvent(
-        new PointerEvent('pointerup', { pointerId, pointerType: 'mouse', clientX: at.x, clientY: at.y, bubbles: true }),
-      )
+      const up = new PointerEvent('pointerup', {
+        view,
+        pointerId,
+        pointerType: 'mouse',
+        clientX: at.x,
+        clientY: at.y,
+        bubbles: true,
+      })
+      sent.add(up)
+      page.dispatchEvent(up)
     }
     const outside = (event: PointerEvent) =>
       !!view &&

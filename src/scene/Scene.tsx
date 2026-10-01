@@ -13,6 +13,7 @@ import CameraRig, { type CameraHandle } from '#/scene/CameraRig.tsx'
 import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
 import Effects from '#/scene/Effects.tsx'
+import Merged from '#/scene/Merged.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
 import Shadows from '#/scene/shadows.tsx'
@@ -128,6 +129,10 @@ export default function Scene({
           wheelZoom={wheelZoom}
         />
         <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
+        {/* In the card, the pieces with no device behind them are drawn
+          together, a room at a time. In the editor every piece is its own,
+          so it can be picked and tried. */}
+        {!onPickDecoration && !onTry && <Merged config={config} />}
         {/* A press that misses everything looks around itself for something
           to act on, so small things are still easy to hit, and only then
           asks whether it landed on a room's floor. */}

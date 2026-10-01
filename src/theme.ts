@@ -23,8 +23,15 @@ export const CARD_CORNER_RADIUS_PX = 24
 // white card around it washed the lamps out.
 export const SCENE_BACKGROUND_COLOR = '#1c1c1c'
 // The darkening of the card's corners, laid over the picture and the space
-// around it alike.
-export const VIGNETTE_CSS = 'radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%)'
+// around it alike. Over a background this dark the shade has only a few
+// dozen steps of grey to climb through, and a plain gradient showed each as
+// a ring, so a faint grain lies over it: at every pixel the shade lands a
+// little above or below, and the rings dissolve into it.
+const GRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.12 0 0 0 0"/></filter><rect width="160" height="160" filter="url(#g)"/></svg>`
+export const VIGNETTE_CSS = [
+  `url("data:image/svg+xml,${encodeURIComponent(GRAIN_SVG)}") repeat`,
+  'radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.1) 58%, rgba(0, 0, 0, 0.3) 78%, rgba(0, 0, 0, 0.55) 100%)',
+].join(', ')
 
 // Editor
 
@@ -120,13 +127,17 @@ export const NIGHT_SUN_INTENSITY = 0.05
 // How far from a press the card looks for something to act on, in pixels.
 // A ray hits one point, so a press that lands on nothing is tried again in
 // rings out to this radius.
-export const PICK_RADIUS_PX = 42
+export const PICK_RADIUS_PX = 48
 // How far through those rings a press that has found nothing is checked
 // against the floor, as a share of all the points tried, 0 to 1. Devices
 // keep the press up to that point, so a press near a lamp goes to the lamp
 // and not to the room under it. At 0 the floor is checked before the first
 // ring, at 1 only once every point has been tried.
-export const PICK_ROOM_AT = 0.5
+export const PICK_ROOM_AT = 1
+// The same two for a finger, which lands less exactly than a mouse and
+// covers what it presses.
+export const PICK_RADIUS_TOUCH_PX = 52
+export const PICK_ROOM_AT_TOUCH = 1
 // Radius of the sphere shown for a device with no decoration bound.
 export const DEVICE_SPHERE_RADIUS_M = 0.12
 export const DEVICE_SPHERE_COLOR = '#ffffff'
