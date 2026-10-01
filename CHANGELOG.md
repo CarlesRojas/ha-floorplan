@@ -12,7 +12,7 @@ moves that section under the new version and uses it as the release notes.
 ### Changed
 
 - The furniture that stands for no device is drawn a room at a time instead of a part at a time, so the card moves more smoothly on a phone or a tablet and looks the same.
-- A tap with a finger reaches about twice as far for a device before the floor of the room takes it, so a lamp no longer has to be hit exactly.
+- A click or a tap near a device goes to the device, and only a press with nothing at all around it goes to the floor of the room. A tap with a finger reaches a little further than a click.
 
 ### Fixed
 
