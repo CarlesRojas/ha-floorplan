@@ -1,5 +1,7 @@
 import { coarseOnly } from '#/scene/device.ts'
 import { EDITOR_SELECTED_COLOR } from '#/theme.ts'
+import { FOCUS_FADE_S } from '#/constants.ts'
+import { redrawShadows, showOnly } from '#/scene/focus.ts'
 import { setComposed } from '#/scene/warm.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { N8AOPostPass } from 'n8ao'
@@ -15,7 +17,15 @@ import {
   ToneMappingMode,
 } from 'postprocessing'
 import { useEffect, useRef } from 'react'
-import { Color, HalfFloatType, type Object3D } from 'three'
+import {
+  Color,
+  ConstantAlphaFactor,
+  CustomBlending,
+  HalfFloatType,
+  OneMinusConstantAlphaFactor,
+  type Material,
+  type Object3D,
+} from 'three'
 
 // The frame is drawn into a buffer and finished from there, in a few steps:
 //
@@ -34,6 +44,14 @@ import { Color, HalfFloatType, type Object3D } from 'three'
 // blue the plan draws it in. The edge is the object's own silhouette, so a
 // sofa is outlined as a sofa rather than as the box around it, and where
 // something stands in front of it the edge carries on, fainter.
+//
+// In the card, a room that is focused stands alone, and the rest of the home
+// fades away around it. Fading the things themselves would make every
+// material see through, which is a shader of its own for each, built on the
+// first fade while the card stalls. So the fade is of the finished picture
+// instead: for as long as it lasts the frame is drawn twice, the whole home
+// and then the room alone laid over it, more and more of it. Either picture
+// is drawn with the shaders the scene already has.
 
 // How far the occlusion reaches, in meters, and how much it darkens. A
 // flat is about ten meters across, so the reach is a fraction of one.
@@ -49,14 +67,21 @@ type Props = {
   // The name of the object to outline, as the scene gives it, `null` for
   // none. The card never passes one, and gets no outline pass at all.
   selected?: string | null
+  // The room that stands alone, the rest of the home faded away. The editor
+  // never passes one.
+  focus?: string | null
 }
 
 type Pipeline = {
   composer: EffectComposer
   outline: OutlineEffect | null
+  // What lays the finished picture on the screen, and how much of what is
+  // already there it replaces: all of it, but for the second picture of a
+  // fade.
+  paint: Material
 }
 
-export default function Effects({ selected }: Props) {
+export default function Effects({ selected, focus = null }: Props) {
   const gl = useThree(state => state.gl)
   const scene = useThree(state => state.scene)
   const camera = useThree(state => state.camera)
@@ -97,15 +122,31 @@ export default function Effects({ selected }: Props) {
         multisampling: 4,
       })
     }
-    composer.addPass(
-      new EffectPass(
-        camera,
-        ...(outline ? [outline] : []),
-        new SMAAEffect({ preset: SMAAPreset.HIGH }),
-        new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }),
-      ),
+    const last = new EffectPass(
+      camera,
+      ...(outline ? [outline] : []),
+      new SMAAEffect({ preset: SMAAPreset.HIGH }),
+      new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }),
     )
-    pipeline.current = { composer, outline }
+    // The picture replaces a share of what the screen holds. The share is
+    // all of it but during a fade, and it is set up this way from the start
+    // so the fade changes a number and not the shader.
+    const paint = last.fullscreenMaterial
+    paint.blending = CustomBlending
+    paint.blendSrc = ConstantAlphaFactor
+    paint.blendDst = OneMinusConstantAlphaFactor
+    paint.blendAlpha = 1
+    // Laid over what is there, the screen must not be cleared first.
+    const draw = last.render.bind(last)
+    last.render = (...args: Parameters<EffectPass['render']>) => {
+      const renderer = args[0]
+      const clears = renderer.autoClear
+      if (paint.blendAlpha < 1) renderer.autoClear = false
+      draw(...args)
+      renderer.autoClear = clears
+    }
+    composer.addPass(last)
+    pipeline.current = { composer, outline, paint }
     found.current = null
     // The shaders the scene needs are now the ones for drawing into a
     // buffer, and the ones built ahead of a light change must match.
@@ -127,7 +168,24 @@ export default function Effects({ selected }: Props) {
   // Frames are drawn on request, and a new pick or a new size is one.
   useEffect(() => {
     invalidate()
-  }, [selected, size.width, size.height, dpr, invalidate])
+  }, [selected, focus, size.width, size.height, dpr, invalidate])
+
+  // How far the rest of the home has faded, 0 to 1, the room it fades around,
+  // the room the scene is cut down to right now and the one the shadows were
+  // last drawn for.
+  const faded = useRef(0)
+  const around = useRef<string | null>(null)
+  const cut = useRef<string | null>(null)
+  const shaded = useRef<string | null>(null)
+  // The whole home is back before the scene goes, and before the pieces are
+  // merged again.
+  useEffect(
+    () => () => {
+      showOnly(scene, null)
+      cut.current = null
+    },
+    [scene],
+  )
 
   useFrame((_, delta) => {
     const run = pipeline.current
@@ -143,7 +201,36 @@ export default function Effects({ selected }: Props) {
         if (found.current) run.outline.selection.add(found.current)
       }
     }
-    run.composer.render(delta)
+    const cutTo = (room: string | null) => {
+      // Again on every frame a room stands alone, for parts built since.
+      if (room !== null || cut.current !== null) showOnly(scene, room)
+      cut.current = room
+    }
+    const draw = (room: string | null, share: number) => {
+      cutTo(room)
+      if (shaded.current !== room) redrawShadows(scene)
+      shaded.current = room
+      run.paint.blendAlpha = share
+      run.composer.render(delta)
+    }
+    if (focus) around.current = focus
+    const aim = focus ? 1 : 0
+    if (faded.current !== aim) {
+      // A frame after a long rest reports the whole rest as its time.
+      const step = Math.min(delta, 0.05) / FOCUS_FADE_S
+      faded.current = aim > faded.current ? Math.min(1, faded.current + step) : Math.max(0, faded.current - step)
+      invalidate()
+    }
+    const t = faded.current
+    if (t === 0) draw(null, 1)
+    else if (t === 1) draw(around.current, 1)
+    else {
+      draw(null, 1)
+      draw(around.current, t * t * (3 - 2 * t))
+      run.paint.blendAlpha = 1
+      // On the way back the whole home takes presses again at once.
+      if (!focus) cutTo(null)
+    }
     // A priority above zero takes the drawing over from the default loop,
     // which is what lets the composer be the one to draw the frame.
   }, 1)

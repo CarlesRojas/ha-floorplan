@@ -191,7 +191,7 @@ export default function RoomInfo({
       </div>
       <p className="-mt-1 text-xs text-(--secondary-text-color)">
         {room.camera
-          ? 'Clicking this room in the card flies the camera to its view.'
+          ? 'Clicking this room in the card flies the camera to its view and fades the rest of the home away.'
           : 'Orbit the 3D view to where this room looks best, then save it. Clicking the room in the card will fly there.'}
       </p>
       <button

@@ -1,4 +1,5 @@
 import { decorationKind } from '#/decoration/catalog.ts'
+import { showOnly } from '#/scene/focus.ts'
 import type { CardConfig } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect } from 'react'
@@ -273,6 +274,9 @@ export default function Merged({ config }: Props) {
   // scratch when the plan changes.
   useEffect(() => {
     if (!enabled) return
+    // A part hidden around a focused room would be taken for one that is
+    // not plain paint. The focus hides what it has to again on its next frame.
+    showOnly(scene, null)
     const baked = bake(scene, staticIds(config))
     invalidate()
     return () => {

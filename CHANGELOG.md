@@ -9,6 +9,14 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- The card can send the first click on a device to its room instead of the device, which then answers once the camera is in the room: switch it with the Click button in the corner of the editor's 3D view, or with `first_click: room`.
+
+### Changed
+
+- Clicking a room that has a view now fades the rest of the home away, so the room stands alone and only what is in it can be clicked, and clicking outside it brings the camera and the other rooms back.
+
 ## [1.2.0] - 2026-10-02
 
 ### Added
