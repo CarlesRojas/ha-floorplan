@@ -11,7 +11,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Added
 
-- The editor can show a picture of your plan, faded, under the drawing to trace the rooms over: choose it from the image button in the toolbar, move and resize it to scale, and remove it when the rooms are drawn. The picture stays in your browser and is never saved with the card.
+- The editor can show a picture of your plan, faded, under the drawing to trace the rooms over: choose it from the image button in the toolbar, click it to move and resize it to scale, show the whole picture or only its lines, and remove it when the rooms are drawn. The picture stays in your browser and is never saved with the card.
 
 ### Changed
 

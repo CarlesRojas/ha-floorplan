@@ -1,5 +1,5 @@
 import type { Point, RoomConfig } from '#/types.ts'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 // A picture of the home's plan, laid under the drawing to trace the rooms
 // over, the way tracing paper is used. It belongs to the editor on this
@@ -15,7 +15,15 @@ export type Trace = {
   center: Point
   width: number
   opacity: number
+  // What of the picture shows. A stored picture from before this existed
+  // has none and shows whole.
+  mode?: TraceMode
 }
+
+// The whole picture, or only its lines in the color of the theme's text with
+// the paper left out: the dark lines of a plan on white paper, or the light
+// lines of one on a dark background.
+export type TraceMode = 'picture' | 'dark-lines' | 'light-lines'
 
 const KEY = 'floorplan-3d:trace'
 // The longest side the picture is kept at. Enough to read a plan's lines
@@ -23,6 +31,18 @@ const KEY = 'floorplan-3d:trace'
 const LONGEST_PX = 2400
 export const TRACE_OPACITY = 0.5
 const TRACE_WIDTH_M = 10
+// The narrowest the picture can be dragged to, in meters.
+export const TRACE_LEAST_WIDTH_M = 0.5
+// How long the picture rests before it is stored again, since a drag changes
+// it on every move and the whole picture is written each time.
+const STORE_MS = 300
+
+// Whether a point on the plan falls on the picture.
+export function traceCovers(trace: Trace, [x, y]: Point) {
+  return (
+    Math.abs(x - trace.center[0]) <= trace.width / 2 && Math.abs(y - trace.center[1]) <= (trace.width * trace.aspect) / 2
+  )
+}
 
 function read(): Trace | null {
   try {
@@ -45,9 +65,11 @@ function write(trace: Trace | null) {
 
 export function useTrace(): [Trace | null, (trace: Trace | null) => void] {
   const [trace, setTrace] = useState<Trace | null>(read)
+  const timer = useRef(0)
   const set = useCallback((next: Trace | null) => {
     setTrace(next)
-    write(next)
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => write(next), STORE_MS)
   }, [])
   return [trace, set]
 }

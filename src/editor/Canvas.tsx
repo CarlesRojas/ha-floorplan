@@ -16,7 +16,7 @@ import {
 import { canRide, decorationKind, footprint, isSupport } from '#/decoration/catalog.ts'
 import { ridersOf, standHeight, supportUnder } from '#/decoration/surfaces.ts'
 import { decorationIcon } from '#/decoration/icons.ts'
-import type { Trace } from '#/editor/trace.ts'
+import { TRACE_LEAST_WIDTH_M, traceCovers, type Trace } from '#/editor/trace.ts'
 import { TraceFrame, TraceImage } from '#/editor/TraceLayer.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
@@ -68,11 +68,12 @@ type Props = {
   onCloseDraft: () => void
   onDeleteRoom: (roomId: string) => void
   onTool: (tool: Tool) => void
-  // The picture the rooms are traced over, and whether it is being moved
-  // and sized rather than drawn over.
+  // The picture the rooms are traced over, and whether it is the thing
+  // selected, which is when it can be moved and sized.
   trace: Trace | null
-  adjustingTrace: boolean
+  traceSelected: boolean
   onTrace: (trace: Trace) => void
+  onSelectTrace: (selected: boolean) => void
   fill?: boolean
 }
 
@@ -80,9 +81,11 @@ type Drag =
   | { kind: 'pan'; start: Point; view: View }
   | { kind: 'vertex'; roomId: string; index: number }
   | { kind: 'edge'; roomId: string; index: number; start: Point; origin: Point[] }
-  | { kind: 'room'; roomId: string; start: Point; origin: Point[] }
+  | { kind: 'room'; roomId: string; start: Point; origin: Point[]; already: boolean }
   | { kind: 'decoration'; id: string; start: Point; origin: Point; already: boolean }
   | { kind: 'rotate'; id: string; center: Point }
+  | { kind: 'trace'; start: Point; origin: Point }
+  | { kind: 'trace-size'; reach: number; width: number }
 
 type Menu =
   | { kind: 'vertex'; roomId: string; index: number }
@@ -93,6 +96,8 @@ type Menu =
 
 const HANDLE = EDITOR_HANDLE_PX
 const EDGE_HIT_PX = 10
+// How far a press may wander and still be a click rather than a drag.
+const CLICK_PX = 4
 
 export default function Canvas({
   rooms,
@@ -124,8 +129,9 @@ export default function Canvas({
   onDeleteRoom,
   onTool,
   trace,
-  adjustingTrace,
+  traceSelected,
   onTrace,
+  onSelectTrace,
   fill = false,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -135,6 +141,10 @@ export default function Canvas({
   })
   const [hover, setHover] = useState<Point | null>(null)
   const drag = useRef<Drag | null>(null)
+  // Where on the canvas the last press landed, to tell a click from a drag.
+  const pressed = useRef<Point | null>(null)
+  // Where clicking down through a pile reached the room, on the plan.
+  const roomCycle = useRef<Point | null>(null)
   // Rooms at their last valid positions during a drag. The dragged room
   // itself is shown following the pointer, red when that spot is invalid,
   // and lands on this resolved position when released. Kept in a ref since
@@ -217,6 +227,24 @@ export default function Canvas({
     if (e.button !== 0) return
     e.stopPropagation()
     capture(e)
+    // The picture under the plan is the last stop of the way down through a
+    // pile: once clicking the same spot has reached the room, the next click
+    // picks the picture, and the one after starts again from the top.
+    const from = roomCycle.current
+    roomCycle.current = null
+    const p = planPoint(e)
+    if (
+      from &&
+      trace &&
+      view &&
+      !e.altKey &&
+      selection.roomId &&
+      traceCovers(trace, p) &&
+      Math.hypot(p[0] - from[0], p[1] - from[1]) * view.scale < CLICK_PX
+    ) {
+      pickTrace()
+      return
+    }
     // Alt or Option drags a copy out and leaves the original behind, the way
     // every drawing program does it.
     let dragged = item
@@ -241,6 +269,16 @@ export default function Canvas({
     const p = toPlan(v, screen)
     const d = drag.current
     if (!d) return
+    if (d.kind === 'trace' || d.kind === 'trace-size') {
+      if (!trace) return
+      if (d.kind === 'trace')
+        onTrace({ ...trace, center: [d.origin[0] + p[0] - d.start[0], d.origin[1] + p[1] - d.start[1]] })
+      else {
+        const reach = Math.hypot(p[0] - trace.center[0], p[1] - trace.center[1])
+        onTrace({ ...trace, width: Math.max(TRACE_LEAST_WIDTH_M, (d.width * reach) / d.reach) })
+      }
+      return
+    }
     const currentRooms = liveRooms.current ?? renderedRooms
     // A move that would overlap another room or fold the polygon is ignored,
     // so the room stays where it last was valid. Candidates are tried in
@@ -534,15 +572,43 @@ export default function Canvas({
   const capture = (e: React.PointerEvent) => {
     svgRef.current!.setPointerCapture(e.pointerId)
     svgRef.current!.focus()
+    pressed.current = screenPoint(e)
+  }
+
+  // One thing at a time is selected: picking the picture lets go of the rest.
+  const pickTrace = () => {
+    onSelect({ roomId: null, vertex: null })
+    onSelectDecoration(null)
+    onSelectTrace(true)
+  }
+
+  // Dragging a corner of the selected picture sizes it around its middle.
+  const onTraceCornerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 || !trace) return
+    e.stopPropagation()
+    capture(e)
+    const p = planPoint(e)
+    const reach = Math.hypot(p[0] - trace.center[0], p[1] - trace.center[1])
+    drag.current = { kind: 'trace-size', reach: Math.max(reach, 1e-6), width: trace.width }
   }
 
   const onBackgroundDown = (e: React.PointerEvent) => {
+    // A press that reaches the background found nothing drawn over the
+    // picture there, so on the selected picture it moves it.
+    if (tool === 'select' && e.button === 0 && trace && traceSelected) {
+      const p = planPoint(e)
+      if (traceCovers(trace, p)) {
+        drag.current = { kind: 'trace', start: p, origin: trace.center }
+        return
+      }
+    }
     if (e.button === 1 || tool === 'select') {
       drag.current = { kind: 'pan', start: screenPoint(e), view }
       setPanning(true)
       if (tool === 'select' && e.button === 0) {
         onSelect({ roomId: null, vertex: null })
         onSelectDecoration(null)
+        onSelectTrace(false)
       }
       return
     }
@@ -577,6 +643,10 @@ export default function Canvas({
     if (tool !== 'select' || e.button !== 0) return
     e.stopPropagation()
     capture(e)
+    roomCycle.current = null
+    // Whether this room was already picked, since clicking it again is what
+    // steps down to the picture under it.
+    const already = selection.roomId === room.id && !selectedDecoration && !e.altKey
     // Bare floor picks the room itself, and lets go of whatever item was
     // selected: one thing at a time is selected on the plan.
     onSelectDecoration(null)
@@ -592,12 +662,12 @@ export default function Canvas({
       duplicateSource.current = room.id
       onRooms(next, false)
       onSelect({ roomId: id, vertex: null })
-      drag.current = { kind: 'room', roomId: id, start: planPoint(e), origin: copy.points }
+      drag.current = { kind: 'room', roomId: id, start: planPoint(e), origin: copy.points, already }
       setDraggingId(id)
       return
     }
     liveRooms.current = rooms
-    drag.current = { kind: 'room', roomId: room.id, start: planPoint(e), origin: room.points }
+    drag.current = { kind: 'room', roomId: room.id, start: planPoint(e), origin: room.points, already }
     setDraggingId(room.id)
   }
 
@@ -687,7 +757,18 @@ export default function Canvas({
     setPanning(false)
     stopAutopan()
     svgRef.current?.releasePointerCapture(e.pointerId)
-    if (!d || d.kind === 'pan') return
+    if (!d) return
+    const [ux, uy] = screenPoint(e)
+    const still = !!pressed.current && Math.hypot(ux - pressed.current[0], uy - pressed.current[1]) < CLICK_PX
+    if (d.kind === 'pan') {
+      // A click on the picture with nothing drawn over it there picks it.
+      if (still && tool === 'select' && e.button === 0 && trace && traceCovers(trace, toPlan(view, d.start)))
+        pickTrace()
+      return
+    }
+    if (d.kind === 'trace' || d.kind === 'trace-size') return
+    // A click on the room already picked steps down to the picture under it.
+    if (d.kind === 'room' && d.already && still && trace && traceCovers(trace, d.start)) pickTrace()
     if (d.kind === 'rotate' || d.kind === 'decoration') {
       const source = resolvedDecorations ?? decorations
       onDecorations(
@@ -708,6 +789,7 @@ export default function Canvas({
           } else if (next) {
             onSelectDecoration(null)
             onSelect({ roomId: next.room?.id ?? null, vertex: null })
+            roomCycle.current = next.room ? d.start : null
           }
         }
       }
@@ -1238,7 +1320,7 @@ export default function Canvas({
           </>
         )}
 
-        {trace && adjustingTrace && <TraceFrame trace={trace} view={view} onTrace={onTrace} />}
+        {trace && traceSelected && <TraceFrame trace={trace} view={view} onCornerDown={onTraceCornerDown} />}
         <ScaleBar view={view} height={height} />
       </svg>
 

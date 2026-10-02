@@ -1,4 +1,4 @@
-import type { Trace } from '#/editor/trace.ts'
+import type { Trace, TraceMode } from '#/editor/trace.ts'
 import type { Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_ACCENT_COLOR } from '#/theme.ts'
@@ -59,8 +59,6 @@ type Props = {
   trace: Trace | null
   onTrace: (trace: Trace | null) => void
   onPickTrace: (file: File) => Promise<void>
-  adjustingTrace: boolean
-  onAdjustingTrace: (value: boolean) => void
 }
 
 export default function Toolbar({
@@ -79,8 +77,6 @@ export default function Toolbar({
   trace,
   onTrace,
   onPickTrace,
-  adjustingTrace,
-  onAdjustingTrace,
 }: Props) {
   const color = EDITOR_ACCENT_COLOR
   return (
@@ -150,14 +146,7 @@ export default function Toolbar({
         toggle
         onClick={() => onShowLengths(!showLengths)}
       />
-      <TracePanel
-        color={color}
-        trace={trace}
-        onTrace={onTrace}
-        onPick={onPickTrace}
-        adjusting={adjustingTrace}
-        onAdjusting={onAdjustingTrace}
-      />
+      <TracePanel color={color} trace={trace} onTrace={onTrace} onPick={onPickTrace} />
     </div>
   )
 }
@@ -198,22 +187,18 @@ function useAway(open: boolean, close: () => void) {
 }
 
 // The picture of a plan to trace the rooms over: choosing it, how much it
-// shows, how wide it is, moving and sizing it on the plan, and taking it
-// away again.
+// shows, how wide it is, and taking it away again. Moving and sizing it is
+// done on the plan, by selecting it.
 function TracePanel({
   color,
   trace,
   onTrace,
   onPick,
-  adjusting,
-  onAdjusting,
 }: {
   color: string
   trace: Trace | null
   onTrace: (trace: Trace | null) => void
   onPick: (file: File) => Promise<void>
-  adjusting: boolean
-  onAdjusting: (value: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -245,8 +230,8 @@ function TracePanel({
         <div className="absolute top-full left-0 z-20 mt-1 flex w-64 flex-col gap-2 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg">
           <p className="text-sm font-semibold">Trace image</p>
           <p className="text-sm text-(--secondary-text-color)">
-            A picture of your plan under the drawing, to trace the rooms over. It stays in this browser and is never
-            saved with the card.
+            A picture of your plan under the drawing, to trace the rooms over. Click it on the plan to move and resize
+            it. It stays in this browser and is never saved with the card.
           </p>
           <input
             ref={file}
@@ -261,6 +246,18 @@ function TracePanel({
           {failed && <p className="text-sm text-(--error-color)">That file could not be read as a picture.</p>}
           {trace && (
             <>
+              <label className="flex items-center justify-between gap-2 text-sm">
+                Show
+                <select
+                  value={trace.mode ?? 'picture'}
+                  className="rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2 py-1"
+                  onChange={e => onTrace({ ...trace, mode: e.target.value as TraceMode })}
+                >
+                  <option value="picture">Whole picture</option>
+                  <option value="dark-lines">Dark lines only</option>
+                  <option value="light-lines">Light lines only</option>
+                </select>
+              </label>
               <label className="flex flex-col gap-1 text-sm">
                 Opacity
                 <input
@@ -287,14 +284,6 @@ function TracePanel({
                   }}
                 />
               </label>
-              <button
-                type="button"
-                className={button}
-                style={adjusting ? { borderColor: color, color } : undefined}
-                onClick={() => onAdjusting(!adjusting)}
-              >
-                {adjusting ? 'Done moving' : 'Move and resize'}
-              </button>
             </>
           )}
           <div className="flex gap-2">
@@ -305,10 +294,7 @@ function TracePanel({
               <button
                 type="button"
                 className={cn(button, 'flex-1')}
-                onClick={() => {
-                  onTrace(null)
-                  onAdjusting(false)
-                }}
+                onClick={() => onTrace(null)}
               >
                 Remove
               </button>
