@@ -9,6 +9,10 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- The editor can show a picture of your plan under the drawing to trace the rooms over, as just its lines or faded as you like: choose it from the image button in the toolbar, click it to move and resize it to scale, show the whole picture or only its lines, and remove it when the rooms are drawn. The picture stays in your browser and is never saved with the card.
+
 ### Changed
 
 - The furniture that stands for no device is drawn a room at a time instead of a part at a time, so the card moves more smoothly on a phone or a tablet and looks the same.

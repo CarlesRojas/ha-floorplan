@@ -1,3 +1,4 @@
+import type { Trace, TraceMode } from '#/editor/trace.ts'
 import type { Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDITOR_ACCENT_COLOR } from '#/theme.ts'
@@ -6,6 +7,7 @@ import {
   faArrowPointer,
   faDrawPolygon,
   faExpand,
+  faImage,
   faCube,
   faLocationArrow,
   faMoon,
@@ -54,6 +56,9 @@ type Props = {
   onSunDirection: (degrees: number) => void
   // Called when the slider is let go, to save the new direction.
   onSunDirectionDone: () => void
+  trace: Trace | null
+  onTrace: (trace: Trace | null) => void
+  onPickTrace: (file: File) => Promise<void>
 }
 
 export default function Toolbar({
@@ -69,6 +74,9 @@ export default function Toolbar({
   sunDirection,
   onSunDirection,
   onSunDirectionDone,
+  trace,
+  onTrace,
+  onPickTrace,
 }: Props) {
   const color = EDITOR_ACCENT_COLOR
   return (
@@ -138,6 +146,7 @@ export default function Toolbar({
         toggle
         onClick={() => onShowLengths(!showLengths)}
       />
+      <TracePanel color={color} trace={trace} onTrace={onTrace} onPick={onPickTrace} />
     </div>
   )
 }
@@ -155,6 +164,146 @@ function clock(hour: number) {
   const h = Math.floor(hour) % 24
   const m = Math.round((hour - Math.floor(hour)) * 60)
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+// Puts the panel a button opened away on a press anywhere else.
+function useAway(open: boolean, close: () => void) {
+  const box = useRef<HTMLDivElement>(null)
+  const latest = useRef(close)
+  useEffect(() => {
+    latest.current = close
+  })
+  useEffect(() => {
+    if (!open) return
+    // The composed path, since inside the editor's shadow root the target
+    // is retargeted to the host by the time the event reaches the document.
+    const away = (e: PointerEvent) => {
+      if (box.current && !e.composedPath().includes(box.current)) latest.current()
+    }
+    document.addEventListener('pointerdown', away, true)
+    return () => document.removeEventListener('pointerdown', away, true)
+  }, [open])
+  return box
+}
+
+// The picture of a plan to trace the rooms over: choosing it, how much it
+// shows, how wide it is, and taking it away again. Moving and sizing it is
+// done on the plan, by selecting it.
+function TracePanel({
+  color,
+  trace,
+  onTrace,
+  onPick,
+}: {
+  color: string
+  trace: Trace | null
+  onTrace: (trace: Trace | null) => void
+  onPick: (file: File) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const box = useAway(open, () => setOpen(false))
+  const file = useRef<HTMLInputElement>(null)
+  const pick = async (chosen: File | undefined) => {
+    if (!chosen) return
+    try {
+      await onPick(chosen)
+      setFailed(false)
+    } catch {
+      setFailed(true)
+    }
+  }
+  const button =
+    'rounded-lg border border-(--divider-color) px-2.5 py-1.5 text-sm hover:bg-(--secondary-background-color)'
+  return (
+    <div className="relative" ref={box}>
+      <button
+        type="button"
+        aria-label="Trace image"
+        onClick={() => setOpen(!open)}
+        style={open || trace ? { color } : undefined}
+        className="flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)"
+      >
+        <FontAwesomeIcon icon={faImage} className="size-4" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 z-20 mt-1 flex w-64 flex-col gap-2 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg">
+          <p className="text-sm font-semibold">Trace image</p>
+          <p className="text-sm text-(--secondary-text-color)">
+            A picture of your plan under the drawing, to trace the rooms over. Click it on the plan to move and resize
+            it. It stays in this browser and is never saved with the card.
+          </p>
+          <input
+            ref={file}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => {
+              void pick(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+          {failed && <p className="text-sm text-(--error-color)">That file could not be read as a picture.</p>}
+          {trace && (
+            <>
+              <label className="flex items-center justify-between gap-2 text-sm">
+                Show
+                <select
+                  value={trace.mode ?? 'picture'}
+                  className="rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2 py-1"
+                  onChange={e => onTrace({ ...trace, mode: e.target.value as TraceMode })}
+                >
+                  <option value="picture">Whole picture</option>
+                  <option value="dark-lines">Dark lines only</option>
+                  <option value="light-lines">Light lines only</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                Opacity
+                <input
+                  type="range"
+                  min={0.1}
+                  max={1}
+                  step={0.05}
+                  value={trace.opacity}
+                  style={{ accentColor: color }}
+                  onChange={e => onTrace({ ...trace, opacity: Number(e.target.value) })}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-2 text-sm">
+                Width in meters
+                <input
+                  type="number"
+                  min={0.5}
+                  step={0.1}
+                  value={Math.round(trace.width * 100) / 100}
+                  className="w-24 rounded-lg border border-(--divider-color) bg-transparent px-2 py-1 text-right"
+                  onChange={e => {
+                    const width = Number(e.target.value)
+                    if (width >= 0.5) onTrace({ ...trace, width })
+                  }}
+                />
+              </label>
+            </>
+          )}
+          <div className="flex gap-2">
+            <button type="button" className={cn(button, 'flex-1')} onClick={() => file.current?.click()}>
+              {trace ? 'Replace' : 'Choose image'}
+            </button>
+            {trace && (
+              <button
+                type="button"
+                className={cn(button, 'flex-1')}
+                onClick={() => onTrace(null)}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // A button that opens a slider under itself. The sun's bearing turns its
@@ -187,22 +336,7 @@ function Dial({
   onDone?: () => void
 }) {
   const [open, setOpen] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
-  // A press anywhere else puts it away.
-  useEffect(() => {
-    if (!open) return
-    const away = (e: PointerEvent) => {
-      // The editor lives in a shadow root, where an event's target is
-      // retargeted to the host by the time it reaches the document. The
-      // composed path still holds the real one, so ask that instead: without
-      // it, pressing the slider itself counted as pressing outside and the
-      // panel closed the moment a drag started.
-      const path = e.composedPath()
-      if (box.current && !path.includes(box.current)) setOpen(false)
-    }
-    document.addEventListener('pointerdown', away, true)
-    return () => document.removeEventListener('pointerdown', away, true)
-  }, [open])
+  const box = useAway(open, () => setOpen(false))
   return (
     <div className="relative" ref={box}>
       <button

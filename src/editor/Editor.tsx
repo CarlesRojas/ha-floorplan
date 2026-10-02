@@ -5,6 +5,7 @@ import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomInfo from '#/editor/RoomInfo.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
+import { traceFrom, useTrace } from '#/editor/trace.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
@@ -86,6 +87,20 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // view and takes a moment, during which the button shows it is working.
   const [opening, setOpening] = useState(false)
   const [showLengths, setShowLengths] = useState(false)
+  // The picture the rooms are traced over. It is selected like anything
+  // else on the plan, which is when it can be moved and sized, and it opens
+  // selected when it is first chosen.
+  const [trace, setTrace] = useTrace()
+  const [traceSelected, setTraceSelected] = useState(false)
+  const pickTrace = async (file: File) => {
+    setTrace(await traceFrom(file, rooms))
+    setSelection({ roomId: null, vertex: null })
+    setSelectedDecoration(null)
+    setTraceSelected(true)
+  }
+  // One thing at a time is selected: picking a room or a piece, or starting
+  // to draw, lets go of the picture.
+  if (traceSelected && (selection.roomId || selectedDecoration || tool === 'draw')) setTraceSelected(false)
   const [showPreview, setShowPreview] = useState(true)
   // The hour the preview is lit at. The editor never follows the sun: what
   // is being drawn should look the same whatever the time outside, and the
@@ -718,13 +733,17 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         closeDraft()
         break
       case 'Escape':
+        setTraceSelected(false)
         setDraft([])
         setSelection({ roomId: null, vertex: null })
         setSelectedDecoration(null)
         break
       case 'Delete':
       case 'Backspace':
-        if (selectedDecoration) removeDecoration(selectedDecoration)
+        if (traceSelected) {
+          setTrace(null)
+          setTraceSelected(false)
+        } else if (selectedDecoration) removeDecoration(selectedDecoration)
         else deleteSelectedVertex()
         break
       default:
@@ -782,6 +801,10 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       onCloseDraft={closeDraft}
       onDeleteRoom={deleteRoom}
       onTool={setTool}
+      trace={trace}
+      traceSelected={traceSelected}
+      onTrace={setTrace}
+      onSelectTrace={setTraceSelected}
       fill
     />
   )
@@ -801,6 +824,12 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         sunDirection={sunDirection}
         onSunDirection={setSunDirection}
         onSunDirectionDone={saveSun}
+        trace={trace}
+        onTrace={next => {
+          setTrace(next)
+          if (!next) setTraceSelected(false)
+        }}
+        onPickTrace={pickTrace}
       />
     </div>
   )
