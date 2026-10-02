@@ -29,7 +29,7 @@ const KEY = 'floorplan-3d:trace'
 // The longest side the picture is kept at. Enough to read a plan's lines
 // zoomed in, and small enough to fit in the browser's storage.
 const LONGEST_PX = 2400
-export const TRACE_OPACITY = 0.5
+export const TRACE_OPACITY = 1
 const TRACE_WIDTH_M = 10
 // The narrowest the picture can be dragged to, in meters.
 export const TRACE_LEAST_WIDTH_M = 0.5
@@ -104,6 +104,8 @@ export async function traceFrom(file: File, rooms: RoomConfig[]): Promise<Trace>
       center: some ? [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2] : [0, 0],
       width: some ? Math.max(Math.max(...xs) - Math.min(...xs), TRACE_WIDTH_M) : TRACE_WIDTH_M,
       opacity: TRACE_OPACITY,
+      // Most plans are dark lines on white paper.
+      mode: 'dark-lines',
     }
   } finally {
     URL.revokeObjectURL(url)
