@@ -1,3 +1,4 @@
+import { balance } from '#/scene/pad.ts'
 import { useThree, type RootState } from '@react-three/fiber'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
@@ -47,6 +48,10 @@ export type Change = {
   revert: () => void
   // Makes it for good, once the shaders are ready.
   commit: () => void
+  // Tried in a round of its own. For a change that is never made for good,
+  // only tried for its shaders: with others it would have theirs built for
+  // a scene they never see.
+  alone?: boolean
 }
 
 type Queued = Change & { cancelled: boolean }
@@ -172,12 +177,21 @@ async function flush(w: Warmer, get: () => RootState) {
   w.busy = true
   const batch = w.pending
   w.pending = new Map()
+  if (batch.size > 1)
+    for (const [key, change] of batch) {
+      if (!change.alone) continue
+      batch.delete(key)
+      w.pending.set(key, change)
+    }
   w.flying = batch
   const changes = [...batch.values()]
   const { gl, scene, camera } = get()
   let ready: Promise<unknown> = Promise.resolve()
   for (const c of changes) c.apply()
   try {
+    // The dark lights that hold the counts to a step are part of what the
+    // shaders are built for.
+    balance(scene)
     // The shadow pass first, with a target bound as the maps have, then the
     // scene as it is drawn, which is into a buffer of its own when the frame
     // is finished from one. Both see the lights as the change leaves them.
