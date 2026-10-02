@@ -3,7 +3,15 @@ import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import { deskRise } from '#/scene/decor/state.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
-import { clickAction, clickOutcome, deviceSignals, kelvinToRgb, levelChannels, levelValues, signalValues } from '#/signals.ts'
+import {
+  clickAction,
+  clickOutcome,
+  deviceSignals,
+  kelvinToRgb,
+  levelChannels,
+  levelValues,
+  signalValues,
+} from '#/signals.ts'
 import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
@@ -19,6 +27,9 @@ type Props = {
   // one of those steps its state the way a device's click would.
   tries?: TryStates
   onTry?: (id: string) => void
+  // Asked before a click acts on a device, with the room its piece stands
+  // in. True means the click was spent on the room instead.
+  roomFirst?: (room: string) => boolean
 }
 
 // The last color each light was seen with. Home Assistant drops rgb_color
@@ -92,7 +103,7 @@ function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<strin
   }
 }
 
-export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
+export default function Devices({ hass, config, onPick, tries, onTry, roomFirst }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
   const rooms = config.rooms ?? []
@@ -174,7 +185,8 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
     // the one tried last, and a click steps it.
     const tried = !device && onTry && kind && canTry(kind)
     const tryState = tried ? tries?.[item.id] : undefined
-    const state = device && hass ? itemState(hass, device, guesses) : kind && tryState ? tryItemState(kind, tryState) : null
+    const state =
+      device && hass ? itemState(hass, device, guesses) : kind && tryState ? tryItemState(kind, tryState) : null
     return { device, kind, tried, state }
   }
   const states = new Map(decorations.map(item => [item.id, stateOf(item)]))
@@ -202,8 +214,9 @@ export default function Devices({ hass, config, onPick, tries, onTry }: Props) {
           device || onPick || tried
             ? () => {
                 onPick?.(item.id)
-                if (device) act(device.entity_id)
-                else if (tried) onTry?.(item.id)
+                if (device) {
+                  if (!roomFirst?.(item.room)) act(device.entity_id)
+                } else if (tried) onTry?.(item.id)
               }
             : undefined
         const onOpen = device ? () => openMoreInfo(device.entity_id) : undefined

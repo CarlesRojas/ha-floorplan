@@ -31,16 +31,39 @@ export default function Card({ hass, config }: Props) {
   // second click on that floor, with the camera still standing in the view,
   // takes it back to the opening one. A room without a view is a room, and
   // a click on it is nothing.
-  const showRoom = (id: string) => {
-    const view = config.rooms?.find(r => r.id === id)?.camera
-    if (!view || !camera.current) return
-    if (sameView(camera.current.view(), view)) camera.current.reset()
-    else camera.current.flyTo(view)
+  //
+  // The room flown to stands alone: the rest of the home fades away and
+  // takes no presses until the camera heads back.
+  const [focus, setFocus] = useState<string | null>(null)
+  const viewOf = (id: string) => config.rooms?.find(r => r.id === id)?.camera
+  // A room that has left the plan, or lost its view, holds no focus.
+  const focused = focus !== null && viewOf(focus) ? focus : null
+  const goHome = () => {
+    setFocus(null)
+    camera.current?.reset()
   }
-  // A click on nothing at all, the air around the home, takes the camera
-  // back to the opening view, the way the corner button does.
+  const showRoom = (id: string) => {
+    const view = viewOf(id)
+    if (!view || !camera.current) return
+    if (sameView(camera.current.view(), view)) goHome()
+    else {
+      setFocus(id)
+      camera.current.flyTo(view)
+    }
+  }
+  // A click on nothing at all, the air around the home or where the faded
+  // rooms were, takes the camera back to the opening view, the way the
+  // corner button does.
   const showHome = () => {
-    if (away) camera.current?.reset()
+    if (away || focused) goHome()
+  }
+  // With rooms first, a click on a device in a room the camera has not flown
+  // to goes to that room. A room with no view cannot be flown to, so its
+  // devices answer from anywhere.
+  const roomFirst = (id: string) => {
+    if (config.first_click !== 'room' || focused === id || !viewOf(id) || !camera.current) return false
+    showRoom(id)
+    return true
   }
 
   return (
@@ -62,14 +85,19 @@ export default function Card({ hass, config }: Props) {
               cameraRef={camera}
               onPickRoom={showRoom}
               onPickNothing={showHome}
-              onCameraAway={setAway}
+              onCameraAway={value => {
+                setAway(value)
+                if (!value) setFocus(null)
+              }}
+              focus={focused}
+              roomFirst={roomFirst}
             />
             {away && (
               <button
                 type="button"
                 aria-label="Back to the opening view"
                 title="Back to the opening view"
-                onClick={() => camera.current?.reset()}
+                onClick={goHome}
                 className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-(--card-background-color)/80 text-(--primary-text-color) shadow backdrop-blur-sm hover:bg-(--card-background-color)"
               >
                 <FontAwesomeIcon icon={faRotateLeft} className="size-4" />

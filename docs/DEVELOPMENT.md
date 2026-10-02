@@ -74,7 +74,9 @@ Editing the card shows Home Assistant's own card dialog first, with its visibili
 
 The sidebar shows the decoration catalog. Selecting a room fills it with a block for the room instead: its name, the Home Assistant area it stands for, the floor under it, its camera view, a button to delete it, and a cross that puts the block away and brings the catalog back. The cross lets go of the block, not of the room, so what is added next still lands in it. Selecting an item inside the room shows that item instead. An area can be linked to one room only. Radius and color can be set per room in the YAML.
 
-A room can have a view of its own. Orbit the 3D view to where the room looks best and press Use current view in the room's block. In the card, clicking that room's floor then flies the camera there, and a room with no view does nothing when clicked. The eye beside the button flies the editor's camera to the saved view and the cross forgets it. Orbiting during a flight takes the camera over. Once the camera has left the view the card opened with, by orbiting or by flying to a room, a button in the card's bottom right corner flies it back there and goes away when it lands.
+A room can have a view of its own. Orbit the 3D view to where the room looks best and press Use current view in the room's block. In the card, clicking that room's floor then flies the camera there and the rest of the home fades away, so the room stands alone and only what is in it takes a press. Clicking outside it, clicking its floor again or pressing the corner button flies the camera back and fades the other rooms in again. A room with no view does nothing when clicked. The fade is of the finished picture, not of the things: for as long as it lasts the frame is drawn twice, the whole home and the room alone over it, and the hidden rooms are moved to a layer the camera does not look at rather than taken out, so no light leaves the scene and no shader is built again (`src/scene/focus.ts`, `src/scene/Effects.tsx`). The eye beside the button flies the editor's camera to the saved view and the cross forgets it. Orbiting during a flight takes the camera over. Once the camera has left the view the card opened with, by orbiting or by flying to a room, a button in the card's bottom right corner flies it back there and goes away when it lands.
+
+The Click button in the 3D view's top left corner chooses what a click on a device goes to first in the card. Devices first, the default, acts on a device from wherever it is clicked. Rooms first sends the first click to the room the device stands in, and the device answers once the camera has flown there. A room with no view cannot be flown to, so its devices always answer. A long press or a right click opens the device's dialog either way.
 
 ### Editing commands
 
@@ -192,16 +194,17 @@ Only entities that drive at least one of the things an item can show are on offe
 
 ## Card config
 
-| Key             | Default | Description                                                              |
-| --------------- | ------- | ------------------------------------------------------------------------ |
-| `rooms`         | `[]`    | List of rooms, see below                                                 |
-| `radius`        | `0.3`   | Corner radius in meters for rooms without their own                      |
-| `gap`           | `0.12`  | Gap in meters between adjacent rooms                                     |
-| `aspect_ratio`  | `4:3`   | Card aspect ratio as `width:height`                                      |
-| `sun_direction` | `145`   | Where the sun comes from, in degrees clockwise from the top of the plan  |
-| `camera`        |         | The view the card opens with, saved from the editor's 3D view, see below |
-| `devices`       | `[]`    | Entities bound to decoration items, see below                            |
-| `decorations`   | `[]`    | List of placed decoration items, see below                               |
+| Key             | Default  | Description                                                                                                                         |
+| --------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `rooms`         | `[]`     | List of rooms, see below                                                                                                            |
+| `radius`        | `0.3`    | Corner radius in meters for rooms without their own                                                                                 |
+| `gap`           | `0.12`   | Gap in meters between adjacent rooms                                                                                                |
+| `aspect_ratio`  | `4:3`    | Card aspect ratio as `width:height`                                                                                                 |
+| `sun_direction` | `145`    | Where the sun comes from, in degrees clockwise from the top of the plan                                                             |
+| `camera`        |          | The view the card opens with, saved from the editor's 3D view, see below                                                            |
+| `first_click`   | `device` | What a click on a device goes to first: `device` acts on it from anywhere, `room` flies to its room first when that room has a view |
+| `devices`       | `[]`     | Entities bound to decoration items, see below                                                                                       |
+| `decorations`   | `[]`     | List of placed decoration items, see below                                                                                          |
 
 Defaults for these and other visual values live in `src/theme.ts`.
 
@@ -216,7 +219,7 @@ Each room:
 | `radius`  | Corner radius override                                                                                                                                                                                                                     |
 | `color`   | Fill color override                                                                                                                                                                                                                        |
 | `floor`   | Wood on a room drawn in the editor. `material` from wood, tiles, terracotta, carpet, concrete, an optional `color` tint, `scale` as a multiplier on the pattern size, `rotation` in degrees and `intensity` for how much the pattern shows |
-| `camera`  | The view the camera flies to when the room's floor is clicked in the card. A room without one does nothing when clicked                                                                                                                    |
+| `camera`  | The view the camera flies to when the room's floor is clicked in the card, where the room then stands alone. A room without one does nothing when clicked                                                                                  |
 
 A view, on the card or on a room, is where the camera stands and what it looks at, both as `[x, y, z]` in meters: `x` as on the plan, `y` up, `z` the plan's `y` with its sign flipped. It is saved from the editor's 3D view rather than written by hand.
 

@@ -114,6 +114,11 @@ export type CardConfig = {
   sun_direction?: number
   // The view the card opens with. Without one the camera frames the plan.
   camera?: CameraView
+  // What a click on a device goes to first. `device`, the default, acts on
+  // the device wherever it is clicked from. `room` takes the click for the
+  // room the device stands in while that room has a view and is not the one
+  // the camera has flown to, so a device only answers from inside its room.
+  first_click?: 'device' | 'room'
 }
 
 declare global {

@@ -54,6 +54,12 @@ type Props = {
   cameraRef?: RefObject<CameraHandle | null>
   // Told when the camera leaves the view it opened with, and when it is back.
   onCameraAway?: (away: boolean) => void
+  // The room that stands alone in the card, the rest of the home faded away
+  // and out of reach.
+  focus?: string | null
+  // Asked before a click acts on a device, with the room its piece stands
+  // in. True means the click went to the room instead.
+  roomFirst?: (room: string) => boolean
 }
 
 export default function Scene({
@@ -70,6 +76,8 @@ export default function Scene({
   paused = false,
   cameraRef,
   onCameraAway,
+  focus,
+  roomFirst,
 }: Props) {
   const rooms = config.rooms ?? []
   const radius = config.radius ?? ROOM_CORNER_RADIUS_M
@@ -128,7 +136,14 @@ export default function Scene({
           onAway={onCameraAway}
           wheelZoom={wheelZoom}
         />
-        <Devices hass={hass} config={config} onPick={onPickDecoration} tries={tries} onTry={onTry} />
+        <Devices
+          hass={hass}
+          config={config}
+          onPick={onPickDecoration}
+          tries={tries}
+          onTry={onTry}
+          roomFirst={roomFirst}
+        />
         {/* In the card, the pieces with no device behind them are drawn
           together, a room at a time. In the editor every piece is its own,
           so it can be picked and tried. */}
@@ -140,7 +155,7 @@ export default function Scene({
         {/* The frame is finished from a buffer: shaded where things meet,
           tone mapped, softly darkened at the corners, and in the editor with
           the picked thing outlined. */}
-        <Effects selected={selected} />
+        <Effects selected={selected} focus={focus} />
         {rooms.map((room, i) => (
           <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
         ))}

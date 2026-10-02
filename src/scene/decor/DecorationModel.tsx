@@ -109,8 +109,9 @@ function DecorationModel({ item, all, room, state, raise = 0, onClick, onOpen }:
       rotation={[0, rotation, 0]}
       // A press that lands near this item rather than on it finds these. A
       // piece with nothing to do says which room it stands in instead, so a
-      // press on it counts as one on that room's floor.
-      userData={onClick ? { pick: { click: onClick, open: onOpen ?? onClick } } : { room: item.room }}
+      // press on it counts as one on that room's floor. Both say the room,
+      // which is how the rest of the home is told from a focused room.
+      userData={onClick ? { pick: { click: onClick, open: onOpen ?? onClick }, room: item.room } : { room: item.room }}
       {...interactive}
     >
       <Model kind={kind} item={item} state={state} room={room} all={all} />

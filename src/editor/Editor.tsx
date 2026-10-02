@@ -25,15 +25,17 @@ import {
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
 import {
-  type IconDefinition,
   faCamera,
   faCheck,
+  faDoorOpen,
   faEye,
   faFloppyDisk,
+  faHandPointer,
   faPenRuler,
   faSpinner,
   faTrash,
   faXmark,
+  type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -185,6 +187,13 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   const saveRoomCamera = (roomId: string) => {
     const view = camera.current?.view()
     if (view) setRoomCamera(roomId, view)
+  }
+  // What a click on a device goes to first in the card. Devices first is
+  // what the card does when nothing is said, so it is not written down.
+  const roomsFirst = config.first_click === 'room'
+  const toggleFirstClick = () => {
+    const { first_click: _dropped, ...rest } = config
+    onChange(roomsFirst ? rest : { ...rest, first_click: 'room' })
   }
   const showMainView = () => {
     if (config.camera) camera.current?.flyTo(config.camera)
@@ -952,6 +961,20 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                     {/* The view the card opens with: saved from where the
                         camera stands, flown back to, or forgotten. Named
                         buttons in the corner, over the view. */}
+                    {/* What a click in the card goes to first, a device or
+                        the room it stands in. */}
+                    <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
+                      <PreviewButton
+                        icon={roomsFirst ? faDoorOpen : faHandPointer}
+                        label={roomsFirst ? 'Click: rooms first' : 'Click: devices first'}
+                        title={
+                          roomsFirst
+                            ? 'In the card, the first click on a device goes to its room when the room has a view, and the device answers once the camera is there. Click to have devices answer from anywhere.'
+                            : 'In the card, a click on a device acts on it from anywhere. Click to have the first click go to its room instead.'
+                        }
+                        onClick={toggleFirstClick}
+                      />
+                    </div>
                     <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                       <PreviewButton
                         icon={faXmark}
