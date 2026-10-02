@@ -19,6 +19,8 @@ moves that section under the new version and uses it as the release notes.
 - The darkening at the corners of the card showed as rings of gray instead of a smooth shade.
 - Flying to a room's view no longer starts with a jump: the camera moves in one continuous motion from where it stands to the view.
 - On a dashboard scrolled down, a gesture with one or two fingers no longer opens with a leap of the camera, a sudden zoom, slide or tilt.
+- The editor tab showed both the mouse controls and the finger gestures on many phones and tablets. It now shows the finger gestures on a device with a touch screen and the mouse controls on any other, never both.
+- Many phones and tablets were drawn with the heavier settings meant for a computer, which made the card slower on them than it should be.
 - The first time a light was switched on after the card opened, it came on late and the card stuttered, most of all on a phone or a tablet. It now comes on at once, as it did from the second time on.
 
 ## [1.1.0] - 2026-09-27

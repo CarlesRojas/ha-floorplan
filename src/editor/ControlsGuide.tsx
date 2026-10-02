@@ -2,61 +2,47 @@ import { cn } from '#/lib/utils.ts'
 import { useEffect, useState, type ReactNode } from 'react'
 
 // How to move the view, shown under the way into the editor. The card is
-// driven with a mouse or with fingers, and the two differ, so only the kinds
-// of pointer the device has are shown: a laptop with a touchscreen gets
-// both, a phone the fingers, a desktop the mouse.
-type Pointers = { mouse: boolean; touch: boolean }
-
-function usePointers(): Pointers {
-  const [pointers, setPointers] = useState<Pointers>({ mouse: true, touch: true })
+// driven with a mouse or with fingers, and the two differ, so only one is
+// shown, never both: the fingers on anything with a touch screen, the mouse
+// everywhere else. Many phones and tablets say they have a precise pointer
+// too, so that is not asked.
+function useTouch(): boolean {
+  const [touch, setTouch] = useState(false)
   useEffect(() => {
     if (typeof matchMedia !== 'function') return
-    const fine = matchMedia('(any-pointer: fine)')
     const coarse = matchMedia('(any-pointer: coarse)')
-    const read = () => {
-      // A device that reports neither is shown both, rather than nothing.
-      const both = !fine.matches && !coarse.matches
-      setPointers({ mouse: fine.matches || both, touch: coarse.matches || both })
-    }
+    const read = () => setTouch(coarse.matches)
     read()
-    fine.addEventListener('change', read)
     coarse.addEventListener('change', read)
-    return () => {
-      fine.removeEventListener('change', read)
-      coarse.removeEventListener('change', read)
-    }
+    return () => coarse.removeEventListener('change', read)
   }, [])
-  return pointers
+  return touch
 }
 
 export default function ControlsGuide({ className }: { className?: string }) {
-  const { mouse, touch } = usePointers()
+  const touch = useTouch()
   return (
     <div className={cn('flex flex-wrap justify-center gap-x-10 gap-y-4', className)}>
-      {mouse && (
-        <Section title={touch ? 'Mouse' : undefined}>
-          <Row icon={<Mouse button="left" />} action="Rotate" how="Drag with the left button" />
-          <Row icon={<Mouse button="right" />} action="Pan" how="Drag with the right button" />
-          <Row icon={<Mouse button="middle" />} action="Zoom" how="Drag with the wheel pressed" />
-        </Section>
-      )}
-      {touch && (
-        <Section title={mouse ? 'Touch' : undefined}>
+      {touch ? (
+        <Section>
           <Row icon={<Fingers gesture="rotate" />} action="Rotate" how="Drag with one finger" />
           <Row icon={<Fingers gesture="pan" />} action="Pan" how="Slide two fingers together" />
           <Row icon={<Fingers gesture="zoom" />} action="Zoom" how="Pinch with two fingers" />
+        </Section>
+      ) : (
+        <Section>
+          <Row icon={<Mouse button="left" />} action="Rotate" how="Drag with the left button" />
+          <Row icon={<Mouse button="right" />} action="Pan" how="Drag with the right button" />
+          <Row icon={<Mouse button="middle" />} action="Zoom" how="Drag with the wheel pressed" />
         </Section>
       )}
     </div>
   )
 }
 
-// The title says which kind of pointer a section is for, so it is only
-// there when both kinds are shown.
-function Section({ title, children }: { title?: string; children: ReactNode }) {
+function Section({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 text-left">
-      {title && <p className="text-xs font-semibold tracking-wide text-(--secondary-text-color) uppercase">{title}</p>}
       {children}
     </div>
   )
