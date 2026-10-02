@@ -16,6 +16,8 @@ import {
 import { canRide, decorationKind, footprint, isSupport } from '#/decoration/catalog.ts'
 import { ridersOf, standHeight, supportUnder } from '#/decoration/surfaces.ts'
 import { decorationIcon } from '#/decoration/icons.ts'
+import type { Trace } from '#/editor/trace.ts'
+import { TraceFrame, TraceImage } from '#/editor/TraceLayer.tsx'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { round, snap, toPlan, toScreen, zoomAt, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
@@ -66,6 +68,11 @@ type Props = {
   onCloseDraft: () => void
   onDeleteRoom: (roomId: string) => void
   onTool: (tool: Tool) => void
+  // The picture the rooms are traced over, and whether it is being moved
+  // and sized rather than drawn over.
+  trace: Trace | null
+  adjustingTrace: boolean
+  onTrace: (trace: Trace) => void
   fill?: boolean
 }
 
@@ -116,6 +123,9 @@ export default function Canvas({
   onCloseDraft,
   onDeleteRoom,
   onTool,
+  trace,
+  adjustingTrace,
+  onTrace,
   fill = false,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -962,6 +972,7 @@ export default function Canvas({
         onContextMenu={e => openMenu(e, { kind: 'canvas' })}
       >
         <Grid view={view} width={width} height={height} />
+        {trace && <TraceImage trace={trace} view={view} />}
 
         {rooms.map((room, i) => {
           // While an item is dragged, the room under the pointer lifts a
@@ -1227,6 +1238,7 @@ export default function Canvas({
           </>
         )}
 
+        {trace && adjustingTrace && <TraceFrame trace={trace} view={view} onTrace={onTrace} />}
         <ScaleBar view={view} height={height} />
       </svg>
 

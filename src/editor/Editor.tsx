@@ -5,6 +5,7 @@ import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomInfo from '#/editor/RoomInfo.tsx'
 import Toolbar from '#/editor/Toolbar.tsx'
+import { traceFrom, useTrace } from '#/editor/trace.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
 import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
@@ -86,6 +87,14 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // view and takes a moment, during which the button shows it is working.
   const [opening, setOpening] = useState(false)
   const [showLengths, setShowLengths] = useState(false)
+  // The picture the rooms are traced over. It opens ready to be moved and
+  // sized when it is first chosen, and is drawn over from then on.
+  const [trace, setTrace] = useTrace()
+  const [adjustingTrace, setAdjustingTrace] = useState(false)
+  const pickTrace = async (file: File) => {
+    setTrace(await traceFrom(file, rooms))
+    setAdjustingTrace(true)
+  }
   const [showPreview, setShowPreview] = useState(true)
   // The hour the preview is lit at. The editor never follows the sun: what
   // is being drawn should look the same whatever the time outside, and the
@@ -718,6 +727,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         closeDraft()
         break
       case 'Escape':
+        setAdjustingTrace(false)
         setDraft([])
         setSelection({ roomId: null, vertex: null })
         setSelectedDecoration(null)
@@ -782,6 +792,9 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       onCloseDraft={closeDraft}
       onDeleteRoom={deleteRoom}
       onTool={setTool}
+      trace={trace}
+      adjustingTrace={adjustingTrace}
+      onTrace={setTrace}
       fill
     />
   )
@@ -801,6 +814,11 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         sunDirection={sunDirection}
         onSunDirection={setSunDirection}
         onSunDirectionDone={saveSun}
+        trace={trace}
+        onTrace={setTrace}
+        onPickTrace={pickTrace}
+        adjustingTrace={adjustingTrace}
+        onAdjustingTrace={setAdjustingTrace}
       />
     </div>
   )
