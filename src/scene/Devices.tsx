@@ -1,4 +1,4 @@
-import { betweenOf, roomPressed } from '#/decoration/between.ts'
+import { betweenOf, roomLookedFrom } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -17,7 +17,7 @@ import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useState } from 'react'
-import { Color, MathUtils, SRGBColorSpace } from 'three'
+import { Color, MathUtils, SRGBColorSpace, Vector3 } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
@@ -211,12 +211,14 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
       {decorations.map(item => {
         const { device, tried, state } = states.get(item.id) ?? stateOf(item)
         // A piece in a wall between two rooms sends its first click to the
-        // room the press lands over, on that side of the wall.
+        // room it is looked at from, the one the camera looks out of.
         const between = betweenOf(item, rooms)
         const roomOf = () => {
           if (!between) return item.room
           const turn = MathUtils.degToRad(item.rotation ?? 0)
-          return roomPressed(between, item.position[0], -item.position[1], turn, get().raycaster.ray)
+          const camera = get().camera
+          const look = camera.getWorldDirection(new Vector3())
+          return roomLookedFrom(between, item.position[0], -item.position[1], turn, look, camera.position)
         }
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.

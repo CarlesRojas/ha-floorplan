@@ -1,8 +1,8 @@
-import { roomPressed, type Between } from '#/decoration/between.ts'
+import { roomLookedFrom, type Between } from '#/decoration/between.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { PICK_RADIUS_PX, PICK_RADIUS_TOUCH_PX, PICK_ROOM_AT, PICK_ROOM_AT_TOUCH } from '#/theme.ts'
-import { Vector2, type Object3D } from 'three'
+import { Vector2, Vector3, type Object3D } from 'three'
 
 // What a click on an object does. Models carry it in their userData so a
 // pick that lands near them, rather than on them, can still act.
@@ -91,10 +91,13 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       for (let node: Object3D | null = hit.object; node; node = node.parent) {
         if (node.name.startsWith(ROOM_NAME)) return node.name.slice(ROOM_NAME.length)
         if (node.userData?.pick) return null
-        // A piece in a wall between two rooms stands for the one the press
-        // lands over.
+        // A piece in a wall between two rooms stands for the one it is
+        // looked at from.
         const between = node.userData?.between as Between | undefined
-        if (between) return roomPressed(between, node.position.x, node.position.z, node.rotation.y, raycaster.ray)
+        if (between) {
+          const look = camera.getWorldDirection(new Vector3())
+          return roomLookedFrom(between, node.position.x, node.position.z, node.rotation.y, look, camera.position)
+        }
         const room = node.userData?.room as string | undefined
         if (room) return room
       }
@@ -209,9 +212,6 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
         latestRoom.current?.(found.id)
       } else if (found && !found.direct) {
         onHandled?.()
-        // The search left the ray on the ring where it found the piece. A
-        // piece in a wall asks which side of it the press itself was on.
-        ray(e.clientX, e.clientY)
         found.pick.click()
       }
     }

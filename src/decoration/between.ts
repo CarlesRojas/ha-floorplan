@@ -59,16 +59,17 @@ export function betweenOf(item: DecorationConfig, rooms: RoomConfig[]): Between 
   }
 }
 
-// Which of its two rooms a press on a piece is meant for: the one whose
-// floor the press lands over, on that side of the wall. The piece stands at
-// x, z in the scene, turned by `turn`, and `ray` is the press, from the
-// camera out into the scene. A press that never comes down to the floor is
-// taken from where the camera is instead.
-type Ray = { origin: { x: number; y: number; z: number }; direction: { x: number; y: number; z: number } }
-export function roomPressed(between: Between, x: number, z: number, turn: number, ray: Ray) {
-  const reach = ray.direction.y < -1e-6 ? -ray.origin.y / ray.direction.y : 0
-  const px = ray.origin.x + ray.direction.x * reach
-  const pz = ray.origin.z + ray.direction.z * reach
-  const facing = (px - x) * Math.sin(turn) + (pz - z) * Math.cos(turn)
+// Which of its two rooms a piece is looked at from: the one the camera is
+// looking out of, across the wall, whichever side of it the camera happens
+// to hang over. The piece stands at x, z in the scene, turned by `turn`.
+// `look` is the way the camera faces and `camera` where it is, which only
+// decides when the camera looks straight down and faces neither way.
+type Flat = { x: number; z: number }
+export function roomLookedFrom(between: Between, x: number, z: number, turn: number, look: Flat, camera: Flat) {
+  const flat = Math.hypot(look.x, look.z)
+  const facing =
+    flat > 1e-3
+      ? -(look.x * Math.sin(turn) + look.z * Math.cos(turn))
+      : (camera.x - x) * Math.sin(turn) + (camera.z - z) * Math.cos(turn)
   return facing >= 0 ? between.front : between.back
 }
