@@ -20,13 +20,48 @@ function distanceToOutline(p: Point, points: Point[]) {
   return best
 }
 
-// Every room a piece belongs to: the one it was put in, and for a piece in a
-// wall the rooms on the other side of that wall. Null for a piece that has
-// only its own room, which is nearly all of them.
-export function roomsOf(item: DecorationConfig, rooms: RoomConfig[]): string[] | null {
+function inside(p: Point, points: Point[]) {
+  let within = false
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, yi] = points[i]
+    const [xj, yj] = points[j]
+    if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) within = !within
+  }
+  return within
+}
+
+// The rooms of a piece in a wall between two. `rooms` is every room it
+// belongs to, the one it was put in first. `front` is the room on the side
+// the piece faces and `back` the one behind it, so a press can go to the
+// room it was made from.
+export type Between = { rooms: string[]; front: string; back: string }
+
+// Null for a piece that has only its own room, which is nearly all of them.
+export function betweenOf(item: DecorationConfig, rooms: RoomConfig[]): Between | null {
   if (!BETWEEN_KINDS.has(item.kind)) return null
-  const others = rooms.filter(
-    room => room.id !== item.room && distanceToOutline(item.position, room.points) <= BETWEEN_REACH_M,
-  )
-  return others.length > 0 ? [item.room, ...others.map(room => room.id)] : null
+  const others = rooms
+    .filter(room => room.id !== item.room)
+    .map(room => ({ id: room.id, distance: distanceToOutline(item.position, room.points) }))
+    .filter(room => room.distance <= BETWEEN_REACH_M)
+    .sort((a, b) => a.distance - b.distance)
+  if (others.length === 0) return null
+  // A wall piece faces plan -y at rotation 0. A step that way from where it
+  // stands is either in its own room or it is not.
+  const turn = ((item.rotation ?? 0) * Math.PI) / 180
+  const ahead: Point = [item.position[0] + Math.sin(turn) * 0.25, item.position[1] - Math.cos(turn) * 0.25]
+  const own = rooms.find(room => room.id === item.room)
+  const faces = own ? inside(ahead, own.points) : true
+  const other = others[0].id
+  return {
+    rooms: [item.room, ...others.map(room => room.id)],
+    front: faces ? item.room : other,
+    back: faces ? other : item.room,
+  }
+}
+
+// Which of its two rooms a piece is seen from: the one on the camera's side
+// of the wall. The piece stands at x, z in the scene, turned by `turn`.
+export function roomSeenFrom(between: Between, x: number, z: number, turn: number, camera: { x: number; z: number }) {
+  const facing = (camera.x - x) * Math.sin(turn) + (camera.z - z) * Math.cos(turn)
+  return facing >= 0 ? between.front : between.back
 }

@@ -1,3 +1,4 @@
+import { betweenOf } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { showOnly } from '#/scene/focus.ts'
 import type { CardConfig } from '#/types.ts'
@@ -61,6 +62,9 @@ function staticIds(config: CardConfig) {
     if (bound.has(item.id)) continue
     const kind = decorationKind(item.kind)
     if (!kind || LIVE_KINDS.has(kind.id)) continue
+    // A piece in a wall between two rooms stays its own, so it can stay
+    // when either room is focused and say which side it was pressed from.
+    if (betweenOf(item, config.rooms ?? [])) continue
     let raised = false
     let at = item
     for (let depth = 0; at.on && depth < 6; depth++) {
@@ -219,23 +223,19 @@ type Baked = { meshes: Mesh[]; hidden: Mesh[] }
 // was made and what was hidden, so both can be undone.
 function bake(scene: Scene, ids: Set<string>): Baked {
   scene.updateMatrixWorld(true)
-  // The groups to take, by the room they stand in. The pieces in a wall
-  // between two rooms are kept apart from the rest of either, so they can
-  // stay when one of the two is focused.
-  const rooms = new Map<string, { room?: string; also?: string[]; groups: Group[] }>()
+  // The groups to take, by the room they stand in.
+  const rooms = new Map<string | undefined, Group[]>()
   scene.traverse(object => {
     if (!object.name.startsWith(DECORATION) || !ids.has(object.name.slice(DECORATION.length))) return
     const room = object.userData.room as string | undefined
-    const also = object.userData.rooms as string[] | undefined
-    const key = JSON.stringify(also ?? room ?? null)
-    const set = rooms.get(key) ?? { room, also, groups: [] }
-    set.groups.push(object as Group)
-    rooms.set(key, set)
+    const list = rooms.get(room) ?? []
+    list.push(object as Group)
+    rooms.set(room, list)
   })
   const meshes: Mesh[] = []
   const hidden: Mesh[] = []
   const materials = new Map<string, MeshStandardMaterial>()
-  for (const { room, also, groups } of rooms.values()) {
+  for (const [room, groups] of rooms) {
     const all = new Map<string, Batch>()
     for (const group of groups) {
       for (const [key, batch] of batches(group, hidden)) {
@@ -262,7 +262,6 @@ function bake(scene: Scene, ids: Set<string>): Baked {
       mesh.receiveShadow = true
       // A press on it is one on the floor of the room, as it was on the parts.
       if (room) mesh.userData.room = room
-      if (also) mesh.userData.rooms = also
       scene.add(mesh)
       meshes.push(mesh)
     }

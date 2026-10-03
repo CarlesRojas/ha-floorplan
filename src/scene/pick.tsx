@@ -1,3 +1,4 @@
+import { roomSeenFrom, type Between } from '#/decoration/between.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { PICK_RADIUS_PX, PICK_RADIUS_TOUCH_PX, PICK_ROOM_AT, PICK_ROOM_AT_TOUCH } from '#/theme.ts'
@@ -90,6 +91,10 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       for (let node: Object3D | null = hit.object; node; node = node.parent) {
         if (node.name.startsWith(ROOM_NAME)) return node.name.slice(ROOM_NAME.length)
         if (node.userData?.pick) return null
+        // A piece in a wall between two rooms stands for the one it is
+        // seen from.
+        const between = node.userData?.between as Between | undefined
+        if (between) return roomSeenFrom(between, node.position.x, node.position.z, node.rotation.y, camera.position)
         const room = node.userData?.room as string | undefined
         if (room) return room
       }

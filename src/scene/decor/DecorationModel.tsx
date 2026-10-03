@@ -1,3 +1,4 @@
+import type { Between } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { usePressActions } from '#/scene/decor/press.ts'
 import { standHeight } from '#/decoration/surfaces.ts'
@@ -25,9 +26,9 @@ type Props = {
   // The room it stands in, for the models that have to know the floor they
   // are on. Absent in the sidebar's preview, where there is no room.
   room?: RoomConfig
-  // Every room it belongs to, for a piece in a wall between two. Absent for
+  // The rooms it belongs to, for a piece in a wall between two. Absent for
   // a piece that has only its own.
-  rooms?: string[] | null
+  between?: Between | null
   state: ItemState | null
   // How far the standing desks under it have carried it up.
   raise?: number
@@ -93,7 +94,7 @@ const READS_PLAN = new Set(['vacuum_robot', 'kitchen_counter'])
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-function DecorationModel({ item, all, room, rooms, state, raise = 0, onClick, onOpen }: Props) {
+function DecorationModel({ item, all, room, between, state, raise = 0, onClick, onOpen }: Props) {
   const interactive = usePressActions(onClick, onOpen)
   const rise = useEased(raise, 2)
   const kind = decorationKind(item.kind)
@@ -118,7 +119,7 @@ function DecorationModel({ item, all, room, rooms, state, raise = 0, onClick, on
       userData={{
         ...(onClick && { pick: { click: onClick, open: onOpen ?? onClick } }),
         room: item.room,
-        ...(rooms && { rooms }),
+        ...(between && { rooms: between.rooms, between }),
       }}
       {...interactive}
     >
@@ -133,7 +134,7 @@ function DecorationModel({ item, all, room, rooms, state, raise = 0, onClick, on
 // edit, so it only counts through the height it lifts the piece to.
 function unchanged(a: Props, b: Props) {
   if (a.raise !== b.raise) return false
-  if (a.rooms?.join() !== b.rooms?.join()) return false
+  if (JSON.stringify(a.between ?? null) !== JSON.stringify(b.between ?? null)) return false
   if (a.item !== b.item || a.room !== b.room || a.onClick !== b.onClick || a.onOpen !== b.onOpen) return false
   if (!sameState(a.state, b.state)) return false
   if (a.all === b.all) return true

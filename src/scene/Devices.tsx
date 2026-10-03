@@ -1,4 +1,4 @@
-import { roomsOf } from '#/decoration/between.ts'
+import { betweenOf, roomSeenFrom } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -17,7 +17,7 @@ import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useState } from 'react'
-import { Color, SRGBColorSpace } from 'three'
+import { Color, MathUtils, SRGBColorSpace } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
@@ -159,6 +159,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
   // click cannot stand in for: brightness, color, a cover's position. The
   // event has to cross the card's shadow root to reach it.
   const gl = useThree(state => state.gl)
+  const get = useThree(state => state.get)
   const openMoreInfo = (entityId: string) => {
     gl.domElement.dispatchEvent(
       new CustomEvent('hass-more-info', { detail: { entityId }, bubbles: true, composed: true }),
@@ -209,6 +210,14 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
     <>
       {decorations.map(item => {
         const { device, tried, state } = states.get(item.id) ?? stateOf(item)
+        // A piece in a wall between two rooms sends its first click to the
+        // room it is seen from, the one on the camera's side of the wall.
+        const between = betweenOf(item, rooms)
+        const roomOf = () => {
+          if (!between) return item.room
+          const turn = MathUtils.degToRad(item.rotation ?? 0)
+          return roomSeenFrom(between, item.position[0], -item.position[1], turn, get().camera.position)
+        }
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.
         const onClick =
@@ -216,7 +225,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
             ? () => {
                 onPick?.(item.id)
                 if (device) {
-                  if (!roomFirst?.(item.room)) act(device.entity_id)
+                  if (!roomFirst?.(roomOf())) act(device.entity_id)
                 } else if (tried) onTry?.(item.id)
               }
             : undefined
@@ -229,7 +238,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
             item={item}
             all={decorations}
             room={roomById.get(item.room)}
-            rooms={roomsOf(item, rooms)}
+            between={between}
             state={state}
             raise={raise(item)}
             onClick={onClick && h.click}

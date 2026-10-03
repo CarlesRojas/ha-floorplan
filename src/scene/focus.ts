@@ -25,7 +25,7 @@ function sweep(object: Object3D, room: string | null, hide: boolean) {
   const name = object.name
   if (room === null) hide = false
   else if (name.startsWith(ROOM)) hide = name.slice(ROOM.length) !== room
-  else if (name.startsWith(MERGED)) hide = name.slice(MERGED.length) !== room && !alsoIn(object, room)
+  else if (name.startsWith(MERGED)) hide = name.slice(MERGED.length) !== room
   else if (name.startsWith(DECORATION)) hide = object.userData.room !== room && !alsoIn(object, room)
   if (!(object as Light).isLight) {
     if (hide) {
