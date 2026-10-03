@@ -9,6 +9,15 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The camera flies to a room, and back out of it, a little faster.
+
+### Fixed
+
+- A long press never sends the camera to a room or back home any more: on touch screens that call a long press early, holding a finger on a room's floor used to count as a click on it.
+- A long press on a touch screen finds a device as far from the finger as a tap does, and opens its dialog where the browser's own menu used to get in the way.
+
 ## [1.2.1] - 2026-10-03
 
 ### Added
