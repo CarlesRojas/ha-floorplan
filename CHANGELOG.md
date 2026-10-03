@@ -13,6 +13,7 @@ moves that section under the new version and uses it as the release notes.
 
 - A blind has an Other side of wall switch that hangs it on the far side of the wall it is on, outside the room it belongs to, which is where a shutter on an outside wall goes. It works whether or not there is a room on that side.
 - A toaster has a Depth slider, and one made shallow enough has a single slot where it had two.
+- A piece that can stand on others has an arrow down and an arrow up in its panel that step it through the heights there are where it stands: the floor, every top under it, and the height it has on its own. A piece sent down to the floor stays on it when dragged, so it can go under a table. A height set with the old slider is kept, as one of the steps.
 
 ### Changed
 
@@ -21,7 +22,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Removed
 
-- The toaster's Standing on slider is gone. It still stands at counter height until it is put on a counter.
+- The Standing on slider and dropdown of the pieces that go on tables and counters are gone, replaced by the arrows above.
 
 ## [1.2.2] - 2026-10-03
 

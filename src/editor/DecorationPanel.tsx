@@ -1,11 +1,9 @@
 import {
   adjustedCount,
-  canRide,
   cycleLength,
   DECORATION_KINDS,
   decorationKind,
   decorationVariant,
-  isSupport,
   itemLevels,
   kindColors,
   paramValue,
@@ -13,7 +11,7 @@ import {
   withoutStyleDefaults,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { ridersOf } from '#/decoration/surfaces.ts'
+import { levelsAt } from '#/decoration/surfaces.ts'
 import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import TrySection from '#/editor/TrySection.tsx'
@@ -34,7 +32,16 @@ import { deviceSignals, levelChannels } from '#/signals.ts'
 import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
-import { faArrowsRotate, faMinus, faPlus, faRotateLeft, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowsRotate,
+  faChevronDown,
+  faChevronUp,
+  faMinus,
+  faPlus,
+  faRotateLeft,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState } from 'react'
 
@@ -49,7 +56,7 @@ type Props = {
   onRemove: (id: string) => void
   onBind: (id: string, entityId: string | null) => void
   onDeviceLevels: (entityId: string, levels: Record<string, string>) => void
-  onStandOn: (id: string, supportId: string | null) => void
+  onStandOn: (id: string, level: { on: string | null; floor: boolean }) => void
   onSelect: (id: string | null) => void
   // States tried on pieces with no device, only while editing.
   tries: TryStates
@@ -126,13 +133,15 @@ export default function DecorationPanel({
     const fits = (hass ? placeableEntities(hass) : [])
       .filter(e => shared(e.entity_id) > 0)
       .sort((a, b) => shared(b.entity_id) - shared(a.entity_id) || a.name.localeCompare(b.name))
-    // Tops in the same room, never the item itself or anything on it.
-    const mine = new Set([item.id, ...ridersOf(item.id, decorations).map(r => r.id)])
-    const supports = decorations.filter(d => {
-      if (mine.has(d.id) || d.room !== item.room) return false
-      const k = decorationKind(d.kind)
-      return k ? isSupport(k) : false
-    })
+    // The heights it can stand at where it is: the floor, its own height
+    // and the tops under it.
+    const levels = levelsAt(item, decorations)
+    const levelAt = levels.findIndex(l => l.current)
+    const levelName = (l: (typeof levels)[number]) => {
+      const under = l.on ? decorations.find(d => d.id === l.on) : undefined
+      if (under) return decorationKind(under.kind)?.label ?? under.kind
+      return l.floor ? 'The floor' : 'On its own'
+    }
     const itemRoom = rooms.find(r => r.id === item.room)
     const roomIndex = rooms.findIndex(r => r.id === item.room)
     const roomTag = itemRoom ? (
@@ -314,19 +323,37 @@ export default function DecorationPanel({
           ))}
         </div>
 
-        {canRide(kind) && (
+        {/* Up and down through the heights there are where it stands. With
+            only one, there is nothing to step through. */}
+        {levels.length > 1 && levelAt >= 0 && (
           <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
             <p className="text-xs font-semibold text-(--secondary-text-color)">Standing on</p>
-            <Select
-              aria-label="Standing on"
-              value={item.on ?? ''}
-              placeholder="The floor"
-              options={[
-                { value: '', label: 'The floor' },
-                ...supports.map(s => ({ value: s.id, label: decorationKind(s.kind)?.label ?? s.kind })),
-              ]}
-              onChange={v => onStandOn(item.id, v || null)}
-            />
+            <div className="flex items-center gap-2 text-sm">
+              <span className="min-w-0 flex-1 truncate">
+                {levelName(levels[levelAt])}
+                <span className="ml-2 text-xs text-(--secondary-text-color)">
+                  {Math.round(levels[levelAt].height * 100)} cm
+                </span>
+              </span>
+              {(
+                [
+                  [-1, 'Lower', faChevronDown],
+                  [1, 'Higher', faChevronUp],
+                ] as const
+              ).map(([by, label, icon]) => (
+                <button
+                  key={label}
+                  type="button"
+                  aria-label={label}
+                  title={levels[levelAt + by] ? `${label}: ${levelName(levels[levelAt + by])}` : label}
+                  disabled={!levels[levelAt + by]}
+                  onClick={() => onStandOn(item.id, levels[levelAt + by])}
+                  className="flex size-7 items-center justify-center rounded-md border border-(--divider-color) hover:bg-(--secondary-background-color) disabled:opacity-50"
+                >
+                  <FontAwesomeIcon icon={icon} className="size-3" />
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

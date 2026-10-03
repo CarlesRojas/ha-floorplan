@@ -327,20 +327,17 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     if (selectedDecoration === id) setSelectedDecoration(null)
   }
 
-  // Puts an item on another one, or back on the floor.
-  const standOn = (id: string, supportId: string | null) => {
-    const support = supportId ? decorations.find(d => d.id === supportId) : null
+  // Stands an item at another height where it is: on one of the tops under
+  // it, on the floor, or at the height it has on its own.
+  const standOn = (id: string, level: { on: string | null; floor: boolean }) => {
     commit(
       rooms,
       devices,
       decorations.map(d => {
         if (d.id !== id) return d
-        if (!support) {
-          const { on: _dropped, ...rest } = d
-          return rest
-        }
-        // It lands in the middle of the top it was put on.
-        return { ...d, on: support.id, room: support.room, position: support.position }
+        const { on: _on, floor: _floor, ...rest } = d
+        if (level.on) return { ...rest, on: level.on }
+        return level.floor ? { ...rest, floor: true } : rest
       }),
     )
   }

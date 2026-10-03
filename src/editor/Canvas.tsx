@@ -433,10 +433,14 @@ export default function Canvas({
           }
         }
         // What it comes to rest on: the highest top under it, or the floor.
-        if (kind && canRide(kind)) {
+        // A piece put on the floor from its panel stays there, so it can be
+        // slid under a table without climbing onto it.
+        if (kind && canRide(kind) && !(item.floor && !item.on)) {
           const support = supportUnder(landing.position, { ...item, room: landing.room }, current)
-          if (support) landing = { ...landing, on: support.id, room: support.room }
-          else if (landing.on) {
+          if (support) {
+            const { floor: _floor, ...rest } = landing
+            landing = { ...rest, on: support.id, room: support.room }
+          } else if (landing.on) {
             const { on: _dropped, ...rest } = landing
             landing = rest
           }

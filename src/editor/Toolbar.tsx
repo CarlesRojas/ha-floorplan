@@ -291,11 +291,7 @@ function TracePanel({
               {trace ? 'Replace' : 'Choose image'}
             </button>
             {trace && (
-              <button
-                type="button"
-                className={cn(button, 'flex-1')}
-                onClick={() => onTrace(null)}
-              >
+              <button type="button" className={cn(button, 'flex-1')} onClick={() => onTrace(null)}>
                 Remove
               </button>
             )}

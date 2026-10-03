@@ -135,8 +135,10 @@ const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max
 const height = (d: number, min = 0.2, max = 2.6) => p('height', 'Height', d, min, max)
 const size = (d: number, min = 0.1, max = 1.5) => p('size', 'Size', d, min, max)
 const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Length', d, min, max, step)
-// Height an item stands at when it is not standing on anything.
-const lift = (d: number, max = 1.5) => p('lift', 'Standing on', d, 0, max)
+// Height an item stands at when it is not standing on anything. The editor
+// has no slider for it: the piece is stepped between the floor, this height
+// and the tops under it.
+const lift = (d: number, max = 1.5) => ({ ...p('lift', 'Standing on', d, 0, max), hidden: true })
 const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1, '')
 // How far an appliance is raised off the floor, to sit in a run of units.
 const base = (d = 0) => p('base', 'Off floor', d, 0, 1.6)
@@ -1332,9 +1334,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Toaster',
     'floor',
-    // It stands at counter height until it is put on something, with no
-    // slider for that: a toaster has nowhere else to be.
-    [width(0.31, 0.2, 0.45), depth(0.2, 0.1, 0.3), { ...lift(0.92), hidden: true }],
+    [width(0.31, 0.2, 0.45), depth(0.2, 0.1, 0.3), lift(0.92)],
     { body: '#e8e3d8', trim: '#c4c7c8' },
     { body: 'ceramic', trim: 'metal' },
     TOGGLE,
@@ -2797,7 +2797,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
 const BUILT_IN: Record<string, number> = { hob: 0, kitchen_sink: 0 }
 
 export const isSupport = (kind: DecorationKind) => kind.id in SURFACE_TOPS
-// Anything with a "Standing on" parameter is meant to stand on something.
+// Anything with a height of its own to stand at is meant to stand on something.
 export const canRide = (kind: DecorationKind) => kind.params.some(p => p.id === 'lift')
 export const isBuiltIn = (kind: DecorationKind) => kind.id in BUILT_IN
 // Positive sinks the item into the top, negative lifts it clear of it.
