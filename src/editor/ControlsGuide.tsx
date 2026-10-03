@@ -25,7 +25,7 @@ export default function ControlsGuide({ className }: { className?: string }) {
     <div className={cn('flex flex-wrap justify-center gap-x-10 gap-y-4', className)}>
       {touch ? (
         <Section>
-          <Row icon={<Fingers gesture="rotate" />} action="Rotate" how="Drag with one finger" />
+          <Row icon={<Fingers gesture="rotate" />} action="Rotate" how="Drag sideways with one finger" />
           <Row icon={<Fingers gesture="pan" />} action="Pan" how="Slide two fingers together" />
           <Row icon={<Fingers gesture="zoom" />} action="Zoom" how="Pinch with two fingers" />
         </Section>
@@ -41,11 +41,7 @@ export default function ControlsGuide({ className }: { className?: string }) {
 }
 
 function Section({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2 text-left">
-      {children}
-    </div>
-  )
+  return <div className="flex flex-col gap-2 text-left">{children}</div>
 }
 
 function Row({ icon, action, how }: { icon: ReactNode; action: string; how: string }) {
