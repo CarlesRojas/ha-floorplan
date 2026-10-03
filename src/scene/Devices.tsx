@@ -1,3 +1,4 @@
+import { roomsOf } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -228,6 +229,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
             item={item}
             all={decorations}
             room={roomById.get(item.room)}
+            rooms={roomsOf(item, rooms)}
             state={state}
             raise={raise(item)}
             onClick={onClick && h.click}

@@ -219,19 +219,23 @@ type Baked = { meshes: Mesh[]; hidden: Mesh[] }
 // was made and what was hidden, so both can be undone.
 function bake(scene: Scene, ids: Set<string>): Baked {
   scene.updateMatrixWorld(true)
-  // The groups to take, by the room they stand in.
-  const rooms = new Map<string | undefined, Group[]>()
+  // The groups to take, by the room they stand in. The pieces in a wall
+  // between two rooms are kept apart from the rest of either, so they can
+  // stay when one of the two is focused.
+  const rooms = new Map<string, { room?: string; also?: string[]; groups: Group[] }>()
   scene.traverse(object => {
     if (!object.name.startsWith(DECORATION) || !ids.has(object.name.slice(DECORATION.length))) return
     const room = object.userData.room as string | undefined
-    const list = rooms.get(room) ?? []
-    list.push(object as Group)
-    rooms.set(room, list)
+    const also = object.userData.rooms as string[] | undefined
+    const key = JSON.stringify(also ?? room ?? null)
+    const set = rooms.get(key) ?? { room, also, groups: [] }
+    set.groups.push(object as Group)
+    rooms.set(key, set)
   })
   const meshes: Mesh[] = []
   const hidden: Mesh[] = []
   const materials = new Map<string, MeshStandardMaterial>()
-  for (const [room, groups] of rooms) {
+  for (const { room, also, groups } of rooms.values()) {
     const all = new Map<string, Batch>()
     for (const group of groups) {
       for (const [key, batch] of batches(group, hidden)) {
@@ -258,6 +262,7 @@ function bake(scene: Scene, ids: Set<string>): Baked {
       mesh.receiveShadow = true
       // A press on it is one on the floor of the room, as it was on the parts.
       if (room) mesh.userData.room = room
+      if (also) mesh.userData.rooms = also
       scene.add(mesh)
       meshes.push(mesh)
     }
