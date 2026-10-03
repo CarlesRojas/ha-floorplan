@@ -9,6 +9,8 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-10-03
+
 ### Added
 
 - A blind has an Other side of wall switch that hangs it on the far side of the wall it is on, outside the room it belongs to, which is where a shutter on an outside wall goes. It works whether or not there is a room on that side.
@@ -126,7 +128,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.1.0...v1.2.0
