@@ -9,6 +9,8 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-10-03
+
 ### Added
 
 - Every room has a view from the start: one with none saved is framed alone, from the same side as the view the card opens with, so a click on any room flies the camera to it. Forgetting a saved view, of a room or of the card, goes back to the one it comes with.
@@ -145,7 +147,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.4...HEAD
+[1.2.4]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.0...v1.2.1
