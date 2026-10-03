@@ -119,20 +119,40 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       return room ? { kind: 'room', id: room } : null
     }
 
-    let from: { x: number; y: number; at: number } | null = null
+    let from: { x: number; y: number; at: number; reach: typeof MOUSE } | null = null
     // Where the right button went down, until it drags or comes up.
     let rightFrom: { x: number; y: number } | null = null
     let timer: ReturnType<typeof setTimeout> | null = null
     let opened = false
+    // The press under way was held long enough to be a long press, whether
+    // or not it found a dialog to open. Its release is then never a click.
+    let held = false
     const stop = () => {
       if (timer !== null) clearTimeout(timer)
       timer = null
+    }
+
+    // A long press asks for the dialog of whatever is near, as far out as a
+    // click from the same pointer reaches. It never asks for the floor.
+    const longPress = () => {
+      stop()
+      if (!from || held) return
+      held = true
+      const found = near(from.x, from.y, false, from.reach)
+      // A direct hit is the object's own business, it has handlers of its
+      // own. This only speaks for presses that landed on nothing.
+      if (found?.kind === 'pick' && !found.direct) {
+        opened = true
+        onHandled?.()
+        found.pick.open()
+      }
     }
 
     const onDown = (e: PointerEvent) => {
       from = null
       rightFrom = null
       opened = false
+      held = false
       stop()
       if (e.button === 2) {
         rightFrom = { x: e.clientX, y: e.clientY }
@@ -140,17 +160,8 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       }
       // Only the left button presses. Any other is the camera's.
       if (e.button !== 0) return
-      from = { x: e.clientX, y: e.clientY, at: performance.now() }
-      timer = setTimeout(() => {
-        const found = near(e.clientX, e.clientY, false, reachOf(e))
-        // A direct hit is the object's own business, it has handlers of its
-        // own. This only speaks for presses that landed on nothing.
-        if (found?.kind === 'pick' && !found.direct) {
-          opened = true
-          onHandled?.()
-          found.pick.open()
-        }
-      }, LONG_PRESS_MS)
+      from = { x: e.clientX, y: e.clientY, at: performance.now(), reach: reachOf(e) }
+      timer = setTimeout(longPress, LONG_PRESS_MS)
     }
 
     const onMove = (e: PointerEvent) => {
@@ -179,9 +190,14 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
         }
         return
       }
-      if (!start || opened) return
+      if (!start) return
       if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > SLOP_PX) return
-      if (performance.now() - start.at > LONG_PRESS_MS) return
+      // A long press is spent when it is let go: it clicks nothing, goes to
+      // no room, and is not a press on nothing that sends the camera home.
+      if (opened || held || performance.now() - start.at > LONG_PRESS_MS) {
+        onHandled?.()
+        return
+      }
       const found = near(e.clientX, e.clientY, true, reachOf(e))
       if (found?.kind === 'room') {
         onHandled?.()
@@ -192,9 +208,26 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       }
     }
 
+    // A press the browser takes away, to scroll the page or to show a menu
+    // of its own, was never let go, so it does nothing.
+    const onCancel = () => {
+      stop()
+      from = null
+      rightFrom = null
+    }
+
     // The menu is kept away from anything that has a dialog to open instead.
     // The opening itself waits for the button to come up, above.
     const onContext = (e: MouseEvent) => {
+      // A touch screen asks for the menu when a finger has been held down,
+      // and some ask sooner than the timer here runs out. That is the long
+      // press, taken there and then, and the menu has no place over the plan.
+      if (from) {
+        const touch = from.reach === TOUCH
+        longPress()
+        if (opened || touch) e.preventDefault()
+        return
+      }
       const found = near(e.clientX, e.clientY, false)
       if (found?.kind === 'pick' && !found.direct) e.preventDefault()
     }
@@ -202,14 +235,14 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
     el.addEventListener('pointerdown', onDown)
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-    el.addEventListener('pointercancel', onUp)
+    el.addEventListener('pointercancel', onCancel)
     el.addEventListener('contextmenu', onContext)
     return () => {
       stop()
       el.removeEventListener('pointerdown', onDown)
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerup', onUp)
-      el.removeEventListener('pointercancel', onUp)
+      el.removeEventListener('pointercancel', onCancel)
       el.removeEventListener('contextmenu', onContext)
     }
   }, [gl, camera, scene, raycaster, onHandled])

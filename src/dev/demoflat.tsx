@@ -9,8 +9,10 @@
 // room can be shot at dusk; `dark` uses Home Assistant's dark theme colors;
 // `editor` shows the editor instead of the card; `merge=0` draws every piece
 // on its own, to compare against the merged room; `views` gives every room
-// a view from above it, so a click on a room flies there; `first=room` has
-// the first click on a device go to its room.
+// a view from above it, so a click on a room flies there; `first=device` has
+// a click on a device act on it from anywhere, not go to its room first;
+// `mobile=1:1` gives the card that aspect ratio while it is narrow, and 16:9
+// otherwise.
 // A click on a piece flips its entity, the way Home Assistant would.
 import { setMerging } from '#/scene/Merged.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
@@ -57,7 +59,12 @@ if (params.has('views')) {
     return { ...room, camera: { position: [x + 2, 7, -y + 5], target: [x, 0, -y] } }
   })
 }
-if (params.get('first') === 'room') config.first_click = 'room'
+const mobile = params.get('mobile')
+if (mobile) {
+  config.aspect_ratio = '16:9'
+  config.aspect_ratio_mobile = mobile
+}
+if (params.get('first') === 'device') config.first_click = 'device'
 
 type CardElement = HTMLElement & { setConfig: (c: CardConfig) => void; hass: HomeAssistant }
 const element = document.createElement(params.has('editor') ? 'floorplan-3d-editor' : 'floorplan-3d') as CardElement

@@ -16,6 +16,8 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
   // Where the right button went down, until it drags or comes up.
   const rightFrom = useRef<[number, number] | null>(null)
   const opened = useRef(false)
+  // When the left button or the finger last went down.
+  const downAt = useRef(0)
   const hovered = useRef(false)
 
   const cancel = () => {
@@ -47,6 +49,9 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
         opened.current = false
         return
       }
+      // A press held this long was a long press, even one that opened
+      // nothing, and a long press never clicks.
+      if (performance.now() - downAt.current > LONG_PRESS_MS) return
       onClick?.()
     },
     // The menu is kept away. The right click opens the dialog when it is let
@@ -54,10 +59,20 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
     onContextMenu: (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation()
       e.nativeEvent.preventDefault()
+      // A touch screen asks for the menu when a finger has been held down,
+      // and some ask sooner than the timer here runs out. That is the long
+      // press, taken there and then.
+      if (timer.current === null || !from.current || !onOpen) return
+      clearTimeout(timer.current)
+      timer.current = null
+      if (multiTouchSince(downAt.current)) return
+      opened.current = true
+      onOpen()
     },
     onPointerDown: (e: ThreeEvent<PointerEvent>) => {
       cancel()
       opened.current = false
+      if (e.nativeEvent.button === 0) downAt.current = performance.now()
       if (!onOpen) return
       if (e.nativeEvent.button === 2) {
         rightFrom.current = [e.nativeEvent.clientX, e.nativeEvent.clientY]
@@ -66,7 +81,7 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       // Only the left button presses. Any other is the camera's.
       if (e.nativeEvent.button !== 0) return
       from.current = [e.nativeEvent.clientX, e.nativeEvent.clientY]
-      const at = performance.now()
+      const at = downAt.current
       timer.current = setTimeout(() => {
         timer.current = null
         // Two fingers held still on a piece are a pinch about to start,

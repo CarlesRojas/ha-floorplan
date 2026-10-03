@@ -9,6 +9,21 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- `aspect_ratio_mobile` gives the card another shape while it is narrower than 600 px, so one card can be 16:9 on a desktop and square on a phone.
+
+### Changed
+
+- A card that sets no `aspect_ratio` is now 16:9, and square while it is narrower than 600 px, where it used to be 4:3 at every width. A card that sets `aspect_ratio` keeps its shape.
+- The first click on a device now goes to its room by default, when that room has a view, and the device answers once the camera is there. Set `first_click: device`, or switch the Click button in the editor's 3D view, to have devices answer from anywhere as before.
+- The camera flies to a room, and back out of it, a little faster.
+
+### Fixed
+
+- A long press never sends the camera to a room or back home any more: on touch screens that call a long press early, holding a finger on a room's floor used to count as a click on it.
+- A long press on a touch screen finds a device as far from the finger as a tap does, and opens its dialog where the browser's own menu used to get in the way.
+
 ## [1.2.1] - 2026-10-03
 
 ### Added
