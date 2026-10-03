@@ -14,6 +14,7 @@ moves that section under the new version and uses it as the release notes.
 - A blind has an Other side of wall switch that hangs it on the far side of the wall it is on, outside the room it belongs to, which is where a shutter on an outside wall goes. It works whether or not there is a room on that side.
 - A toaster has a Depth slider, and one made shallow enough has a single slot where it had two.
 - A piece that can stand on others has an arrow down and an arrow up in its panel that step it through the heights there are where it stands: the floor, every top under it, and the height it has on its own. A piece sent down to the floor stays on it when dragged, so it can go under a table. A height set with the old slider is kept, as one of the steps.
+- A window, a door, a sliding door or a garage door with no device and a blind or a curtain over it passes its clicks to that blind, so a click on the glass works the blind whichever side of the window it hangs on.
 
 ### Changed
 

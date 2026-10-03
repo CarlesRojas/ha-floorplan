@@ -1,4 +1,4 @@
-import { betweenOf, roomLookedFrom } from '#/decoration/between.ts'
+import { betweenOf, coverOver, roomLookedFrom } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -227,6 +227,11 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
         // In the card, a piece in a wall with no device still takes the
         // press, for the room it is looked at from. Left to pass through, it
         // would go to whatever stands behind the piece, in the far room.
+        // A window or a door with no device and a blind or a curtain over
+        // it takes that cover's presses, so a press on the glass works the
+        // blind whichever of the two is in front.
+        const cover = !device && !onPick && !tried ? coverOver(item, decorations, id => boundTo.has(id)) : undefined
+        const covering = cover && boundTo.get(cover.id)
         const onClick =
           device || onPick || tried
             ? () => {
@@ -235,10 +240,15 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
                   if (!roomFirst?.(roomOf())) act(device.entity_id)
                 } else if (tried) onTry?.(item.id)
               }
-            : between && onRoom
-              ? () => onRoom(roomOf())
-              : undefined
-        const onOpen = device ? () => openMoreInfo(device.entity_id) : undefined
+            : covering
+              ? () => {
+                  if (!roomFirst?.(roomOf())) act(covering.entity_id)
+                }
+              : between && onRoom
+                ? () => onRoom(roomOf())
+                : undefined
+        const acting = device ?? covering
+        const onOpen = acting ? () => openMoreInfo(acting.entity_id) : undefined
         actions.set(item.id, { click: onClick, open: onOpen })
         const h = handler(item.id)
         return (

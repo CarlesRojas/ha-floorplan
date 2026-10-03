@@ -1,3 +1,4 @@
+import { decorationKind, paramValue } from '#/decoration/catalog.ts'
 import type { DecorationConfig, Point, RoomConfig } from '#/types.ts'
 
 // The pieces that stand in a wall between two rooms and are seen from both:
@@ -72,4 +73,34 @@ export function roomLookedFrom(between: Between, x: number, z: number, turn: num
       ? -(look.x * Math.sin(turn) + look.z * Math.cos(turn))
       : (camera.x - x) * Math.sin(turn) + (camera.z - z) * Math.cos(turn)
   return facing >= 0 ? between.front : between.back
+}
+
+// The openings a blind or a curtain hangs over, and the covers that do.
+const OPENING_KINDS = new Set(['window', 'door', 'sliding_door', 'garage_door'])
+const COVER_KINDS = new Set(['blind', 'curtain'])
+
+// The blind or curtain hanging over an opening, on either side of it: the
+// nearest one with a device, `bound` saying which have, that is within the
+// opening's width of its middle. An opening with no device of its own hands
+// its presses to that cover, so a press on the glass works the blind.
+export function coverOver(
+  item: DecorationConfig,
+  all: DecorationConfig[],
+  bound: (id: string) => boolean,
+): DecorationConfig | undefined {
+  if (!OPENING_KINDS.has(item.kind) || bound(item.id)) return undefined
+  const kind = decorationKind(item.kind)
+  if (!kind) return undefined
+  const reach = Math.max(BETWEEN_REACH_M, paramValue(kind, item.params, 'width', item.variant) / 2)
+  let best: DecorationConfig | undefined
+  let bestAway = reach
+  for (const other of all) {
+    if (!COVER_KINDS.has(other.kind) || !bound(other.id)) continue
+    const away = Math.hypot(other.position[0] - item.position[0], other.position[1] - item.position[1])
+    if (away <= bestAway) {
+      best = other
+      bestAway = away
+    }
+  }
+  return best
 }
