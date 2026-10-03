@@ -1,6 +1,10 @@
 import { multiTouchSince } from '#/scene/touches.ts'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
+import type { Vector3 } from 'three'
+
+// What a press does, told where on the piece it landed.
+export type PressAction = (at?: Vector3) => void
 
 // How a click and a press are told apart in 3D. A click acts on the device.
 // A right click, or a long press on a touch screen, asks Home Assistant for
@@ -10,7 +14,7 @@ const LONG_PRESS_MS = 500
 // A press that wanders this far is the viewer orbiting, not a long press.
 const SLOP_PX = 8
 
-export function usePressActions(onClick?: () => void, onOpen?: () => void) {
+export function usePressActions(onClick?: PressAction, onOpen?: PressAction) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const from = useRef<[number, number] | null>(null)
   // Where the right button went down, until it drags or comes up.
@@ -52,7 +56,7 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       // A press held this long was a long press, even one that opened
       // nothing, and a long press never clicks.
       if (performance.now() - downAt.current > LONG_PRESS_MS) return
-      onClick?.()
+      onClick?.(e.point)
     },
     // The menu is kept away. The right click opens the dialog when it is let
     // go, below, so a right drag that orbits or pans opens nothing.
@@ -67,7 +71,7 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       timer.current = null
       if (multiTouchSince(downAt.current)) return
       opened.current = true
-      onOpen()
+      onOpen(e.point)
     },
     onPointerDown: (e: ThreeEvent<PointerEvent>) => {
       cancel()
@@ -82,13 +86,14 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       if (e.nativeEvent.button !== 0) return
       from.current = [e.nativeEvent.clientX, e.nativeEvent.clientY]
       const at = downAt.current
+      const point = e.point.clone()
       timer.current = setTimeout(() => {
         timer.current = null
         // Two fingers held still on a piece are a pinch about to start,
         // not a long press on it.
         if (multiTouchSince(at)) return
         opened.current = true
-        onOpen()
+        onOpen(point)
       }, LONG_PRESS_MS)
     },
     onPointerMove: (e: ThreeEvent<PointerEvent>) => {
@@ -103,7 +108,7 @@ export function usePressActions(onClick?: () => void, onOpen?: () => void) {
       cancel()
       if (right && e.nativeEvent.button === 2) {
         e.stopPropagation()
-        onOpen?.()
+        onOpen?.(e.point)
       }
     },
     onPointerOver: () => {

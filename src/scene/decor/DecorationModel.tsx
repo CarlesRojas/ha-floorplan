@@ -1,6 +1,6 @@
 import type { Between } from '#/decoration/between.ts'
 import { decorationKind, paramValue } from '#/decoration/catalog.ts'
-import { usePressActions } from '#/scene/decor/press.ts'
+import { usePressActions, type PressAction } from '#/scene/decor/press.ts'
 import { standHeight } from '#/decoration/surfaces.ts'
 import ApplianceModel from '#/scene/decor/ApplianceModel.tsx'
 import DecorModel from '#/scene/decor/DecorModel.tsx'
@@ -32,11 +32,11 @@ type Props = {
   state: ItemState | null
   // How far the standing desks under it have carried it up.
   raise?: number
-  onClick?: () => void
+  onClick?: PressAction
   // A right click, or a long press, asks Home Assistant for the entity's own
   // dialog, where everything a click cannot do lives: brightness, color,
   // position.
-  onOpen?: () => void
+  onOpen?: PressAction
   // The click is only for a press that lands on the piece, not near it.
   exact?: boolean
 }

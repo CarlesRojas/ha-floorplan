@@ -1,7 +1,8 @@
-import { betweenOf, coverOver, roomLookedFrom } from '#/decoration/between.ts'
+import { betweenOf, coverAt, coversOver, roomLookedFrom } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
+import type { PressAction } from '#/scene/decor/press.ts'
 import { deskRise } from '#/scene/decor/state.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import {
@@ -171,12 +172,12 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
   // What a press on each piece does. The models are only drawn again when
   // they change, so each is handed a handler that stays the same and calls
   // whatever this render says a press does now.
-  const [actions] = useState(() => new Map<string, { click?: () => void; open?: () => void }>())
-  const [handlers] = useState(() => new Map<string, { click: () => void; open: () => void }>())
+  const [actions] = useState(() => new Map<string, { click?: PressAction; open?: PressAction }>())
+  const [handlers] = useState(() => new Map<string, { click: PressAction; open: PressAction }>())
   const handler = (id: string) => {
     let h = handlers.get(id)
     if (!h) {
-      h = { click: () => actions.get(id)?.click?.(), open: () => actions.get(id)?.open?.() }
+      h = { click: at => actions.get(id)?.click?.(at), open: at => actions.get(id)?.open?.(at) }
       handlers.set(id, h)
     }
     return h
@@ -229,10 +230,14 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
         // would go to whatever stands behind the piece, in the far room.
         // A window or a door with no device and a blind or a curtain over
         // it takes that cover's presses, so a press on the glass works the
-        // blind whichever of the two is in front.
-        const cover = !device && !onPick && !tried ? coverOver(item, decorations, id => boundTo.has(id)) : undefined
-        const covering = cover && boundTo.get(cover.id)
-        const onClick =
+        // blind whichever of the two is in front. With more than one over
+        // it, the press is for the one over the stretch it landed on.
+        const covers = !device && !onPick && !tried ? coversOver(item, decorations, id => boundTo.has(id)) : []
+        const covering = (at?: Vector3) => {
+          const cover = coverAt(covers, at ? [at.x, -at.z] : item.position)
+          return cover && boundTo.get(cover.id)
+        }
+        const onClick: PressAction | undefined =
           device || onPick || tried
             ? () => {
                 onPick?.(item.id)
@@ -240,15 +245,22 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
                   if (!roomFirst?.(roomOf())) act(device.entity_id)
                 } else if (tried) onTry?.(item.id)
               }
-            : covering
-              ? () => {
-                  if (!roomFirst?.(roomOf())) act(covering.entity_id)
+            : covers.length > 0
+              ? at => {
+                  const over = covering(at)
+                  if (over && !roomFirst?.(roomOf())) act(over.entity_id)
                 }
               : between && onRoom
                 ? () => onRoom(roomOf())
                 : undefined
-        const acting = device ?? covering
-        const onOpen = acting ? () => openMoreInfo(acting.entity_id) : undefined
+        const onOpen: PressAction | undefined = device
+          ? () => openMoreInfo(device.entity_id)
+          : covers.length > 0
+            ? at => {
+                const over = covering(at)
+                if (over) openMoreInfo(over.entity_id)
+              }
+            : undefined
         actions.set(item.id, { click: onClick, open: onOpen })
         const h = handler(item.id)
         return (
