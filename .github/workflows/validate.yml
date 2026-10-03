@@ -2,16 +2,13 @@
 # description and topics on GitHub, and the card file in the latest
 # release. Being listed in the HACS default store asks for this to pass.
 #
-# It runs when something lands on main, and once a night in case the rules
-# of HACS have changed. It does not run on pull requests or on the commits
-# of other branches.
+# It runs when something lands on main, and by hand from the Actions tab.
+# It does not run on pull requests or on the commits of other branches.
 name: Validate
 
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
 
 permissions: {}
