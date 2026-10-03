@@ -24,6 +24,8 @@ export type DecorationParam = {
   adjust?: boolean
   // The styles it means something on. Every style when missing.
   variants?: string[]
+  // Kept out of the editor: the piece has the value, with no slider for it.
+  hidden?: boolean
 }
 
 // One style of a kind. A pendant is a pendant whichever one it is, so the
@@ -184,7 +186,7 @@ const only = (param: DecorationParam, variants: string[]): DecorationParam => ({
 // The parameters the editor shows for a style.
 export function styleParams(kind: DecorationKind, variant?: string) {
   const style = decorationVariant(kind, variant)?.id
-  return kind.params.filter(p => !p.variants || (style !== undefined && p.variants.includes(style)))
+  return kind.params.filter(p => !p.hidden && (!p.variants || (style !== undefined && p.variants.includes(style))))
 }
 
 // Signal sets.
@@ -1330,18 +1332,21 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Toaster',
     'floor',
-    [width(0.31, 0.2, 0.45), lift(0.92)],
+    // It stands at counter height until it is put on something, with no
+    // slider for that: a toaster has nowhere else to be.
+    [width(0.31, 0.2, 0.45), depth(0.2, 0.1, 0.3), { ...lift(0.92), hidden: true }],
     { body: '#e8e3d8', trim: '#c4c7c8' },
     { body: 'ceramic', trim: 'metal' },
     TOGGLE,
     [
-      // Two slots in a rounded body, 31 cm long.
+      // Two slots in a rounded body, 31 cm long. Made shallow enough, either
+      // style is left with a single slot.
       { id: 'retro', label: 'Twin Loaf' },
       {
         id: 'long',
         label: 'Long Slot',
         // Two long slots side by side, 42 cm long.
-        params: { width: 0.42 },
+        params: { width: 0.42, depth: 0.17 },
         colors: { body: '#c4c7c8', trim: '#2b2e31' },
         materials: { body: 'metal', trim: 'matte' },
       },

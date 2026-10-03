@@ -12,11 +12,16 @@ moves that section under the new version and uses it as the release notes.
 ### Added
 
 - A blind has an Other side of wall switch that hangs it on the far side of the wall it is on, outside the room it belongs to, which is where a shutter on an outside wall goes. It works whether or not there is a room on that side.
+- A toaster has a Depth slider, and one made shallow enough has a single slot where it had two.
 
 ### Changed
 
 - On a touch screen, a finger dragged up or down over the card scrolls the dashboard where it used to turn the home. Start the drag sideways to turn the home, and it tilts too for as long as the finger stays down.
 - A door, window, blind, curtain or awning in a wall between two rooms now belongs to both: it stays in view and can be pressed when the camera goes to either room, whichever of the two it was put in. From the whole home, a click on it goes to the room it is looked at from, so turning the home round to see the door from its other side sends the click to the other room.
+
+### Removed
+
+- The toaster's Standing on slider is gone. It still stands at counter height until it is put on a counter.
 
 ## [1.2.2] - 2026-10-03
 
