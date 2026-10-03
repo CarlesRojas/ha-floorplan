@@ -1,4 +1,5 @@
 import { CAMERA_FLIGHT_S, CAMERA_TURN_S } from '#/constants.ts'
+import { flights } from '#/scene/flights.ts'
 import { frameRooms, sceneHeight } from '#/scene/framing.ts'
 import { multiTouchSince, sent } from '#/scene/touches.ts'
 import type { CameraView, DecorationConfig, RoomConfig } from '#/types.ts'
@@ -9,9 +10,11 @@ import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/cont
 
 // What the outside can ask of the camera: where it is now, as a view that
 // can be saved, to travel to a saved view, and to go back to the view it
-// opened with.
+// opened with. It also says where it would stand to look at one room alone,
+// which is the view of a room that has none saved.
 export type CameraHandle = {
   view: () => CameraView
+  frame: (room?: RoomConfig) => CameraView
   flyTo: (view: CameraView) => void
   reset: () => void
 }
@@ -104,6 +107,10 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   const canvas = useThree(state => (state.events.connected as HTMLElement | undefined) ?? state.gl.domElement)
   const moved = useRef(false)
   const flight = useRef<Flight | null>(null)
+  // The fade around a focused room reads how long the flight there takes.
+  useLayoutEffect(() => {
+    flights.set(camera, flight)
+  }, [camera])
   // Whether the camera has left the view it opened with. Only a change is
   // reported, and to whatever was passed last.
   const away = useRef(false)
@@ -144,6 +151,22 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     return { position: triple(position), target: triple(target) }
   }
 
+  // One room alone, filling the picture, looked at from the same side and
+  // height as the opening view, so flying there only closes in.
+  // With no room, the whole plan from the standard side, which is the view
+  // the card opens with when none is saved.
+  const frame = (room?: RoomConfig): CameraView => {
+    if (!room) {
+      const whole = frameRooms(rooms, size.width / size.height, sceneHeight(decorations))
+      return { position: triple(whole.position), target: triple(whole.target) }
+    }
+    const opening = home()
+    const from = A.set(...opening.position).sub(B.set(...opening.target))
+    const height = sceneHeight(decorations.filter(d => d.room === room.id))
+    const { position, target } = frameRooms([room], size.width / size.height, height, [from.x, from.y, from.z])
+    return { position: triple(position), target: triple(target) }
+  }
+
   // A flight that turns further round the home takes longer, so it moves
   // no faster than a short one.
   const plan = (to: CameraView, isHome: boolean): Flight => {
@@ -166,6 +189,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
 
   useImperativeHandle(handle, () => ({
     view: current,
+    frame,
     flyTo: to => {
       moved.current = true
       setAway(true)

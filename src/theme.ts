@@ -4,14 +4,16 @@
 // Rooms
 
 // Distance between neighbouring rooms.
-export const ROOM_GAP_M = 0.1
-// Rounding of the room corners, seen from above.
-export const ROOM_CORNER_RADIUS_M = 0.05
-// Thickness of the floor slab.
-export const ROOM_SLAB_THICKNESS_M = 0.05
-// Rounding of the slab edges between the top and side faces. Kept below half
-// the slab thickness so the top and bottom rounding do not meet.
-export const ROOM_SLAB_EDGE_RADIUS_M = 0.05
+export const ROOM_GAP_M = 0
+// Height of the flat band round the floor slab, between the rounding of its
+// top edge and of its bottom one. The slab is this and two roundings thick.
+export const ROOM_SLAB_THICKNESS_M = 0.01
+// Rounding of the slab's top and bottom edges where it stands free. Where two
+// floors touch they meet square.
+export const ROOM_SLAB_EDGE_RADIUS_M = 0.07
+// Rounding of the room corners, seen from above: the same as the edge's, and
+// like it only for the corners that touch no other room.
+export const ROOM_CORNER_RADIUS_M = ROOM_SLAB_EDGE_RADIUS_M
 // Fill colors, assigned to rooms in order. A room can override with `color`.
 export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a', '#8fb6b3']
 
@@ -162,6 +164,10 @@ export const DEVICE_SPHERE_COLOR = '#ffffff'
 // sheen of the surface.
 // What a room is floored with until it is told otherwise: warm oak boards.
 export const DEFAULT_FLOOR_MATERIAL = 'wood'
+// How far a floor's pattern is moved along both axes of the plan. The sides
+// of the slab take the line of the pattern right above them, and a room drawn
+// from a round number would have a joint there. Half a floorboard's width.
+export const FLOOR_PATTERN_SHIFT_M = 0.08
 
 export const FLOOR_MATERIALS: Record<string, { label: string; color: string; surface: string }> = {
   wood: { label: 'Wood', color: '#dcc3a0', surface: 'wood_floor' },

@@ -33,6 +33,10 @@ import { useLive } from '#/scene/live.ts'
 import { useMemo, useRef } from 'react'
 import { Color, Shape, type Group, type Mesh } from 'three'
 
+// How far below the top of the worktop the deepest bowl ends, with its
+// walls and a little to spare.
+const SINK_CLEARANCE_M = 0.25
+
 type Props = { kind: DecorationKind; item: DecorationConfig; state: ItemState | null; all: DecorationConfig[] }
 
 // The holes the sinks standing on a counter need in it, in the counter's own
@@ -313,16 +317,18 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
           <Slab size={[w, t, d]} radius={0.004} position={[0, plinth + bodyH - t, 0]} holes={bowls}>
             {M('cabinets')}
           </Slab>
-          {[0, ...starts.slice(1), w].map(x => (
-            <Slab
-              key={x}
-              size={[t, bodyH - 2 * t, d - t]}
-              radius={0.002}
-              position={[-w / 2 + Math.min(Math.max(x, t / 2), w - t / 2), plinth + t, t / 2]}
-            >
-              {M('cabinets')}
-            </Slab>
-          ))}
+          {[0, ...starts.slice(1), w].map(x => {
+            // A side a bowl hangs across stops short under it, or it would
+            // stand up through the bowl.
+            const sx = -w / 2 + Math.min(Math.max(x, t / 2), w - t / 2)
+            const sideH = underSink(sx - t, sx + t) ? h - SINK_CLEARANCE_M - plinth - t : bodyH - 2 * t
+            if (sideH < 0.02) return null
+            return (
+              <Slab key={x} size={[t, sideH, d - t]} radius={0.002} position={[sx, plinth + t, t / 2]}>
+                {M('cabinets')}
+              </Slab>
+            )
+          })}
           {modules.map((cw, i) => {
             const x = -w / 2 + starts[i] + cw / 2
             if (cw < 0.25)

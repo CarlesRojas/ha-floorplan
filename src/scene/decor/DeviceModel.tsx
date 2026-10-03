@@ -943,7 +943,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       const t = steel ? 0.022 : 0.03
       const rows = Math.max(2, Math.round(inner.h / 0.3))
       return (
-        <group>
+        // Set back so the frame stands as far out of one side of its wall as
+        // out of the other.
+        <group position={[0, 0, 0.02 - d / 2]}>
           <Slab size={[w, f, d]} radius={0.012} position={[0, 0, d / 2 - 0.02]}>
             {frame}
           </Slab>
@@ -1143,7 +1145,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         )
       }
       return (
-        <group>
+        // Set back by half the leaf, so the door stands as far into the room
+        // on one side of its wall as into the one on the other.
+        <group position={[0, 0, -leaf / 2]}>
           {/* The frame is three rectangles, a jamb each side and the head,
               and it stays put while the leaf swings. */}
           {[-1, 1].map(s2 => (

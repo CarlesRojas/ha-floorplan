@@ -34,7 +34,7 @@ export const CAMERA_FAR_M = 200
 export const CAMERA_FLIGHT_S = 0.35
 export const CAMERA_TURN_S = 0.325
 // How long the rest of the home takes to fade away around a focused room,
-// and to fade back.
+// and to fade back, when no flight of the camera sets the time.
 export const FOCUS_FADE_S = 0.25
 
 // Lights

@@ -167,7 +167,7 @@ export default function Scene({
           the picked thing outlined. */}
         <Effects selected={selected} focus={focus} />
         {rooms.map((room, i) => (
-          <Room key={room.id} room={room} index={i} radius={radius} gap={gap} />
+          <Room key={room.id} room={room} rooms={rooms} index={i} radius={radius} gap={gap} />
         ))}
         {frame && (
           <OrbitControls
