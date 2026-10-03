@@ -1,5 +1,6 @@
-import { decorationKind } from '#/decoration/catalog.ts'
-import { usePressActions } from '#/scene/decor/press.ts'
+import type { Between } from '#/decoration/between.ts'
+import { decorationKind, paramValue } from '#/decoration/catalog.ts'
+import { usePressActions, type PressAction } from '#/scene/decor/press.ts'
 import { standHeight } from '#/decoration/surfaces.ts'
 import ApplianceModel from '#/scene/decor/ApplianceModel.tsx'
 import DecorModel from '#/scene/decor/DecorModel.tsx'
@@ -25,14 +26,19 @@ type Props = {
   // The room it stands in, for the models that have to know the floor they
   // are on. Absent in the sidebar's preview, where there is no room.
   room?: RoomConfig
+  // The rooms it belongs to, for a piece in a wall between two. Absent for
+  // a piece that has only its own.
+  between?: Between | null
   state: ItemState | null
   // How far the standing desks under it have carried it up.
   raise?: number
-  onClick?: () => void
+  onClick?: PressAction
   // A right click, or a long press, asks Home Assistant for the entity's own
   // dialog, where everything a click cannot do lives: brightness, color,
   // position.
-  onOpen?: () => void
+  onOpen?: PressAction
+  // The click is only for a press that lands on the piece, not near it.
+  exact?: boolean
 }
 
 type FamilyModel = (props: {
@@ -90,7 +96,7 @@ const READS_PLAN = new Set(['vacuum_robot', 'kitchen_counter'])
 // Places one decoration item in the scene. Wall and ceiling items are lifted
 // to their mounting height here, so every model can be built from its own
 // base up around its origin.
-function DecorationModel({ item, all, room, state, raise = 0, onClick, onOpen }: Props) {
+function DecorationModel({ item, all, room, between, state, raise = 0, onClick, onOpen, exact }: Props) {
   const interactive = usePressActions(onClick, onOpen)
   const rise = useEased(raise, 2)
   const kind = decorationKind(item.kind)
@@ -100,6 +106,10 @@ function DecorationModel({ item, all, room, state, raise = 0, onClick, onOpen }:
 
   const rotation = MathUtils.degToRad(item.rotation ?? 0)
   const lift = standHeight(item, all) + rise
+  // A piece told to hang on the other side of its wall is turned round where
+  // it meets the wall. The piece itself keeps facing its room, so it is still
+  // in that room and its clicks still go where they did.
+  const outside = paramValue(kind, item.params, 'outside', item.variant) > 0.5
 
   return (
     <group
@@ -110,11 +120,22 @@ function DecorationModel({ item, all, room, state, raise = 0, onClick, onOpen }:
       // A press that lands near this item rather than on it finds these. A
       // piece with nothing to do says which room it stands in instead, so a
       // press on it counts as one on that room's floor. Both say the room,
-      // which is how the rest of the home is told from a focused room.
-      userData={onClick ? { pick: { click: onClick, open: onOpen ?? onClick }, room: item.room } : { room: item.room }}
+      // which is how the rest of the home is told from a focused room, and a
+      // piece in a wall between two rooms says both.
+      userData={{
+        ...(onClick && { pick: { click: onClick, open: onOpen ?? onClick, exact } }),
+        room: item.room,
+        ...(between && { rooms: between.rooms, between }),
+      }}
       {...interactive}
     >
-      <Model kind={kind} item={item} state={state} room={room} all={all} />
+      {outside ? (
+        <group rotation={[0, Math.PI, 0]}>
+          <Model kind={kind} item={item} state={state} room={room} all={all} />
+        </group>
+      ) : (
+        <Model kind={kind} item={item} state={state} room={room} all={all} />
+      )}
     </group>
   )
 }
@@ -125,7 +146,9 @@ function DecorationModel({ item, all, room, state, raise = 0, onClick, onOpen }:
 // edit, so it only counts through the height it lifts the piece to.
 function unchanged(a: Props, b: Props) {
   if (a.raise !== b.raise) return false
-  if (a.item !== b.item || a.room !== b.room || a.onClick !== b.onClick || a.onOpen !== b.onOpen) return false
+  if (JSON.stringify(a.between ?? null) !== JSON.stringify(b.between ?? null)) return false
+  if (a.item !== b.item || a.room !== b.room || a.onClick !== b.onClick || a.onOpen !== b.onOpen || a.exact !== b.exact)
+    return false
   if (!sameState(a.state, b.state)) return false
   if (a.all === b.all) return true
   return !READS_PLAN.has(a.item.kind) && standHeight(a.item, a.all) === standHeight(b.item, b.all)

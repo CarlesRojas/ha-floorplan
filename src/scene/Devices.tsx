@@ -1,6 +1,8 @@
+import { betweenOf, coverAt, coversOver, roomLookedFrom } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
+import type { PressAction } from '#/scene/decor/press.ts'
 import { deskRise } from '#/scene/decor/state.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import {
@@ -16,7 +18,7 @@ import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import type { CardConfig, DeviceConfig, HomeAssistant } from '#/types.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useState } from 'react'
-import { Color, SRGBColorSpace } from 'three'
+import { Color, MathUtils, SRGBColorSpace, Vector3 } from 'three'
 
 type Props = {
   hass: HomeAssistant | null
@@ -30,6 +32,9 @@ type Props = {
   // Asked before a click acts on a device, with the room its piece stands
   // in. True means the click was spent on the room instead.
   roomFirst?: (room: string) => boolean
+  // In the card, a click that is for a room and nothing else, with the
+  // rooms on either side of the wall the piece it landed on stands in.
+  onRoom?: (room: string, through: string[]) => void
 }
 
 // The last color each light was seen with. Home Assistant drops rgb_color
@@ -103,7 +108,7 @@ function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<strin
   }
 }
 
-export default function Devices({ hass, config, onPick, tries, onTry, roomFirst }: Props) {
+export default function Devices({ hass, config, onPick, tries, onTry, roomFirst, onRoom }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
   const rooms = config.rooms ?? []
@@ -158,6 +163,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
   // click cannot stand in for: brightness, color, a cover's position. The
   // event has to cross the card's shadow root to reach it.
   const gl = useThree(state => state.gl)
+  const get = useThree(state => state.get)
   const openMoreInfo = (entityId: string) => {
     gl.domElement.dispatchEvent(
       new CustomEvent('hass-more-info', { detail: { entityId }, bubbles: true, composed: true }),
@@ -167,12 +173,12 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
   // What a press on each piece does. The models are only drawn again when
   // they change, so each is handed a handler that stays the same and calls
   // whatever this render says a press does now.
-  const [actions] = useState(() => new Map<string, { click?: () => void; open?: () => void }>())
-  const [handlers] = useState(() => new Map<string, { click: () => void; open: () => void }>())
+  const [actions] = useState(() => new Map<string, { click?: PressAction; open?: PressAction }>())
+  const [handlers] = useState(() => new Map<string, { click: PressAction; open: PressAction }>())
   const handler = (id: string) => {
     let h = handlers.get(id)
     if (!h) {
-      h = { click: () => actions.get(id)?.click?.(), open: () => actions.get(id)?.open?.() }
+      h = { click: at => actions.get(id)?.click?.(at), open: at => actions.get(id)?.open?.(at) }
       handlers.set(id, h)
     }
     return h
@@ -208,18 +214,55 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
     <>
       {decorations.map(item => {
         const { device, tried, state } = states.get(item.id) ?? stateOf(item)
+        // A piece in a wall between two rooms sends its first click to the
+        // room it is looked at from, the one the camera looks out of.
+        const between = betweenOf(item, rooms)
+        const roomOf = () => {
+          if (!between) return item.room
+          const turn = MathUtils.degToRad(item.rotation ?? 0)
+          const camera = get().camera
+          const look = camera.getWorldDirection(new Vector3())
+          return roomLookedFrom(between, item.position[0], -item.position[1], turn, look, camera.position)
+        }
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.
-        const onClick =
+        // In the card, a piece in a wall with no device still takes the
+        // press, for the room it is looked at from. Left to pass through, it
+        // would go to whatever stands behind the piece, in the far room.
+        // From a focused room the same press goes through to the other one.
+        // A window or a door with no device and a blind or a curtain over
+        // it takes that cover's presses, so a press on the glass works the
+        // blind whichever of the two is in front. With more than one over
+        // it, the press is for the one over the stretch it landed on.
+        const covers = !device && !onPick && !tried ? coversOver(item, decorations, id => boundTo.has(id)) : []
+        const covering = (at?: Vector3) => {
+          const cover = coverAt(covers, at ? [at.x, -at.z] : item.position)
+          return cover && boundTo.get(cover.id)
+        }
+        const onClick: PressAction | undefined =
           device || onPick || tried
             ? () => {
                 onPick?.(item.id)
                 if (device) {
-                  if (!roomFirst?.(item.room)) act(device.entity_id)
+                  if (!roomFirst?.(roomOf())) act(device.entity_id)
                 } else if (tried) onTry?.(item.id)
               }
+            : covers.length > 0
+              ? at => {
+                  const over = covering(at)
+                  if (over && !roomFirst?.(roomOf())) act(over.entity_id)
+                }
+              : between && onRoom
+                ? () => onRoom(roomOf(), between.rooms)
+                : undefined
+        const onOpen: PressAction | undefined = device
+          ? () => openMoreInfo(device.entity_id)
+          : covers.length > 0
+            ? at => {
+                const over = covering(at)
+                if (over) openMoreInfo(over.entity_id)
+              }
             : undefined
-        const onOpen = device ? () => openMoreInfo(device.entity_id) : undefined
         actions.set(item.id, { click: onClick, open: onOpen })
         const h = handler(item.id)
         return (
@@ -228,10 +271,12 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
             item={item}
             all={decorations}
             room={roomById.get(item.room)}
+            between={between}
             state={state}
             raise={raise(item)}
             onClick={onClick && h.click}
             onOpen={onOpen && h.open}
+            exact={!device && !onPick && !tried}
           />
         )
       })}

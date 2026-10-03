@@ -18,7 +18,8 @@ const MAX_DEPTH = 6
 
 // How high above the floor an item's own base sits. A wall or ceiling item
 // hangs where its kind says. A floor item stands on its support's top, or on
-// its own "Standing on" height when it stands on nothing.
+// the height it has on its own when it stands on nothing, unless it was
+// put on the floor.
 export function standHeight(item: DecorationConfig, all: DecorationConfig[], depth = 0): number {
   const kind = decorationKind(item.kind)
   if (!kind) return 0
@@ -29,7 +30,7 @@ export function standHeight(item: DecorationConfig, all: DecorationConfig[], dep
   const support = item.on ? all.find(d => d.id === item.on) : undefined
   const supportKind = support ? decorationKind(support.kind) : undefined
   if (!support || !supportKind || !isSupport(supportKind) || depth >= MAX_DEPTH) {
-    return base + (canRide(kind) ? paramValue(kind, item.params, 'lift') : 0)
+    return base + (canRide(kind) && !item.floor ? paramValue(kind, item.params, 'lift') : 0)
   }
   const top = standHeight(support, all, depth + 1) + surfaceTop(supportKind, support.params, support.variant)
   return top + base - builtInDepth(kind)
@@ -49,6 +50,51 @@ export function onSurface(point: Point, support: DecorationConfig): boolean {
   return Math.abs(lx) <= w / 2 && Math.abs(ly) <= d / 2
 }
 
+// A height a piece can stand at where it is: on the floor, at the height it
+// has on its own, or on one of the tops under it.
+export type Level = {
+  // The piece it stands on there, or null when it stands on nothing.
+  on: string | null
+  // On nothing, whether that is the floor or the height it has on its own.
+  floor: boolean
+  // How high its base is there.
+  height: number
+  // Whether that is where it stands now.
+  current: boolean
+}
+
+// Every height a piece can stand at where it is, lowest first: the floor,
+// every top under it, and the height it has on its own. That last one is
+// for where there is nothing to stand on, a kettle in mid air over a table
+// being no use, unless the height was set by hand, which is then kept as a
+// step wherever the piece goes.
+export function levelsAt(item: DecorationConfig, all: DecorationConfig[]): Level[] {
+  const kind = decorationKind(item.kind)
+  if (!kind || kind.mount !== 'floor' || !canRide(kind)) return []
+  const { on: _on, floor: _floor, ...free } = item
+  const support = item.on ? all.find(d => d.id === item.on) : undefined
+  const supportKind = support ? decorationKind(support.kind) : undefined
+  const riding = support && supportKind && isSupport(supportKind) ? support.id : null
+  const lift = paramValue(kind, item.params, 'lift', item.variant)
+  const grounded = riding === null && (item.floor === true || lift === 0)
+  const mine = new Set([item.id, ...ridersOf(item.id, all).map(r => r.id)])
+  const spots: { on: string | null; floor: boolean }[] = [{ on: null, floor: true }]
+  for (const other of all) {
+    if (mine.has(other.id) || other.room !== item.room) continue
+    if (other.id === riding || onSurface(item.position, other)) spots.push({ on: other.id, floor: false })
+  }
+  const own = { on: null, floor: false }
+  const standsAlone = riding === null && !grounded
+  if (lift > 0 && (spots.length === 1 || item.params?.lift !== undefined || standsAlone)) spots.push(own)
+  return spots
+    .map(spot => ({
+      ...spot,
+      height: standHeight(spot.on ? { ...free, on: spot.on } : spot.floor ? { ...free, floor: true } : free, all),
+      current: spot.on ? spot.on === riding : riding === null && spot.floor === grounded,
+    }))
+    .sort((a, b) => a.height - b.height)
+}
+
 // Everything standing on an item, directly or further up.
 export function ridersOf(id: string, all: DecorationConfig[]): DecorationConfig[] {
   const out: DecorationConfig[] = []
@@ -66,11 +112,7 @@ export function ridersOf(id: string, all: DecorationConfig[]): DecorationConfig[
 
 // The item a dragged one should stand on: the highest top under the point,
 // never itself and never something already standing on it.
-export function supportUnder(
-  point: Point,
-  item: DecorationConfig,
-  all: DecorationConfig[],
-): DecorationConfig | null {
+export function supportUnder(point: Point, item: DecorationConfig, all: DecorationConfig[]): DecorationConfig | null {
   const kind = decorationKind(item.kind)
   if (!kind || kind.mount !== 'floor' || !canRide(kind)) return null
   const own = new Set([item.id, ...ridersOf(item.id, all).map(r => r.id)])

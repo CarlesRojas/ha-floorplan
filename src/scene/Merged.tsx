@@ -1,3 +1,4 @@
+import { betweenOf, coversOver } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { showOnly } from '#/scene/focus.ts'
 import type { CardConfig } from '#/types.ts'
@@ -61,6 +62,11 @@ function staticIds(config: CardConfig) {
     if (bound.has(item.id)) continue
     const kind = decorationKind(item.kind)
     if (!kind || LIVE_KINDS.has(kind.id)) continue
+    // A piece in a wall between two rooms stays its own, so it can stay
+    // when either room is focused and say which side it was pressed from.
+    if (betweenOf(item, config.rooms ?? [])) continue
+    // So does a window with a blind over it, which takes the blind's presses.
+    if (coversOver(item, items, id => bound.has(id)).length > 0) continue
     let raised = false
     let at = item
     for (let depth = 0; at.on && depth < 6; depth++) {

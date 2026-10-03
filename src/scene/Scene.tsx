@@ -7,6 +7,7 @@ import {
   CAMERA_MIN_POLAR_DEG,
   CAMERA_NEAR_M,
 } from '#/constants.ts'
+import { cn } from '#/lib/utils.ts'
 import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import Adaptive from '#/scene/Adaptive.tsx'
 import CameraRig, { type CameraHandle } from '#/scene/CameraRig.tsx'
@@ -33,12 +34,14 @@ type Props = {
   // The editor can hold the room at day or at night to see how it looks.
   sky?: SkyMode
   // Whether the wheel zooms the view. Off in the card, where it scrolls
-  // the dashboard past it, on in the editor's preview.
+  // the dashboard past it, and so does a finger dragged up or down. On in
+  // the editor's preview.
   wheelZoom?: boolean
   // In the editor, a press in 3D also picks what it landed on, so the plan
   // and the sidebar follow the view.
   onPickDecoration?: (id: string) => void
-  onPickRoom?: (id: string) => void
+  // A press on a piece in a wall between rooms also says which rooms.
+  onPickRoom?: (id: string, through?: string[]) => void
   // A click that lands on nothing at all, which lets go of whatever was
   // picked, the way a click on the plan's empty background does.
   onPickNothing?: () => void
@@ -96,7 +99,12 @@ export default function Scene({
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
 
   return (
-    <div ref={setFrame} className="relative h-full w-full">
+    // In the card a finger that sets off up or down scrolls the dashboard
+    // past it, and one that sets off sideways turns the home, and then tilts
+    // it too for as long as it stays down. The controls ask for every touch
+    // on the element they listen on, so this has to outrank them. The editor
+    // has nothing to scroll and keeps every touch.
+    <div ref={setFrame} className={cn('relative h-full w-full', !wheelZoom && 'touch-pan-y!')}>
       <Canvas
         // Percentage closer filtering across the map, so the edge comes out
         // soft and clean, and softness comes from how fine the map is. This
@@ -143,6 +151,8 @@ export default function Scene({
           tries={tries}
           onTry={onTry}
           roomFirst={roomFirst}
+          // The editor picks a room from its floor, never from a door.
+          onRoom={onPickDecoration ? undefined : onPickRoom}
         />
         {/* In the card, the pieces with no device behind them are drawn
           together, a room at a time. In the editor every piece is its own,

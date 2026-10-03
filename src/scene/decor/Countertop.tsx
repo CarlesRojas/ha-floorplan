@@ -208,6 +208,12 @@ function ToastSlot({
   )
 }
 
+// Where a toaster's slots lie across its depth. Two side by side, each `s`
+// wide and `gap` from the middle, while the body is deep enough to leave a
+// wall outside them, and a single one down the middle when it is not.
+const toastSlots = (d: number, s: number, gap: number) =>
+  d < (s + gap) * 2 + 0.05 ? [0] : [-1, 1].map(k => k * (s / 2 + gap))
+
 // A two slice toaster in the fifties manner, after the Smeg TSF01: a soft
 // rounded body, its top edges well rounded, on a polished base, two slots
 // side by side along its length, and on its right end the lever and a
@@ -217,7 +223,7 @@ function RetroToaster({ p, M, on }: Look) {
   const w = p('width')
   const lit = useEased(on ? 1 : 0, 2.2)
   const press = useEased(on ? 1 : 0, 6)
-  const d = Math.min(0.22, Math.max(0.16, w * 0.63))
+  const d = Math.max(0.09, p('depth'))
   const h = Math.min(0.24, Math.max(0.16, w * 0.64))
   const plinth = 0.016
   // The lever stands out from the right end, so the body gives it room.
@@ -225,18 +231,19 @@ function RetroToaster({ p, M, on }: Look) {
   const endX = bw / 2
   const L = bw * 0.55
   const s = 0.034
-  const slots = [-1, 1].map(k => k * (s / 2 + 0.013))
+  const slots = toastSlots(d, s, 0.013)
   const top = h
   const lever = h - 0.05 + (plinth + 0.045 - (h - 0.05)) * press
   return (
     <group>
       <group position={[-0.015, 0, 0]}>
-        <Slab size={[bw - 0.006, plinth, d - 0.006]} radius={0.05} bevel={0.004}>
+        <Slab size={[bw - 0.006, plinth, d - 0.006]} radius={Math.min(0.05, d / 2 - 0.01)} bevel={0.004}>
           {M('trim')}
         </Slab>
         <Slab
           size={[bw, h - plinth, d]}
-          radius={0.055}
+          // A shallow body cannot be rounded by more than half its depth.
+          radius={Math.min(0.055, d / 2 - 0.006)}
           bevel={0.012}
           position={[0, plinth, 0]}
           holes={slots.map(z => ({ x: 0, z, w: L, d: s, r: s / 2 - 0.002 }))}
@@ -300,14 +307,14 @@ function LongToaster({ p, M, on }: Look) {
   const w = p('width')
   const lit = useEased(on ? 1 : 0, 2.2)
   const press = useEased(on ? 1 : 0, 6)
-  const d = Math.min(0.2, Math.max(0.15, w * 0.4))
+  const d = Math.max(0.09, p('depth'))
   const h = 0.19
   const cap = 0.035
   const base = 0.012
   const bw = w - cap * 2 + 0.01
   const L = w - cap * 2 - 0.04
   const s = 0.034
-  const slots = [-1, 1].map(k => k * (s / 2 + 0.012))
+  const slots = toastSlots(d, s, 0.012)
   const front = d / 2
   const trackX = w / 2 - cap - 0.035
   const lever = h - 0.045 + (base + 0.04 - (h - 0.045)) * press

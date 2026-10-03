@@ -24,6 +24,8 @@ export type DecorationParam = {
   adjust?: boolean
   // The styles it means something on. Every style when missing.
   variants?: string[]
+  // Kept out of the editor: the piece has the value, with no slider for it.
+  hidden?: boolean
 }
 
 // One style of a kind. A pendant is a pendant whichever one it is, so the
@@ -133,8 +135,10 @@ const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max
 const height = (d: number, min = 0.2, max = 2.6) => p('height', 'Height', d, min, max)
 const size = (d: number, min = 0.1, max = 1.5) => p('size', 'Size', d, min, max)
 const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Length', d, min, max, step)
-// Height an item stands at when it is not standing on anything.
-const lift = (d: number, max = 1.5) => p('lift', 'Standing on', d, 0, max)
+// Height an item stands at when it is not standing on anything. The editor
+// has no slider for it: the piece is stepped between the floor, this height
+// and the tops under it.
+const lift = (d: number, max = 1.5) => ({ ...p('lift', 'Standing on', d, 0, max), hidden: true })
 const panels = (d = 2, max = 5) => p('panels', 'Panels', d, 1, max, 1, '')
 // How far an appliance is raised off the floor, to sit in a run of units.
 const base = (d = 0) => p('base', 'Off floor', d, 0, 1.6)
@@ -184,7 +188,7 @@ const only = (param: DecorationParam, variants: string[]): DecorationParam => ({
 // The parameters the editor shows for a style.
 export function styleParams(kind: DecorationKind, variant?: string) {
   const style = decorationVariant(kind, variant)?.id
-  return kind.params.filter(p => !p.variants || (style !== undefined && p.variants.includes(style)))
+  return kind.params.filter(p => !p.hidden && (!p.variants || (style !== undefined && p.variants.includes(style))))
 }
 
 // Signal sets.
@@ -1330,18 +1334,19 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'kitchen',
     'Toaster',
     'floor',
-    [width(0.31, 0.2, 0.45), lift(0.92)],
+    [width(0.31, 0.2, 0.45), depth(0.2, 0.1, 0.3), lift(0.92)],
     { body: '#e8e3d8', trim: '#c4c7c8' },
     { body: 'ceramic', trim: 'metal' },
     TOGGLE,
     [
-      // Two slots in a rounded body, 31 cm long.
+      // Two slots in a rounded body, 31 cm long. Made shallow enough, either
+      // style is left with a single slot.
       { id: 'retro', label: 'Twin Loaf' },
       {
         id: 'long',
         label: 'Long Slot',
         // Two long slots side by side, 42 cm long.
-        params: { width: 0.42 },
+        params: { width: 0.42, depth: 0.17 },
         colors: { body: '#c4c7c8', trim: '#2b2e31' },
         materials: { body: 'metal', trim: 'matte' },
       },
@@ -2189,7 +2194,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Blind',
     'wall',
-    [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2)],
+    // A blind can hang on the far side of its wall, outside the room it is
+    // in, which is where a shutter over a window on an outside wall goes.
+    [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2), flag('outside', 'Other side of wall')],
     { slats: SCANDI.linen, rail: SCANDI.slate, ladder: SCANDI.linen },
     { slats: 'fabric', rail: 'metal', ladder: 'fabric' },
     TOGGLE_LEVEL,
@@ -2790,7 +2797,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
 const BUILT_IN: Record<string, number> = { hob: 0, kitchen_sink: 0 }
 
 export const isSupport = (kind: DecorationKind) => kind.id in SURFACE_TOPS
-// Anything with a "Standing on" parameter is meant to stand on something.
+// Anything with a height of its own to stand at is meant to stand on something.
 export const canRide = (kind: DecorationKind) => kind.params.some(p => p.id === 'lift')
 export const isBuiltIn = (kind: DecorationKind) => kind.id in BUILT_IN
 // Positive sinks the item into the top, negative lifts it clear of it.

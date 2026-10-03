@@ -9,6 +9,23 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- A blind has an Other side of wall switch that hangs it on the far side of the wall it is on, outside the room it belongs to, which is where a shutter on an outside wall goes. It works whether or not there is a room on that side.
+- A toaster has a Depth slider, and one made shallow enough has a single slot where it had two.
+- A piece that can stand on others has an arrow down and an arrow up in its panel that step it through the heights there are where it stands: the floor, every top under it, and the height it has on its own. A piece sent down to the floor stays on it when dragged, so it can go under a table. A height set with the old slider is kept, as one of the steps.
+- A window, a door, a sliding door or a garage door with no device and a blind or a curtain over it passes its clicks to that blind, so a click on the glass works the blind whichever side of the window it hangs on. With two blinds side by side over it, each part of the glass works the blind over it, and where a blind and a curtain hang over the same part the click goes to the blind.
+
+### Changed
+
+- With the camera on a room, a click on a door or a window with no device in one of its walls now takes the camera to the room on the other side, where it used to go back to the whole home. One with a blind or a curtain over it still works that blind.
+- On a touch screen, a finger dragged up or down over the card scrolls the dashboard where it used to turn the home. Start the drag sideways to turn the home, and it tilts too for as long as the finger stays down.
+- A door, window, blind, curtain or awning in a wall between two rooms now belongs to both: it stays in view and can be pressed when the camera goes to either room, whichever of the two it was put in. From the whole home, a click on it goes to the room it is looked at from, so turning the home round to see the door from its other side sends the click to the other room.
+
+### Removed
+
+- The Standing on slider and dropdown of the pieces that go on tables and counters are gone, replaced by the arrows above.
+
 ## [1.2.2] - 2026-10-03
 
 ### Added

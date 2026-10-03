@@ -1,6 +1,7 @@
 import type { Light, LightShadow, Object3D, Scene } from 'three'
 
-// A room that is focused stands alone: the rest of the home is not drawn,
+// A room that is focused stands alone, with the doors, windows and blinds in
+// its walls whichever side they were put on: the rest of the home is not drawn,
 // throws no shadow and takes no press. Hiding the others the usual way would
 // take their lamps out of the scene with them, and the count of lights is in
 // every shader, so each focus would have had the shaders built again. So the
@@ -13,6 +14,10 @@ const ROOM = 'room:'
 const MERGED = 'merged:'
 const DECORATION = 'decoration:'
 
+// Whether a thing in a wall between two rooms has this one on its other side.
+const alsoIn = (object: Object3D, room: string) =>
+  (object.userData.rooms as string[] | undefined)?.includes(room) ?? false
+
 // The layers each hidden thing was on, to put it back.
 const kept = new WeakMap<Object3D, number>()
 
@@ -21,7 +26,7 @@ function sweep(object: Object3D, room: string | null, hide: boolean) {
   if (room === null) hide = false
   else if (name.startsWith(ROOM)) hide = name.slice(ROOM.length) !== room
   else if (name.startsWith(MERGED)) hide = name.slice(MERGED.length) !== room
-  else if (name.startsWith(DECORATION)) hide = object.userData.room !== room
+  else if (name.startsWith(DECORATION)) hide = object.userData.room !== room && !alsoIn(object, room)
   if (!(object as Light).isLight) {
     if (hide) {
       if (!kept.has(object)) {

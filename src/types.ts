@@ -90,6 +90,9 @@ export type DecorationConfig = {
   // Id of the item this one stands on, for example the table under a lamp.
   // Its height follows that item's top, and it moves when that item moves.
   on?: string
+  // Stands on the floor, where it would stand at the height of its own
+  // otherwise. Only read while it stands on nothing.
+  floor?: boolean
   // Kind specific numbers, for example size or cord length, in meters.
   params?: Record<string, number>
   // Colors per material slot, as hex strings.
