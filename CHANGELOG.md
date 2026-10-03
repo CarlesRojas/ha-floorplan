@@ -20,6 +20,10 @@ moves that section under the new version and uses it as the release notes.
 - The first click on a device now goes to its room by default, when that room has a view, and the device answers once the camera is there. Set `first_click: device`, or switch the Click button in the editor's 3D view, to have devices answer from anywhere as before.
 - The camera flies to a room, and back out of it, more than twice as fast.
 
+### Removed
+
+- The reset button in the card's bottom right corner is gone: a click on the empty space around the home takes the camera back to the opening view.
+
 ### Fixed
 
 - A long press never sends the camera to a room or back home any more: on touch screens that call a long press early, holding a finger on a room's floor used to count as a click on it.

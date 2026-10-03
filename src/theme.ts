@@ -26,8 +26,8 @@ export const SCENE_BACKGROUND_CSS = 'var(--lovelace-background, var(--primary-ba
 // and the corners are true quarter circles whatever the card's shape, the
 // way a vignette's are. Both in hundredths of the card's shorter side: how
 // deep the fade is, and the radius of the corner where it reaches nothing.
-const EDGE_FADE_DEPTH = 11
-const EDGE_FADE_CORNER = 16
+const EDGE_FADE_DEPTH = 7
+const EDGE_FADE_CORNER = 10
 // The mask is a picture the size of the card: a rounded shape, and over its
 // rim a stack of ever narrower outlines that each take a little more of it
 // away, so it thins out towards the edge in steps too fine to see. All of
