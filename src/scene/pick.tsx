@@ -1,4 +1,4 @@
-import { roomSeenFrom, type Between } from '#/decoration/between.ts'
+import { roomPressed, type Between } from '#/decoration/between.ts'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { PICK_RADIUS_PX, PICK_RADIUS_TOUCH_PX, PICK_ROOM_AT, PICK_ROOM_AT_TOUCH } from '#/theme.ts'
@@ -91,10 +91,10 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       for (let node: Object3D | null = hit.object; node; node = node.parent) {
         if (node.name.startsWith(ROOM_NAME)) return node.name.slice(ROOM_NAME.length)
         if (node.userData?.pick) return null
-        // A piece in a wall between two rooms stands for the one it is
-        // seen from.
+        // A piece in a wall between two rooms stands for the one the press
+        // lands over.
         const between = node.userData?.between as Between | undefined
-        if (between) return roomSeenFrom(between, node.position.x, node.position.z, node.rotation.y, camera.position)
+        if (between) return roomPressed(between, node.position.x, node.position.z, node.rotation.y, raycaster.ray)
         const room = node.userData?.room as string | undefined
         if (room) return room
       }
@@ -209,6 +209,9 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
         latestRoom.current?.(found.id)
       } else if (found && !found.direct) {
         onHandled?.()
+        // The search left the ray on the ring where it found the piece. A
+        // piece in a wall asks which side of it the press itself was on.
+        ray(e.clientX, e.clientY)
         found.pick.click()
       }
     }

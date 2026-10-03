@@ -1,4 +1,4 @@
-import { betweenOf, roomSeenFrom } from '#/decoration/between.ts'
+import { betweenOf, roomPressed } from '#/decoration/between.ts'
 import { decorationKind } from '#/decoration/catalog.ts'
 import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
@@ -211,12 +211,12 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
       {decorations.map(item => {
         const { device, tried, state } = states.get(item.id) ?? stateOf(item)
         // A piece in a wall between two rooms sends its first click to the
-        // room it is seen from, the one on the camera's side of the wall.
+        // room the press lands over, on that side of the wall.
         const between = betweenOf(item, rooms)
         const roomOf = () => {
           if (!between) return item.room
           const turn = MathUtils.degToRad(item.rotation ?? 0)
-          return roomSeenFrom(between, item.position[0], -item.position[1], turn, get().camera.position)
+          return roomPressed(between, item.position[0], -item.position[1], turn, get().raycaster.ray)
         }
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.

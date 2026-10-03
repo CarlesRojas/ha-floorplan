@@ -59,9 +59,16 @@ export function betweenOf(item: DecorationConfig, rooms: RoomConfig[]): Between 
   }
 }
 
-// Which of its two rooms a piece is seen from: the one on the camera's side
-// of the wall. The piece stands at x, z in the scene, turned by `turn`.
-export function roomSeenFrom(between: Between, x: number, z: number, turn: number, camera: { x: number; z: number }) {
-  const facing = (camera.x - x) * Math.sin(turn) + (camera.z - z) * Math.cos(turn)
+// Which of its two rooms a press on a piece is meant for: the one whose
+// floor the press lands over, on that side of the wall. The piece stands at
+// x, z in the scene, turned by `turn`, and `ray` is the press, from the
+// camera out into the scene. A press that never comes down to the floor is
+// taken from where the camera is instead.
+type Ray = { origin: { x: number; y: number; z: number }; direction: { x: number; y: number; z: number } }
+export function roomPressed(between: Between, x: number, z: number, turn: number, ray: Ray) {
+  const reach = ray.direction.y < -1e-6 ? -ray.origin.y / ray.direction.y : 0
+  const px = ray.origin.x + ray.direction.x * reach
+  const pz = ray.origin.z + ray.direction.z * reach
+  const facing = (px - x) * Math.sin(turn) + (pz - z) * Math.cos(turn)
   return facing >= 0 ? between.front : between.back
 }

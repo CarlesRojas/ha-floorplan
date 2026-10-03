@@ -12,7 +12,7 @@ moves that section under the new version and uses it as the release notes.
 ### Changed
 
 - On a touch screen, a finger dragged up or down over the card scrolls the dashboard where it used to turn the home. Start the drag sideways to turn the home, and it tilts too for as long as the finger stays down.
-- A door, window, blind, curtain or awning in a wall between two rooms now belongs to both: it stays in view and can be pressed when the camera goes to either room, whichever of the two it was put in. From the whole home, a click on it goes to the room on the side it is seen from.
+- A door, window, blind, curtain or awning in a wall between two rooms now belongs to both: it stays in view and can be pressed when the camera goes to either room, whichever of the two it was put in. From the whole home, a click on it goes to the room on the side of the wall the click lands on.
 
 ## [1.2.2] - 2026-10-03
 
