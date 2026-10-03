@@ -31,11 +31,11 @@ export const CAMERA_NEAR_M = 0.1
 export const CAMERA_FAR_M = 200
 // How long the camera takes to travel to a saved view, and how much longer
 // for a flight that has to turn all the way round the home on top.
-export const CAMERA_FLIGHT_S = 0.7
-export const CAMERA_TURN_S = 0.65
+export const CAMERA_FLIGHT_S = 0.35
+export const CAMERA_TURN_S = 0.325
 // How long the rest of the home takes to fade away around a focused room,
 // and to fade back.
-export const FOCUS_FADE_S = 0.5
+export const FOCUS_FADE_S = 0.25
 
 // Lights
 

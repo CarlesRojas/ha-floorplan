@@ -91,24 +91,25 @@ export default function Card({ hass, config }: Props) {
           {hasRooms ? (
             <>
               {/* Only the picture fades at the edges, not the button over it. */}
-              <div
-                className="absolute inset-0"
-                style={{ maskImage: EDGE_FADE_MASK, maskComposite: 'intersect', WebkitMaskComposite: 'source-in' }}
-              >
-                <Scene
-                  hass={hass}
-                  config={config}
-                  paused={paused}
-                  cameraRef={camera}
-                  onPickRoom={showRoom}
-                  onPickNothing={showHome}
-                  onCameraAway={value => {
-                    setAway(value)
-                    if (!value) setFocus(null)
-                  }}
-                  focus={focused}
-                  roomFirst={roomFirst}
-                />
+              {/* The fade is measured against the card's shorter side, which
+                the outer of the two is there to give it. */}
+              <div className="absolute inset-0" style={{ containerType: 'size' }}>
+                <div className="absolute inset-0" style={{ mask: EDGE_FADE_MASK, WebkitMask: EDGE_FADE_MASK }}>
+                  <Scene
+                    hass={hass}
+                    config={config}
+                    paused={paused}
+                    cameraRef={camera}
+                    onPickRoom={showRoom}
+                    onPickNothing={showHome}
+                    onCameraAway={value => {
+                      setAway(value)
+                      if (!value) setFocus(null)
+                    }}
+                    focus={focused}
+                    roomFirst={roomFirst}
+                  />
+                </div>
               </div>
               {away && (
                 <button

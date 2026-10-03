@@ -20,13 +20,44 @@ export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a
 // The card has no background of its own: the home stands on whatever the
 // dashboard is, in any theme. The editor's preview stands on the same thing.
 export const SCENE_BACKGROUND_CSS = 'var(--lovelace-background, var(--primary-background-color))'
-// How far in from each edge of the card the picture fades away to nothing,
-// so a home that reaches an edge dissolves into the dashboard and the card
-// has no border to be cut by.
-export const EDGE_FADE = '12%'
-const fade = (to: string) =>
-  `linear-gradient(to ${to}, transparent, black ${EDGE_FADE}, black calc(100% - ${EDGE_FADE}), transparent)`
-export const EDGE_FADE_MASK = `${fade('right')}, ${fade('bottom')}`
+// The picture fades away to nothing towards the card's edges, so a home
+// that reaches one dissolves into the dashboard and the card has no border
+// to be cut by. The fade is as deep along the sides as round the corners,
+// and the corners are true quarter circles whatever the card's shape, the
+// way a vignette's are. Both in hundredths of the card's shorter side: how
+// deep the fade is, and the radius of the corner where it reaches nothing.
+const EDGE_FADE_DEPTH = 11
+const EDGE_FADE_CORNER = 16
+// The mask is laid out in nine parts: a band across and a band down that
+// fade at their ends, and a quarter circle in each corner between them. The
+// ramp eases in and out, so the fade has no line where it starts or ends.
+const EDGE_FADE_RAMP = [0, 0.1, 0.35, 0.65, 0.9, 1]
+const fadeDepth = `${EDGE_FADE_DEPTH}cqmin`
+const fadeCorner = `${EDGE_FADE_CORNER}cqmin`
+const fadeBand = (to: string) => {
+  const last = EDGE_FADE_RAMP.length - 1
+  const at = (i: number) => `calc(${fadeDepth} * ${i / last})`
+  const rise = EDGE_FADE_RAMP.map((alpha, i) => `rgb(0 0 0 / ${alpha}) ${at(i)}`)
+  const fall = EDGE_FADE_RAMP.map((alpha, i) => `rgb(0 0 0 / ${alpha}) calc(100% - ${at(i)})`).reverse()
+  return `linear-gradient(to ${to}, ${[...rise, ...fall].join(', ')})`
+}
+const fadeQuarter = (x: string, y: string) => {
+  const last = EDGE_FADE_RAMP.length - 1
+  const stops = EDGE_FADE_RAMP.map(
+    (alpha, i) => `rgb(0 0 0 / ${alpha}) calc(${fadeCorner} - ${fadeDepth} * ${i / last})`,
+  ).reverse()
+  // The circle is centred on the corner of its square that points into the card.
+  const inner = `${x === 'left' ? '100%' : '0%'} ${y === 'top' ? '100%' : '0%'}`
+  return `radial-gradient(circle at ${inner}, ${stops.join(', ')}) ${x} ${y} / ${fadeCorner} ${fadeCorner} no-repeat`
+}
+export const EDGE_FADE_MASK = [
+  `${fadeBand('right')} center / 100% calc(100% - 2 * ${fadeCorner}) no-repeat`,
+  `${fadeBand('bottom')} center / calc(100% - 2 * ${fadeCorner}) 100% no-repeat`,
+  fadeQuarter('left', 'top'),
+  fadeQuarter('right', 'top'),
+  fadeQuarter('left', 'bottom'),
+  fadeQuarter('right', 'bottom'),
+].join(', ')
 
 // Editor
 
