@@ -306,23 +306,6 @@ export default function DecorationPanel({
           <span />
         </label>
 
-        {/* The surface of each part is part of what the piece is. Only its
-            color is the viewer's to pick. */}
-        <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-          <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
-          {Object.entries(kindColors(kind, item.variant)).map(([slot, fallback]) => (
-            <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
-              {slot}
-              <input
-                type="color"
-                className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
-                value={item.colors?.[slot] ?? fallback}
-                onChange={e => onUpdate(item.id, { colors: { ...item.colors, [slot]: e.target.value } })}
-              />
-            </label>
-          ))}
-        </div>
-
         {/* Up and down through the heights there are where it stands. With
             only one, there is nothing to step through. */}
         {levels.length > 1 && levelAt >= 0 && (
@@ -356,6 +339,23 @@ export default function DecorationPanel({
             </div>
           </div>
         )}
+
+        {/* The surface of each part is part of what the piece is. Only its
+            color is the viewer's to pick. */}
+        <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
+          <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
+          {Object.entries(kindColors(kind, item.variant)).map(([slot, fallback]) => (
+            <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
+              {slot}
+              <input
+                type="color"
+                className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
+                value={item.colors?.[slot] ?? fallback}
+                onChange={e => onUpdate(item.id, { colors: { ...item.colors, [slot]: e.target.value } })}
+              />
+            </label>
+          ))}
+        </div>
 
         {/* Every look the piece has, tried without a device. A bound one
             shows its device instead, so there is nothing to try there. */}
