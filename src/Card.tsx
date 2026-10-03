@@ -28,15 +28,19 @@ export default function Card({ hass, config }: Props) {
   const [away, setAway] = useState(false)
   // A click on a room's floor takes the camera to the view saved for it. A
   // second click on that floor, with the camera still standing in the view,
-  // takes it back to the opening one. A room without a view is a room, and
-  // a click on it is nothing.
+  // takes it back to the opening one. A room with no view saved has the one
+  // the camera works out for it, the room alone filling the picture.
   //
   // The room flown to stands alone: the rest of the home fades away and
   // takes no presses until the camera heads back.
   const [focus, setFocus] = useState<string | null>(null)
-  const viewOf = (id: string) => config.rooms?.find(r => r.id === id)?.camera
-  // A room that has left the plan, or lost its view, holds no focus.
-  const focused = focus !== null && viewOf(focus) ? focus : null
+  const roomOf = (id: string) => config.rooms?.find(r => r.id === id)
+  const viewOf = (id: string) => {
+    const room = roomOf(id)
+    return room && (room.camera ?? camera.current?.frame(room))
+  }
+  // A room that has left the plan holds no focus.
+  const focused = focus !== null && roomOf(focus) ? focus : null
   const goHome = () => {
     setFocus(null)
     camera.current?.reset()
@@ -44,7 +48,7 @@ export default function Card({ hass, config }: Props) {
   const showRoom = (asked: string, through?: string[]) => {
     // A press on a door or a window in the wall of the focused room goes
     // through it, to the room on its other side, when that one has a view.
-    const beyond = focused && through?.includes(focused) ? through.find(id => id !== focused && viewOf(id)) : undefined
+    const beyond = focused && through?.includes(focused) ? through.find(id => id !== focused && roomOf(id)) : undefined
     // Around a focused room only that room can be pressed, and the pieces in
     // its walls that were put in the room on the other side. A press on one
     // of those with nowhere to go is a press on the room that is showing.
@@ -62,12 +66,12 @@ export default function Card({ hass, config }: Props) {
   const showHome = () => {
     if (away || focused) goHome()
   }
-  // With rooms first, which is how the card comes, a click on a device in a
-  // room the camera has not flown to goes to that room. A room with no view cannot be flown to, so its
-  // devices answer from anywhere.
+  // With rooms first, a click on a device in a room the camera has not flown
+  // to goes to that room. The card comes with devices first, where a device
+  // answers from anywhere.
   const roomFirst = (id: string) => {
     // With a room focused, whatever can be pressed is in it or in its walls.
-    if (config.first_click === 'device' || focused || !viewOf(id) || !camera.current) return false
+    if (config.first_click !== 'room' || focused || !roomOf(id) || !camera.current) return false
     showRoom(id)
     return true
   }

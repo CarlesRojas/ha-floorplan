@@ -9,6 +9,23 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- Every room has a view from the start: one with none saved is framed alone, from the same side as the view the card opens with, so a click on any room flies the camera to it. Forgetting a saved view, of a room or of the card, goes back to the one it comes with.
+
+### Changed
+
+- A click on a device now acts on it from anywhere by default. Set `first_click: room`, or switch the Click button in the editor's 3D view, to have the first click go to the device's room as before.
+- Going from one room to another, the room left behind fades out while the new one fades in, for as long as the camera takes to fly there, where the change used to be over well before the camera landed.
+- Floors that touch now meet with no gap, and a floor's edges and corners are rounded only where it stands free, top and bottom alike, with a wider rounding than before.
+- A floor's boards and tiles are set off a little from the room's outline, so the sides of the floor take the color of a board or a tile, not of the joint between two.
+
+### Fixed
+
+- A door and a window stand exactly on the line between two rooms, as far into one as into the other, where they used to sit a little inside the room they were put in.
+- After Save & Close in the editor, the Save button of Home Assistant's own dialog can be pressed to leave, where it used to be greyed out and only Cancel was left.
+- The panels inside a kitchen counter no longer show through a sink set where two of its units meet.
+
 ## [1.2.3] - 2026-10-03
 
 ### Added

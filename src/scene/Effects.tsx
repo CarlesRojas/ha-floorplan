@@ -1,3 +1,4 @@
+import { flights } from '#/scene/flights.ts'
 import { coarseOnly } from '#/scene/device.ts'
 import { EDITOR_SELECTED_COLOR } from '#/theme.ts'
 import { FOCUS_FADE_S } from '#/constants.ts'
@@ -46,7 +47,8 @@ import {
 // something stands in front of it the edge carries on, fainter.
 //
 // In the card, a room that is focused stands alone, and the rest of the home
-// fades away around it. Fading the things themselves would make every
+// fades away around it, or the room that stood alone before it does, for as
+// long as the camera takes to fly there. Fading the things themselves would make every
 // material see through, which is a shader of its own for each, built on the
 // first fade while the card stalls. So the fade is of the finished picture
 // instead: for as long as it lasts the frame is drawn twice, the whole home
@@ -170,11 +172,14 @@ export default function Effects({ selected, focus = null }: Props) {
     invalidate()
   }, [selected, focus, size.width, size.height, dpr, invalidate])
 
-  // How far the rest of the home has faded, 0 to 1, the room it fades around,
-  // the room the scene is cut down to right now and the one the shadows were
-  // last drawn for.
-  const faded = useRef(0)
-  const around = useRef<string | null>(null)
+  // The fade from one picture to the next: the room that stood alone before
+  // and the one that does now, null for the whole home, how far the fade has
+  // come, 0 to 1, and how long it takes. Then the room the scene is cut down
+  // to right now and the one the shadows were last drawn for.
+  const from = useRef<string | null>(null)
+  const to = useRef<string | null>(null)
+  const faded = useRef(1)
+  const span = useRef(FOCUS_FADE_S)
   const cut = useRef<string | null>(null)
   const shaded = useRef<string | null>(null)
   // The whole home is back before the scene goes, and before the pieces are
@@ -213,23 +218,27 @@ export default function Effects({ selected, focus = null }: Props) {
       run.paint.blendAlpha = share
       run.composer.render(delta)
     }
-    if (focus) around.current = focus
-    const aim = focus ? 1 : 0
-    if (faded.current !== aim) {
+    if (focus !== to.current) {
+      from.current = to.current
+      to.current = focus
+      faded.current = 0
+      // The fade lasts as long as the flight that takes the camera there.
+      const flight = flights.get(camera)?.current
+      span.current = flight?.duration ?? FOCUS_FADE_S
+    }
+    if (faded.current < 1) {
       // A frame after a long rest reports the whole rest as its time.
-      const step = Math.min(delta, 0.05) / FOCUS_FADE_S
-      faded.current = aim > faded.current ? Math.min(1, faded.current + step) : Math.max(0, faded.current - step)
+      faded.current = Math.min(1, faded.current + Math.min(delta, 0.05) / span.current)
       invalidate()
     }
     const t = faded.current
-    if (t === 0) draw(null, 1)
-    else if (t === 1) draw(around.current, 1)
+    if (t === 1) draw(to.current, 1)
     else {
-      draw(null, 1)
-      draw(around.current, t * t * (3 - 2 * t))
+      // The one picture goes as the other comes, and the one that comes is
+      // drawn last, so it is the one that takes presses from the start.
+      draw(from.current, 1)
+      draw(to.current, t * t * (3 - 2 * t))
       run.paint.blendAlpha = 1
-      // On the way back the whole home takes presses again at once.
-      if (!focus) cutTo(null)
     }
     // A priority above zero takes the drawing over from the default loop,
     // which is what lets the composer be the one to draw the frame.

@@ -164,35 +164,33 @@ export default function RoomInfo({
             <FontAwesomeIcon icon={saved ? faCheck : faCamera} className="size-3.5" />
             <span className="truncate">{saved ? 'View saved' : room.camera ? 'Replace view' : 'Use current view'}</span>
           </button>
+          <button
+            type="button"
+            disabled={!hasPreview}
+            aria-label="Fly to this room's view"
+            title="Fly to this room's view"
+            onClick={() => onShowCamera(room.id)}
+            className={cn(cameraButton, 'size-8 shrink-0')}
+          >
+            <FontAwesomeIcon icon={faEye} className="size-3.5" />
+          </button>
           {room.camera && (
-            <>
-              <button
-                type="button"
-                disabled={!hasPreview}
-                aria-label="Fly to this room's view"
-                title="Fly to this room's view"
-                onClick={() => onShowCamera(room.id)}
-                className={cn(cameraButton, 'size-8 shrink-0')}
-              >
-                <FontAwesomeIcon icon={faEye} className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                aria-label="Forget this room's view"
-                title="Forget this room's view"
-                onClick={() => onClearCamera(room.id)}
-                className={cn(cameraButton, 'size-8 shrink-0')}
-              >
-                <FontAwesomeIcon icon={faXmark} className="size-3.5" />
-              </button>
-            </>
+            <button
+              type="button"
+              aria-label="Go back to the view the room comes with"
+              title="Go back to the view the room comes with"
+              onClick={() => onClearCamera(room.id)}
+              className={cn(cameraButton, 'size-8 shrink-0')}
+            >
+              <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+            </button>
           )}
         </div>
       </div>
       <p className="-mt-1 text-xs text-(--secondary-text-color)">
         {room.camera
-          ? 'Clicking this room in the card flies the camera to its view and fades the rest of the home away.'
-          : 'Orbit the 3D view to where this room looks best, then save it. Clicking the room in the card will fly there.'}
+          ? 'Clicking this room in the card flies the camera to this view and fades the rest of the home away.'
+          : 'Clicking this room in the card flies the camera to it and fades the rest of the home away. Orbit the 3D view to where the room looks best and save it to choose the view yourself.'}
       </p>
       <button
         type="button"

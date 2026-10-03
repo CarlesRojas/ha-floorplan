@@ -172,6 +172,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   const clearMainView = () => {
     const { camera: _dropped, ...rest } = config
     onChange(rest)
+    // Back on the view the card comes with, and the camera goes there.
+    if (camera.current) camera.current.flyTo(camera.current.frame())
   }
   const setRoomCamera = (roomId: string, view: RoomConfig['camera']) =>
     commit(
@@ -184,23 +186,31 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         return { ...r, camera: view }
       }),
     )
+  // A room with its view forgotten is back on the one it comes with, and
+  // the camera goes there to show it.
+  const clearRoomCamera = (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId)
+    setRoomCamera(roomId, undefined)
+    if (room && camera.current) camera.current.flyTo(camera.current.frame(room))
+  }
   const saveRoomCamera = (roomId: string) => {
     const view = camera.current?.view()
     if (view) setRoomCamera(roomId, view)
   }
-  // What a click on a device goes to first in the card. Rooms first is
+  // What a click on a device goes to first in the card. Devices first is
   // what the card does when nothing is said, so it is not written down.
-  const roomsFirst = config.first_click !== 'device'
+  const roomsFirst = config.first_click === 'room'
   const toggleFirstClick = () => {
     const { first_click: _dropped, ...rest } = config
-    onChange(roomsFirst ? { ...rest, first_click: 'device' } : rest)
+    onChange(roomsFirst ? rest : { ...rest, first_click: 'room' })
   }
+  // With no view saved the card opens on the whole plan, framed.
   const showMainView = () => {
-    if (config.camera) camera.current?.flyTo(config.camera)
+    if (camera.current) camera.current.flyTo(config.camera ?? camera.current.frame())
   }
   const showRoomCamera = (roomId: string) => {
-    const view = rooms.find(r => r.id === roomId)?.camera
-    if (view) camera.current?.flyTo(view)
+    const room = rooms.find(r => r.id === roomId)
+    if (room && camera.current) camera.current.flyTo(room.camera ?? camera.current.frame(room))
   }
   const [sidebarWidth, setSidebarWidth] = useState(EDITOR_SIDEBAR_WIDTH_PX)
   const sidebarDrag = useRef<{ startX: number; width: number } | null>(null)
@@ -857,7 +867,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         onFloor={setFloor}
         onSaveCamera={saveRoomCamera}
         onShowCamera={showRoomCamera}
-        onClearCamera={id => setRoomCamera(id, undefined)}
+        onClearCamera={clearRoomCamera}
         hasPreview={showPreview}
         onDelete={deleteRoom}
         onDeselect={() => setShowRoom(false)}
@@ -966,7 +976,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         label={roomsFirst ? 'Click: rooms first' : 'Click: devices first'}
                         title={
                           roomsFirst
-                            ? 'In the card, the first click on a device goes to its room when the room has a view, and the device answers once the camera is there. Click to have devices answer from anywhere.'
+                            ? 'In the card, the first click on a device goes to its room, and the device answers once the camera is there. Click to have devices answer from anywhere.'
                             : 'In the card, a click on a device acts on it from anywhere. Click to have the first click go to its room instead.'
                         }
                         onClick={toggleFirstClick}
@@ -976,7 +986,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       <PreviewButton
                         icon={faXmark}
                         label="Forget view"
-                        title="Forget the saved view, the card frames the plan by itself again"
+                        title="Forget the saved view and go back to the one the card comes with, the whole plan framed"
                         disabled={!config.camera}
                         onClick={clearMainView}
                       />
@@ -984,7 +994,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         icon={faEye}
                         label="Fly to view"
                         title="Fly the camera to the view the card opens with"
-                        disabled={!config.camera}
                         onClick={showMainView}
                       />
                       <PreviewButton

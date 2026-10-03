@@ -60,7 +60,7 @@ export type RoomConfig = {
   // Floor material from the theme's list, with an optional color tint.
   floor?: { material: string; color?: string; scale?: number; rotation?: number; intensity?: number }
   // Where the camera goes when the room is clicked in the card. A room
-  // without one does nothing when clicked.
+  // without one is framed alone, from the side the card opens on.
   camera?: CameraView
 }
 
@@ -121,10 +121,10 @@ export type CardConfig = {
   sun_direction?: number
   // The view the card opens with. Without one the camera frames the plan.
   camera?: CameraView
-  // What a click on a device goes to first. `room`, the default, takes the
-  // click for the room the device stands in while that room has a view and
-  // is not the one the camera has flown to, so a device only answers from
-  // inside its room. `device` acts on the device wherever it is clicked from.
+  // What a click on a device goes to first. `device`, the default, acts on
+  // the device wherever it is clicked from. `room` takes the click for the
+  // room the device stands in while that room is not the one the camera has
+  // flown to, so a device only answers from inside its room.
   first_click?: 'device' | 'room'
 }
 

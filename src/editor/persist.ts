@@ -14,6 +14,13 @@
 // not ask about unsaved changes and its Save has nothing left to do. The
 // dialog itself stays open, for visibility and layout.
 //
+// With nothing left to save the dialog greys its Save out, which left only
+// Cancel to get out by, and Cancel reads as throwing the edit away. Its Save
+// with nothing to save only closes the dialog, so the button is switched
+// back on once the dialog has drawn itself clean, and a press on it leaves.
+// The dialog greys it out by itself again after the next edit is saved, and
+// it is switched on again then.
+//
 // This reaches into the dialog's internals. Anything that is not there, on
 // an older or a newer Home Assistant, falls back to the old behaviour rather
 // than guessing.
@@ -25,6 +32,19 @@ type EditCardDialog = HTMLElement & {
   }
   _cardConfig?: unknown
   _markDirtyStateClean?: () => void
+  updateComplete?: Promise<unknown>
+}
+
+// Switches the dialog's Save back on once the dialog has drawn itself with
+// nothing to save.
+async function enableSave(dialog: EditCardDialog) {
+  await dialog.updateComplete
+  const button = dialog.shadowRoot?.querySelector<HTMLElement & { disabled?: boolean }>(
+    'ha-button[slot="primaryAction"]',
+  )
+  if (!button) return
+  button.removeAttribute('disabled')
+  button.disabled = false
 }
 
 // The nearest Edit card dialog above an element, across shadow roots.
@@ -66,7 +86,10 @@ export async function persistCard(host: HTMLElement): Promise<SaveResult> {
     toast(host, err instanceof Error ? err.message : 'The card could not be saved')
     throw err
   }
-  dialog._markDirtyStateClean?.()
+  if (dialog._markDirtyStateClean) {
+    dialog._markDirtyStateClean()
+    void enableSave(dialog)
+  }
   toast(host, 'Saved')
   return 'saved'
 }

@@ -47,7 +47,14 @@ export function planBounds(rooms: RoomConfig[]) {
   return { center, reach }
 }
 
-export function frameRooms(rooms: RoomConfig[], aspect: number, height = 0.6): Framing {
+// The camera stands along `from`, a direction from the target to the camera,
+// or along the standard one when none is given.
+export function frameRooms(
+  rooms: RoomConfig[],
+  aspect: number,
+  height = 0.6,
+  from: [number, number, number] = CAMERA_DIRECTION,
+): Framing {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -66,7 +73,7 @@ export function frameRooms(rooms: RoomConfig[], aspect: number, height = 0.6): F
   }
 
   const target = new Vector3((minX + maxX) / 2, height * 0.35, -(minY + maxY) / 2)
-  const direction = new Vector3(...CAMERA_DIRECTION).normalize()
+  const direction = new Vector3(...from).normalize()
 
   // Camera basis for a camera at `target + direction * d` looking at target.
   const forward = direction.clone().negate()
