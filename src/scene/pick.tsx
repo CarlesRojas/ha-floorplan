@@ -6,7 +6,12 @@ import { Vector2, Vector3, type Object3D } from 'three'
 
 // What a click on an object does. Models carry it in their userData so a
 // pick that lands near them, rather than on them, can still act.
-export type Pick = { click: () => void; open: () => void }
+export type Pick = {
+  click: () => void
+  open: () => void
+  // Takes only a press that lands on it, never one that lands near it.
+  exact?: boolean
+}
 
 // A ray hits exactly one point, and the things in the plan are small seen
 // from across a room. When a press lands on nothing, the same press is tried
@@ -71,12 +76,14 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
       return true
     }
 
-    const at = (x: number, y: number): Pick | null => {
+    const at = (x: number, y: number, nearby = false): Pick | null => {
       if (!ray(x, y)) return null
       // Nearest first, so something behind the floor is not picked over it.
       for (const hit of raycaster.intersectObjects(scene.children, true)) {
         const pick = pickOf(hit.object)
-        if (pick) return pick
+        // A piece that only takes presses on itself hides what is behind
+        // it from a press nearby, and takes nothing from it either.
+        if (pick) return nearby && pick.exact ? null : pick
       }
       return null
     }
@@ -119,7 +126,7 @@ export default function PickFallback({ onHandled, onRoom }: Props = {}) {
         for (let i = 0; i < SAMPLES; i++) {
           if (room && tried === reach.roomAt) return { kind: 'room', id: room }
           const angle = ((i + 0.5) / SAMPLES) * Math.PI * 2
-          const pick = at(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius)
+          const pick = at(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius, true)
           if (pick) return { kind: 'pick', pick, direct: false }
           tried++
         }

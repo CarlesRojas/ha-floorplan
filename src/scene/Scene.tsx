@@ -150,6 +150,8 @@ export default function Scene({
           tries={tries}
           onTry={onTry}
           roomFirst={roomFirst}
+          // The editor picks a room from its floor, never from a door.
+          onRoom={onPickDecoration ? undefined : onPickRoom}
         />
         {/* In the card, the pieces with no device behind them are drawn
           together, a room at a time. In the editor every piece is its own,

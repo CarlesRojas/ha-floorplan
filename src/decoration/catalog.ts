@@ -2189,7 +2189,9 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'cover',
     'Blind',
     'wall',
-    [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2)],
+    // A blind can hang on the far side of its wall, outside the room it is
+    // in, which is where a shutter over a window on an outside wall goes.
+    [width(1.2, 0.5, 3), height(2.1, 1, 2.5), p('drop', 'Drop', 1.4, 0.3, 2.2), flag('outside', 'Other side of wall')],
     { slats: SCANDI.linen, rail: SCANDI.slate, ladder: SCANDI.linen },
     { slats: 'fabric', rail: 'metal', ladder: 'fabric' },
     TOGGLE_LEVEL,

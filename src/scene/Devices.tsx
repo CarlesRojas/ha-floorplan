@@ -31,6 +31,8 @@ type Props = {
   // Asked before a click acts on a device, with the room its piece stands
   // in. True means the click was spent on the room instead.
   roomFirst?: (room: string) => boolean
+  // In the card, a click that is for a room and nothing else.
+  onRoom?: (room: string) => void
 }
 
 // The last color each light was seen with. Home Assistant drops rgb_color
@@ -104,7 +106,7 @@ function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<strin
   }
 }
 
-export default function Devices({ hass, config, onPick, tries, onTry, roomFirst }: Props) {
+export default function Devices({ hass, config, onPick, tries, onTry, roomFirst, onRoom }: Props) {
   const devices = config.devices ?? []
   const decorations = config.decorations ?? []
   const rooms = config.rooms ?? []
@@ -222,6 +224,9 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
         }
         // A press does what the device says, and in the editor also picks
         // the piece. A piece with nothing behind it is still pickable.
+        // In the card, a piece in a wall with no device still takes the
+        // press, for the room it is looked at from. Left to pass through, it
+        // would go to whatever stands behind the piece, in the far room.
         const onClick =
           device || onPick || tried
             ? () => {
@@ -230,7 +235,9 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
                   if (!roomFirst?.(roomOf())) act(device.entity_id)
                 } else if (tried) onTry?.(item.id)
               }
-            : undefined
+            : between && onRoom
+              ? () => onRoom(roomOf())
+              : undefined
         const onOpen = device ? () => openMoreInfo(device.entity_id) : undefined
         actions.set(item.id, { click: onClick, open: onOpen })
         const h = handler(item.id)
@@ -245,6 +252,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst 
             raise={raise(item)}
             onClick={onClick && h.click}
             onOpen={onOpen && h.open}
+            exact={!device && !onPick && !tried}
           />
         )
       })}
