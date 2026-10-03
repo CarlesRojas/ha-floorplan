@@ -9,6 +9,8 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-03
+
 ### Added
 
 - The card can send the first click on a device to its room instead of the device, which then answers once the camera is in the room: switch it with the Click button in the corner of the editor's 3D view, or with `first_click: room`.
@@ -85,7 +87,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.0.0...v1.0.1
