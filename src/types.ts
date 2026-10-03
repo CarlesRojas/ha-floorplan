@@ -109,6 +109,9 @@ export type CardConfig = {
   gap?: number
   // Card aspect ratio as "width:height".
   aspect_ratio?: string
+  // The aspect ratio while the card is narrower than 600 px, as on a phone.
+  // Without it the card keeps `aspect_ratio` at every width.
+  aspect_ratio_mobile?: string
   // Where the sun comes from, in degrees clockwise from the top of the plan.
   // 0 puts it beyond the top edge, 90 to the right of it.
   sun_direction?: number

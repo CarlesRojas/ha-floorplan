@@ -66,50 +66,59 @@ export default function Card({ hass, config }: Props) {
     return true
   }
 
+  const wide = aspectRatioCss(config.aspect_ratio)
+
   return (
     <ha-card style={{ '--ha-card-border-radius': `${CARD_CORNER_RADIUS_PX}px` } as CSSProperties}>
-      <div
-        className="relative w-full overflow-hidden"
-        style={{
-          aspectRatio: aspectRatioCss(config.aspect_ratio),
-          borderRadius: CARD_CORNER_RADIUS_PX,
-          background: hasRooms ? SCENE_BACKGROUND_COLOR : undefined,
-        }}
-      >
-        {hasRooms ? (
-          <>
-            <Scene
-              hass={hass}
-              config={config}
-              paused={paused}
-              cameraRef={camera}
-              onPickRoom={showRoom}
-              onPickNothing={showHome}
-              onCameraAway={value => {
-                setAway(value)
-                if (!value) setFocus(null)
-              }}
-              focus={focused}
-              roomFirst={roomFirst}
-            />
-            {away && (
-              <button
-                type="button"
-                aria-label="Back to the opening view"
-                title="Back to the opening view"
-                onClick={goHome}
-                className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-(--card-background-color)/80 text-(--primary-text-color) shadow backdrop-blur-sm hover:bg-(--card-background-color)"
-              >
-                <FontAwesomeIcon icon={faRotateLeft} className="size-4" />
-              </button>
-            )}
-          </>
-        ) : (
-          <div className="font-montserrat flex h-full flex-col items-center justify-center gap-1 p-4 text-center">
-            <p className="text-sm font-semibold">No rooms yet</p>
-            <p className="text-xs opacity-70">Add rooms to the card config to see your floorplan.</p>
-          </div>
-        )}
+      {/* The card's shape follows its own width, not the window's: a card
+        in a narrow column on a wide screen is as narrow as one on a phone. */}
+      <div className="@container w-full">
+        <div
+          className="relative aspect-(--aspect) w-full overflow-hidden @max-[600px]:aspect-(--aspect-narrow)"
+          style={
+            {
+              '--aspect': wide,
+              '--aspect-narrow': config.aspect_ratio_mobile ? aspectRatioCss(config.aspect_ratio_mobile, wide) : wide,
+              borderRadius: CARD_CORNER_RADIUS_PX,
+              background: hasRooms ? SCENE_BACKGROUND_COLOR : undefined,
+            } as CSSProperties
+          }
+        >
+          {hasRooms ? (
+            <>
+              <Scene
+                hass={hass}
+                config={config}
+                paused={paused}
+                cameraRef={camera}
+                onPickRoom={showRoom}
+                onPickNothing={showHome}
+                onCameraAway={value => {
+                  setAway(value)
+                  if (!value) setFocus(null)
+                }}
+                focus={focused}
+                roomFirst={roomFirst}
+              />
+              {away && (
+                <button
+                  type="button"
+                  aria-label="Back to the opening view"
+                  title="Back to the opening view"
+                  onClick={goHome}
+                  className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-(--card-background-color)/80 text-(--primary-text-color) shadow backdrop-blur-sm hover:bg-(--card-background-color)"
+                >
+                  <FontAwesomeIcon icon={faRotateLeft} className="size-4" />
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="font-montserrat flex h-full flex-col items-center justify-center gap-1 p-4 text-center">
+              <p className="text-sm font-semibold">No rooms yet</p>
+              <p className="text-xs opacity-70">Add rooms to the card config to see your floorplan.</p>
+            </div>
+          )}
+        </div>
       </div>
     </ha-card>
   )

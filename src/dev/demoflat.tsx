@@ -10,7 +10,8 @@
 // `editor` shows the editor instead of the card; `merge=0` draws every piece
 // on its own, to compare against the merged room; `views` gives every room
 // a view from above it, so a click on a room flies there; `first=room` has
-// the first click on a device go to its room.
+// the first click on a device go to its room; `mobile=1:1` gives the card
+// that aspect ratio while it is narrow, and 16:9 otherwise.
 // A click on a piece flips its entity, the way Home Assistant would.
 import { setMerging } from '#/scene/Merged.tsx'
 import type { CardConfig, HomeAssistant } from '#/types.ts'
@@ -56,6 +57,11 @@ if (params.has('views')) {
     const y = room.points.reduce((sum, p) => sum + p[1], 0) / room.points.length
     return { ...room, camera: { position: [x + 2, 7, -y + 5], target: [x, 0, -y] } }
   })
+}
+const mobile = params.get('mobile')
+if (mobile) {
+  config.aspect_ratio = '16:9'
+  config.aspect_ratio_mobile = mobile
 }
 if (params.get('first') === 'room') config.first_click = 'room'
 
