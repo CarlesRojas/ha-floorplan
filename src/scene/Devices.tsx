@@ -32,8 +32,9 @@ type Props = {
   // Asked before a click acts on a device, with the room its piece stands
   // in. True means the click was spent on the room instead.
   roomFirst?: (room: string) => boolean
-  // In the card, a click that is for a room and nothing else.
-  onRoom?: (room: string) => void
+  // In the card, a click that is for a room and nothing else, with the
+  // rooms on either side of the wall the piece it landed on stands in.
+  onRoom?: (room: string, through: string[]) => void
 }
 
 // The last color each light was seen with. Home Assistant drops rgb_color
@@ -228,6 +229,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
         // In the card, a piece in a wall with no device still takes the
         // press, for the room it is looked at from. Left to pass through, it
         // would go to whatever stands behind the piece, in the far room.
+        // From a focused room the same press goes through to the other one.
         // A window or a door with no device and a blind or a curtain over
         // it takes that cover's presses, so a press on the glass works the
         // blind whichever of the two is in front. With more than one over
@@ -251,7 +253,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
                   if (over && !roomFirst?.(roomOf())) act(over.entity_id)
                 }
               : between && onRoom
-                ? () => onRoom(roomOf())
+                ? () => onRoom(roomOf(), between.rooms)
                 : undefined
         const onOpen: PressAction | undefined = device
           ? () => openMoreInfo(device.entity_id)

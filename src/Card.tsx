@@ -41,11 +41,14 @@ export default function Card({ hass, config }: Props) {
     setFocus(null)
     camera.current?.reset()
   }
-  const showRoom = (asked: string) => {
+  const showRoom = (asked: string, through?: string[]) => {
+    // A press on a door or a window in the wall of the focused room goes
+    // through it, to the room on its other side, when that one has a view.
+    const beyond = focused && through?.includes(focused) ? through.find(id => id !== focused && viewOf(id)) : undefined
     // Around a focused room only that room can be pressed, and the pieces in
     // its walls that were put in the room on the other side. A press on one
-    // of those is a press on the room that is showing.
-    const id = focused ?? asked
+    // of those with nowhere to go is a press on the room that is showing.
+    const id = beyond ?? focused ?? asked
     const view = viewOf(id)
     if (!view || !camera.current) return
     if (sameView(camera.current.view(), view)) goHome()

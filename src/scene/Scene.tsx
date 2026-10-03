@@ -40,7 +40,8 @@ type Props = {
   // In the editor, a press in 3D also picks what it landed on, so the plan
   // and the sidebar follow the view.
   onPickDecoration?: (id: string) => void
-  onPickRoom?: (id: string) => void
+  // A press on a piece in a wall between rooms also says which rooms.
+  onPickRoom?: (id: string, through?: string[]) => void
   // A click that lands on nothing at all, which lets go of whatever was
   // picked, the way a click on the plan's empty background does.
   onPickNothing?: () => void

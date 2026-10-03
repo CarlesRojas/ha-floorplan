@@ -18,6 +18,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- With the camera on a room, a click on a door or a window with no device in one of its walls now takes the camera to the room on the other side, where it used to go back to the whole home. One with a blind or a curtain over it still works that blind.
 - On a touch screen, a finger dragged up or down over the card scrolls the dashboard where it used to turn the home. Start the drag sideways to turn the home, and it tilts too for as long as the finger stays down.
 - A door, window, blind, curtain or awning in a wall between two rooms now belongs to both: it stays in view and can be pressed when the camera goes to either room, whichever of the two it was put in. From the whole home, a click on it goes to the room it is looked at from, so turning the home round to see the door from its other side sends the click to the other room.
 
