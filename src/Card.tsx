@@ -1,6 +1,6 @@
 import { DEFAULT_ASPECT_RATIO_MOBILE } from '#/constants.ts'
 import { aspectRatioCss } from '#/lib/aspect.ts'
-import { CARD_CORNER_RADIUS_PX, SCENE_BACKGROUND_COLOR } from '#/theme.ts'
+import { EDGE_FADE_MASK } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import type { CameraView, CardConfig, HomeAssistant } from '#/types.ts'
@@ -73,7 +73,9 @@ export default function Card({ hass, config }: Props) {
   const narrow = aspectRatioCss(config.aspect_ratio_mobile, config.aspect_ratio ? wide : DEFAULT_ASPECT_RATIO_MOBILE)
 
   return (
-    <ha-card style={{ '--ha-card-border-radius': `${CARD_CORNER_RADIUS_PX}px` } as CSSProperties}>
+    // No background, border or shadow: nothing says where the card ends and
+    // the dashboard begins.
+    <ha-card style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
       {/* The card's shape follows its own width, not the window's: a card
         in a narrow column on a wide screen is as narrow as one on a phone. */}
       <div className="@container w-full">
@@ -83,27 +85,31 @@ export default function Card({ hass, config }: Props) {
             {
               '--aspect': wide,
               '--aspect-narrow': narrow,
-              borderRadius: CARD_CORNER_RADIUS_PX,
-              background: hasRooms ? SCENE_BACKGROUND_COLOR : undefined,
             } as CSSProperties
           }
         >
           {hasRooms ? (
             <>
-              <Scene
-                hass={hass}
-                config={config}
-                paused={paused}
-                cameraRef={camera}
-                onPickRoom={showRoom}
-                onPickNothing={showHome}
-                onCameraAway={value => {
-                  setAway(value)
-                  if (!value) setFocus(null)
-                }}
-                focus={focused}
-                roomFirst={roomFirst}
-              />
+              {/* Only the picture fades at the edges, not the button over it. */}
+              <div
+                className="absolute inset-0"
+                style={{ maskImage: EDGE_FADE_MASK, maskComposite: 'intersect', WebkitMaskComposite: 'source-in' }}
+              >
+                <Scene
+                  hass={hass}
+                  config={config}
+                  paused={paused}
+                  cameraRef={camera}
+                  onPickRoom={showRoom}
+                  onPickNothing={showHome}
+                  onCameraAway={value => {
+                    setAway(value)
+                    if (!value) setFocus(null)
+                  }}
+                  focus={focused}
+                  roomFirst={roomFirst}
+                />
+              </div>
               {away && (
                 <button
                   type="button"
