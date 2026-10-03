@@ -107,20 +107,21 @@ export type CardConfig = {
   radius?: number
   // Gap in meters between adjacent rooms.
   gap?: number
-  // Card aspect ratio as "width:height".
+  // Card aspect ratio as "width:height". 16:9 without one.
   aspect_ratio?: string
   // The aspect ratio while the card is narrower than 600 px, as on a phone.
-  // Without it the card keeps `aspect_ratio` at every width.
+  // Without it the card keeps `aspect_ratio` at every width, or is square
+  // when that is not set either.
   aspect_ratio_mobile?: string
   // Where the sun comes from, in degrees clockwise from the top of the plan.
   // 0 puts it beyond the top edge, 90 to the right of it.
   sun_direction?: number
   // The view the card opens with. Without one the camera frames the plan.
   camera?: CameraView
-  // What a click on a device goes to first. `device`, the default, acts on
-  // the device wherever it is clicked from. `room` takes the click for the
-  // room the device stands in while that room has a view and is not the one
-  // the camera has flown to, so a device only answers from inside its room.
+  // What a click on a device goes to first. `room`, the default, takes the
+  // click for the room the device stands in while that room has a view and
+  // is not the one the camera has flown to, so a device only answers from
+  // inside its room. `device` acts on the device wherever it is clicked from.
   first_click?: 'device' | 'room'
 }
 

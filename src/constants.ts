@@ -2,7 +2,10 @@
 
 // Card
 
-export const DEFAULT_ASPECT_RATIO = '4 / 3'
+// The card's shape when the config gives none: wide on a wide card, square
+// on one as narrow as a phone.
+export const DEFAULT_ASPECT_RATIO = '16 / 9'
+export const DEFAULT_ASPECT_RATIO_MOBILE = '1 / 1'
 
 // Rooms
 

@@ -15,6 +15,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- A card that sets no `aspect_ratio` is now 16:9, and square while it is narrower than 600 px, where it used to be 4:3 at every width. A card that sets `aspect_ratio` keeps its shape.
+- The first click on a device now goes to its room by default, when that room has a view, and the device answers once the camera is there. Set `first_click: device`, or switch the Click button in the editor's 3D view, to have devices answer from anywhere as before.
 - The camera flies to a room, and back out of it, a little faster.
 
 ### Fixed

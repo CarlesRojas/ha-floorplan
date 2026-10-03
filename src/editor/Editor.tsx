@@ -188,12 +188,12 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     const view = camera.current?.view()
     if (view) setRoomCamera(roomId, view)
   }
-  // What a click on a device goes to first in the card. Devices first is
+  // What a click on a device goes to first in the card. Rooms first is
   // what the card does when nothing is said, so it is not written down.
-  const roomsFirst = config.first_click === 'room'
+  const roomsFirst = config.first_click !== 'device'
   const toggleFirstClick = () => {
     const { first_click: _dropped, ...rest } = config
-    onChange(roomsFirst ? rest : { ...rest, first_click: 'room' })
+    onChange(roomsFirst ? { ...rest, first_click: 'device' } : rest)
   }
   const showMainView = () => {
     if (config.camera) camera.current?.flyTo(config.camera)

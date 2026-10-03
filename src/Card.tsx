@@ -1,3 +1,4 @@
+import { DEFAULT_ASPECT_RATIO_MOBILE } from '#/constants.ts'
 import { aspectRatioCss } from '#/lib/aspect.ts'
 import { CARD_CORNER_RADIUS_PX, SCENE_BACKGROUND_COLOR } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
@@ -57,16 +58,19 @@ export default function Card({ hass, config }: Props) {
   const showHome = () => {
     if (away || focused) goHome()
   }
-  // With rooms first, a click on a device in a room the camera has not flown
-  // to goes to that room. A room with no view cannot be flown to, so its
+  // With rooms first, which is how the card comes, a click on a device in a
+  // room the camera has not flown to goes to that room. A room with no view cannot be flown to, so its
   // devices answer from anywhere.
   const roomFirst = (id: string) => {
-    if (config.first_click !== 'room' || focused === id || !viewOf(id) || !camera.current) return false
+    if (config.first_click === 'device' || focused === id || !viewOf(id) || !camera.current) return false
     showRoom(id)
     return true
   }
 
   const wide = aspectRatioCss(config.aspect_ratio)
+  // A card given one shape keeps it at every width. Only a card given none
+  // turns square when it is narrow.
+  const narrow = aspectRatioCss(config.aspect_ratio_mobile, config.aspect_ratio ? wide : DEFAULT_ASPECT_RATIO_MOBILE)
 
   return (
     <ha-card style={{ '--ha-card-border-radius': `${CARD_CORNER_RADIUS_PX}px` } as CSSProperties}>
@@ -78,7 +82,7 @@ export default function Card({ hass, config }: Props) {
           style={
             {
               '--aspect': wide,
-              '--aspect-narrow': config.aspect_ratio_mobile ? aspectRatioCss(config.aspect_ratio_mobile, wide) : wide,
+              '--aspect-narrow': narrow,
               borderRadius: CARD_CORNER_RADIUS_PX,
               background: hasRooms ? SCENE_BACKGROUND_COLOR : undefined,
             } as CSSProperties
