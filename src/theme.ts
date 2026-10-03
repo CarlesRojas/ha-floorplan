@@ -17,21 +17,35 @@ export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a
 
 // Card
 
-export const CARD_CORNER_RADIUS_PX = 24
-// Behind the scene, in the card and in the editor's preview. Always dark,
-// whatever the Home Assistant theme: the home is lit from inside, and a
-// white card around it washed the lamps out.
-export const SCENE_BACKGROUND_COLOR = '#1c1c1c'
-// The darkening of the card's corners, laid over the picture and the space
-// around it alike. Over a background this dark the shade has only a few
-// dozen steps of grey to climb through, and a plain gradient showed each as
-// a ring, so a faint grain lies over it: at every pixel the shade lands a
-// little above or below, and the rings dissolve into it.
-const GRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0.12 0 0 0 0"/></filter><rect width="160" height="160" filter="url(#g)"/></svg>`
-export const VIGNETTE_CSS = [
-  `url("data:image/svg+xml,${encodeURIComponent(GRAIN_SVG)}") repeat`,
-  'radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.1) 58%, rgba(0, 0, 0, 0.3) 78%, rgba(0, 0, 0, 0.55) 100%)',
-].join(', ')
+// The card has no background of its own: the home stands on whatever the
+// dashboard is, in any theme. The editor's preview stands on the same thing.
+export const SCENE_BACKGROUND_CSS = 'var(--lovelace-background, var(--primary-background-color))'
+// The picture fades away to nothing towards the card's edges, so a home
+// that reaches one dissolves into the dashboard and the card has no border
+// to be cut by. The fade is as deep along the sides as round the corners,
+// and the corners are true quarter circles whatever the card's shape, the
+// way a vignette's are. Both in hundredths of the card's shorter side: how
+// deep the fade is, and the radius of the corner where it reaches nothing.
+const EDGE_FADE_DEPTH = 7
+const EDGE_FADE_CORNER = 10
+// The mask is a picture the size of the card: a rounded shape, and over its
+// rim a stack of ever narrower outlines that each take a little more of it
+// away, so it thins out towards the edge in steps too fine to see. All of
+// them share one centre, so there is no seam for a line to show along. The
+// ramp eases in and out, so the fade has no line where it starts or ends.
+const EDGE_FADE_STEPS = 32
+const ease = (t: number) => t * t * (3 - 2 * t)
+const fadeRings = Array.from({ length: EDGE_FADE_STEPS }, (_, i) => {
+  // What is left of the picture just inside this ring and just outside it.
+  const inside = i === EDGE_FADE_STEPS - 1 ? 1 : ease((i + 1.5) / EDGE_FADE_STEPS)
+  const here = i === 0 ? 0 : ease((i + 0.5) / EDGE_FADE_STEPS)
+  const opacity = (1 - here / inside).toFixed(4)
+  // A stroke lies half inside its outline, so it is twice as wide as it is deep.
+  const width = ((2 * EDGE_FADE_DEPTH * (i + 1)) / EDGE_FADE_STEPS).toFixed(3)
+  return `<rect width="100%" height="100%" rx="${EDGE_FADE_CORNER}vmin" fill="none" stroke="#000" stroke-opacity="${opacity}" stroke-width="${width}vmin"/>`
+}).join('')
+const EDGE_FADE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><mask id="m"><rect width="100%" height="100%" rx="${EDGE_FADE_CORNER}vmin" fill="#fff"/>${fadeRings}</mask><rect width="100%" height="100%" mask="url(#m)"/></svg>`
+export const EDGE_FADE_MASK = `url("data:image/svg+xml,${encodeURIComponent(EDGE_FADE_SVG)}") center / 100% 100% no-repeat`
 
 // Editor
 

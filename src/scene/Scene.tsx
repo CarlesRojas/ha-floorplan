@@ -7,7 +7,7 @@ import {
   CAMERA_MIN_POLAR_DEG,
   CAMERA_NEAR_M,
 } from '#/constants.ts'
-import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M, VIGNETTE_CSS } from '#/theme.ts'
+import { ROOM_CORNER_RADIUS_M, ROOM_GAP_M } from '#/theme.ts'
 import Adaptive from '#/scene/Adaptive.tsx'
 import CameraRig, { type CameraHandle } from '#/scene/CameraRig.tsx'
 import Cleanup from '#/scene/cleanup.tsx'
@@ -174,9 +174,6 @@ export default function Scene({
           />
         )}
       </Canvas>
-      {/* The vignette lies over the whole card, the space around the home
-        included, which the effects cannot reach: the canvas is clear there. */}
-      <div className="pointer-events-none absolute inset-0" style={{ background: VIGNETTE_CSS }} />
     </div>
   )
 }

@@ -1,11 +1,9 @@
 import { DEFAULT_ASPECT_RATIO_MOBILE } from '#/constants.ts'
 import { aspectRatioCss } from '#/lib/aspect.ts'
-import { CARD_CORNER_RADIUS_PX, SCENE_BACKGROUND_COLOR } from '#/theme.ts'
+import { EDGE_FADE_MASK } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import type { CameraView, CardConfig, HomeAssistant } from '#/types.ts'
-import { faRotateLeft } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, useState, type CSSProperties } from 'react'
 
 type Props = {
@@ -26,7 +24,7 @@ export default function Card({ hass, config }: Props) {
   const paused = useEditorOpen()
   const camera = useRef<CameraHandle | null>(null)
   // Whether the camera has left the view the card opened with. While it
-  // has, a corner button takes it back.
+  // has, a click on nothing takes it back.
   const [away, setAway] = useState(false)
   // A click on a room's floor takes the camera to the view saved for it. A
   // second click on that floor, with the camera still standing in the view,
@@ -53,8 +51,7 @@ export default function Card({ hass, config }: Props) {
     }
   }
   // A click on nothing at all, the air around the home or where the faded
-  // rooms were, takes the camera back to the opening view, the way the
-  // corner button does.
+  // rooms were, takes the camera back to the opening view.
   const showHome = () => {
     if (away || focused) goHome()
   }
@@ -73,7 +70,9 @@ export default function Card({ hass, config }: Props) {
   const narrow = aspectRatioCss(config.aspect_ratio_mobile, config.aspect_ratio ? wide : DEFAULT_ASPECT_RATIO_MOBILE)
 
   return (
-    <ha-card style={{ '--ha-card-border-radius': `${CARD_CORNER_RADIUS_PX}px` } as CSSProperties}>
+    // No background, border or shadow: nothing says where the card ends and
+    // the dashboard begins.
+    <ha-card style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
       {/* The card's shape follows its own width, not the window's: a card
         in a narrow column on a wide screen is as narrow as one on a phone. */}
       <div className="@container w-full">
@@ -83,38 +82,27 @@ export default function Card({ hass, config }: Props) {
             {
               '--aspect': wide,
               '--aspect-narrow': narrow,
-              borderRadius: CARD_CORNER_RADIUS_PX,
-              background: hasRooms ? SCENE_BACKGROUND_COLOR : undefined,
             } as CSSProperties
           }
         >
           {hasRooms ? (
             <>
-              <Scene
-                hass={hass}
-                config={config}
-                paused={paused}
-                cameraRef={camera}
-                onPickRoom={showRoom}
-                onPickNothing={showHome}
-                onCameraAway={value => {
-                  setAway(value)
-                  if (!value) setFocus(null)
-                }}
-                focus={focused}
-                roomFirst={roomFirst}
-              />
-              {away && (
-                <button
-                  type="button"
-                  aria-label="Back to the opening view"
-                  title="Back to the opening view"
-                  onClick={goHome}
-                  className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-(--card-background-color)/80 text-(--primary-text-color) shadow backdrop-blur-sm hover:bg-(--card-background-color)"
-                >
-                  <FontAwesomeIcon icon={faRotateLeft} className="size-4" />
-                </button>
-              )}
+              <div className="absolute inset-0" style={{ mask: EDGE_FADE_MASK, WebkitMask: EDGE_FADE_MASK }}>
+                <Scene
+                  hass={hass}
+                  config={config}
+                  paused={paused}
+                  cameraRef={camera}
+                  onPickRoom={showRoom}
+                  onPickNothing={showHome}
+                  onCameraAway={value => {
+                    setAway(value)
+                    if (!value) setFocus(null)
+                  }}
+                  focus={focused}
+                  roomFirst={roomFirst}
+                />
+              </div>
             </>
           ) : (
             <div className="font-montserrat flex h-full flex-col items-center justify-center gap-1 p-4 text-center">
