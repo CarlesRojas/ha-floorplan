@@ -7,6 +7,7 @@ import {
   itemLevels,
   kindColors,
   paramValue,
+  preferredDomains,
   styleParams,
   withoutStyleDefaults,
   type DecorationKind,
@@ -126,13 +127,22 @@ export default function DecorationPanel({
         .filter((d): d is DecorationConfig => !!d)
         .map(d => ({ id: d.id, label: decorationKind(d.kind)?.label ?? d.kind }))
     // Entities that drive at least one of the things this item can show,
-    // the ones that fit best first. A device can stand behind several
-    // pieces at once, so one already in use is still on offer.
+    // the ones that fit best first: a device of the piece's own kind, a
+    // cover for a blind, then the ones that show the most of it. A device
+    // can stand behind several pieces at once, so one already in use is
+    // still on offer.
     const shared = (entityId: string) =>
       hass ? deviceSignals(hass, entityId).filter(x => kind.expresses.includes(x)).length : 0
+    const own = preferredDomains(kind)
+    const ownKind = (entityId: string) => (own.includes(entityId.split('.')[0]) ? 1 : 0)
     const fits = (hass ? placeableEntities(hass) : [])
       .filter(e => shared(e.entity_id) > 0)
-      .sort((a, b) => shared(b.entity_id) - shared(a.entity_id) || a.name.localeCompare(b.name))
+      .sort(
+        (a, b) =>
+          ownKind(b.entity_id) - ownKind(a.entity_id) ||
+          shared(b.entity_id) - shared(a.entity_id) ||
+          a.name.localeCompare(b.name),
+      )
     // The heights it can stand at where it is: the floor, its own height
     // and the tops under it.
     const levels = levelsAt(item, decorations)

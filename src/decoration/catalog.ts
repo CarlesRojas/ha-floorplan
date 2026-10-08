@@ -79,6 +79,36 @@ export function itemLevels(kind: DecorationKind) {
   return ITEM_LEVELS[kind.id] ?? (kind.expresses.includes('level') ? [{ id: 'open', label: 'Level' }] : [])
 }
 
+// The kinds of Home Assistant device that are what a piece is, offered first
+// when picking one to drive it. Any device that can show something on the
+// piece is still on offer after them: a plain switch can run a fan.
+const FAMILY_DOMAINS: Record<string, string[]> = {
+  light: ['light'],
+  cover: ['cover'],
+  media: ['media_player'],
+  climate: ['climate', 'fan', 'humidifier'],
+}
+const KIND_DOMAINS: Record<string, string[]> = {
+  projector_screen: ['cover'],
+  awning: ['cover'],
+  louvred_pergola: ['cover'],
+  fan_ceiling: ['fan'],
+  fan_floor: ['fan'],
+  air_purifier: ['fan'],
+  humidifier: ['humidifier'],
+  smart_lock: ['lock'],
+  vacuum_robot: ['vacuum'],
+  water_heater: ['water_heater'],
+  motion_sensor: ['binary_sensor'],
+  smoke_detector: ['binary_sensor'],
+  camera: ['camera'],
+  alarm_panel: ['alarm_control_panel'],
+}
+
+export function preferredDomains(kind: DecorationKind): string[] {
+  return KIND_DOMAINS[kind.id] ?? FAMILY_DOMAINS[kind.family] ?? []
+}
+
 // Parameter shorthands. Every length is in meters.
 
 // Vertical parameters: how tall something is, or how high it sits. They are

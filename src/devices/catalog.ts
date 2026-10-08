@@ -40,6 +40,14 @@ export function entityName(hass: HomeAssistant, entityId: string) {
   return hass.entities?.[entityId]?.name ?? entityId
 }
 
+// Whether Home Assistant still has the entity. Only answered once it has
+// sent its lists: before that every entity looks missing. One that is only
+// unavailable, a device that is off or out of reach, is still there.
+export function entityGone(hass: HomeAssistant, entityId: string) {
+  const loaded = Object.keys(hass.entities ?? {}).length > 0 && Object.keys(hass.states).length > 0
+  return loaded && !hass.entities?.[entityId] && !hass.states[entityId]
+}
+
 export function entityArea(hass: HomeAssistant, entityId: string): string | null {
   const entry = hass.entities?.[entityId]
   if (!entry) return null
