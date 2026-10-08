@@ -9,6 +9,10 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- On a light dashboard the home is lit brighter, so it no longer looks dark against a white background. The lighter the dashboard, the brighter the room, and dark dashboards look the same as before.
+
 ## [1.2.4] - 2026-10-03
 
 ### Added

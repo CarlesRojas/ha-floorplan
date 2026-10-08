@@ -133,6 +133,13 @@ export const DAY_AMBIENT_INTENSITY = 0.07
 export const DAY_HEMISPHERE_INTENSITY = 0.32
 export const NIGHT_AMBIENT_INTENSITY = 0.07
 export const NIGHT_HEMISPHERE_INTENSITY = 0.18
+// How much the ambient and sky fill are raised on a white dashboard, as a
+// multiple of the above. A pale dashboard sets the eye brighter than a dark
+// one, and the room lit for the dark one looks muddy on it. The raise
+// follows how light the dashboard is, so a mid grey gets part of it and a
+// dark one none. The sun and the lamps are left as they are.
+export const LIGHT_BACKDROP_AMBIENT_BOOST = 3
+export const LIGHT_BACKDROP_HEMISPHERE_BOOST = 1.8
 // The sun itself. It is kept gentle, and its shadow map is deliberately
 // coarse, so daylight models the room without cutting hard edges into it.
 // Daytime is kept on the dim side on purpose, so the lamps still read as
