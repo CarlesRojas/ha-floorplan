@@ -11,6 +11,7 @@ import { fitView, roomCenter, round, type View } from '#/editor/view.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from '#/geometry/overlap.ts'
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { entityGone } from '#/devices/catalog.ts'
 import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
 import { DEFAULT_FLOOR_MATERIAL, SCENE_BACKGROUND_CSS } from '#/theme.ts'
 import { useFlash } from '#/lib/flash.ts'
@@ -276,6 +277,15 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     else delete next.decorations
     onChange(next)
   }
+
+  // A device removed from Home Assistant lets go of what it drove, so the
+  // card never holds on to an entity that is no longer there.
+  useEffect(() => {
+    if (!hass) return
+    const kept = devices.filter(d => !entityGone(hass, d.entity_id))
+    if (kept.length !== devices.length) commit(rooms, kept)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hass, devices])
 
   // Decoration
 
