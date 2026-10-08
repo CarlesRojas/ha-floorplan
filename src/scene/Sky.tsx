@@ -1,4 +1,5 @@
 import { DAYLIGHT_EASE_S, SUN_DIRECTION_DEG, SUN_ELEVATION_DEG, SUN_SHADOW_MAP_PX } from '#/constants.ts'
+import { backdropLightness } from '#/scene/backdrop.ts'
 import { daylight, sunElevation } from '#/scene/daylight.ts'
 import { planBounds } from '#/scene/framing.ts'
 import {
@@ -9,6 +10,8 @@ import {
   DAY_SUN_COLOR,
   DAY_SUN_INTENSITY,
   HORIZON_GROUND_COLOR,
+  LIGHT_BACKDROP_AMBIENT_BOOST,
+  LIGHT_BACKDROP_HEMISPHERE_BOOST,
   HORIZON_SKY_COLOR,
   HORIZON_SUN_COLOR,
   NIGHT_AMBIENT_INTENSITY,
@@ -94,28 +97,47 @@ export default function Sky({
   useEffect(() => {
     invalidate()
   }, [target.level, target.height, invalidate])
+
+  // How light the dashboard behind the card is, read again whenever Home
+  // Assistant changes theme. The fill is raised with it, see theme.ts.
+  const canvas = useThree(state => state.gl.domElement)
+  const themes = hass?.themes
+  const backdrop = useMemo(() => backdropLightness(canvas, themes?.darkMode ?? false), [canvas, themes])
+  // Starts where the dashboard is, so the card never opens with a fade.
+  const lift = useRef(backdrop)
+  useEffect(() => {
+    invalidate()
+  }, [backdrop, invalidate])
+
   const settled = useRef(false)
   useFrame((_, delta) => {
     // Once the light has arrived it is left alone until the sun moves.
-    const arrived = Math.abs(target.level - level.current) < 1e-4 && Math.abs(target.height - height.current) < 1e-4
+    const arrived =
+      Math.abs(target.level - level.current) < 1e-4 &&
+      Math.abs(target.height - height.current) < 1e-4 &&
+      Math.abs(backdrop - lift.current) < 1e-4
     if (arrived && settled.current) return
     settled.current = arrived
     if (!arrived) invalidate()
     const k = 1 - Math.exp(-delta / DAYLIGHT_EASE_S)
     level.current += (target.level - level.current) * k
     height.current += (target.height - height.current) * k
+    lift.current += (backdrop - lift.current) * k
     const day = level.current
     const up = height.current
     const between = (night: number, light: number) => night + (light - night) * day
+    const raised = (boost: number) => 1 + (boost - 1) * lift.current
     // Golden along the horizon, near white overhead, then faded toward the
     // night wash as the sun goes down.
     const tint = (set: Color[]) => colors.mix.lerpColors(set[0], colors.lit.lerpColors(set[1], set[2], up), day)
     if (ambient.current) {
-      ambient.current.intensity = between(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY)
+      ambient.current.intensity =
+        between(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY) * raised(LIGHT_BACKDROP_AMBIENT_BOOST)
       ambient.current.color.copy(tint(colors.sky))
     }
     if (hemi.current) {
-      hemi.current.intensity = between(NIGHT_HEMISPHERE_INTENSITY, DAY_HEMISPHERE_INTENSITY)
+      hemi.current.intensity =
+        between(NIGHT_HEMISPHERE_INTENSITY, DAY_HEMISPHERE_INTENSITY) * raised(LIGHT_BACKDROP_HEMISPHERE_BOOST)
       hemi.current.color.copy(tint(colors.sky))
       hemi.current.groundColor.copy(tint(colors.ground))
     }

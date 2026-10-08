@@ -29,6 +29,7 @@ if (params.has('dark')) {
     '--card-background-color': '#1c1c1c',
     '--secondary-background-color': '#202020',
     '--divider-color': 'rgba(225, 225, 225, 0.12)',
+    '--primary-background-color': '#111111',
   }
   for (const [name, value] of Object.entries(dark)) document.documentElement.style.setProperty(name, value)
   document.body.style.background = '#111111'
@@ -80,7 +81,7 @@ const hass = (): HomeAssistant => ({
     }
     return Promise.resolve()
   },
-  themes: { darkMode: false },
+  themes: { darkMode: params.has('dark') },
 })
 element.style.cssText = 'display:block;width:100vw;height:100vh'
 element.setConfig(config)
