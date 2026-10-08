@@ -9,6 +9,8 @@ moves that section under the new version and uses it as the release notes.
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-10-08
+
 ### Changed
 
 - On a light dashboard the home is lit brighter, so it no longer looks dark against a white background. The lighter the dashboard, the brighter the room, and dark dashboards look the same as before.
@@ -151,7 +153,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.4...HEAD
+[Unreleased]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.5...HEAD
+[1.2.5]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/CarlesRojas/ha-floorplan/compare/v1.2.1...v1.2.2
