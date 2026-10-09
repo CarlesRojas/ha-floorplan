@@ -422,7 +422,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // by what the device says it is doing, and plain when it only moves
       // the air.
       const mode = state?.text ?? ''
-      const air = /heat/.test(mode) ? '#9a5a48' : /cool/.test(mode) ? '#4d73a3' : '#7d8894'
+      const air = /heat/.test(mode) ? '#7a4538' : /cool/.test(mode) ? '#3b5a82' : '#626b75'
       if (style === 'duct') {
         // A grille let into the wall, a frame round a dark slot of blades
         // angled down, with the air coming out through them.
