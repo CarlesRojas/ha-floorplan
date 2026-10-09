@@ -18,16 +18,20 @@ const STACK_PX = 900
 
 type HuiCard = HTMLElement & { config: CardConfig; hass: HomeAssistant; preview: boolean; load: () => void }
 
-// Whether the element sits in a panel view, which gives its one card the
-// whole screen, looking up through the shadow roots on the way.
-function inPanelView(element: HTMLElement) {
+// The nearest ancestor with the given tag, looking up through the shadow
+// roots on the way.
+function closest(element: HTMLElement, tag: string) {
   let node: Node | null = element
   while (node) {
-    if (node instanceof HTMLElement && node.localName === 'hui-panel-view') return true
+    if (node instanceof HTMLElement && node.localName === tag) return node
     node = node instanceof ShadowRoot ? node.host : node.parentNode
   }
-  return false
+  return null
 }
+
+// Whether the element sits in a panel view, which gives its one card the
+// whole screen.
+const inPanelView = (element: HTMLElement) => !!closest(element, 'hui-panel-view')
 
 const ROW_PX = 56
 const GAP_PX = 10
@@ -60,8 +64,8 @@ const CSS = `
   grid-template-columns: 2fr 1fr;
   gap: 24px;
   box-sizing: border-box;
-  height: calc(100vh - var(--header-height, 56px) - env(safe-area-inset-top, 0px));
-  height: calc(100dvh - var(--header-height, 56px) - env(safe-area-inset-top, 0px));
+  height: calc(100vh - var(--_reserved, calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px))));
+  height: calc(100dvh - var(--_reserved, calc(var(--header-height, 56px) + env(safe-area-inset-top, 0px))));
   padding: 0 24px 0 8px;
 }
 .main {
@@ -190,7 +194,10 @@ export class SidePanel extends HTMLElement {
     shadow.appendChild(this.root)
     // Caught on the way down, before a hui-card can stop it.
     this.cardsSlot.addEventListener('card-visibility-changed', () => queueMicrotask(() => this.updateEmpty()), true)
-    this.observer = new ResizeObserver(() => this.updateStacked())
+    this.observer = new ResizeObserver(() => {
+      this.updateStacked()
+      this.updateReserved()
+    })
   }
 
   setConfig(config: PlanConfig) {
@@ -226,12 +233,15 @@ export class SidePanel extends HTMLElement {
     }
     this.observer.observe(this)
     this.updateStacked()
+    this.updateReserved()
+    window.addEventListener('resize', this.onResize)
     this.unsubscribe ??= onRoomFilter(() => this.updateRoom())
     this.updateRoom()
   }
 
   disconnectedCallback() {
     this.observer.disconnect()
+    window.removeEventListener('resize', this.onResize)
     this.unsubscribe?.()
     this.unsubscribe = null
   }
@@ -293,6 +303,21 @@ export class SidePanel extends HTMLElement {
       any ||= !off && !card.hasAttribute('data-away')
     }
     this.empty.hidden = any
+  }
+
+  private onResize = () => this.updateReserved()
+
+  // In a panel view the floorplan and the panel fill the screen below the
+  // header. The space they leave is measured rather than assumed, since the
+  // header grows a row of tabs while the dashboard is edited, and the bar
+  // with the edit button sits under the card then.
+  private updateReserved() {
+    if (!this.panel) return this.root.style.removeProperty('--_reserved')
+    const options = closest(this, 'hui-card-options')
+    const card = options?.shadowRoot?.querySelector('.card')
+    const below = card ? Math.max(0, options!.getBoundingClientRect().bottom - card.getBoundingClientRect().bottom) : 0
+    const above = this.getBoundingClientRect().top + window.scrollY
+    this.root.style.setProperty('--_reserved', `${Math.round(above + below)}px`)
   }
 
   private updateStacked() {
