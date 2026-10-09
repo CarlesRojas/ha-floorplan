@@ -7,7 +7,7 @@ import {
   screenSize,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { Bar, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
+import { Bar, Draft, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
 import { roundedShape } from '#/geometry/polygon.ts'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
@@ -417,11 +417,11 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // top, a louvre that tips open underneath and a small display. Its
       // height and depth follow its width, within what real units come in.
       const w = p('width')
-      // Warm air out orange and cool air out blue, by what the device says
-      // it is doing, and pale when it only moves the air.
+      // Warm air out with a faint blush and cool air out with a faint blue,
+      // by what the device says it is doing, and plain when it only moves
+      // the air.
       const mode = state?.text ?? ''
-      const air = /heat/.test(mode) ? '#ff7a2e' : /cool/.test(mode) ? '#3f93ff' : '#d6ecff'
-      const tinted = air !== '#d6ecff'
+      const air = /heat/.test(mode) ? '#ffa088' : /cool/.test(mode) ? '#94c0ff' : '#e6eef4'
       if (style === 'duct') {
         // A grille let into the wall, a frame round a dark slot of blades
         // angled down, with the air coming out through them.
@@ -456,22 +456,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
                 {M('grille')}
               </mesh>
             ))}
-            {[-0.3, 0, 0.3].map(k => (
-              <Steam
-                key={k}
-                on={on}
-                position={[k * w, gh * 0.4, 0.02]}
-                radius={Math.min(0.05, w * 0.05)}
-                rise={-0.4}
-                drift={[0, 0.35]}
-                count={6}
-                strength={tinted ? 0.22 : 0.14}
-                speed={0.5}
-                color={air}
-                glow={tinted ? 0.9 : 0.25}
-                phase={k}
-              />
-            ))}
+            <Draft on={on} position={[0, gh * 0.3, 0.02]} width={w * 0.7} color={air} />
           </group>
         )
       }
@@ -516,21 +501,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </mesh>
           <Led on={on} position={[w * 0.31, h * 0.42, d + 0.004]} color="#7fb3e8" radius={Math.min(0.008, h * 0.03)} />
           {/* The draft out of the flap, cool air sinking forward along it. */}
-          {[-0.3, 0, 0.3].map(k => (
-            <Steam
-              key={k}
-              on={on}
-              position={[k * w, h * 0.08, d]}
-              radius={Math.min(0.06, w * 0.05)}
-              rise={-0.4}
-              drift={[0, 0.3]}
-              count={6}
-              strength={tinted ? 0.22 : 0.14}
-              speed={0.5}
-              color={air}
-              glow={tinted ? 0.9 : 0.25}
-            />
-          ))}
+          <Draft on={on} position={[0, h * 0.08, d]} width={w * 0.75} color={air} />
         </group>
       )
     }
