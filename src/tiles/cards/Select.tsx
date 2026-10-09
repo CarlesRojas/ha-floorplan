@@ -16,6 +16,14 @@ export default function Select({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const domain = config.entity!.split('.')[0]
   const options = Array.isArray(entity?.attributes.options) ? (entity.attributes.options as string[]) : []
+  // An option as Home Assistant words it, or the raw value made readable
+  // when it has no words for it.
+  const label = (option: string) => {
+    const worded = entity && env.hass.formatEntityState?.(entity, option)
+    if (worded && worded !== option) return worded
+    const spaced = option.replace(/_/g, ' ')
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+  }
   const anchor = useRef<HTMLDivElement>(null)
   const menu = useRef<HTMLDivElement>(null)
 
@@ -30,8 +38,13 @@ export default function Select({ env, config }: Props) {
     const el = menu.current
     const box = anchor.current?.getBoundingClientRect()
     if (!el || !box) return
+    // At least as wide as the tile it opens from.
+    el.style.minWidth = `${box.width}px`
+    el.style.maxWidth = `max(min(320px, 100vw - 32px), ${box.width}px)`
     el.showPopover()
-    const { width, height } = el.getBoundingClientRect()
+    // Its own size, not the one it is scaled to while it fades in.
+    const width = el.offsetWidth
+    const height = el.offsetHeight
     const below = box.bottom + GAP + height <= window.innerHeight
     const top = below ? box.bottom + GAP : Math.max(GAP, box.top - GAP - height)
     const left = Math.min(Math.max(GAP, box.left), window.innerWidth - width - GAP)
@@ -49,7 +62,7 @@ export default function Select({ env, config }: Props) {
 
   return (
     <div ref={anchor} className="h-full">
-      <Tile env={env} config={config} entity={entity} state={entity?.state ?? ''} onTap={tap} />
+      <Tile env={env} config={config} entity={entity} state={entity ? label(entity.state) : ''} onTap={tap} />
       <div
         ref={menu}
         popover="auto"
@@ -74,7 +87,7 @@ export default function Select({ env, config }: Props) {
             className="fp-option"
             onClick={() => choose(option)}
           >
-            <span className="min-w-0 flex-1 truncate">{option}</span>
+            <span className="min-w-0 flex-1 truncate">{label(option)}</span>
             {option === entity?.state && <Icon icon="ph:check" className="fp-check" />}
           </button>
         ))}
