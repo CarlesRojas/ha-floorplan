@@ -334,16 +334,10 @@
 /* The weather tile, its background the sky and its type white on it. */
 .fp-weather {
   min-height: 0;
+  padding: 16px 18px 14px;
+  gap: 6px;
   color: #fff;
-}
-
-/* A soft light falling on the glass from above. */
-.fp-weather::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 55%);
-  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .fp-weather > * {
@@ -358,12 +352,12 @@
 }
 
 .fp-weather .fp-name {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .fp-weather-temp {
-  font-size: 64px;
+  font-size: 50px;
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -380,7 +374,7 @@
 }
 
 .fp-weather-condition {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.25;
   font-variant-numeric: tabular-nums;
@@ -408,15 +402,15 @@
   flex: 1 1 0;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
   font-variant-numeric: tabular-nums;
 }
 
 .fp-weather-step .fp-icon {
-  width: 26px;
-  height: 26px;
-  --mdc-icon-size: 26px;
+  width: 22px;
+  height: 22px;
+  --mdc-icon-size: 22px;
 }
 
 .fp-weather-when {

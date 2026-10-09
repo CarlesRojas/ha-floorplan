@@ -24,10 +24,10 @@ const STEPS = 6
 
 // The sky behind the tile, by the weather and whether the sun is up.
 const SKIES: Record<string, string> = {
-  day: 'linear-gradient(180deg, #2a5ea8 0%, #4a80c6 100%)',
-  night: 'linear-gradient(180deg, #0b1630 0%, #26355c 100%)',
-  cloudy: 'linear-gradient(180deg, #34588c 0%, #5579a8 100%)',
-  cloudyNight: 'linear-gradient(180deg, #1d2532 0%, #3a4556 100%)',
+  day: 'linear-gradient(180deg, #2c5a9c 0%, #4f7dbd 100%)',
+  night: 'linear-gradient(180deg, #13244a 0%, #2a4677 100%)',
+  cloudy: 'linear-gradient(180deg, #2c5a9c 0%, #4f7dbd 100%)',
+  cloudyNight: 'linear-gradient(180deg, #1c2a45 0%, #344a6e 100%)',
   rain: 'linear-gradient(180deg, #3c4a5c 0%, #66768a 100%)',
   storm: 'linear-gradient(180deg, #232836 0%, #474e63 100%)',
 }
@@ -84,7 +84,7 @@ const iconColor = (condition: string | undefined) => (condition === 'sunny' ? '#
 
 type Props = { env: TileEnv; config: TileConfig }
 
-// The weather outside, the whole width and four rows tall. The temperature
+// The weather outside, the whole width and three rows tall. The temperature
 // in large type, what the sky is doing and the day's high and low on the
 // right, and the next hours along the bottom, or the next days when the
 // entity has no hourly forecast. Its background is the sky. A tap opens the

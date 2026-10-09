@@ -31,7 +31,7 @@ function span(config: CardConfig) {
   let rows: number | 'auto' = 'auto'
   if (type === 'fp-title') rows = 1
   else if (type === 'fp-camera') columns = 12
-  else if (type === 'fp-weather') rows = 4
+  else if (type === 'fp-weather') rows = 3
   else if (type.startsWith('fp-')) {
     columns = config.size === 'wide' ? 12 : 6
     rows = 2

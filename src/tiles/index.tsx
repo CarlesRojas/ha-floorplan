@@ -105,11 +105,11 @@ class CameraCard extends entityCard<CameraConfig>(CAMERA_DOMAINS, Camera, ['came
 
 class WeatherCard extends entityCard(WEATHER_DOMAINS, Weather) {
   getCardSize() {
-    return 4
+    return 3
   }
 
   getGridOptions(): GridOptions {
-    return { columns: 'full', rows: 4 }
+    return { columns: 'full', rows: 3 }
   }
 }
 

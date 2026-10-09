@@ -14,7 +14,7 @@ Floorplan 3D comes with eleven small tiles, to sit around the 3D model on the sa
 | `fp-climate` | `climate.*`, `water_heater.*`                                                                                       | opens its dialog. A wide tile adds minus and plus for the temperature it aims for                               |
 | `fp-media`   | `media_player.*`                                                                                                    | plays or pauses it, or turns it on. A wide tile adds previous, play or pause, next, and a button to turn it off |
 | `fp-lock`    | `lock.*`                                                                                                            | locks it, or unlocks it while it is locked                                                                      |
-| `fp-weather` | `weather.*`                                                                                                         | opens its dialog. It takes the whole width and four rows, and shows the next hours or days                      |
+| `fp-weather` | `weather.*`                                                                                                         | opens its dialog. It takes the whole width and three rows, and shows the next hours or days                     |
 | `fp-entity`  | any entity                                                                                                          | opens its dialog. The line under the name is its state, with its unit                                           |
 
 On every tile but the title, a long press or a right click opens Home Assistant's more info dialog for the entity. With a keyboard, Enter or Space taps and the context menu key or Shift+F10 holds.
