@@ -4,14 +4,7 @@ declare module 'n8ao' {
   import type { Camera, Color, Scene } from 'three'
 
   export type N8AOQuality =
-    | 'Performance'
-    | 'Low'
-    | 'Medium'
-    | 'High'
-    | 'Ultra'
-    | 'Neural-Low'
-    | 'Neural-Medium'
-    | 'Neural-High'
+    'Performance' | 'Low' | 'Medium' | 'High' | 'Ultra' | 'Neural-Low' | 'Neural-Medium' | 'Neural-High'
 
   export class N8AOPostPass extends Pass {
     constructor(scene: Scene, camera: Camera, width?: number, height?: number)

@@ -3,11 +3,11 @@
 // regular weight, for a tile that is off, and filled, for one that is on.
 // To add one, add its name to both lists below.
 const REGULAR = import.meta.glob<string>(
-  '/node_modules/@phosphor-icons/core/assets/regular/{armchair,arrow-line-down,arrow-line-up,bathtub,battery-charging,battery-empty,battery-full,battery-high,battery-low,battery-medium,bed,bell,broom,camera,caret-down,caret-left,caret-right,caret-up,cat,check,circle,clock,cooking-pot,couch,cursor-click,desktop,door,door-open,drop,fan,film-strip,fire,fork-knife,garage,hand-tap,heart,house,house-line,lamp,lamp-pendant,lightbulb,lightbulb-filament,lightning,list,list-bullets,list-checks,lock,lock-open,map-trifold,monitor,moon,oven,pause,paw-print,plant,play,plug,plugs,popcorn,potted-plant,power,projector-screen,question,robot,rows,security-camera,shower,sliders,snowflake,sparkle,spray-bottle,square-half-bottom,star,stop,sun,television,thermometer,timer,toggle-left,toggle-right,toilet,tree,video-camera,warning,wind,x}.svg',
+  '/node_modules/@phosphor-icons/core/assets/regular/{alarm,armchair,arrow-line-down,arrow-line-up,bathtub,battery-charging,battery-empty,battery-full,battery-high,battery-low,battery-medium,bed,bell,broom,calendar-blank,camera,caret-down,caret-left,caret-right,caret-up,cat,chat-circle,check,circle,clock,cloud,cloud-fog,cloud-lightning,cloud-rain,cloud-snow,cloud-sun,cooking-pot,couch,cursor-click,desktop,door,door-open,download,drop,drop-half,eye,fan,film-strip,fire,fork-knife,garage,gauge,globe,hand-tap,hash,heart,house,house-line,lamp,lamp-pendant,lightbulb,lightbulb-filament,lightning,list,list-bullets,list-checks,lock,lock-open,map-pin,map-trifold,minus,monitor,moon,moon-stars,music-notes,oven,pause,paw-print,person,person-simple-walk,pipe,plant,play,plug,plugs,plus,popcorn,potted-plant,power,projector-screen,pulse,question,robot,rows,security-camera,shield,shield-check,shower,siren,skip-back,skip-forward,sliders,sliders-horizontal,snowflake,sparkle,speaker-high,spray-bottle,square-half-bottom,star,stop,sun,television,textbox,thermometer,thermometer-simple,timer,toggle-left,toggle-right,toilet,tree,user,video-camera,warning,wifi-high,wind,x}.svg',
   { query: '?raw', import: 'default', eager: true },
 )
 const FILL = import.meta.glob<string>(
-  '/node_modules/@phosphor-icons/core/assets/fill/{armchair,arrow-line-down,arrow-line-up,bathtub,battery-charging,battery-empty,battery-full,battery-high,battery-low,battery-medium,bed,bell,broom,camera,caret-down,caret-left,caret-right,caret-up,cat,check,circle,clock,cooking-pot,couch,cursor-click,desktop,door,door-open,drop,fan,film-strip,fire,fork-knife,garage,hand-tap,heart,house,house-line,lamp,lamp-pendant,lightbulb,lightbulb-filament,lightning,list,list-bullets,list-checks,lock,lock-open,map-trifold,monitor,moon,oven,pause,paw-print,plant,play,plug,plugs,popcorn,potted-plant,power,projector-screen,question,robot,rows,security-camera,shower,sliders,snowflake,sparkle,spray-bottle,square-half-bottom,star,stop,sun,television,thermometer,timer,toggle-left,toggle-right,toilet,tree,video-camera,warning,wind,x}-fill.svg',
+  '/node_modules/@phosphor-icons/core/assets/fill/{alarm,armchair,arrow-line-down,arrow-line-up,bathtub,battery-charging,battery-empty,battery-full,battery-high,battery-low,battery-medium,bed,bell,broom,calendar-blank,camera,caret-down,caret-left,caret-right,caret-up,cat,chat-circle,check,circle,clock,cloud,cloud-fog,cloud-lightning,cloud-rain,cloud-snow,cloud-sun,cooking-pot,couch,cursor-click,desktop,door,door-open,download,drop,drop-half,eye,fan,film-strip,fire,fork-knife,garage,gauge,globe,hand-tap,hash,heart,house,house-line,lamp,lamp-pendant,lightbulb,lightbulb-filament,lightning,list,list-bullets,list-checks,lock,lock-open,map-pin,map-trifold,minus,monitor,moon,moon-stars,music-notes,oven,pause,paw-print,person,person-simple-walk,pipe,plant,play,plug,plugs,plus,popcorn,potted-plant,power,projector-screen,pulse,question,robot,rows,security-camera,shield,shield-check,shower,siren,skip-back,skip-forward,sliders,sliders-horizontal,snowflake,sparkle,speaker-high,spray-bottle,square-half-bottom,star,stop,sun,television,textbox,thermometer,thermometer-simple,timer,toggle-left,toggle-right,toilet,tree,user,video-camera,warning,wifi-high,wind,x}-fill.svg',
   { query: '?raw', import: 'default', eager: true },
 )
 
@@ -26,9 +26,73 @@ export function phosphor(name: string, on: boolean) {
   return (on ? fill : regular).get(name)
 }
 
-// The icon a tile shows when its config names none.
-export function defaultIcon(entityId: string | undefined, deviceClass?: unknown) {
+// Sensors by what they measure.
+const SENSOR_ICONS: Record<string, string> = {
+  temperature: 'ph:thermometer-simple',
+  humidity: 'ph:drop-half',
+  moisture: 'ph:drop',
+  battery: 'ph:battery-high',
+  battery_charging: 'ph:battery-charging',
+  power: 'ph:lightning',
+  energy: 'ph:lightning',
+  current: 'ph:lightning',
+  voltage: 'ph:lightning',
+  illuminance: 'ph:sun',
+  motion: 'ph:person-simple-walk',
+  occupancy: 'ph:person-simple-walk',
+  presence: 'ph:person-simple-walk',
+  door: 'ph:door',
+  garage_door: 'ph:garage',
+  window: 'ph:square-half-bottom',
+  opening: 'ph:door-open',
+  smoke: 'ph:warning',
+  gas: 'ph:warning',
+  carbon_monoxide: 'ph:warning',
+  safety: 'ph:warning',
+  problem: 'ph:warning',
+  connectivity: 'ph:wifi-high',
+  signal_strength: 'ph:wifi-high',
+  pressure: 'ph:gauge',
+  atmospheric_pressure: 'ph:gauge',
+  wind_speed: 'ph:wind',
+  pm25: 'ph:wind',
+  pm10: 'ph:wind',
+  aqi: 'ph:wind',
+  carbon_dioxide: 'ph:wind',
+  volatile_organic_compounds: 'ph:wind',
+  timestamp: 'ph:clock',
+  duration: 'ph:timer',
+  sound: 'ph:speaker-high',
+  plug: 'ph:plug',
+  outlet: 'ph:plug',
+  lock: 'ph:lock',
+  update: 'ph:download',
+  running: 'ph:play',
+}
+
+// Weather by its condition.
+const WEATHER_ICONS: Record<string, string> = {
+  'clear-night': 'ph:moon-stars',
+  cloudy: 'ph:cloud',
+  fog: 'ph:cloud-fog',
+  hail: 'ph:cloud-snow',
+  lightning: 'ph:cloud-lightning',
+  'lightning-rainy': 'ph:cloud-lightning',
+  partlycloudy: 'ph:cloud-sun',
+  pouring: 'ph:cloud-rain',
+  rainy: 'ph:cloud-rain',
+  snowy: 'ph:cloud-snow',
+  'snowy-rainy': 'ph:cloud-snow',
+  sunny: 'ph:sun',
+  windy: 'ph:wind',
+  'windy-variant': 'ph:wind',
+}
+
+// The icon a tile shows when its config names none. The state picks it
+// where it says more, like a lock that is open or the weather outside.
+export function defaultIcon(entityId: string | undefined, deviceClass?: unknown, state?: string) {
   const domain = entityId?.split('.')[0]
+  const byClass = typeof deviceClass === 'string' ? SENSOR_ICONS[deviceClass] : undefined
   switch (domain) {
     case 'light':
       return 'ph:lightbulb'
@@ -36,6 +100,8 @@ export function defaultIcon(entityId: string | undefined, deviceClass?: unknown)
       return deviceClass === 'outlet' ? 'ph:plug' : 'ph:power'
     case 'input_boolean':
       return 'ph:toggle-right'
+    case 'fan':
+      return 'ph:fan'
     case 'button':
     case 'input_button':
       return 'ph:hand-tap'
@@ -43,6 +109,8 @@ export function defaultIcon(entityId: string | undefined, deviceClass?: unknown)
       return 'ph:play'
     case 'scene':
       return 'ph:sparkle'
+    case 'automation':
+      return 'ph:robot'
     case 'cover':
       if (deviceClass === 'garage') return 'ph:garage'
       if (deviceClass === 'door' || deviceClass === 'gate') return 'ph:door'
@@ -54,6 +122,65 @@ export function defaultIcon(entityId: string | undefined, deviceClass?: unknown)
       return 'ph:list-bullets'
     case 'camera':
       return 'ph:video-camera'
+    case 'climate':
+      return 'ph:thermometer-simple'
+    case 'water_heater':
+      return 'ph:fire'
+    case 'humidifier':
+      return 'ph:drop-half'
+    case 'media_player':
+      return deviceClass === 'tv' ? 'ph:television' : 'ph:speaker-high'
+    case 'remote':
+      return 'ph:sliders-horizontal'
+    case 'lock':
+      return state === 'unlocked' || state === 'open' || state === 'opening' ? 'ph:lock-open' : 'ph:lock'
+    case 'siren':
+      return 'ph:siren'
+    case 'valve':
+      return 'ph:pipe'
+    case 'alarm_control_panel':
+      return state === 'disarmed' ? 'ph:shield' : 'ph:shield-check'
+    case 'person':
+    case 'device_tracker':
+      return 'ph:user'
+    case 'weather':
+      return WEATHER_ICONS[state ?? ''] ?? 'ph:cloud-sun'
+    case 'update':
+      return 'ph:download'
+    case 'calendar':
+      return 'ph:calendar-blank'
+    case 'todo':
+      return 'ph:list-checks'
+    case 'number':
+    case 'input_number':
+      return 'ph:hash'
+    case 'text':
+    case 'input_text':
+      return 'ph:textbox'
+    case 'date':
+    case 'time':
+    case 'datetime':
+    case 'input_datetime':
+      return 'ph:clock'
+    case 'timer':
+      return 'ph:timer'
+    case 'sun':
+      return state === 'below_horizon' ? 'ph:moon' : 'ph:sun'
+    case 'zone':
+      return 'ph:map-pin'
+    case 'geo_location':
+      return 'ph:globe'
+    case 'air_quality':
+      return 'ph:wind'
+    case 'image_processing':
+      return 'ph:eye'
+    case 'conversation':
+      return 'ph:chat-circle'
+    case 'event':
+      return byClass ?? 'ph:pulse'
+    case 'sensor':
+    case 'binary_sensor':
+      return byClass ?? (domain === 'sensor' ? 'ph:gauge' : 'ph:circle')
     default:
       return 'ph:circle'
   }

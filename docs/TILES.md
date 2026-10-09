@@ -1,18 +1,24 @@
 # Floorplan tiles
 
-Floorplan 3D comes with seven small tiles, to sit around the 3D model on the same dashboard, and a layout card to put them beside it. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, or for the side of `fp-split` in a panel view.
+Floorplan 3D comes with eleven small tiles, to sit around the 3D model on the same dashboard. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, and the floorplan card can also lay them out beside itself in its [side panel](#side-panel).
 
-| Card        | Takes                                               | A tap                                                      |
-| ----------- | --------------------------------------------------- | ---------------------------------------------------------- |
-| `fp-title`  | nothing                                             | nothing, it is a heading                                   |
-| `fp-toggle` | `light.*`, `switch.*`, `input_boolean.*`            | toggles it                                                 |
-| `fp-button` | `button.*`, `input_button.*`, `script.*`, `scene.*` | presses it, or runs the script or scene                    |
-| `fp-cover`  | `cover.*`                                           | opens or closes it. A wide tile adds up, stop and down     |
-| `fp-vacuum` | `vacuum.*`                                          | starts or pauses it. A wide tile adds the vacuum's buttons |
-| `fp-select` | `select.*`, `input_select.*`                        | opens a menu of the options, or moves to the next one      |
-| `fp-camera` | `camera.*`                                          | opens the camera's dialog                                  |
+| Card         | Takes                                                                                                               | A tap                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `fp-title`   | nothing                                                                                                             | nothing, it is a heading                                                               |
+| `fp-toggle`  | `light.*`, `switch.*`, `fan.*`, `input_boolean.*`, `humidifier.*`, `siren.*`, `remote.*`, `automation.*`, `valve.*` | toggles it, or opens or closes a valve                                                 |
+| `fp-button`  | `button.*`, `input_button.*`, `script.*`, `scene.*`                                                                 | presses it, or runs the script or scene                                                |
+| `fp-cover`   | `cover.*`                                                                                                           | opens or closes it. A wide tile adds up, stop and down                                 |
+| `fp-vacuum`  | `vacuum.*`                                                                                                          | starts or pauses it. A wide tile adds the vacuum's buttons                             |
+| `fp-select`  | `select.*`, `input_select.*`                                                                                        | opens a menu of the options, or moves to the next one                                  |
+| `fp-camera`  | `camera.*`                                                                                                          | opens the camera's dialog                                                              |
+| `fp-climate` | `climate.*`, `water_heater.*`                                                                                       | opens its dialog. A wide tile adds minus and plus for the temperature it aims for      |
+| `fp-media`   | `media_player.*`                                                                                                    | plays or pauses it, or turns it on. A wide tile adds previous, play or pause, and next |
+| `fp-lock`    | `lock.*`                                                                                                            | locks it, or unlocks it while it is locked                                             |
+| `fp-entity`  | any entity                                                                                                          | opens its dialog. The line under the name is its state, with its unit                  |
 
 On every tile but the title, a long press or a right click opens Home Assistant's more info dialog for the entity. With a keyboard, Enter or Space taps and the context menu key or Shift+F10 holds.
+
+Every tile can be set up from Home Assistant's visual card editor, as well as in YAML.
 
 A tile that is on is light and opaque with its icon in color. One that is off is frosted glass. One whose entity is unavailable is dimmed, says so, and does nothing when tapped.
 
@@ -35,7 +41,7 @@ size: small
 | `icon`         | one for its domain  | A Phosphor icon as `ph:<name>`, see below, or any icon Home Assistant knows, such as `mdi:lightbulb` |
 | `color`        | the domain's accent | Any CSS color, for the icon while the tile is on                                                     |
 | `state_text`   |                     | Replaces the line under the name                                                                     |
-| `size`         | `small`             | `small` is a quarter of a section's width, `wide` is half of it                                      |
+| `size`         | `small`             | `small` is half of a section's width, `wide` is all of it                                            |
 | `area`         | the entity's area   | The area the tile belongs to for the room filter, as its id or its name                              |
 | `room_filter`  | `hide`              | How the tile follows the room in view, see [Room filtering](#room-filtering)                         |
 | `tap_action`   |                     | Replaces what a tap does, in the format Home Assistant's own cards use                               |
@@ -76,9 +82,9 @@ The buttons are never greyed out, since many covers do not know where they are. 
 
 `fp-vacuum`
 
-| Key              | Description                                                           |
-| ---------------- | --------------------------------------------------------------------- |
-| `battery_entity` | A sensor with the battery level, for a vacuum that does not report it |
+| Key              | Description                                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `battery_entity` | A sensor with the battery level, for a vacuum that does not report it. Without one, a battery sensor on the vacuum's own device is used |
 
 A wide tile shows pause or start, stop, and back to the dock, each only when the vacuum supports it.
 
@@ -95,38 +101,34 @@ A wide tile shows pause or start, stop, and back to the dock, each only when the
 | `camera_view`  | `auto`  | `auto` shows a still that refreshes, `live` streams                               |
 | `aspect_ratio` | `16:9`  | The picture's shape, as `width:height`. Ignored when `grid_options` sets the rows |
 
-`fp-split`
+## Side panel
 
-A layout card for a panel view. Its `main` card takes the left two thirds of the screen and its `side` cards the right third, laid out on a grid of 12 columns like a section and centered top to bottom. A small tile takes 3 columns, a wide one 6, and a title or a camera all 12. When the screen is narrower than `breakpoint`, the side cards go under the main one, which takes the whole width. A floorplan card with no `aspect_ratio` is square on a phone.
+The floorplan card can bring its own tiles. Turn on **Show the side panel** in the card's editor, or set `side_panel: true` in its YAML, and the floorplan takes the left two thirds of the card with its tiles on the right third. When the card is narrower than 900 pixels, the tiles go under the floorplan instead. This works in any view. In a panel view the floorplan fills its column from the top of the screen to the bottom, whatever its `aspect_ratio`. On a phone it is square, with the tiles under it. In a sections view the card takes the full width of its section.
 
-| Key          | Default                   | Description                                        |
-| ------------ | ------------------------- | -------------------------------------------------- |
-| `main`       |                           | The card on the left, usually the floorplan card   |
-| `side`       |                           | The cards on the right                             |
-| `empty_text` | `Nothing to control here` | Shown on the right while every side card is hidden |
-| `breakpoint` | `900`                     | The width in pixels under which the two stack      |
+The tiles fill themselves from the plan. Each room gets a heading with its name, then a tile for each device placed in it, in the order the plan lists them. Each device gets the tile made for its domain, and `fp-entity` when none is. Covers, vacuums, thermostats and media players are wide. The icon comes from the piece the device stands behind, so a pendant lamp shows `ph:lamp-pendant`, and a projector screen's tile is inverted. With the whole home in view every room shows, and with a room in view only that room does. While every tile is hidden the panel reads Nothing to control here.
+
+Entities with no piece on the plan, like a scene, a sensor, a thermostat or a media player, can join a room's tiles too. Under **Tiles by room** in the card's editor, each room lists the devices it already has from the plan and takes more with an entity picker. An entity can be in one place only, so the picker leaves out every entity the plan or another room already has. They get the same tiles as the devices on the plan. In YAML they are the room's `entities`.
+
+The handle on the right of each row in that list drags it up or down, and the panel shows the room's tiles in that order. With the handle focused, the up and down arrow keys move the row too. In YAML the order is the room's `order`, a list of entity ids. An entity it leaves out goes after the ones it names.
 
 ```yaml
-type: panel
-cards:
-  - type: custom:fp-split
-    main:
-      type: custom:floorplan-3d
-      rooms: []
-    side:
-      - type: custom:fp-title
-        title: Ambience
-        room_filter: home
-      - type: custom:fp-toggle
-        entity: switch.all_lights
-        room_filter: home
-      - type: custom:fp-title
-        area: kitchen
-        room_filter: room
-      - type: custom:fp-toggle
-        entity: light.kitchen
-        room_filter: room
+type: custom:floorplan-3d
+side_panel: true
+rooms:
+  - id: living
+    name: Living room
+    area_id: living_room
+    points: [[0, 0], [5, 0], [5, 4], [0, 4]]
+    entities:
+      - scene.movie_night
+      - climate.living_room
+    order:
+      - climate.living_room
+      - light.living_room
+      - scene.movie_night
 ```
+
+To choose every tile yourself, leave the side panel off and put the tiles next to the floorplan card in a sections view.
 
 ## Icons
 
@@ -134,7 +136,9 @@ cards:
 
 These are included:
 
-armchair, arrow-line-down, arrow-line-up, bathtub, battery-charging, battery-empty, battery-full, battery-high, battery-low, battery-medium, bed, bell, broom, camera, caret-down, caret-up, cat, check, circle, clock, cooking-pot, couch, cursor-click, desktop, door, door-open, drop, fan, film-strip, fire, fork-knife, garage, hand-tap, heart, house, house-line, lamp, lamp-pendant, lightbulb, lightbulb-filament, lightning, list, list-bullets, list-checks, lock, lock-open, map-trifold, monitor, moon, oven, pause, paw-print, plant, play, plug, plugs, popcorn, potted-plant, power, projector-screen, question, robot, rows, security-camera, shower, sliders, snowflake, sparkle, spray-bottle, square-half-bottom, star, stop, sun, television, thermometer, timer, toggle-left, toggle-right, toilet, tree, video-camera, warning, wind, x.
+alarm, armchair, arrow-line-down, arrow-line-up, bathtub, battery-charging, battery-empty, battery-full, battery-high, battery-low, battery-medium, bed, bell, broom, calendar-blank, camera, caret-down, caret-left, caret-right, caret-up, cat, chat-circle, check, circle, clock, cloud, cloud-fog, cloud-lightning, cloud-rain, cloud-snow, cloud-sun, cooking-pot, couch, cursor-click, desktop, door, door-open, download, drop, drop-half, eye, fan, film-strip, fire, fork-knife, garage, gauge, globe, hand-tap, hash, heart, house, house-line, lamp, lamp-pendant, lightbulb, lightbulb-filament, lightning, list, list-bullets, list-checks, lock, lock-open, map-pin, map-trifold, minus, monitor, moon, moon-stars, music-notes, oven, pause, paw-print, person, person-simple-walk, pipe, plant, play, plug, plugs, plus, popcorn, potted-plant, power, projector-screen, pulse, question, robot, rows, security-camera, shield, shield-check, shower, siren, skip-back, skip-forward, sliders, sliders-horizontal, snowflake, sparkle, speaker-high, spray-bottle, square-half-bottom, star, stop, sun, television, textbox, thermometer, thermometer-simple, timer, toggle-left, toggle-right, toilet, tree, user, video-camera, warning, wifi-high, wind, x.
+
+The same icons are offered as `ph:` in Home Assistant's icon picker, and can be used on any card, unless another `ph` icon set is already installed.
 
 A name not in the list shows a question mark and logs a warning in the browser console. Any other icon is one `mdi:` name away.
 
@@ -175,7 +179,7 @@ The tiles look finished without it, and change with any theme that sets these:
 | Token                         | Default                    | What it changes                                             |
 | ----------------------------- | -------------------------- | ----------------------------------------------------------- |
 | `fp-tile-radius`              | `24px`                     | The corner radius                                           |
-| `fp-tile-padding`             | `14px`                     | The space inside a tile                                     |
+| `fp-tile-padding`             | `18px`                     | The space inside a tile                                     |
 | `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                  |
 | `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on                         |
 | `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                        |
@@ -188,13 +192,15 @@ The tiles look finished without it, and change with any theme that sets these:
 | `fp-tile-state-size`          | `13px`                     | The line under the name                                     |
 | `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                             |
 | `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                        |
+| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard       |
 | `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on                               |
 | `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                              |
 | `fp-text-secondary-opacity`   | `.6`                       | The line under the name                                     |
 | `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on |
 | `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                  |
 | `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                   |
-| `fp-accent-climate`           | `#ff9f0a`                  | Kept for a climate tile                                     |
+| `fp-accent-climate`           | `#ff9f0a`                  | The icon of a thermostat or water heater that heats         |
+| `fp-accent-cool`              | `#64d2ff`                  | The icon of a thermostat that cools                         |
 | `fp-font-tile`                | Inter                      | The tiles' font                                             |
 | `fp-font-title`               | Inter Tight                | The headings' font                                          |
 | `fp-title-size`               | `30px`                     | The headings' size                                          |

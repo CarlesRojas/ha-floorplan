@@ -2,7 +2,7 @@ import { CAMERA_DIRECTION, CAMERA_FIT_MARGIN, CAMERA_FOV_DEG } from '#/constants
 import { decorationKind, paramValue } from '#/decoration/catalog.ts'
 import { standHeight } from '#/decoration/surfaces.ts'
 import { CEILING_HEIGHT_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
-import type { DecorationConfig, RoomConfig } from '#/types.ts'
+import type { CameraView, DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils, Vector3 } from 'three'
 
 export type Framing = {
@@ -48,12 +48,17 @@ export function planBounds(rooms: RoomConfig[]) {
 }
 
 // The camera stands along `from`, a direction from the target to the camera,
-// or along the standard one when none is given.
+// or along the standard one when none is given. `margin` is how much room
+// is left around the flat, as a factor of the distance. `center` moves the
+// target until the flat sits in the middle of the view, so no side keeps
+// more empty space than the others.
 export function frameRooms(
   rooms: RoomConfig[],
   aspect: number,
   height = 0.6,
   from: [number, number, number] = CAMERA_DIRECTION,
+  margin = CAMERA_FIT_MARGIN,
+  center = false,
 ): Framing {
   let minX = Infinity
   let minY = Infinity
@@ -86,20 +91,86 @@ export function frameRooms(
 
   // For each box corner, the distance the camera needs so that the corner
   // still fits horizontally and vertically. The farthest wins.
-  let distance = 0
+  const corners: Vector3[] = []
+  for (const x of [minX, maxX])
+    for (const y of [minY, maxY]) for (const z of [-ROOM_SLAB_THICKNESS_M, height]) corners.push(new Vector3(x, z, -y))
+  const fit = () => {
+    let distance = 0
+    for (const point of corners) {
+      const corner = point.clone().sub(target)
+      const depth = corner.dot(forward)
+      const dx = Math.abs(corner.dot(right))
+      const dy = Math.abs(corner.dot(up))
+      distance = Math.max(distance, dx / tanH - depth, dy / tanV - depth)
+    }
+    return distance
+  }
+
+  let distance = fit()
+  // The box seen at an angle is not symmetric around its center: its top
+  // reaches further on screen than its bottom. Each pass moves the target
+  // to the middle of what shows and fits again.
+  for (let pass = 0; center && pass < 4; pass++) {
+    let left = Infinity
+    let rightmost = -Infinity
+    let bottom = Infinity
+    let top = -Infinity
+    for (const point of corners) {
+      const corner = point.clone().sub(target)
+      const depth = distance + corner.dot(forward)
+      const x = corner.dot(right) / depth
+      const y = corner.dot(up) / depth
+      left = Math.min(left, x)
+      rightmost = Math.max(rightmost, x)
+      bottom = Math.min(bottom, y)
+      top = Math.max(top, y)
+    }
+    target
+      .addScaledVector(right, ((left + rightmost) / 2) * distance)
+      .addScaledVector(up, ((bottom + top) / 2) * distance)
+    distance = fit()
+  }
+
+  const position = target.clone().addScaledVector(direction, distance * margin)
+  return { position, target }
+}
+
+// A saved view, kept as it is when the whole plan shows in it at this
+// aspect, and otherwise backed off along the same angle until it does. The
+// view is saved in a 3D view of one shape and shown in cards of others, a
+// square on a phone or a tall half of a screen, where it could cut the home
+// off.
+export function fitView(
+  view: CameraView,
+  rooms: RoomConfig[],
+  aspect: number,
+  height = 0.6,
+  margin = CAMERA_FIT_MARGIN,
+  // Frames the plan along the view's angle even when it already fits, for
+  // a card too small to spare the room the saved view leaves around it.
+  closeIn = false,
+): Framing {
+  const position = new Vector3(...view.position)
+  const target = new Vector3(...view.target)
+  const forward = target.clone().sub(position).normalize()
+  const right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize()
+  const up = new Vector3().crossVectors(right, forward).normalize()
+  const tanV = Math.tan(MathUtils.degToRad(CAMERA_FOV_DEG) / 2) / margin
+  const tanH = tanV * aspect
+
+  let fits = true
   const corner = new Vector3()
-  for (const x of [minX, maxX]) {
-    for (const y of [minY, maxY]) {
+  for (const room of rooms) {
+    for (const [x, y] of room.points) {
       for (const z of [-ROOM_SLAB_THICKNESS_M, height]) {
-        corner.set(x, z, -y).sub(target)
+        corner.set(x, z, -y).sub(position)
         const depth = corner.dot(forward)
-        const dx = Math.abs(corner.dot(right))
-        const dy = Math.abs(corner.dot(up))
-        distance = Math.max(distance, dx / tanH - depth, dy / tanV - depth)
+        if (depth <= 0 || Math.abs(corner.dot(right)) > depth * tanH || Math.abs(corner.dot(up)) > depth * tanV)
+          fits = false
       }
     }
   }
-
-  const position = target.clone().addScaledVector(direction, distance * CAMERA_FIT_MARGIN)
-  return { position, target }
+  if (fits && !closeIn) return { position, target }
+  const from = position.clone().sub(target)
+  return frameRooms(rooms, aspect, height, [from.x, from.y, from.z], margin, closeIn)
 }

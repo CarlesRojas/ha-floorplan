@@ -75,3 +75,16 @@ export function runAction(env: TileEnv, action: ActionConfig | undefined, fallba
     }
   }
 }
+
+// The state as Home Assistant words it, translated and with its unit.
+export function formatState(hass: HomeAssistant, entity: EntityState | undefined) {
+  if (!entity) return ''
+  if (hass.formatEntityState) return hass.formatEntityState(entity)
+  const unit = entity.attributes.unit_of_measurement
+  return typeof unit === 'string' ? `${entity.state} ${unit}` : entity.state
+}
+
+// An attribute as Home Assistant words it, like a temperature with its unit.
+export function formatAttribute(hass: HomeAssistant, entity: EntityState, attribute: string) {
+  return hass.formatEntityAttributeValue?.(entity, attribute) ?? String(entity.attributes[attribute])
+}

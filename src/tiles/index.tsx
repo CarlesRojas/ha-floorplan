@@ -1,23 +1,40 @@
+import { registerIcons, tileForm, titleForm } from '#/tiles/editor.ts'
 import { stubEntity, TileHost, type GridOptions, type TileConfig } from '#/tiles/host.tsx'
 import Button from '#/tiles/cards/Button.tsx'
 import Camera, { type CameraConfig } from '#/tiles/cards/Camera.tsx'
+import Climate from '#/tiles/cards/Climate.tsx'
 import Cover, { type CoverConfig } from '#/tiles/cards/Cover.tsx'
+import Entity from '#/tiles/cards/Entity.tsx'
+import Lock from '#/tiles/cards/Lock.tsx'
+import Media from '#/tiles/cards/Media.tsx'
 import Select, { type SelectConfig } from '#/tiles/cards/Select.tsx'
 import Title, { type TitleConfig } from '#/tiles/cards/Title.tsx'
 import Toggle from '#/tiles/cards/Toggle.tsx'
 import Vacuum, { type VacuumConfig } from '#/tiles/cards/Vacuum.tsx'
-import { SplitCard } from '#/tiles/split.ts'
 import type { HomeAssistant } from '#/types.ts'
 import type { ReactNode } from 'react'
 
 // The Floorplan tiles, shipped in the same file as the floorplan card.
 
-const TOGGLE_DOMAINS = ['light', 'switch', 'input_boolean']
+const TOGGLE_DOMAINS = [
+  'light',
+  'switch',
+  'input_boolean',
+  'fan',
+  'humidifier',
+  'siren',
+  'remote',
+  'automation',
+  'valve',
+]
 const BUTTON_DOMAINS = ['button', 'input_button', 'script', 'scene']
 const COVER_DOMAINS = ['cover']
 const VACUUM_DOMAINS = ['vacuum']
 const SELECT_DOMAINS = ['select', 'input_select']
 const CAMERA_DOMAINS = ['camera']
+const CLIMATE_DOMAINS = ['climate', 'water_heater']
+const MEDIA_DOMAINS = ['media_player']
+const LOCK_DOMAINS = ['lock']
 
 type EntityView<C extends TileConfig> = (props: {
   env: { hass: HomeAssistant; host: HTMLElement; entityId?: string }
@@ -25,12 +42,21 @@ type EntityView<C extends TileConfig> = (props: {
 }) => ReactNode
 
 // One class per card, which only names its domains and its view.
-function entityCard<C extends TileConfig>(domains: string[], View: EntityView<C>) {
+function entityCard<C extends TileConfig>(
+  domains: string[] | 'any',
+  View: EntityView<C>,
+  extras: Parameters<typeof tileForm>[1] = [],
+) {
   return class extends TileHost<C> {
     protected readonly domains = domains
 
+    static getConfigForm() {
+      return tileForm(domains, extras)
+    }
+
     static getStubConfig(hass?: HomeAssistant) {
-      return { entity: stubEntity(hass, domains) ?? `${domains[0]}.example` }
+      const named = domains === 'any' ? ['sensor'] : domains
+      return { entity: stubEntity(hass, named) ?? `${named[0]}.example` }
     }
 
     protected view() {
@@ -48,6 +74,10 @@ class TitleCard extends TileHost<TitleConfig & TileConfig> {
     return { title: 'Living Room' }
   }
 
+  static getConfigForm() {
+    return titleForm()
+  }
+
   getCardSize() {
     return 1
   }
@@ -61,7 +91,7 @@ class TitleCard extends TileHost<TitleConfig & TileConfig> {
   }
 }
 
-class CameraCard extends entityCard<CameraConfig>(CAMERA_DOMAINS, Camera) {
+class CameraCard extends entityCard<CameraConfig>(CAMERA_DOMAINS, Camera, ['camera']) {
   getCardSize() {
     return 4
   }
@@ -82,7 +112,7 @@ const CARDS: { type: string; element: CustomElementConstructor; name: string; de
     type: 'fp-toggle',
     element: entityCard(TOGGLE_DOMAINS, Toggle),
     name: 'Floorplan Toggle',
-    description: 'Light, switch or boolean tile',
+    description: 'Light, switch, fan, valve or anything else on or off',
   },
   {
     type: 'fp-button',
@@ -92,32 +122,46 @@ const CARDS: { type: string; element: CustomElementConstructor; name: string; de
   },
   {
     type: 'fp-cover',
-    element: entityCard<CoverConfig>(COVER_DOMAINS, Cover),
+    element: entityCard<CoverConfig>(COVER_DOMAINS, Cover, ['invert']),
     name: 'Floorplan Cover',
     description: 'Blind or screen tile with up, stop and down',
   },
   {
     type: 'fp-vacuum',
-    element: entityCard<VacuumConfig>(VACUUM_DOMAINS, Vacuum),
+    element: entityCard<VacuumConfig>(VACUUM_DOMAINS, Vacuum, ['battery_entity']),
     name: 'Floorplan Vacuum',
     description: 'Robot vacuum tile',
   },
   {
     type: 'fp-select',
-    element: entityCard<SelectConfig>(SELECT_DOMAINS, Select),
+    element: entityCard<SelectConfig>(SELECT_DOMAINS, Select, ['tap_behavior']),
     name: 'Floorplan Select',
     description: 'Option tile with a menu',
   },
-  { type: 'fp-camera', element: CameraCard, name: 'Floorplan Camera', description: 'Camera picture tile' },
   {
-    type: 'fp-split',
-    element: SplitCard,
-    name: 'Floorplan Split',
-    description: 'The floorplan on two thirds of the view and its tiles on the rest',
+    type: 'fp-climate',
+    element: entityCard(CLIMATE_DOMAINS, Climate),
+    name: 'Floorplan Climate',
+    description: 'Thermostat or water heater tile with minus and plus',
   },
+  {
+    type: 'fp-media',
+    element: entityCard(MEDIA_DOMAINS, Media),
+    name: 'Floorplan Media',
+    description: 'Speaker or TV tile with play, pause and tracks',
+  },
+  { type: 'fp-lock', element: entityCard(LOCK_DOMAINS, Lock), name: 'Floorplan Lock', description: 'Lock tile' },
+  {
+    type: 'fp-entity',
+    element: entityCard('any', Entity),
+    name: 'Floorplan Entity',
+    description: 'Any entity, like a sensor, with its state',
+  },
+  { type: 'fp-camera', element: CameraCard, name: 'Floorplan Camera', description: 'Camera picture tile' },
 ]
 
 export function registerTiles() {
+  registerIcons()
   window.customCards = window.customCards ?? []
   for (const card of CARDS) {
     if (!customElements.get(card.type)) customElements.define(card.type, card.element)

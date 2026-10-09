@@ -19,7 +19,7 @@ Floorplan Glass:
       # Tiles.
       fp-tile-radius: 24px
       fp-tile-gap: 10px
-      fp-tile-padding: 14px
+      fp-tile-padding: 18px
       fp-tile-bg-active: 'rgba(255, 255, 255, 0.94)'
       fp-tile-bg-inactive: 'rgba(118, 118, 128, 0.24)'
       fp-tile-blur: 24px
@@ -32,6 +32,7 @@ Floorplan Glass:
       fp-accent-light: '#ffb340'
       fp-accent-cover: '#32ade6'
       fp-accent-climate: '#ff9f0a'
+      fp-accent-cool: '#64d2ff'
       fp-font-tile: "'Inter', system-ui, sans-serif"
       fp-font-title: "'Inter Tight', system-ui, sans-serif"
       fp-title-size: 30px

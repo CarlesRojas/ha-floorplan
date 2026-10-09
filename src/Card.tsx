@@ -1,5 +1,6 @@
 import { DEFAULT_ASPECT_RATIO_MOBILE } from '#/constants.ts'
 import { aspectRatioCss } from '#/lib/aspect.ts'
+import { cn } from '#/lib/utils.ts'
 import { EDGE_FADE_MASK } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
 import { useRoomFilter } from '#/lib/roomFilter.ts'
@@ -79,6 +80,9 @@ export default function Card({ hass, config }: Props) {
     return true
   }
 
+  // A card set to fill takes the shape of whatever holds it, as the split
+  // card's main column does.
+  const fill = config.aspect_ratio === 'fill'
   const wide = aspectRatioCss(config.aspect_ratio)
   // A card given one shape keeps it at every width. Only a card given none
   // turns square when it is narrow.
@@ -87,12 +91,15 @@ export default function Card({ hass, config }: Props) {
   return (
     // No background, border or shadow: nothing says where the card ends and
     // the dashboard begins.
-    <ha-card style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
+    <ha-card style={{ background: 'none', border: 'none', boxShadow: 'none', height: fill ? '100%' : undefined }}>
       {/* The card's shape follows its own width, not the window's: a card
         in a narrow column on a wide screen is as narrow as one on a phone. */}
-      <div className="@container w-full">
+      <div className={cn('@container w-full', fill && 'h-full')}>
         <div
-          className="relative aspect-(--aspect) w-full overflow-hidden @max-[600px]:aspect-(--aspect-narrow)"
+          className={cn(
+            'relative w-full overflow-hidden',
+            fill ? 'h-full' : 'aspect-(--aspect) @max-[600px]:aspect-(--aspect-narrow)',
+          )}
           style={
             {
               '--aspect': wide,

@@ -10,7 +10,8 @@ const STATES: Record<string, string> = { open: 'Open', closed: 'Closed', opening
 type Props = { env: TileEnv; config: CoverConfig }
 
 // A blind, a shutter or a screen. A tap opens it or closes it, or stops it
-// while it moves. A wide tile adds up, stop and down buttons.
+// while it moves. A wide tile adds up, stop and down buttons. The tile is
+// lit while the cover is open or opening, so it shows where it is heading.
 export default function Cover({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const target = { entity_id: config.entity }
@@ -24,7 +25,7 @@ export default function Cover({ env, config }: Props) {
       env={env}
       config={config}
       entity={entity}
-      active={entity?.state === 'open'}
+      active={entity?.state === 'open' || entity?.state === 'opening'}
       toggles
       accent="var(--_accent-cover)"
       state={state}

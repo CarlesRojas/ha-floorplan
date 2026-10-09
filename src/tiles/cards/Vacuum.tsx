@@ -4,7 +4,8 @@ import { Control, Tile } from '#/tiles/Tile.tsx'
 
 export type VacuumConfig = TileConfig & {
   // A sensor with the battery level, for a vacuum that keeps it there
-  // rather than in an attribute of its own.
+  // rather than in an attribute of its own. Without it, a battery sensor
+  // on the same device is used.
   battery_entity?: string
 }
 
@@ -25,8 +26,22 @@ const STATES: Record<string, string> = {
 
 type Props = { env: TileEnv; config: VacuumConfig }
 
+// A battery sensor on the same device as the vacuum, for one that keeps
+// its level there rather than in an attribute.
+function batterySensor(hass: TileEnv['hass'], entityId: string | undefined) {
+  const device = entityId ? hass.entities?.[entityId]?.device_id : undefined
+  if (!device) return undefined
+  return Object.values(hass.entities ?? {}).find(
+    entry =>
+      entry.device_id === device &&
+      entry.entity_id.startsWith('sensor.') &&
+      hass.states[entry.entity_id]?.attributes.device_class === 'battery',
+  )?.entity_id
+}
+
 // A robot vacuum. A tap starts it, or pauses it while it cleans. A wide
 // tile adds start or pause, stop and dock buttons, only those it supports.
+// The tile is lit only while it cleans: returning is on its way to resting.
 export default function Vacuum({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const features = Number(entity?.attributes.supported_features ?? 0)
@@ -36,7 +51,10 @@ export default function Vacuum({ env, config }: Props) {
   const pause = run(supports(PAUSE) ? 'pause' : 'stop')
   const start = run('start')
 
-  const sensor = config.battery_entity ? env.hass.states[config.battery_entity]?.state : undefined
+  const battery =
+    config.battery_entity ??
+    (entity?.attributes.battery_level === undefined ? batterySensor(env.hass, config.entity) : undefined)
+  const sensor = battery ? env.hass.states[battery]?.state : undefined
   const level = Number(sensor ?? entity?.attributes.battery_level)
   const label = STATES[entity?.state ?? ''] ?? entity?.state ?? ''
   const state =
@@ -49,7 +67,7 @@ export default function Vacuum({ env, config }: Props) {
       env={env}
       config={config}
       entity={entity}
-      active={cleaning || entity?.state === 'returning'}
+      active={cleaning}
       toggles
       state={state}
       onTap={cleaning ? pause : start}

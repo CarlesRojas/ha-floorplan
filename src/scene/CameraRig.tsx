@@ -1,6 +1,12 @@
-import { CAMERA_FLIGHT_S, CAMERA_TURN_S } from '#/constants.ts'
+import {
+  CAMERA_FIT_MARGIN,
+  CAMERA_FIT_MARGIN_NARROW,
+  CAMERA_FLIGHT_S,
+  CAMERA_TURN_S,
+  NARROW_CARD_PX,
+} from '#/constants.ts'
 import { flights } from '#/scene/flights.ts'
-import { frameRooms, sceneHeight } from '#/scene/framing.ts'
+import { fitView, frameRooms, sceneHeight } from '#/scene/framing.ts'
 import { multiTouchSince, sent } from '#/scene/touches.ts'
 import type { CameraView, DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -24,7 +30,8 @@ type Props = {
   decorations: DecorationConfig[]
   // Whether the wheel zooms. In the card it scrolls the page instead.
   wheelZoom?: boolean
-  // The view to open with. Without one the camera frames the plan.
+  // The angle to open with, closer in when the whole plan fits. Without one
+  // the camera frames the plan from the standard side.
   view?: CameraView
   handle?: RefObject<CameraHandle | null>
   // Told when the camera leaves the view it opened with, and when it is
@@ -89,6 +96,9 @@ const MAX_STEP_S = 0.1
 // The shortest way round from one heading to another, in radians.
 const turn = (from: number, to: number) => MathUtils.euclideanModulo(to - from + Math.PI, 2 * Math.PI) - Math.PI
 
+// A card as narrow as a phone frames the home closer to its edges.
+const fitMargin = (width: number) => (width < NARROW_CARD_PX ? CAMERA_FIT_MARGIN_NARROW : CAMERA_FIT_MARGIN)
+
 const round = (v: number) => Math.round(v * 100) / 100
 const triple = (v: Vector3): [number, number, number] => [round(v.x), round(v.y), round(v.z)]
 
@@ -144,10 +154,16 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     return { position: triple(camera.position), target: triple(target) }
   }
 
-  // The view the camera opened with: the saved one, or the plan framed.
+  // The view the camera opened with: the saved one, backed off if the
+  // whole plan would not show in it at this shape, or the plan framed. On
+  // a card as narrow as a phone the saved angle frames the plan closely.
   const home = (): CameraView => {
-    if (view) return view
-    const { position, target } = frameRooms(rooms, size.width / size.height, sceneHeight(decorations))
+    const aspect = size.width / size.height
+    const height = sceneHeight(decorations)
+    const margin = fitMargin(size.width)
+    const { position, target } = view
+      ? fitView(view, rooms, aspect, height, margin, size.width < NARROW_CARD_PX)
+      : frameRooms(rooms, aspect, height, undefined, margin, size.width < NARROW_CARD_PX)
     return { position: triple(position), target: triple(target) }
   }
 
@@ -157,13 +173,25 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   // the card opens with when none is saved.
   const frame = (room?: RoomConfig): CameraView => {
     if (!room) {
-      const whole = frameRooms(rooms, size.width / size.height, sceneHeight(decorations))
+      const whole = frameRooms(
+        rooms,
+        size.width / size.height,
+        sceneHeight(decorations),
+        undefined,
+        fitMargin(size.width),
+      )
       return { position: triple(whole.position), target: triple(whole.target) }
     }
     const opening = home()
     const from = A.set(...opening.position).sub(B.set(...opening.target))
     const height = sceneHeight(decorations.filter(d => d.room === room.id))
-    const { position, target } = frameRooms([room], size.width / size.height, height, [from.x, from.y, from.z])
+    const { position, target } = frameRooms(
+      [room],
+      size.width / size.height,
+      height,
+      [from.x, from.y, from.z],
+      fitMargin(size.width),
+    )
     return { position: triple(position), target: triple(target) }
   }
 
@@ -542,11 +570,12 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     if (moved.current) return
     // A canvas that has not been laid out yet has no shape to frame for.
     if (size.width <= 0 || size.height <= 0) return
-    if (view) {
-      place(new Vector3(...view.position), new Vector3(...view.target))
-      return
-    }
-    const { position, target } = frameRooms(rooms, size.width / size.height, sceneHeight(decorations))
+    const aspect = size.width / size.height
+    const height = sceneHeight(decorations)
+    const margin = fitMargin(size.width)
+    const { position, target } = view
+      ? fitView(view, rooms, aspect, height, margin, size.width < NARROW_CARD_PX)
+      : frameRooms(rooms, aspect, height, undefined, margin, size.width < NARROW_CARD_PX)
     place(position, target)
   }, [rooms, decorations, view, size.width, size.height, place])
 

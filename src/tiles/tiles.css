@@ -8,7 +8,7 @@
   display: block;
   height: 100%;
   --_radius: var(--fp-tile-radius, 24px);
-  --_padding: var(--fp-tile-padding, 14px);
+  --_padding: var(--fp-tile-padding, 18px);
   --_bg-active: var(--fp-tile-bg-active, rgba(255, 255, 255, 0.94));
   --_bg-inactive: var(--fp-tile-bg-inactive, rgba(118, 118, 128, 0.24));
   --_blur: var(--fp-tile-blur, 24px);
@@ -22,6 +22,7 @@
   --_accent-light: var(--fp-accent-light, #ffb340);
   --_accent-cover: var(--fp-accent-cover, #32ade6);
   --_accent-climate: var(--fp-accent-climate, #ff9f0a);
+  --_accent-cool: var(--fp-accent-cool, #64d2ff);
   --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);
   --_font-title: var(--fp-font-title, 'Inter Tight', system-ui, sans-serif);
   --_title-size: var(--fp-title-size, 30px);
@@ -31,6 +32,7 @@
   --_state-size: var(--fp-tile-state-size, 13px);
   --_duration: var(--fp-tile-duration, 200ms);
   --_press: var(--fp-tile-press-scale, 0.96);
+  --_focus: var(--fp-tile-focus-scale, 1.03);
 }
 
 /* Hidden by the room filter. Home Assistant hides the card around it too,
@@ -86,18 +88,20 @@
   opacity: var(--_opacity-inactive);
 }
 
-.fp-tile[data-pressed] {
-  transform: scale(var(--_press));
-}
-
 .fp-tile[data-unavailable] {
   opacity: var(--_opacity-unavailable);
   cursor: default;
 }
 
+/* A tile in focus from the keyboard grows a little and lifts off the page. */
 .fp-tile:focus-visible {
-  outline: 2px solid var(--_tile-accent, var(--_accent));
-  outline-offset: 2px;
+  outline: none;
+  transform: scale(var(--_focus));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.fp-tile[data-pressed] {
+  transform: scale(var(--_press));
 }
 
 .fp-top {
@@ -155,7 +159,7 @@
 .fp-controls {
   display: flex;
   flex: none;
-  gap: 2px;
+  gap: 4px;
   margin: -4px -4px 0 0;
   padding: 3px;
   border-radius: 999px;
@@ -164,8 +168,8 @@
 
 .fp-control {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: none;
   border-radius: 999px;
@@ -324,7 +328,14 @@
     transition: none;
   }
 
-  .fp-tile[data-pressed] {
+  .fp-tile[data-pressed],
+  .fp-tile:focus-visible {
     transform: none;
+  }
+
+  /* With no growth to show focus, a ring inside the edge shows it. */
+  .fp-tile:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
   }
 }

@@ -45,6 +45,27 @@ for (const s of [
     friendly_name: 'Clean Mode',
     options: ['Quiet', 'Standard', 'Max Vacuum', 'Mop', 'Vacuum and Mop'],
   }),
+  state('climate.living', 'heat', {
+    friendly_name: 'Thermostat',
+    hvac_action: 'heating',
+    current_temperature: 20.5,
+    temperature: 22,
+    min_temp: 7,
+    max_temp: 35,
+  }),
+  state('media_player.living', 'playing', {
+    friendly_name: 'Speaker',
+    media_title: 'Night Drive',
+    media_artist: 'Some Band',
+    supported_features: 1 | 16 | 32 | 16384,
+  }),
+  state('lock.front', 'locked', { friendly_name: 'Front Door' }),
+  state('sensor.living_temperature', '21.4', {
+    friendly_name: 'Temperature',
+    device_class: 'temperature',
+    unit_of_measurement: '°C',
+  }),
+  state('binary_sensor.living_motion', 'on', { friendly_name: 'Motion', device_class: 'motion' }),
 ])
   states[s.entity_id] = s
 
@@ -104,6 +125,10 @@ hass = {
     if (domain === 'vacuum')
       update(id, { start: 'cleaning', pause: 'paused', stop: 'idle', return_to_base: 'returning' }[service] ?? s.state)
     if (service === 'select_option') update(id, data!.option as string)
+    if (domain === 'lock') update(id, service === 'lock' ? 'locked' : 'unlocked')
+    if (domain === 'climate' && service === 'set_temperature') update(id, s.state, { temperature: data!.temperature })
+    if (domain === 'media_player' && service === 'media_play_pause')
+      update(id, s.state === 'playing' ? 'paused' : 'playing')
   },
 }
 
@@ -122,6 +147,11 @@ const sections: { title: Record<string, unknown>; cards: Record<string, unknown>
       { type: 'fp-button', entity: 'button.scoop', icon: 'ph:cat' },
       { type: 'fp-button', entity: 'button.never' },
       { type: 'fp-button', entity: 'scene.movie', icon: 'ph:popcorn' },
+      { type: 'fp-climate', entity: 'climate.living', size: 'wide' },
+      { type: 'fp-media', entity: 'media_player.living', size: 'wide' },
+      { type: 'fp-lock', entity: 'lock.front' },
+      { type: 'fp-entity', entity: 'sensor.living_temperature' },
+      { type: 'fp-entity', entity: 'binary_sensor.living_motion' },
     ],
   },
   {
@@ -180,7 +210,7 @@ for (const section of sections) {
     card.hass = hass
     tiles.push(card)
     const cell = document.createElement('div')
-    const { columns = 3, rows = 2 } = card.getGridOptions()
+    const { columns = 6, rows = 2 } = card.getGridOptions()
     cell.style.gridColumn = `span ${columns === 'full' ? 12 : columns}`
     if (rows !== 'auto') cell.style.gridRow = `span ${rows}`
     cell.appendChild(card)

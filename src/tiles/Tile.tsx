@@ -69,7 +69,10 @@ export function Tile({
       style={{ '--_tile-accent': config.color ?? accent } as CSSProperties}
     >
       <div className="fp-top">
-        <Icon icon={config.icon ?? defaultIcon(config.entity, entity?.attributes.device_class)} on={on} />
+        <Icon
+          icon={config.icon ?? defaultIcon(config.entity, entity?.attributes.device_class, entity?.state)}
+          on={on}
+        />
         {config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>}
       </div>
       <div className="fp-text">

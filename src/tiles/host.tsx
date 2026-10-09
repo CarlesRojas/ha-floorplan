@@ -85,8 +85,9 @@ export function stubEntity(hass: HomeAssistant | undefined, domains: string[]) {
 export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
   // Read by Home Assistant's hui-card.
   connectedWhileHidden = true
-  // Which entity domains this tile takes, or null for none at all.
-  protected abstract readonly domains: string[] | null
+  // Which entity domains this tile takes, 'any' for an entity of any
+  // domain, or null for no entity at all.
+  protected abstract readonly domains: string[] | 'any' | null
   private _preview = false
   private unsubscribe: (() => void) | null = null
 
@@ -102,7 +103,7 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
     if (this.domains) {
       if (!config.entity) throw new Error('entity is required')
       const domain = config.entity.split('.')[0]
-      if (!this.domains.includes(domain))
+      if (this.domains !== 'any' && !this.domains.includes(domain))
         throw new Error(`${config.entity} is not one of ${this.domains.map(d => `${d}.*`).join(', ')}`)
     }
     if (config.size && config.size !== 'small' && config.size !== 'wide') throw new Error('size must be small or wide')
@@ -118,7 +119,7 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
   }
 
   getGridOptions(): GridOptions {
-    return this._config?.size === 'wide' ? { columns: 6, rows: 2 } : { columns: 3, rows: 2 }
+    return this._config?.size === 'wide' ? { columns: 12, rows: 2 } : { columns: 6, rows: 2 }
   }
 
   // Set by Home Assistant while the dashboard is edited, when every card
