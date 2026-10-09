@@ -83,6 +83,17 @@
   color: var(--_text-active);
 }
 
+/* The color of a light, strongest in the top left corner and fading out to
+   the plain tile. */
+.fp-tile[data-active][style*='--_tile-glow'] {
+  background-image: radial-gradient(
+    140% 140% at 0% 0%,
+    color-mix(in srgb, var(--_tile-glow) 70%, transparent) 0%,
+    color-mix(in srgb, var(--_tile-glow) 25%, transparent) 45%,
+    transparent 80%
+  );
+}
+
 .fp-tile:not([data-active]) .fp-icon,
 .fp-tile:not([data-active]) .fp-text {
   opacity: var(--_opacity-inactive);
@@ -326,16 +337,33 @@
   color: #fff;
 }
 
+/* A soft light falling on the glass from above. */
+.fp-weather::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 55%);
+  pointer-events: none;
+}
+
+.fp-weather > * {
+  position: relative;
+}
+
 .fp-weather-now {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: space-between;
   gap: 12px;
 }
 
+.fp-weather .fp-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
 .fp-weather-temp {
-  margin-top: 2px;
-  font-size: 56px;
+  font-size: 64px;
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -346,27 +374,33 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  justify-content: space-between;
   min-width: 0;
   text-align: right;
 }
 
-.fp-weather-sky .fp-state {
-  opacity: 0.8;
+.fp-weather-condition {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
 }
 
-.fp-weather-condition {
-  font-size: var(--_name-size);
-  font-weight: 600;
-  line-height: 1.2;
+.fp-weather-icon {
+  display: inline-flex;
+  color: #fff;
+}
+
+.fp-weather-sky .fp-icon {
+  width: 24px;
+  height: 24px;
+  --mdc-icon-size: 24px;
 }
 
 .fp-weather-steps {
   display: flex;
   justify-content: space-between;
   gap: 4px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .fp-weather-step {
@@ -374,26 +408,26 @@
   flex: 1 1 0;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   font-variant-numeric: tabular-nums;
 }
 
-.fp-weather-step > .fp-icon {
-  width: 22px;
-  height: 22px;
-  --mdc-icon-size: 22px;
+.fp-weather-step .fp-icon {
+  width: 26px;
+  height: 26px;
+  --mdc-icon-size: 26px;
 }
 
 .fp-weather-when {
   font-size: var(--_state-size);
-  font-weight: 500;
-  opacity: 0.8;
+  font-weight: 600;
+  opacity: 0.85;
   white-space: nowrap;
 }
 
 .fp-weather-step-temp {
-  font-size: var(--_name-size);
+  font-size: 17px;
   font-weight: 600;
 }
 

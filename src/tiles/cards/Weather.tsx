@@ -6,7 +6,13 @@ import { defaultIcon } from '#/tiles/icons.ts'
 import type { HomeAssistant } from '#/types.ts'
 import { useEffect, useState } from 'react'
 
-type Forecast = { datetime: string; condition?: string; temperature?: number; templow?: number; is_daytime?: boolean }
+type Forecast = {
+  datetime: string
+  condition?: string
+  temperature?: number
+  templow?: number
+  is_daytime?: boolean
+}
 type Kind = 'hourly' | 'daily'
 
 // The forecasts a weather entity offers, as Home Assistant numbers them.
@@ -18,9 +24,9 @@ const STEPS = 6
 
 // The sky behind the tile, by the weather and whether the sun is up.
 const SKIES: Record<string, string> = {
-  day: 'linear-gradient(180deg, #2f7fd6 0%, #5aa3e8 100%)',
+  day: 'linear-gradient(180deg, #2a5ea8 0%, #4a80c6 100%)',
   night: 'linear-gradient(180deg, #0b1630 0%, #26355c 100%)',
-  cloudy: 'linear-gradient(180deg, #56677d 0%, #8496ab 100%)',
+  cloudy: 'linear-gradient(180deg, #34588c 0%, #5579a8 100%)',
   cloudyNight: 'linear-gradient(180deg, #1d2532 0%, #3a4556 100%)',
   rain: 'linear-gradient(180deg, #3c4a5c 0%, #66768a 100%)',
   storm: 'linear-gradient(180deg, #232836 0%, #474e63 100%)',
@@ -73,13 +79,16 @@ function useForecast(hass: HomeAssistant, entityId: string | undefined, kind: Ki
 
 const degrees = (value: number | undefined) => (typeof value === 'number' ? `${Math.round(value)}°` : '')
 
+// White icons, but for the sun, which is yellow.
+const iconColor = (condition: string | undefined) => (condition === 'sunny' ? '#ffd60a' : undefined)
+
 type Props = { env: TileEnv; config: TileConfig }
 
-// The weather outside, the whole width and twice as tall as a tile. The
-// temperature in large type with what the sky is doing and the day's high
-// and low, and the next hours along the bottom, or the next days when the
-// entity has no hourly forecast. Its background is the sky. A tap opens
-// the entity's dialog.
+// The weather outside, the whole width and four rows tall. The temperature
+// in large type, what the sky is doing and the day's high and low on the
+// right, and the next hours along the bottom, or the next days when the
+// entity has no hourly forecast. Its background is the sky. A tap opens the
+// entity's dialog.
 export default function Weather({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const attributes = entity?.attributes ?? {}
@@ -96,6 +105,8 @@ export default function Weather({ env, config }: Props) {
 
   const night = env.hass.states['sun.sun']?.state === 'below_horizon'
   const condition = entity?.state
+  // Sunny at night is a clear night, with the moon for its icon.
+  const looks = night && condition === 'sunny' ? 'clear-night' : condition
   const today = days?.[0]
   const language = env.hass.locale?.language ?? env.hass.language
   const label = (step: Forecast, i: number) => {
@@ -124,31 +135,33 @@ export default function Weather({ env, config }: Props) {
           <div className="fp-weather-temp">{degrees(attributes.temperature as number | undefined)}</div>
         </div>
         <div className="fp-weather-sky">
-          <Icon icon={config.icon ?? defaultIcon(config.entity, undefined, condition)} on />
-          <div className="fp-weather-condition">{unavailable ? 'Unavailable' : formatState(env.hass, entity)}</div>
-          {today && (
-            <div className="fp-state">
-              H:{degrees(today.temperature)} L:{degrees(today.templow)}
-            </div>
-          )}
+          <span className="fp-weather-icon" style={{ color: iconColor(looks) }}>
+            <Icon icon={config.icon ?? defaultIcon(config.entity, undefined, looks)} on />
+          </span>
+          <div>
+            <div className="fp-weather-condition">{unavailable ? 'Unavailable' : formatState(env.hass, entity)}</div>
+            {today && (
+              <div className="fp-weather-condition">
+                H:{degrees(today.temperature)} L:{degrees(today.templow)}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {steps && steps.length > 0 && (
         <div className="fp-weather-steps">
-          {steps.slice(0, STEPS).map((step, i) => (
-            <div key={step.datetime} className="fp-weather-step">
-              <div className="fp-weather-when">{label(step, i)}</div>
-              <Icon
-                icon={defaultIcon(
-                  config.entity,
-                  undefined,
-                  step.condition === 'sunny' && step.is_daytime === false ? 'clear-night' : step.condition,
-                )}
-                on
-              />
-              <div className="fp-weather-step-temp">{degrees(step.temperature)}</div>
-            </div>
-          ))}
+          {steps.slice(0, STEPS).map((step, i) => {
+            const condition = step.condition === 'sunny' && step.is_daytime === false ? 'clear-night' : step.condition
+            return (
+              <div key={step.datetime} className="fp-weather-step">
+                <div className="fp-weather-when">{label(step, i)}</div>
+                <span className="fp-weather-icon" style={{ color: iconColor(condition) }}>
+                  <Icon icon={defaultIcon(config.entity, undefined, condition)} on />
+                </span>
+                <div className="fp-weather-step-temp">{degrees(step.temperature)}</div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

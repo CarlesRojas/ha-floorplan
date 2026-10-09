@@ -14,6 +14,9 @@ type Props = {
   active?: boolean
   // The color the icon takes while the tile is active.
   accent?: string
+  // A color that washes over an active tile from its top left corner, like
+  // the color a light shines in.
+  glow?: string
   state: ReactNode
   // What a tap does when the config sets no tap_action.
   onTap?: () => void
@@ -37,6 +40,7 @@ export function Tile({
   entity,
   active = false,
   accent,
+  glow,
   state,
   onTap,
   role = 'button',
@@ -66,7 +70,7 @@ export function Tile({
       data-pressed={(pressed && !unavailable) || undefined}
       data-unavailable={unavailable || undefined}
       className="fp-tile"
-      style={{ '--_tile-accent': config.color ?? accent } as CSSProperties}
+      style={{ '--_tile-accent': config.color ?? accent, '--_tile-glow': glow } as CSSProperties}
     >
       <div className="fp-top">
         <Icon

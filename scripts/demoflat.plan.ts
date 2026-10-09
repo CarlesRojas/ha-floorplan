@@ -146,11 +146,12 @@ wall('bedroom_window', 'window', 'bedroom', [7.8, 4.5], { variant: 'casement', p
 wall('dresser', 'dresser', 'bedroom', [4.2, 3.0], { variant: 'oak' })
 item('dresser_plant', 'plant_small', 'bedroom', [4.45, 3.3], { variant: 'pothos', on: 'dresser' })
 wall('bedroom_door', 'door', 'bedroom', [4.2, 4.4], { variant: 'flush' })
-wall('motion', 'motion_sensor', 'bedroom', [4.4, 2.2])
 
 // Bathroom: a walk-in shower in the far right corner, a wide vanity under a
 // square mirror on the top wall, the toilet on the near wall, a towel rail
-// and a leak sensor by the shower, and the door from the living room.
+// by the shower with a litter box beside it, a leak sensor between the
+// shower and the vanity, a motion sensor by the door, and the door from the
+// living room.
 item('shower', 'shower', 'bathroom', [7.1, 1.75], { params: { width: 1.4, depth: 0.9, flip: 0 } })
 item('toilet', 'toilet', 'bathroom', [5.85, 0.3], { variant: 'wall_hung', rotation: 180, params: { depth: 0.6 } })
 item('basin', 'basin', 'bathroom', [5.2, 1.95], { variant: 'vanity', params: { width: 1.2, depth: 0.52 } })
@@ -163,7 +164,9 @@ wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.5], { variant: 'grouped', c
 // Two spots on one circuit, over the vanity and the toilet.
 item('bathroom_spot_a', 'light_ceiling', 'bathroom', [5.15, 1.0])
 item('bathroom_spot_b', 'light_ceiling', 'bathroom', [6.15, 1.0])
-item('leak', 'leak_sensor', 'bathroom', [6.25, 1.15])
+item('leak', 'leak_sensor', 'bathroom', [6.1, 1.95])
+item('litter_box', 'litter_box', 'bathroom', [6.6, 0.4], { rotation: 180 })
+wall('motion', 'motion_sensor', 'bathroom', [4.2, 1.8])
 // The door hangs on the living room side of the shared wall.
 item('bathroom_door', 'door', 'living', [4.2, 1.1], { variant: 'flush', rotation: 270 })
 
@@ -188,7 +191,8 @@ device('cover.projector_screen', 'projector_screen', 'projector')
 device('lock.front_door', 'front_lock')
 device('binary_sensor.front_door', 'front_door')
 device('vacuum.robot', 'vacuum')
-device('binary_sensor.bedroom_motion', 'motion')
+device('binary_sensor.bathroom_motion', 'motion')
+device('button.litter_box_scoop', 'litter_box')
 device('binary_sensor.smoke', 'smoke')
 device('binary_sensor.bathroom_moisture', 'leak')
 
@@ -256,7 +260,8 @@ const NAMES: Record<string, string> = {
   'lock.front_door': 'Front door lock',
   'binary_sensor.front_door': 'Front door',
   'vacuum.robot': 'Robot vacuum',
-  'binary_sensor.bedroom_motion': 'Bedroom motion',
+  'binary_sensor.bathroom_motion': 'Bathroom motion',
+  'button.litter_box_scoop': 'Scoop',
   'binary_sensor.smoke': 'Smoke detector',
   'binary_sensor.bathroom_moisture': 'Bathroom leak',
 }

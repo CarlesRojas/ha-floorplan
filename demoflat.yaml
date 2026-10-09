@@ -353,9 +353,9 @@ devices:
         3: u
         4: u
         5: m
-  - entity_id: binary_sensor.bedroom_motion
-    room: bedroom
-    position: [4.4, 2.2]
+  - entity_id: binary_sensor.bathroom_motion
+    room: bathroom
+    position: [4.2, 1.8]
     decorations:
       - 0: m
         1: o
@@ -363,6 +363,20 @@ devices:
         3: i
         4: o
         5: n
+  - entity_id: button.litter_box_scoop
+    room: bathroom
+    position: [6.6, 0.4]
+    decorations:
+      - 0: l
+        1: i
+        2: t
+        3: t
+        4: e
+        5: r
+        6: "_"
+        7: b
+        8: o
+        9: x
   - entity_id: binary_sensor.smoke
     room: kitchen
     position: [3.2, 4.6]
@@ -374,7 +388,7 @@ devices:
         4: e
   - entity_id: binary_sensor.bathroom_moisture
     room: bathroom
-    position: [6.25, 1.15]
+    position: [6.1, 1.95]
     decorations:
       - 0: l
         1: e
@@ -674,11 +688,6 @@ decorations:
     position: [4.2, 4.4]
     rotation: 90
     variant: flush
-  - id: motion
-    kind: motion_sensor
-    room: bedroom
-    position: [4.4, 2.2]
-    rotation: 180
   - id: shower
     kind: shower
     room: bathroom
@@ -737,7 +746,17 @@ decorations:
   - id: leak
     kind: leak_sensor
     room: bathroom
-    position: [6.25, 1.15]
+    position: [6.1, 1.95]
+  - id: litter_box
+    kind: litter_box
+    room: bathroom
+    position: [6.6, 0.4]
+    rotation: 180
+  - id: motion
+    kind: motion_sensor
+    room: bathroom
+    position: [4.2, 1.8]
+    rotation: 90
   - id: bathroom_door
     kind: door
     room: living
