@@ -3,6 +3,7 @@ import { decorationKind } from '#/decoration/catalog.ts'
 import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
+import { registerTiles } from '#/tiles/index.tsx'
 import type { CardConfig } from '#/types.ts'
 
 // Baked in by the build from package.json.
@@ -260,3 +261,5 @@ if (!window.customCards.some(card => card.type === CARD_TYPE))
     name: 'Floorplan 3D',
     description: 'Interactive 3D model of the flat',
   })
+
+registerTiles()

@@ -1,0 +1,324 @@
+/*
+ * The HomeKit style tiles. Every look a theme can change is a --hk-* token,
+ * read here into a private --_* variable with its default, so a theme that
+ * sets none of them still gets a finished tile. Never set a --hk-* token on
+ * the host: it would win over the theme's value.
+ */
+:host {
+  display: block;
+  height: 100%;
+  --_radius: var(--hk-tile-radius, 24px);
+  --_padding: var(--hk-tile-padding, 14px);
+  --_bg-active: var(--hk-tile-bg-active, rgba(255, 255, 255, 0.94));
+  --_bg-inactive: var(--hk-tile-bg-inactive, rgba(118, 118, 128, 0.24));
+  --_blur: var(--hk-tile-blur, 24px);
+  --_opacity-inactive: var(--hk-tile-opacity-inactive, 1);
+  --_opacity-unavailable: var(--hk-tile-opacity-unavailable, 0.45);
+  --_shadow: var(--hk-tile-shadow, none);
+  --_text-active: var(--hk-text-active, #1c1c1e);
+  --_text-inactive: var(--hk-text-inactive, #ffffff);
+  --_secondary: var(--hk-text-secondary-opacity, 0.6);
+  --_accent: var(--hk-accent, #0a84ff);
+  --_accent-light: var(--hk-accent-light, #ffb340);
+  --_accent-cover: var(--hk-accent-cover, #32ade6);
+  --_accent-climate: var(--hk-accent-climate, #ff9f0a);
+  --_font-tile: var(--hk-font-tile, 'Inter', -apple-system, system-ui, sans-serif);
+  --_font-title: var(--hk-font-title, 'Inter Tight', -apple-system, system-ui, sans-serif);
+  --_title-size: var(--hk-title-size, 30px);
+  --_title-opacity: var(--hk-title-opacity, 0.92);
+  --_icon-size: var(--hk-tile-icon-size, 28px);
+  --_name-size: var(--hk-tile-name-size, 15px);
+  --_state-size: var(--hk-tile-state-size, 13px);
+  --_duration: var(--hk-tile-duration, 200ms);
+  --_press: var(--hk-tile-press-scale, 0.96);
+}
+
+/* On a light dashboard the translucent tile is light too, with dark text. */
+:host([data-light]) {
+  --_bg-inactive: var(--hk-tile-bg-inactive, rgba(120, 120, 128, 0.16));
+  --_text-inactive: var(--hk-text-inactive, #1c1c1e);
+}
+
+.hk-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 112px;
+  padding: var(--_padding);
+  overflow: hidden;
+  border-radius: var(--_radius);
+  background: var(--_bg-inactive);
+  color: var(--_text-inactive);
+  box-shadow: var(--_shadow);
+  -webkit-backdrop-filter: blur(var(--_blur)) saturate(1.6);
+  backdrop-filter: blur(var(--_blur)) saturate(1.6);
+  font-family: var(--_font-tile);
+  font-optical-sizing: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  transition:
+    background-color var(--_duration) ease,
+    color var(--_duration) ease,
+    opacity var(--_duration) ease,
+    transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hk-tile[data-active] {
+  background: var(--_bg-active);
+  color: var(--_text-active);
+}
+
+.hk-tile:not([data-active]) .hk-icon,
+.hk-tile:not([data-active]) .hk-text {
+  opacity: var(--_opacity-inactive);
+}
+
+.hk-tile[data-pressed] {
+  transform: scale(var(--_press));
+}
+
+.hk-tile[data-unavailable] {
+  opacity: var(--_opacity-unavailable);
+  cursor: default;
+}
+
+.hk-tile:focus-visible {
+  outline: 2px solid var(--_tile-accent, var(--_accent));
+  outline-offset: 2px;
+}
+
+.hk-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hk-text {
+  min-width: 0;
+}
+
+.hk-icon {
+  display: block;
+  flex: none;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  --mdc-icon-size: var(--_icon-size);
+  transition: color var(--_duration) ease;
+}
+
+.hk-icon > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hk-tile[data-active] .hk-icon {
+  color: var(--_tile-accent, var(--_accent));
+}
+
+.hk-name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--_name-size);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.hk-state {
+  overflow: hidden;
+  font-size: var(--_state-size);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: var(--_secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Round buttons inside a tile, for the wide cover and vacuum tiles. */
+.hk-controls {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  margin: -4px -4px 0 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.hk-control {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--_duration) ease,
+    transform var(--_duration) ease;
+}
+
+.hk-tile .hk-control > .hk-icon {
+  width: 20px;
+  height: 20px;
+  --mdc-icon-size: 20px;
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hk-control:hover {
+    background: color-mix(in srgb, currentColor 14%, transparent);
+  }
+}
+
+.hk-control:active {
+  transform: scale(0.88);
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.hk-control:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.hk-title {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  min-height: 40px;
+  padding: 4px 4px 2px;
+  box-sizing: border-box;
+  color: var(--hk-title-color, var(--primary-text-color, #fff));
+  font-family: var(--_font-title);
+  font-size: var(--_title-size);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  opacity: var(--_title-opacity);
+}
+
+/* The option menu of the select tile, in the top layer over the dashboard. */
+.hk-menu {
+  position: fixed;
+  inset: auto;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 32px));
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  border: none;
+  border-radius: 18px;
+  background: var(--hk-menu-bg, rgba(44, 44, 48, 0.82));
+  color: var(--hk-menu-text, #fff);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  font-family: var(--_font-tile);
+  font-optical-sizing: auto;
+  opacity: 0;
+  transform: scale(0.94);
+  transform-origin: var(--_origin, top left);
+  transition:
+    opacity var(--_duration) ease,
+    transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay var(--_duration) allow-discrete,
+    display var(--_duration) allow-discrete;
+}
+
+.hk-menu:popover-open {
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .hk-menu:popover-open {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+:host([data-light]) .hk-menu {
+  background: var(--hk-menu-bg, rgba(250, 250, 252, 0.86));
+  color: var(--hk-menu-text, #1c1c1e);
+}
+
+.hk-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hk-option > .hk-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hk-option:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+}
+
+.hk-option:focus-visible {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.hk-camera {
+  padding: 0;
+  min-height: 0;
+  background: #000;
+}
+
+.hk-camera-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hk-camera-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 28px var(--_padding) var(--_padding);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.62), transparent);
+  color: #fff;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hk-tile,
+  .hk-icon,
+  .hk-control,
+  .hk-menu {
+    transition: none;
+  }
+
+  .hk-tile[data-pressed] {
+    transform: none;
+  }
+}
