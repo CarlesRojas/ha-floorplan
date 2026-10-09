@@ -88,8 +88,8 @@
 .fp-tile[data-active][style*='--_tile-glow'] {
   background-image: radial-gradient(
     140% 140% at 0% 0%,
-    color-mix(in srgb, var(--_tile-glow) 70%, transparent) 0%,
-    color-mix(in srgb, var(--_tile-glow) 25%, transparent) 45%,
+    color-mix(in srgb, var(--_tile-glow) 42%, transparent) 0%,
+    color-mix(in srgb, var(--_tile-glow) 14%, transparent) 45%,
     transparent 80%
   );
 }

@@ -21,7 +21,7 @@ On every tile but the title, a long press or a right click opens Home Assistant'
 
 Every tile can be set up from Home Assistant's visual card editor, as well as in YAML.
 
-A tile that is on is light and opaque with its icon in color. A light that can change color tints its icon and the top left of its tile with the color it shines in. One that is off is frosted glass. One whose entity is unavailable is dimmed, says so, and does nothing when tapped.
+A tile that is on is light and opaque with its icon in color. A light that is on tints its icon and the top left of its tile with the color it shines in. One that is off is frosted glass. One whose entity is unavailable is dimmed, says so, and does nothing when tapped.
 
 ## Example
 
