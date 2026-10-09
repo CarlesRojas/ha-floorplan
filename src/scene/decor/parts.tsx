@@ -807,7 +807,7 @@ export function Draft({
   drop = 0.45,
   size = 0.016,
   count = 120,
-  strength = 0.28,
+  strength = 0.45,
   speed = 0.22,
   color = '#e6eef4',
 }: {

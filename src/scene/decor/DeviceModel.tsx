@@ -417,11 +417,12 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // top, a louvre that tips open underneath and a small display. Its
       // height and depth follow its width, within what real units come in.
       const w = p('width')
-      // Warm air out with a faint blush and cool air out with a faint blue,
+      // Warm air out a dim red and cool air out a dim blue, dark enough to
+      // blend into the room,
       // by what the device says it is doing, and plain when it only moves
       // the air.
       const mode = state?.text ?? ''
-      const air = /heat/.test(mode) ? '#ffa088' : /cool/.test(mode) ? '#94c0ff' : '#e6eef4'
+      const air = /heat/.test(mode) ? '#9a5a48' : /cool/.test(mode) ? '#4d73a3' : '#7d8894'
       if (style === 'duct') {
         // A grille let into the wall, a frame round a dark slot of blades
         // angled down, with the air coming out through them.
