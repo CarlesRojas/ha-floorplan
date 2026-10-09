@@ -133,9 +133,23 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
     [timers],
   )
 
+  // Home Assistant's own dialog for the entity, which carries the controls a
+  // click cannot stand in for: brightness, color, a cover's position. The
+  // event has to cross the card's shadow root to reach it.
+  const gl = useThree(state => state.gl)
+  const get = useThree(state => state.get)
+  const openMoreInfo = (entityId: string) => {
+    gl.domElement.dispatchEvent(
+      new CustomEvent('hass-more-info', { detail: { entityId }, bubbles: true, composed: true }),
+    )
+  }
+
+  // A device a click has nothing to switch on, like a camera or a
+  // thermostat, opens its dialog instead.
   const act = (entityId: string) => {
-    const action = clickAction(entityId, hass?.states[entityId]?.state)
-    if (!hass || !action) return
+    if (!hass) return
+    const action = clickAction(entityId, hass.states[entityId]?.state)
+    if (!action) return openMoreInfo(entityId)
     // A second click before the first is answered flips the guess, not the
     // device, so two quick clicks show what two toggles leave.
     const outcome = clickOutcome(hass, entityId, guesses.get(entityId))
@@ -157,17 +171,6 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
     // A call Home Assistant refuses must not surface as an unhandled
     // rejection in the dashboard. Its own toast already says what went wrong.
     hass.callService(action.domain, action.service, { entity_id: entityId }).catch(() => {})
-  }
-
-  // Home Assistant's own dialog for the entity, which carries the controls a
-  // click cannot stand in for: brightness, color, a cover's position. The
-  // event has to cross the card's shadow root to reach it.
-  const gl = useThree(state => state.gl)
-  const get = useThree(state => state.get)
-  const openMoreInfo = (entityId: string) => {
-    gl.domElement.dispatchEvent(
-      new CustomEvent('hass-more-info', { detail: { entityId }, bubbles: true, composed: true }),
-    )
   }
 
   // What a press on each piece does. The models are only drawn again when
