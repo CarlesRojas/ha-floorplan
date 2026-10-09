@@ -837,14 +837,15 @@ export function Draft({
       const m = motes[i]
       const f = (t * speed * m.pace + m.phase) % 1
       speck.position.set(
-        m.x * width + (m.side * 0.08 + Math.sin(t * 0.9 + m.turn) * 0.02) * f,
+        m.x * width + (m.side * 0.04 + Math.sin(t * 0.9 + m.turn) * 0.02) * f,
         -drop * m.sink * f * f + Math.sin(t * 1.3 + m.turn) * 0.01 * f,
-        reach * m.out * Math.sqrt(f),
+        reach * m.out * (1 - (1 - f) ** 2),
       )
       const r = size * m.grow * (1 + f * 1.5)
       speck.scale.set(r, r, 1)
       const material = speck.material as SpriteMaterial
-      material.opacity = strength * lit * Math.sin(Math.PI * f) ** 1.5
+      // Seen as soon as it leaves the vent, fading as it goes.
+      material.opacity = strength * lit * Math.min(1, f * 12) * (1 - f) ** 1.3
       speck.visible = true
     })
   })
