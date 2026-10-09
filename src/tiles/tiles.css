@@ -216,6 +216,116 @@
   outline-offset: -2px;
 }
 
+/* The minus and plus of a thermostat, with what it aims for between them. */
+.fp-stepper-value,
+.fp-stepper-end {
+  align-self: center;
+  min-width: 52px;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-stepper-range {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Either end of a range, the one the buttons move filled in. */
+.fp-stepper-end {
+  height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  transition:
+    background-color var(--_duration) ease,
+    opacity var(--_duration) ease;
+}
+
+.fp-stepper-end[aria-pressed='true'] {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  opacity: 1;
+}
+
+.fp-stepper-end:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* The row along the bottom of a wide thermostat: its modes and its menu. */
+.fp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 -4px -4px;
+}
+
+.fp-footer .fp-controls {
+  margin: 0;
+}
+
+.fp-modes {
+  display: flex;
+  min-width: 0;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.fp-footer .fp-control {
+  width: 40px;
+  height: 40px;
+}
+
+/* The mode it runs in, filled and in the tile's color. */
+.fp-mode[aria-checked='true'] {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.fp-tile[data-active] .fp-mode[aria-checked='true'] {
+  color: var(--_tile-accent, var(--_accent));
+  background: color-mix(in srgb, var(--_tile-accent, var(--_accent)) 18%, transparent);
+}
+
+/* A button that opens a menu and says what is chosen in it. */
+.fp-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fp-tile .fp-chip > .fp-chip-caret {
+  width: 14px;
+  height: 14px;
+  --mdc-icon-size: 14px;
+  color: inherit;
+}
+
+.fp-chip:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
 .fp-title {
   display: flex;
   align-items: flex-end;
@@ -292,6 +402,20 @@
   font-size: 15px;
   text-align: left;
   cursor: pointer;
+}
+
+.fp-menu-heading {
+  padding: 10px 12px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.fp-menu-heading:not(:first-child),
+[role='group'] + [role='group'] > .fp-menu-heading {
+  margin-top: 4px;
 }
 
 .fp-option > .fp-check {
@@ -428,6 +552,7 @@
   .fp-tile,
   .fp-icon,
   .fp-control,
+  .fp-stepper-end,
   .fp-menu {
     transition: none;
   }

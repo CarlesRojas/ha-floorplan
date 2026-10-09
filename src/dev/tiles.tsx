@@ -52,6 +52,32 @@ for (const s of [
     temperature: 22,
     min_temp: 7,
     max_temp: 35,
+    hvac_modes: ['off', 'heat', 'cool', 'auto', 'dry', 'fan_only'],
+    fan_mode: 'auto_low',
+    fan_modes: ['on_low', 'on_high', 'auto_low', 'auto_high', 'off'],
+    swing_mode: 'off',
+    swing_modes: ['auto', '1', '2', '3', 'off'],
+  }),
+  state('climate.range', 'heat_cool', {
+    friendly_name: 'Air Conditioner',
+    hvac_action: 'idle',
+    current_temperature: 23,
+    target_temp_low: 19,
+    target_temp_high: 24,
+    min_temp: 7,
+    max_temp: 35,
+    hvac_modes: ['off', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'],
+    preset_mode: 'home',
+    preset_modes: ['home', 'eco', 'away'],
+  }),
+  state('water_heater.tank', 'eco', {
+    friendly_name: 'Water Heater',
+    current_temperature: 48,
+    temperature: 50,
+    min_temp: 35,
+    max_temp: 65,
+    operation_mode: 'eco',
+    operation_list: ['eco', 'electric', 'performance', 'off'],
   }),
   state('media_player.living', 'playing', {
     friendly_name: 'Speaker',
@@ -126,7 +152,15 @@ hass = {
       update(id, { start: 'cleaning', pause: 'paused', stop: 'idle', return_to_base: 'returning' }[service] ?? s.state)
     if (service === 'select_option') update(id, data!.option as string)
     if (domain === 'lock') update(id, service === 'lock' ? 'locked' : 'unlocked')
-    if (domain === 'climate' && service === 'set_temperature') update(id, s.state, { temperature: data!.temperature })
+    if (service === 'set_temperature') {
+      const { entity_id: _, ...aim } = data!
+      update(id, s.state, aim)
+    }
+    if (service === 'set_hvac_mode') update(id, data!.hvac_mode as string)
+    if (service === 'set_operation_mode')
+      update(id, data!.operation_mode as string, { operation_mode: data!.operation_mode })
+    for (const key of ['fan_mode', 'preset_mode', 'swing_mode'])
+      if (service === `set_${key}`) update(id, s.state, { [key]: data![key] })
     if (domain === 'media_player' && service === 'media_play_pause')
       update(id, s.state === 'playing' ? 'paused' : 'playing')
   },
@@ -148,6 +182,9 @@ const sections: { title: Record<string, unknown>; cards: Record<string, unknown>
       { type: 'fp-button', entity: 'button.never' },
       { type: 'fp-button', entity: 'scene.movie', icon: 'ph:popcorn' },
       { type: 'fp-climate', entity: 'climate.living', size: 'wide' },
+      { type: 'fp-climate', entity: 'climate.range', size: 'wide' },
+      { type: 'fp-climate', entity: 'water_heater.tank', size: 'wide' },
+      { type: 'fp-climate', entity: 'climate.living' },
       { type: 'fp-media', entity: 'media_player.living', size: 'wide' },
       { type: 'fp-lock', entity: 'lock.front' },
       { type: 'fp-entity', entity: 'sensor.living_temperature' },

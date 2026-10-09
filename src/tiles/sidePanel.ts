@@ -34,7 +34,8 @@ function span(config: CardConfig) {
   else if (type === 'fp-weather') rows = 3
   else if (type.startsWith('fp-')) {
     columns = config.size === 'wide' ? 12 : 6
-    rows = 2
+    // A wide thermostat has a row of modes along its bottom.
+    rows = config.size === 'wide' && type === 'fp-climate' ? 3 : 2
   }
   columns = own?.columns ?? columns
   rows = own?.rows ?? rows

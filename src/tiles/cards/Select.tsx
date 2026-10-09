@@ -1,12 +1,11 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
+import { menuKeys, openMenu } from '#/tiles/menu.ts'
 import { Tile } from '#/tiles/Tile.tsx'
 import { useRef } from 'react'
 
 export type SelectConfig = TileConfig & { tap_behavior?: 'menu' | 'cycle' }
-
-const GAP = 8
 
 type Props = { env: TileEnv; config: SelectConfig }
 
@@ -32,27 +31,7 @@ export default function Select({ env, config }: Props) {
     if (option !== entity?.state) callService(env.hass, `${domain}.select_option`, { entity_id: config.entity, option })
   }
 
-  // The menu sits in the top layer, so it is placed by hand: under the
-  // tile, or over it when there is no room below, and kept on screen.
-  const open = () => {
-    const el = menu.current
-    const box = anchor.current?.getBoundingClientRect()
-    if (!el || !box) return
-    // At least as wide as the tile it opens from.
-    el.style.minWidth = `${box.width}px`
-    el.style.maxWidth = `max(min(320px, 100vw - 32px), ${box.width}px)`
-    el.showPopover()
-    // Its own size, not the one it is scaled to while it fades in.
-    const width = el.offsetWidth
-    const height = el.offsetHeight
-    const below = box.bottom + GAP + height <= window.innerHeight
-    const top = below ? box.bottom + GAP : Math.max(GAP, box.top - GAP - height)
-    const left = Math.min(Math.max(GAP, box.left), window.innerWidth - width - GAP)
-    el.style.top = `${top}px`
-    el.style.left = `${left}px`
-    el.style.setProperty('--_origin', below ? 'top left' : 'bottom left')
-    el.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
-  }
+  const open = () => openMenu(menu.current, anchor.current?.getBoundingClientRect())
 
   const tap = () => {
     if (config.tap_behavior === 'cycle')
@@ -63,21 +42,7 @@ export default function Select({ env, config }: Props) {
   return (
     <div ref={anchor} className="h-full">
       <Tile env={env} config={config} entity={entity} state={entity ? label(entity.state) : ''} onTap={tap} />
-      <div
-        ref={menu}
-        popover="auto"
-        role="menu"
-        className="fp-menu"
-        onKeyDown={e => {
-          const items = [...(menu.current?.querySelectorAll<HTMLElement>('.fp-option') ?? [])]
-          const at = items.indexOf(e.target as HTMLElement)
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault()
-            const step = e.key === 'ArrowDown' ? 1 : -1
-            items[(at + step + items.length) % items.length]?.focus()
-          }
-        }}
-      >
+      <div ref={menu} popover="auto" role="menu" className="fp-menu" onKeyDown={menuKeys}>
         {options.map(option => (
           <button
             key={option}

@@ -113,6 +113,17 @@ class WeatherCard extends entityCard(WEATHER_DOMAINS, Weather) {
   }
 }
 
+// A wide thermostat is a row taller, for its modes along the bottom.
+class ClimateCard extends entityCard(CLIMATE_DOMAINS, Climate) {
+  getCardSize() {
+    return this._config?.size === 'wide' ? 3 : 2
+  }
+
+  getGridOptions(): GridOptions {
+    return this._config?.size === 'wide' ? { columns: 12, rows: 3 } : super.getGridOptions()
+  }
+}
+
 const CARDS: { type: string; element: CustomElementConstructor; name: string; description: string }[] = [
   {
     type: 'fp-title',
@@ -152,9 +163,9 @@ const CARDS: { type: string; element: CustomElementConstructor; name: string; de
   },
   {
     type: 'fp-climate',
-    element: entityCard(CLIMATE_DOMAINS, Climate),
+    element: ClimateCard,
     name: 'Floorplan Climate',
-    description: 'Thermostat or water heater tile with minus and plus',
+    description: 'Thermostat or water heater tile with its temperature, modes and settings',
   },
   {
     type: 'fp-media',

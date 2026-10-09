@@ -26,6 +26,8 @@ type Props = {
   toggles?: boolean
   // Buttons shown in the top right corner of a wide tile.
   controls?: ReactNode
+  // A row of buttons along the bottom of a wide tile, under the name.
+  footer?: ReactNode
   // Whether an unknown state counts as unavailable. A button that was
   // never pressed has no time to show and says unknown, yet still works.
   unknownIsUnavailable?: boolean
@@ -33,7 +35,7 @@ type Props = {
 
 // The shell every entity tile shares: the icon on top, the name and a
 // dimmer state line under it, and on a wide tile a row of buttons across
-// from the icon. Active tiles are opaque and light, the rest are frosted glass.
+// from the icon and, for some, another along the bottom. Active tiles are opaque and light, the rest are frosted glass.
 export function Tile({
   env,
   config,
@@ -46,6 +48,7 @@ export function Tile({
   role = 'button',
   toggles = false,
   controls,
+  footer,
   unknownIsUnavailable = true,
 }: Props) {
   const unavailable = !entity || entity.state === 'unavailable' || (unknownIsUnavailable && entity.state === 'unknown')
@@ -83,18 +86,29 @@ export function Tile({
         <div className="fp-name">{name}</div>
         <div className="fp-state">{shown}</div>
       </div>
+      {config.size === 'wide' && footer && !unavailable && <div className="fp-footer">{footer}</div>}
     </div>
   )
 }
 
-type ControlProps = { icon: string; label: string; onPress: () => void; className?: string }
+type ControlProps = {
+  icon: string
+  label: string
+  onPress: () => void
+  className?: string
+  // One of a set where only one is chosen, like the mode of a thermostat.
+  role?: 'radio'
+  checked?: boolean
+}
 
 // One round button inside a wide tile. Pressing it never presses the tile.
-export function Control({ icon, label, onPress, className }: ControlProps) {
+export function Control({ icon, label, onPress, className, role, checked }: ControlProps) {
   return (
     <button
       {...insideTile}
       type="button"
+      role={role}
+      aria-checked={role === 'radio' ? !!checked : undefined}
       aria-label={label}
       title={label}
       className={cn('fp-control', className)}
