@@ -101,6 +101,7 @@ const KIND_DOMAINS: Record<string, string[]> = {
   water_heater: ['water_heater'],
   motion_sensor: ['binary_sensor'],
   smoke_detector: ['binary_sensor'],
+  leak_sensor: ['binary_sensor'],
   camera: ['camera'],
   alarm_panel: ['alarm_control_panel'],
 }
@@ -2407,6 +2408,16 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [size(0.14, 0.08, 0.25)],
     { body: SCANDI.offWhite, vents: SCANDI.slate },
     { body: 'matte', vents: 'matte' },
+    TOGGLE,
+  ),
+  kind(
+    'leak_sensor',
+    'security',
+    'Leak sensor',
+    'floor',
+    [size(0.06, 0.04, 0.1)],
+    { body: SCANDI.offWhite, probes: '#b8bcc0' },
+    { body: 'matte', probes: 'metal' },
     TOGGLE,
   ),
   kind(

@@ -1,5 +1,5 @@
-// The demo flat: a small, fully furnished home with a living room and
-// kitchen in one room, a bedroom and a bathroom. scripts/demoflat.ts writes
+// The demo flat: a small, fully furnished home with a living room, a
+// kitchen open to it, a bedroom and a bathroom. scripts/demoflat.ts writes
 // it to demoflat.yaml and the dev page at src/dev/demoflat.html draws it
 // with made up devices, for the screenshots in the README.
 import { decorationKind, paramValue } from '#/decoration/catalog.ts'
@@ -14,11 +14,18 @@ import type {
   Point,
 } from '#/types.ts'
 
-// The three rooms, counter clockwise on the plan. The living room and the
-// kitchen share one room, the bedroom and the bathroom sit to its right.
+// The four rooms, counter clockwise on the plan. The kitchen is open to the
+// living room, on the same floor behind the sofa, and the bedroom and the
+// bathroom sit to their right.
 const LIVING: Point[] = [
   [0, 0],
   [4.2, 0],
+  [4.2, 3.05],
+  [0, 3.05],
+]
+const KITCHEN: Point[] = [
+  [0, 3.05],
+  [4.2, 3.05],
   [4.2, 5.6],
   [0, 5.6],
 ]
@@ -34,7 +41,7 @@ const BATHROOM: Point[] = [
   [7.8, 2.2],
   [4.2, 2.2],
 ]
-const POINTS: Record<string, Point[]> = { living: LIVING, bedroom: BEDROOM, bathroom: BATHROOM }
+const POINTS: Record<string, Point[]> = { living: LIVING, kitchen: KITCHEN, bedroom: BEDROOM, bathroom: BATHROOM }
 
 type Extra = Partial<Omit<DecorationConfig, 'id' | 'kind' | 'room' | 'position'>>
 
@@ -70,9 +77,8 @@ function device(entity_id: string, ...ids: string[]) {
   devices.push({ entity_id, room: first.room, position: first.position, decorations: ids })
 }
 
-// Living room, along the bottom half of the room. The sofa faces the TV on
-// the bottom wall over a rug, with a window on the left wall and the front
-// door in the bottom right corner.
+// Living room. The sofa faces the TV on the bottom wall over a rug, with
+// the front door in the bottom right corner.
 item('sofa', 'sofa', 'living', [2.3, 2.5], { variant: 'block' })
 item('rug', 'rug', 'living', [2.3, 1.4], { variant: 'kilim' })
 item('coffee_table', 'coffee_table', 'living', [2.3, 1.3], { variant: 'slatted' })
@@ -81,46 +87,45 @@ item('coffee_plant', 'plant_small', 'living', [2.6, 1.4], { variant: 'pilea', on
 item('sideboard', 'sideboard', 'living', [2.3, 0.21], { variant: 'oak', rotation: 180 })
 wall('tv', 'tv_wall', 'living', [2.3, 0])
 item('soundbar', 'soundbar', 'living', [2.3, 0.21], { variant: 'bar', on: 'sideboard', rotation: 180 })
-item('speaker', 'speaker', 'living', [3.0, 0.21], { variant: 'pod', on: 'sideboard' })
 item('living_plant', 'plant_large', 'living', [0.4, 0.4], { variant: 'fiddle' })
-item('floor_lamp', 'light_floor', 'living', [0.4, 3.1], { variant: 'tmm' })
-wall('living_window', 'window', 'living', [0, 3.9], { variant: 'casement', params: { height: 1.45, sill: 0.65 } })
-wall('living_blind', 'blind', 'living', [0, 3.9], { variant: 'venetian' })
+item('floor_lamp', 'light_floor', 'living', [0.4, 2.6], { variant: 'tmm' })
 wall('front_door', 'door', 'living', [3.7, 0], { variant: 'panel' })
 wall('front_lock', 'smart_lock', 'living', [3.15, 0])
 wall('thermostat', 'thermostat', 'living', [0, 1.2])
 item('living_light', 'light_ceiling', 'living', [2.3, 1.8])
 item('vacuum', 'vacuum_robot', 'living', [4.0, 2.0], { rotation: 270 })
 
-// Kitchen, along the top wall of the same room, with an island and two
-// stools between it and the sofa.
-item('counter_a', 'kitchen_counter', 'living', [0.9, 5.3], { variant: 'run' })
-item('counter_b', 'kitchen_counter', 'living', [2.7, 5.3], { variant: 'run' })
-item('hob', 'hob', 'living', [0.9, 5.3], { variant: 'induction', on: 'counter_a' })
-item('kettle', 'kettle', 'living', [0.3, 5.3], { variant: 'gooseneck', on: 'counter_a' })
-item('coffee_machine', 'coffee_machine', 'living', [1.9, 5.45], { variant: 'bambino', on: 'counter_b' })
-item('sink', 'kitchen_sink', 'living', [2.7, 5.3], { variant: 'undermount', on: 'counter_b' })
-item('toaster', 'toaster', 'living', [1.55, 5.45], { variant: 'retro', on: 'counter_a' })
-wall('cabinets_a', 'upper_cabinets', 'living', [0.9, 5.6])
-wall('cabinets_b', 'upper_cabinets', 'living', [2.7, 5.6])
-item('fridge', 'fridge', 'living', [3.9, 5.27], {
+// Kitchen, along the top wall, with an island and two stools between it and
+// the sofa, and a window on the left wall.
+item('counter_a', 'kitchen_counter', 'kitchen', [0.9, 5.3], { variant: 'run' })
+item('counter_b', 'kitchen_counter', 'kitchen', [2.7, 5.3], { variant: 'run' })
+item('hob', 'hob', 'kitchen', [0.9, 5.3], { variant: 'induction', on: 'counter_a' })
+item('kettle', 'kettle', 'kitchen', [0.3, 5.3], { variant: 'gooseneck', on: 'counter_a' })
+item('coffee_machine', 'coffee_machine', 'kitchen', [1.9, 5.45], { variant: 'bambino', on: 'counter_b' })
+item('sink', 'kitchen_sink', 'kitchen', [2.7, 5.3], { variant: 'undermount', on: 'counter_b' })
+item('toaster', 'toaster', 'kitchen', [1.55, 5.45], { variant: 'retro', on: 'counter_a' })
+wall('cabinets_a', 'upper_cabinets', 'kitchen', [0.9, 5.6])
+wall('cabinets_b', 'upper_cabinets', 'kitchen', [2.7, 5.6])
+item('fridge', 'fridge', 'kitchen', [3.9, 5.27], {
   variant: 'bespoke',
   params: { flip: 1 },
   colors: { body: '#9d9c9b', doors: '#acabaa' },
 })
-item('island', 'kitchen_counter', 'living', [2.1, 4.1], { variant: 'island' })
-item('island_vase', 'vase', 'living', [2.65, 4.15], { on: 'island', params: { height: 0.21, size: 0.16 } })
-item('stool_a', 'stool', 'living', [1.7, 3.4], { variant: 'lauta', rotation: 180 })
-item('stool_b', 'stool', 'living', [2.5, 3.4], { variant: 'lauta', rotation: 180 })
-item('pendant_a', 'light_pendant', 'living', [1.65, 4.1], { variant: 'globo_cestita' })
-item('pendant_b', 'light_pendant', 'living', [2.55, 4.1], { variant: 'globo_cestita' })
-item('smoke', 'smoke_detector', 'living', [3.2, 4.6])
+item('island', 'kitchen_counter', 'kitchen', [2.1, 4.1], { variant: 'island' })
+item('island_vase', 'vase', 'kitchen', [2.65, 4.15], { on: 'island', params: { height: 0.21, size: 0.16 } })
+item('stool_a', 'stool', 'kitchen', [1.7, 3.4], { variant: 'lauta', rotation: 180 })
+item('stool_b', 'stool', 'kitchen', [2.5, 3.4], { variant: 'lauta', rotation: 180 })
+item('pendant_a', 'light_pendant', 'kitchen', [1.65, 4.1], { variant: 'globo_cestita' })
+item('pendant_b', 'light_pendant', 'kitchen', [2.55, 4.1], { variant: 'globo_cestita' })
+item('smoke', 'smoke_detector', 'kitchen', [3.2, 4.6])
+wall('kitchen_window', 'window', 'kitchen', [0, 3.9], { variant: 'casement', params: { height: 1.45, sill: 0.65 } })
+wall('kitchen_blind', 'blind', 'kitchen', [0, 3.9], { variant: 'venetian' })
 
 // Bedroom: a half wall across the top of the room with the bed against it,
 // a lamp on each nightstand, a fan above and a portable projector on the
 // half wall throwing its picture on a screen over the bottom wall. A slim
 // wardrobe and a window on the right wall, a dresser on the left wall, and
-// the door from the living room.
+// the door from the kitchen.
 item('half_wall', 'half_wall', 'bedroom', [6.0, 5.5], { params: { width: 3.6, depth: 0.2, height: 1 } })
 item('bed', 'bed_double', 'bedroom', [6.0, 4.25], { variant: 'upholstered' })
 item('nightstand_a', 'side_table', 'bedroom', [4.95, 5.17], { variant: 'nightstand' })
@@ -145,7 +150,7 @@ wall('motion', 'motion_sensor', 'bedroom', [4.4, 2.2])
 
 // Bathroom: a walk-in shower in the far right corner, a wide vanity under a
 // square mirror on the top wall, the toilet on the near wall, a towel rail
-// by the shower, and the door from the living room.
+// and a leak sensor by the shower, and the door from the living room.
 item('shower', 'shower', 'bathroom', [7.1, 1.75], { params: { width: 1.4, depth: 0.9, flip: 0 } })
 item('toilet', 'toilet', 'bathroom', [5.85, 0.3], { variant: 'wall_hung', rotation: 180, params: { depth: 0.6 } })
 item('basin', 'basin', 'bathroom', [5.2, 1.95], { variant: 'vanity', params: { width: 1.2, depth: 0.52 } })
@@ -158,6 +163,7 @@ wall('towel_rail', 'towel_rail', 'bathroom', [7.8, 0.5], { variant: 'grouped', c
 // Two spots on one circuit, over the vanity and the toilet.
 item('bathroom_spot_a', 'light_ceiling', 'bathroom', [5.15, 1.0])
 item('bathroom_spot_b', 'light_ceiling', 'bathroom', [6.15, 1.0])
+item('leak', 'leak_sensor', 'bathroom', [6.25, 1.15])
 // The door hangs on the living room side of the shared wall.
 item('bathroom_door', 'door', 'living', [4.2, 1.1], { variant: 'flush', rotation: 270 })
 
@@ -170,9 +176,8 @@ device('light.bedroom', 'bedroom_light')
 device('light.bedside_left', 'bedside_a')
 device('light.bedside_right', 'bedside_b')
 device('light.bathroom', 'bathroom_spot_a', 'bathroom_spot_b')
-device('cover.living_blind', 'living_blind')
+device('cover.kitchen_blind', 'kitchen_blind')
 device('media_player.living_tv', 'tv', 'soundbar')
-device('media_player.kitchen_speaker', 'speaker')
 device('climate.living_room', 'thermostat')
 device('switch.towel_rail', 'towel_rail')
 device('switch.coffee_machine', 'coffee_machine')
@@ -185,6 +190,7 @@ device('binary_sensor.front_door', 'front_door')
 device('vacuum.robot', 'vacuum')
 device('binary_sensor.bedroom_motion', 'motion')
 device('binary_sensor.smoke', 'smoke')
+device('binary_sensor.bathroom_moisture', 'leak')
 
 export const DEMO_FLAT: CardConfig = {
   type: 'custom:floorplan-3d',
@@ -196,7 +202,15 @@ export const DEMO_FLAT: CardConfig = {
       points: LIVING,
       floor: { material: 'wood' },
       // A click on the floor flies to a close-up of the room.
-      camera: { position: [0.5, 4.2, 1.0], target: [2.4, 0.4, -3.4] },
+      camera: { position: [0.4, 3.8, 1.6], target: [2.3, 0.3, -1.7] },
+    },
+    {
+      id: 'kitchen',
+      name: 'Kitchen',
+      area_id: 'kitchen',
+      points: KITCHEN,
+      floor: { material: 'wood' },
+      camera: { position: [2.1, 4.0, -0.6], target: [2.1, 0.3, -4.5] },
     },
     {
       id: 'bedroom',
@@ -231,9 +245,8 @@ const NAMES: Record<string, string> = {
   'light.bedside_left': 'Left bedside lamp',
   'light.bedside_right': 'Right bedside lamp',
   'light.bathroom': 'Bathroom light',
-  'cover.living_blind': 'Living room blind',
+  'cover.kitchen_blind': 'Kitchen blind',
   'media_player.living_tv': 'Living room TV',
-  'media_player.kitchen_speaker': 'Kitchen speaker',
   'climate.living_room': 'Thermostat',
   'switch.towel_rail': 'Towel rail',
   'switch.coffee_machine': 'Coffee machine',
@@ -245,6 +258,7 @@ const NAMES: Record<string, string> = {
   'vacuum.robot': 'Robot vacuum',
   'binary_sensor.bedroom_motion': 'Bedroom motion',
   'binary_sensor.smoke': 'Smoke detector',
+  'binary_sensor.bathroom_moisture': 'Bathroom leak',
 }
 
 function initial(entityId: string): { state: string; attributes: Record<string, unknown> } {

@@ -30,6 +30,7 @@ const TILE_TYPES: Record<string, string> = {
   scene: 'fp-button',
   select: 'fp-select',
   input_select: 'fp-select',
+  weather: 'fp-weather',
 }
 
 // Anything else, a sensor, a person or the weather, shows its state.
@@ -89,9 +90,10 @@ const KIND_ICONS: Record<string, string> = {
   desk: 'ph:desktop',
   pet_feeder: 'ph:paw-print',
   litter_box: 'ph:paw-print',
-  vacuum_robot: 'ph:robot',
+  vacuum_robot: 'ph:robot-vacuum',
   camera: 'ph:security-camera',
   doorbell: 'ph:bell',
+  leak_sensor: 'ph:drop',
 }
 
 function entityTile(entityId: string): AutoCard {

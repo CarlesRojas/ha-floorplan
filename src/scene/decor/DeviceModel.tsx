@@ -1537,6 +1537,51 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         </group>
       )
     }
+    case 'leak_sensor': {
+      // A small round puck that lies on the floor where water would gather,
+      // on three metal probes. Once they get wet a ring round its top
+      // glows blue and a puddle spreads round it, so a leak reads from
+      // across the room.
+      const s = p('size')
+      const t = s * 0.3
+      return (
+        <group>
+          <mesh position={[0, 0.0015, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.2 + 0.8 * lit} visible={lit > 0.01}>
+            <circleGeometry args={[s * 2.4, SEG * 2]} />
+            <meshStandardMaterial
+              color="#6fa8d8"
+              roughness={0.05}
+              metalness={0.1}
+              transparent
+              opacity={0.45 * lit}
+              depthWrite={false}
+            />
+          </mesh>
+          {[0, 1, 2].map(i => (
+            <mesh
+              key={i}
+              position={[Math.sin((i * Math.PI * 2) / 3) * s * 0.3, 0.003, Math.cos((i * Math.PI * 2) / 3) * s * 0.3]}
+            >
+              <cylinderGeometry args={[s * 0.06, s * 0.06, 0.006, 12]} />
+              {M('probes')}
+            </mesh>
+          ))}
+          <mesh position={[0, 0.006 + t / 2, 0]} castShadow>
+            <cylinderGeometry args={[s * 0.46, s * 0.5, t, SEG * 2]} />
+            {M('body')}
+          </mesh>
+          <mesh position={[0, 0.006 + t, 0]} scale={[1, 0.18, 1]}>
+            <sphereGeometry args={[s * 0.46, SEG * 2, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            {M('body')}
+          </mesh>
+          <mesh position={[0, 0.006 + t, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[s * 0.3, s * 0.025, 10, SEG * 2]} />
+            <meshStandardMaterial color="#d6e4f0" emissive="#2f8cff" emissiveIntensity={3 * lit} />
+          </mesh>
+          <Halo on={on} position={[0, t + 0.05, 0]} color="#5aa8ff" intensity={0.08} />
+        </group>
+      )
+    }
     case 'alarm_panel': {
       // A wall keypad: a dark glass face over a soft body, the readout at
       // the top and a three by four grid of keys under it.

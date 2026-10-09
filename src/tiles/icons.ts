@@ -11,10 +11,39 @@ const FILL = import.meta.glob<string>(
   { query: '?raw', import: 'default', eager: true },
 )
 
+// The few drawn heavier, as `ph:<name>-bold`, for a button that is only
+// its sign, where the filled weight would put it in a box.
+const BOLD = import.meta.glob<string>('/node_modules/@phosphor-icons/core/assets/bold/{minus,plus,power}-bold.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+})
+
+// Icons the set lacks, drawn on its grid and in its two weights.
+const svg = (d: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="${d}"/></svg>`
+const OWN: Record<string, { regular: string; fill: string }> = {
+  // A round robot vacuum from above: its bumper across the front and the
+  // dome of its laser in the middle.
+  'robot-vacuum': {
+    regular: svg(
+      'M128,24A104,104,0,1,0,232,128A104,104,0,0,0,128,24Zm0,16a88,88,0,1,1,0,176a88,88,0,1,1,0-176ZM54.2,80H201.8L210,96H46ZM148,148a20,20,0,1,1-20-20A20,20,0,0,1,148,148Z',
+    ),
+    fill: svg(
+      'M128,24A104,104,0,1,0,232,128A104,104,0,0,0,128,24ZM54.2,80H201.8L210,96H46ZM128,128a20,20,0,1,1,0,40a20,20,0,1,1,0-40Z',
+    ),
+  },
+}
+
 const byName = (files: Record<string, string>) =>
-  new Map(Object.entries(files).map(([path, svg]) => [path.replace(/^.*\/|(-fill)?\.svg$/g, ''), svg]))
+  new Map(Object.entries(files).map(([path, svg]) => [path.replace(/^.*\/|(-fill|-bold)?\.svg$/g, ''), svg]))
 const regular = byName(REGULAR)
 const fill = byName(FILL)
+const bold = byName(BOLD)
+for (const [name, own] of Object.entries(OWN)) {
+  regular.set(name, own.regular)
+  fill.set(name, own.fill)
+}
 
 // Every name that can be written after `ph:`.
 export const PHOSPHOR_ICONS = [...regular.keys()].sort()
@@ -23,6 +52,7 @@ export const PHOSPHOR_ICONS = [...regular.keys()].sort()
 export function phosphor(name: string, on: boolean) {
   // A name that asks for a weight itself keeps it whatever the state.
   if (name.endsWith('-fill')) return fill.get(name.slice(0, -5))
+  if (name.endsWith('-bold')) return bold.get(name.slice(0, -5))
   return (on ? fill : regular).get(name)
 }
 
@@ -116,7 +146,7 @@ export function defaultIcon(entityId: string | undefined, deviceClass?: unknown,
       if (deviceClass === 'door' || deviceClass === 'gate') return 'ph:door'
       return 'ph:rows'
     case 'vacuum':
-      return 'ph:robot'
+      return 'ph:robot-vacuum'
     case 'select':
     case 'input_select':
       return 'ph:list-bullets'

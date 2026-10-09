@@ -33,7 +33,7 @@ export type GridOptions = { columns?: number | 'full'; rows?: number | 'auto' }
 
 const FONTS_ID = 'fp-tiles-fonts'
 const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Inter+Tight:wght@500..800&display=swap'
+  'https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Inter+Tight:wght@500..800&display=swap'
 
 // Like the card's own fonts, these must be in the document to apply.
 function injectFonts() {

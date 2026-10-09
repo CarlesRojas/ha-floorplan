@@ -140,7 +140,7 @@ Everything that moves is eased rather than switched. Home Assistant reports a co
 | Media                | TV, wall TV, soundbar, speaker, floor speaker, monitor, game console, PC tower, laptop, wireless charger (phone, watch, earbuds or tablet), projector, portable projector, ultra short throw projector, projector screen    |
 | Climate              | Radiator, air conditioner (split unit or duct grille), ceiling fan, floor fan (pedestal or disc), air purifier, humidifier, thermostat, fireplace (linear or wood stove)                                                    |
 | Windows and doors    | Blind (venetian or roller shutter), window (casement, box sash, sliding or steel grid), door (flush, panelled or glazed), sliding door (solid or glass), garage door (sectional or roller), awning (folding arm or pergola) |
-| Security and sensors | Camera, doorbell, motion sensor, smoke detector, alarm panel, smart lock, air quality sensor                                                                                                                                |
+| Security and sensors | Camera, doorbell, motion sensor, smoke detector, leak sensor, alarm panel, smart lock, air quality sensor                                                                                                                   |
 | Smart home           | Robot vacuum, pet feeder (food or water fountain), litter box (a self cleaning globe or a hand rolled wooden moon), water heater (combi boiler or tank)                                                                     |
 | Garden and outdoor   | Hot tub (square spa or barrel), pool (decked or frame), sprinkler (pop up rotor, oscillating bar or drip line), louvred pergola (sliding slats or turning cedar blades), sauna (barrel or cabin)                            |
 
@@ -194,7 +194,7 @@ A bound device drives what the item does in 3D, when its signals match:
 - Desks rise to standing height, taking everything on them along.
 - Fireplaces and stoves burn inside their firebox behind clear glass, a Christmas tree runs warm white fairy lights through patterns of steady, blinking, rolling and alternating, a pet feeder drops kibble into its bowl, a fountain spouts water up from its dome, and a water heater lights its flame or display.
 - Hot tubs light up, bubble and steam, pools light their water and ripple out in round rings from several spots, sprinklers throw a sweeping arc or slow drops from each drip emitter, a louvred pergola opens by the cover's position, the slat roof sliding its slats to the back and the cedar one turning its blades, and a sauna lights its stove and lets off vapor.
-- Thermostats, alarm panels and air quality sensors light their display. A smart lock turns its knob upright when locked, a motion sensor's white dome turns teal when it sees someone, a smoke detector blinks red and throws that red on the floor and furniture around it when it raises the alarm, and a camera lights its LED.
+- Thermostats, alarm panels and air quality sensors light their display. A smart lock turns its knob upright when locked, a motion sensor's white dome turns teal when it sees someone, a smoke detector blinks red and throws that red on the floor and furniture around it when it raises the alarm, a leak sensor glows blue and a puddle spreads round it when it gets wet, and a camera lights its LED.
 
 Only entities that drive at least one of the things an item can show are on offer for it, so an item is never bound to something it cannot express.
 

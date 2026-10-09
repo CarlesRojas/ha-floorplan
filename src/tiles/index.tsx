@@ -11,6 +11,7 @@ import Select, { type SelectConfig } from '#/tiles/cards/Select.tsx'
 import Title, { type TitleConfig } from '#/tiles/cards/Title.tsx'
 import Toggle from '#/tiles/cards/Toggle.tsx'
 import Vacuum, { type VacuumConfig } from '#/tiles/cards/Vacuum.tsx'
+import Weather from '#/tiles/cards/Weather.tsx'
 import type { HomeAssistant } from '#/types.ts'
 import type { ReactNode } from 'react'
 
@@ -35,6 +36,7 @@ const CAMERA_DOMAINS = ['camera']
 const CLIMATE_DOMAINS = ['climate', 'water_heater']
 const MEDIA_DOMAINS = ['media_player']
 const LOCK_DOMAINS = ['lock']
+const WEATHER_DOMAINS = ['weather']
 
 type EntityView<C extends TileConfig> = (props: {
   env: { hass: HomeAssistant; host: HTMLElement; entityId?: string }
@@ -101,6 +103,16 @@ class CameraCard extends entityCard<CameraConfig>(CAMERA_DOMAINS, Camera, ['came
   }
 }
 
+class WeatherCard extends entityCard(WEATHER_DOMAINS, Weather) {
+  getCardSize() {
+    return 4
+  }
+
+  getGridOptions(): GridOptions {
+    return { columns: 'full', rows: 4 }
+  }
+}
+
 const CARDS: { type: string; element: CustomElementConstructor; name: string; description: string }[] = [
   {
     type: 'fp-title',
@@ -156,6 +168,12 @@ const CARDS: { type: string; element: CustomElementConstructor; name: string; de
     element: entityCard('any', Entity),
     name: 'Floorplan Entity',
     description: 'Any entity, like a sensor, with its state',
+  },
+  {
+    type: 'fp-weather',
+    element: WeatherCard,
+    name: 'Floorplan Weather',
+    description: 'The weather now and the next hours',
   },
   { type: 'fp-camera', element: CameraCard, name: 'Floorplan Camera', description: 'Camera picture tile' },
 ]

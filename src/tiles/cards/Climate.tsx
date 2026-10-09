@@ -65,8 +65,8 @@ export default function Climate({ env, config }: Props) {
       controls={
         target !== null && (
           <>
-            <Control icon="ph:minus" label="Lower the temperature" onPress={nudge(-1)} />
-            <Control icon="ph:plus" label="Raise the temperature" onPress={nudge(1)} />
+            <Control icon="ph:minus-bold" label="Lower the temperature" onPress={nudge(-1)} />
+            <Control icon="ph:plus-bold" label="Raise the temperature" onPress={nudge(1)} />
           </>
         )
       }

@@ -48,6 +48,10 @@ export type HomeAssistant = {
   // with their units. Missing on very old versions.
   formatEntityState?: (entity: EntityState, state?: string) => string
   formatEntityAttributeValue?: (entity: EntityState, attribute: string, value?: unknown) => string
+  // The websocket, for what is only sent to those who ask, like a forecast.
+  connection?: {
+    subscribeMessage: <T>(callback: (message: T) => void, message: Record<string, unknown>) => Promise<() => void>
+  }
 }
 
 // Plan coordinates in meters. x grows to the right, y grows upward on the plan.
