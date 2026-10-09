@@ -57,21 +57,21 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
 
   return (
     <div className="font-montserrat flex flex-col gap-8 px-6 py-8 text-(--primary-text-color)">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <p className="max-w-sm text-sm text-(--secondary-text-color)">
-          Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for.
-        </p>
+      <Section
+        title="Floorplan"
+        description="Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for."
+      >
         <button
           type="button"
           onClick={onOpen}
           disabled={opening}
           aria-busy={opening}
-          className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
+          className="flex h-10 cursor-pointer items-center gap-2 self-start rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
         >
           <FontAwesomeIcon icon={opening ? faSpinner : faPenRuler} spin={opening} className="size-3.5" />
           {opening ? 'Opening…' : 'Open editor'}
         </button>
-      </div>
+      </Section>
 
       <Section
         title="Side panel"
