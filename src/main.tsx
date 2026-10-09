@@ -4,6 +4,7 @@ import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
 import { registerTiles } from '#/tiles/index.tsx'
+import { inPanelView } from '#/lib/panelView.ts'
 import WithSidePanel from '#/tiles/WithSidePanel.tsx'
 import type { CardConfig } from '#/types.ts'
 
@@ -180,7 +181,7 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
 
   protected view() {
     if (this._config!.side_panel) return <WithSidePanel hass={this._hass} config={this._config!} />
-    return <Card hass={this._hass} config={this._config!} />
+    return <Card hass={this._hass} config={this._config!} panel={inPanelView(this)} />
   }
 }
 

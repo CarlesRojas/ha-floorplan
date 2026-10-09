@@ -581,7 +581,7 @@ decorations:
   - id: bed
     kind: bed_double
     room: bedroom
-    position: [6, 4.37]
+    position: [6, 4.25]
     variant: upholstered
   - id: nightstand_a
     kind: side_table

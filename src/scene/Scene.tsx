@@ -33,9 +33,9 @@ type Props = {
   config: CardConfig
   // The editor can hold the room at day or at night to see how it looks.
   sky?: SkyMode
-  // Whether the wheel zooms the view. Off in the card, where it scrolls
-  // the dashboard past it, and so does a finger dragged up or down. On in
-  // the editor's preview.
+  // Whether the wheel zooms the view and a finger dragged up or down turns
+  // it. Off in a card on a dashboard that scrolls, where both scroll past
+  // it. On in a panel view and in the editor's preview.
   wheelZoom?: boolean
   // In the editor, a press in 3D also picks what it landed on, so the plan
   // and the sidebar follow the view.

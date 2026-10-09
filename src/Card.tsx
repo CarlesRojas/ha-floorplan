@@ -11,6 +11,9 @@ import { useRef, useState, type CSSProperties } from 'react'
 type Props = {
   hass: HomeAssistant | null
   config: CardConfig
+  // In a panel view the card has the screen to itself and nothing to
+  // scroll, so the wheel and a finger dragged up or down move the view.
+  panel?: boolean
 }
 
 // Whether the camera stands in a view, give or take the rounding a view is
@@ -20,7 +23,7 @@ const sameView = (a: CameraView, b: CameraView) =>
   a.position.every((v, i) => Math.abs(v - b.position[i]) <= VIEW_TOLERANCE_M) &&
   a.target.every((v, i) => Math.abs(v - b.target[i]) <= VIEW_TOLERANCE_M)
 
-export default function Card({ hass, config }: Props) {
+export default function Card({ hass, config, panel = false }: Props) {
   const hasRooms = (config.rooms?.length ?? 0) > 0
   // Hidden under the fullscreen editor, so it holds its last frame.
   const paused = useEditorOpen()
@@ -123,6 +126,7 @@ export default function Card({ hass, config }: Props) {
                   }}
                   focus={focused}
                   roomFirst={roomFirst}
+                  wheelZoom={panel}
                 />
               </div>
             </>

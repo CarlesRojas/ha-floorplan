@@ -1,3 +1,4 @@
+import { closest, inPanelView } from '#/lib/panelView.ts'
 import { onRoomFilter, roomFilter } from '#/lib/roomFilter.ts'
 import { autoGroups } from '#/tiles/auto.ts'
 import type { CardConfig as PlanConfig, HomeAssistant } from '#/types.ts'
@@ -17,21 +18,6 @@ export const SIDE_PANEL = 'fp-side-panel'
 const STACK_PX = 900
 
 type HuiCard = HTMLElement & { config: CardConfig; hass: HomeAssistant; preview: boolean; load: () => void }
-
-// The nearest ancestor with the given tag, looking up through the shadow
-// roots on the way.
-function closest(element: HTMLElement, tag: string) {
-  let node: Node | null = element
-  while (node) {
-    if (node instanceof HTMLElement && node.localName === tag) return node
-    node = node instanceof ShadowRoot ? node.host : node.parentNode
-  }
-  return null
-}
-
-// Whether the element sits in a panel view, which gives its one card the
-// whole screen.
-const inPanelView = (element: HTMLElement) => !!closest(element, 'hui-panel-view')
 
 const ROW_PX = 56
 const GAP_PX = 10

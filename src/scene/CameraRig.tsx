@@ -28,7 +28,8 @@ export type CameraHandle = {
 type Props = {
   rooms: RoomConfig[]
   decorations: DecorationConfig[]
-  // Whether the wheel zooms. In the card it scrolls the page instead.
+  // Whether the wheel zooms. In a card on a dashboard that scrolls it
+  // scrolls the page instead.
   wheelZoom?: boolean
   // The angle to open with, closer in when the whole plan fits. Without one
   // the camera frames the plan from the standard side.
@@ -478,7 +479,8 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     }
   }, [controls, canvas])
 
-  // The wheel scrolls the page, as it does everywhere else on a dashboard.
+  // Unless the view has nothing to scroll, the wheel scrolls the page, as
+  // it does everywhere else on a dashboard.
   // The controls would zoom on it, which caught anyone scrolling past the
   // card, so the event is stopped before it reaches them and left to the
   // browser. Zoom by mouse is the middle button dragged.

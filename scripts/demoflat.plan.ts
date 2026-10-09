@@ -122,7 +122,7 @@ item('smoke', 'smoke_detector', 'living', [3.2, 4.6])
 // wardrobe and a window on the right wall, a dresser on the left wall, and
 // the door from the living room.
 item('half_wall', 'half_wall', 'bedroom', [6.0, 5.5], { params: { width: 3.6, depth: 0.2, height: 1 } })
-item('bed', 'bed_double', 'bedroom', [6.0, 4.37], { variant: 'upholstered' })
+item('bed', 'bed_double', 'bedroom', [6.0, 4.25], { variant: 'upholstered' })
 item('nightstand_a', 'side_table', 'bedroom', [4.95, 5.17], { variant: 'nightstand' })
 item('nightstand_b', 'side_table', 'bedroom', [7.05, 5.17], { variant: 'nightstand' })
 item('bedside_a', 'light_table', 'bedroom', [4.95, 5.17], { variant: 'cestita', on: 'nightstand_a' })
