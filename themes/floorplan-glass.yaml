@@ -17,7 +17,7 @@ Floorplan Glass:
       lovelace-background: 'fixed center / cover no-repeat linear-gradient(160deg, #3a3f4f 0%, #1d2029 45%, #0d0e13 100%)'
 
       # Tiles.
-      fp-tile-radius: 24px
+      fp-tile-radius: 30px
       fp-tile-gap: 10px
       fp-tile-padding: 18px
       fp-tile-bg-active: 'rgba(255, 255, 255, 0.94)'
@@ -58,7 +58,7 @@ Floorplan Glass:
       secondary-background-color: '#1c1c1e'
       card-background-color: 'rgba(28, 28, 30, 0.92)'
       ha-card-background: 'rgba(118, 118, 128, 0.24)'
-      ha-card-border-radius: 24px
+      ha-card-border-radius: 30px
       ha-card-border-width: 0px
       ha-card-box-shadow: none
       app-header-background-color: transparent

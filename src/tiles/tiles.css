@@ -7,7 +7,7 @@
 :host {
   display: block;
   height: 100%;
-  --_radius: var(--fp-tile-radius, 24px);
+  --_radius: var(--fp-tile-radius, 30px);
   --_padding: var(--fp-tile-padding, 18px);
   --_bg-active: var(--fp-tile-bg-active, rgba(255, 255, 255, 0.94));
   --_bg-inactive: var(--fp-tile-bg-inactive, rgba(118, 118, 128, 0.24));

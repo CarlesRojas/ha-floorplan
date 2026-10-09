@@ -179,7 +179,7 @@ The tiles look finished without it, and change with any theme that sets these:
 
 | Token                         | Default                    | What it changes                                             |
 | ----------------------------- | -------------------------- | ----------------------------------------------------------- |
-| `fp-tile-radius`              | `24px`                     | The corner radius                                           |
+| `fp-tile-radius`              | `30px`                     | The corner radius                                           |
 | `fp-tile-padding`             | `18px`                     | The space inside a tile                                     |
 | `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                  |
 | `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on                         |
