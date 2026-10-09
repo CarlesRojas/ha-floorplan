@@ -805,9 +805,9 @@ export function Draft({
   width,
   reach = 0.4,
   drop = 0.45,
-  size = 0.016,
+  size = 0.022,
   count = 120,
-  strength = 0.45,
+  strength = 0.6,
   speed = 0.22,
   color = '#e6eef4',
 }: {

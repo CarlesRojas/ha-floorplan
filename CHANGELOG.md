@@ -24,7 +24,8 @@ moves that section under the new version and uses it as the release notes.
 ### Changed
 
 - A click on a piece bound to something it cannot switch, like a camera or a thermostat, opens its dialog, where it used to do nothing.
-- The air out of an air conditioner is a haze of many fine, dark specks with only a hint of blue when cooling or red when heating, which blends into the room, where it used to be bright blue or orange puffs.
+- The air out of an air conditioner is a haze of many fine, soft specks that leave from its outlet, blue when cooling and red when heating, which blends into the room, where it used to be bright blue or orange puffs.
+- A towel rail has an Off the floor setting for how high it hangs, and by default hangs half a meter higher than before.
 - In a panel view, where there is nothing to scroll, the mouse wheel zooms the floorplan and a finger dragged up or down turns it.
 - The view the card opens with always shows the whole home, whatever the card's shape: on a square or tall card the camera backs off along the saved angle until everything fits, and can still be zoomed and turned from there. On a card narrower than 600 px, as on a phone, the home is centered and fills the card with only a thin margin.
 - A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.

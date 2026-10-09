@@ -1559,7 +1559,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'bathroom',
     'Towel rail',
     'wall',
-    [width(0.6, 0.3, 1), height(1.2, 0.6, 1.8)],
+    [width(0.6, 0.3, 1), height(1.05, 0.4, 1.7), p('sill', 'Off the floor', 0.65, 0, 1.2)],
     { rail: SCANDI.slate, towel: SCANDI.linen },
     { rail: 'metal', towel: 'fabric' },
     TOGGLE,
@@ -2759,6 +2759,9 @@ export function mountHeight(kind: DecorationKind, params: Record<string, number>
   if (kind.mount !== 'wall') return 0
   if (FLOOR_STANDING.has(kind.id)) return 0
   if (kind.id === 'window') return paramValue(kind, params, 'sill')
+  // A towel rail hangs by its top, its own height above how far off the
+  // floor it starts.
+  if (kind.id === 'towel_rail') return paramValue(kind, params, 'sill') + paramValue(kind, params, 'height')
   return paramValue(kind, params, 'height')
 }
 

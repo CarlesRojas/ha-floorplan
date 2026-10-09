@@ -422,7 +422,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // by what the device says it is doing, and plain when it only moves
       // the air.
       const mode = state?.text ?? ''
-      const air = /heat/.test(mode) ? '#7a4538' : /cool/.test(mode) ? '#3b5a82' : '#626b75'
+      const air = /heat/.test(mode) ? '#b4503a' : /cool/.test(mode) ? '#4a6d9e' : '#6b7480'
       if (style === 'duct') {
         // A grille let into the wall, a frame round a dark slot of blades
         // angled down, with the air coming out through them.
@@ -501,8 +501,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <meshStandardMaterial color={c('display')} emissive="#7fb3e8" emissiveIntensity={0.8 * lit} />
           </mesh>
           <Led on={on} position={[w * 0.31, h * 0.42, d + 0.004]} color="#7fb3e8" radius={Math.min(0.008, h * 0.03)} />
-          {/* The draft out of the flap, cool air sinking forward along it. */}
-          <Draft on={on} position={[0, h * 0.08, d]} width={w * 0.75} color={air} />
+          {/* The draft out of the outlet, from inside it over the flap and
+              sinking forward. */}
+          <Draft on={on} position={[0, h * 0.15, d * 0.9]} width={w - 0.12} color={air} />
         </group>
       )
     }
