@@ -37,17 +37,20 @@ export function onRoomFilter(listener: (filter: RoomFilter) => void) {
 const warned = new Set<string>()
 
 // Tells the tiles which room is in view, and clears the filter when the
-// card goes away. A room with no area set filters nothing, since no tile
-// could be matched to it.
+// card goes away. A room with no area set still counts as a room in view,
+// but only tiles that wait for their own room hide for it, since no other
+// tile could be matched to it.
 export function useRoomFilter(room: { id: string; area_id?: string } | undefined) {
   const id = room?.id ?? null
   const area = room?.area_id ?? null
   useEffect(() => {
     if (id && !area && !warned.has(id)) {
       warned.add(id)
-      console.warn(`Floorplan 3D: room ${id} has no area_id, so the tiles show everything while it is in view`)
+      console.warn(
+        `Floorplan 3D: room ${id} has no area_id, so it hides only the tiles set to room_filter room or home`,
+      )
     }
-    setRoomFilter(id && area ? { area_id: area, room_id: id } : null)
+    setRoomFilter(id ? { area_id: area, room_id: id } : null)
   }, [id, area])
   useEffect(() => () => setRoomFilter(null), [])
 }

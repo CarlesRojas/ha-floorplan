@@ -14,6 +14,8 @@ moves that section under the new version and uses it as the release notes.
 - Seven tile cards come with the floorplan card: a heading, and tiles for lights and switches, buttons and scenes, covers, vacuums, option lists and cameras. A tap does the obvious thing and a long press opens the entity's dialog.
 - When the floorplan card flies to a room, the Floorplan tiles of every other area hide and empty sections fold away, until the card goes back to the whole home.
 - A Floorplan Glass theme with a dark gradient background, and dialogs and cards to match the tiles.
+- A Floorplan Split card puts the floorplan on two thirds of the screen and its tiles on the rest, and stacks them on a phone.
+- A tile's `room_filter` can be `room`, to show only while its room is in view, or `home`, to show only while the whole home is.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
 
 ### Fixed

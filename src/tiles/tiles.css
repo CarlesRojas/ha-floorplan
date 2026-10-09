@@ -33,6 +33,12 @@
   --_press: var(--fp-tile-press-scale, 0.96);
 }
 
+/* Hidden by the room filter. Home Assistant hides the card around it too,
+   but a tile can sit where nothing does. */
+:host([hidden]) {
+  display: none;
+}
+
 /* On a light dashboard the translucent tile is light too, with dark text. */
 :host([data-light]) {
   --_bg-inactive: var(--fp-tile-bg-inactive, rgba(120, 120, 128, 0.16));

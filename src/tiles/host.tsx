@@ -19,8 +19,10 @@ export type TileConfig = {
   // The area the tile belongs to for the room filter, when its entity's
   // own is not the right one.
   area?: string
-  // What a tile with no area does while a room is in view.
-  room_filter?: 'hide' | 'show'
+  // How the tile follows the room in view. hide and show are what a tile
+  // with no area does while a room is in view. room shows the tile only
+  // while its own room is in view, home only while the whole home is.
+  room_filter?: 'hide' | 'show' | 'room' | 'home'
   tap_action?: ActionConfig
   hold_action?: ActionConfig
   haptic?: boolean
@@ -104,6 +106,8 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
         throw new Error(`${config.entity} is not one of ${this.domains.map(d => `${d}.*`).join(', ')}`)
     }
     if (config.size && config.size !== 'small' && config.size !== 'wide') throw new Error('size must be small or wide')
+    if (config.room_filter && !['hide', 'show', 'room', 'home'].includes(config.room_filter))
+      throw new Error('room_filter must be hide, show, room or home')
     this._config = config
     this.applyFilter()
     this.render()
@@ -157,11 +161,17 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
   }
 
   private visible() {
+    if (!this._config || !this._hass || this._preview) return true
     const filter = roomFilter()
-    if (!filter?.area_id || !this._config || !this._hass || this._preview) return true
+    const mode = this._config.room_filter
+    if (mode === 'home') return !filter
+    if (mode === 'show') return true
+    if (!filter) return mode !== 'room'
+    // A room with no area matches no tile.
+    if (!filter.area_id) return mode !== 'room'
     const area = this.area()
     if (area) return area === filter.area_id
-    if (this._config.room_filter === 'show') return true
+    if (mode === 'room') return false
     const { type, entity, name, title } = this._config as C & { title?: string }
     noteMissingArea(entity ?? `${type} ${name ?? title ?? ''}`.trim())
     return false

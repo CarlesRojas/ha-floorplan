@@ -6,6 +6,7 @@ import Select, { type SelectConfig } from '#/tiles/cards/Select.tsx'
 import Title, { type TitleConfig } from '#/tiles/cards/Title.tsx'
 import Toggle from '#/tiles/cards/Toggle.tsx'
 import Vacuum, { type VacuumConfig } from '#/tiles/cards/Vacuum.tsx'
+import { SplitCard } from '#/tiles/split.ts'
 import type { HomeAssistant } from '#/types.ts'
 import type { ReactNode } from 'react'
 
@@ -108,6 +109,12 @@ const CARDS: { type: string; element: CustomElementConstructor; name: string; de
     description: 'Option tile with a menu',
   },
   { type: 'fp-camera', element: CameraCard, name: 'Floorplan Camera', description: 'Camera picture tile' },
+  {
+    type: 'fp-split',
+    element: SplitCard,
+    name: 'Floorplan Split',
+    description: 'The floorplan on two thirds of the view and its tiles on the rest',
+  },
 ]
 
 export function registerTiles() {

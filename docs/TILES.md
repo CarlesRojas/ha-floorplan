@@ -1,6 +1,6 @@
 # Floorplan tiles
 
-Floorplan 3D comes with seven small tiles, to sit around the 3D model on the same dashboard. They are in the same `card.js`, so there is nothing more to install. They are made for a sections view.
+Floorplan 3D comes with seven small tiles, to sit around the 3D model on the same dashboard, and a layout card to put them beside it. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, or for the side of `fp-split` in a panel view.
 
 | Card        | Takes                                               | A tap                                                      |
 | ----------- | --------------------------------------------------- | ---------------------------------------------------------- |
@@ -37,7 +37,7 @@ size: small
 | `state_text`   |                     | Replaces the line under the name                                                                     |
 | `size`         | `small`             | `small` is a quarter of a section's width, `wide` is half of it                                      |
 | `area`         | the entity's area   | The area the tile belongs to for the room filter, as its id or its name                              |
-| `room_filter`  | `hide`              | What a tile with no area does while a room is in view: `hide` or `show`                              |
+| `room_filter`  | `hide`              | How the tile follows the room in view, see [Room filtering](#room-filtering)                         |
 | `tap_action`   |                     | Replaces what a tap does, in the format Home Assistant's own cards use                               |
 | `hold_action`  | `more-info`         | Replaces what a long press does                                                                      |
 | `haptic`       | `true`              | `false` turns off the short vibration the companion app gives on a tap                               |
@@ -95,6 +95,39 @@ A wide tile shows pause or start, stop, and back to the dock, each only when the
 | `camera_view`  | `auto`  | `auto` shows a still that refreshes, `live` streams                               |
 | `aspect_ratio` | `16:9`  | The picture's shape, as `width:height`. Ignored when `grid_options` sets the rows |
 
+`fp-split`
+
+A layout card for a panel view. Its `main` card takes the left two thirds of the screen and its `side` cards the right third, laid out on a grid of 12 columns like a section and centered top to bottom. A small tile takes 3 columns, a wide one 6, and a title or a camera all 12. When the screen is narrower than `breakpoint`, the side cards go under the main one, which takes the whole width. A floorplan card with no `aspect_ratio` is square on a phone.
+
+| Key          | Default                   | Description                                        |
+| ------------ | ------------------------- | -------------------------------------------------- |
+| `main`       |                           | The card on the left, usually the floorplan card   |
+| `side`       |                           | The cards on the right                             |
+| `empty_text` | `Nothing to control here` | Shown on the right while every side card is hidden |
+| `breakpoint` | `900`                     | The width in pixels under which the two stack      |
+
+```yaml
+type: panel
+cards:
+  - type: custom:fp-split
+    main:
+      type: custom:floorplan-3d
+      rooms: []
+    side:
+      - type: custom:fp-title
+        title: Ambience
+        room_filter: home
+      - type: custom:fp-toggle
+        entity: switch.all_lights
+        room_filter: home
+      - type: custom:fp-title
+        area: kitchen
+        room_filter: room
+      - type: custom:fp-toggle
+        entity: light.kitchen
+        room_filter: room
+```
+
 ## Icons
 
 `ph:` icons come from [Phosphor](https://phosphoricons.com) and are built into the card, so they show offline. A tile that is on shows the filled weight of its icon and one that is off shows the regular one. Add `-fill` to a name, as in `ph:heart-fill`, to always show it filled.
@@ -110,6 +143,17 @@ A name not in the list shows a question mark and logs a warning in the browser c
 When a Floorplan 3D card on the dashboard flies to a room, every tile that belongs to another area hides, and a section left with nothing showing folds away. Going back to the whole home brings them all back. The room needs an area: set it in the editor, or as `area_id` on the room in the card's YAML.
 
 A tile's area is its `area` option when it has one, else its entity's area, else the area of the entity's device. A tile with no area at all hides while a room is in view, and the browser console lists every such tile once. Give it an `area`, or `room_filter: show` to keep it in every room. A title with an `area` hides along with its tiles.
+
+`room_filter` takes one of these:
+
+| Value  | The whole home | A room in view                                   |
+| ------ | -------------- | ------------------------------------------------ |
+| `hide` | shown          | shown in its own room. A tile with no area hides |
+| `show` | shown          | shown                                            |
+| `room` | hidden         | shown in its own room only                       |
+| `home` | shown          | hidden                                           |
+
+`room` and `home` together make a panel that changes with the room: each room's tiles with `room`, and what is for the whole home with `home`. A room in the floorplan with no area hides the `room` and `home` tiles and leaves the rest as they are.
 
 While the dashboard is being edited, every tile shows whatever room is in view.
 
