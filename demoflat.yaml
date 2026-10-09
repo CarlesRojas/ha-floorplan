@@ -96,7 +96,7 @@ devices:
         8: b
   - entity_id: light.bedroom
     room: bedroom
-    position: [6, 3.6]
+    position: [6, 3.4]
     decorations:
       - 0: b
         1: e
@@ -113,7 +113,7 @@ devices:
         12: t
   - entity_id: light.bedside_left
     room: bedroom
-    position: [4.95, 5.35]
+    position: [4.95, 5.17]
     decorations:
       - 0: b
         1: e
@@ -126,7 +126,7 @@ devices:
         8: a
   - entity_id: light.bedside_right
     room: bedroom
-    position: [7.05, 5.35]
+    position: [7.05, 5.17]
     decorations:
       - 0: b
         1: e
@@ -270,7 +270,7 @@ devices:
         5: e
   - entity_id: fan.ceiling_fan
     room: bedroom
-    position: [6, 4.6]
+    position: [6, 4.4]
     decorations:
       - 0: c
         1: e
@@ -283,6 +283,35 @@ devices:
         8: f
         9: a
         10: n
+  - entity_id: cover.projector_screen
+    room: bedroom
+    position: [6, 2.26]
+    decorations:
+      - 0: p
+        1: r
+        2: o
+        3: j
+        4: e
+        5: c
+        6: t
+        7: o
+        8: r
+        9: "_"
+        10: s
+        11: c
+        12: r
+        13: e
+        14: e
+        15: n
+      - 0: p
+        1: r
+        2: o
+        3: j
+        4: e
+        5: c
+        6: t
+        7: o
+        8: r
   - entity_id: lock.front_door
     room: living
     position: [3.15, 0]
@@ -323,7 +352,7 @@ devices:
         5: m
   - entity_id: binary_sensor.bedroom_motion
     room: bedroom
-    position: [6, 2.2]
+    position: [4.4, 2.2]
     decorations:
       - 0: m
         1: o
@@ -541,37 +570,58 @@ decorations:
     kind: smoke_detector
     room: living
     position: [3.2, 4.6]
+  - id: half_wall
+    kind: half_wall
+    room: bedroom
+    position: [6, 5.5]
+    params:
+      width: 3.6
+      depth: 0.2
+      height: 1
   - id: bed
     kind: bed_double
     room: bedroom
-    position: [6, 4.58]
+    position: [6, 4.37]
     variant: upholstered
   - id: nightstand_a
     kind: side_table
     room: bedroom
-    position: [4.95, 5.35]
+    position: [4.95, 5.17]
     variant: nightstand
   - id: nightstand_b
     kind: side_table
     room: bedroom
-    position: [7.05, 5.35]
+    position: [7.05, 5.17]
     variant: nightstand
   - id: bedside_a
     kind: light_table
     room: bedroom
-    position: [4.95, 5.35]
+    position: [4.95, 5.17]
     variant: cestita
     on: nightstand_a
   - id: bedside_b
     kind: light_table
     room: bedroom
-    position: [7.05, 5.35]
+    position: [7.05, 5.17]
     variant: cestita
     on: nightstand_b
+  - id: projector
+    kind: projector_portable
+    room: bedroom
+    position: [6, 5.5]
+    on: half_wall
+    params:
+      throw: 3.2
+  - id: projector_screen
+    kind: projector_screen
+    room: bedroom
+    position: [6, 2.26]
+    params:
+      inches: 115
   - id: ceiling_fan
     kind: fan_ceiling
     room: bedroom
-    position: [6, 4.6]
+    position: [6, 4.4]
     variant: classic
   - id: bedroom_rug
     kind: rug
@@ -581,13 +631,15 @@ decorations:
   - id: bedroom_light
     kind: light_ceiling
     room: bedroom
-    position: [6, 3.6]
+    position: [6, 3.4]
   - id: wardrobe
     kind: wardrobe
     room: bedroom
-    position: [7.8, 3]
+    position: [7.575, 3]
     rotation: 270
     variant: hinged
+    params:
+      depth: 0.45
     colors:
       cabinet: "#dcc3a0"
   - id: bedroom_window
@@ -602,7 +654,7 @@ decorations:
   - id: dresser
     kind: dresser
     room: bedroom
-    position: [4.2, 3]
+    position: [4.425, 3]
     rotation: 90
     variant: oak
   - id: dresser_plant
@@ -620,7 +672,7 @@ decorations:
   - id: motion
     kind: motion_sensor
     room: bedroom
-    position: [6, 2.2]
+    position: [4.4, 2.2]
     rotation: 180
   - id: shower
     kind: shower

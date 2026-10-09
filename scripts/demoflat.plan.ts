@@ -2,6 +2,7 @@
 // kitchen in one room, a bedroom and a bathroom. scripts/demoflat.ts writes
 // it to demoflat.yaml and the dev page at src/dev/demoflat.html draws it
 // with made up devices, for the screenshots in the README.
+import { decorationKind, paramValue } from '#/decoration/catalog.ts'
 import { snapToWall } from '#/editor/walls.ts'
 import type {
   Area,
@@ -47,9 +48,19 @@ function item(id: string, kind: string, room: string, position: Point, extra: Ex
 }
 
 // A piece on a wall: snapped to the room's nearest wall, facing into the room.
+// One that stands on the floor is placed by its middle, so it moves into the
+// room by half its depth to stand with its back to the wall.
 function wall(id: string, kind: string, room: string, near: Point, extra: Extra = {}) {
   const snapped = snapToWall(near, POINTS[room])
-  decorations.push({ id, kind, room, position: snapped.point, rotation: snapped.rotation, ...extra })
+  const spec = decorationKind(kind)!
+  let position = snapped.point
+  if (spec.mount === 'floor') {
+    const half = paramValue(spec, extra.params, 'depth', extra.variant) / 2
+    const angle = (snapped.rotation * Math.PI) / 180
+    const round = (n: number) => Math.round(n * 1000) / 1000
+    position = [round(position[0] + Math.sin(angle) * half), round(position[1] - Math.cos(angle) * half)]
+  }
+  decorations.push({ id, kind, room, position, rotation: snapped.rotation, ...extra })
   return id
 }
 
@@ -105,23 +116,32 @@ item('pendant_a', 'light_pendant', 'living', [1.65, 4.1], { variant: 'globo_cest
 item('pendant_b', 'light_pendant', 'living', [2.55, 4.1], { variant: 'globo_cestita' })
 item('smoke', 'smoke_detector', 'living', [3.2, 4.6])
 
-// Bedroom: the bed against the top wall with a lamp on each nightstand and
-// a fan above it, a wardrobe and a window on the right wall, a dresser on
-// the left wall, and the door from the living room.
-item('bed', 'bed_double', 'bedroom', [6.0, 4.58], { variant: 'upholstered' })
-item('nightstand_a', 'side_table', 'bedroom', [4.95, 5.35], { variant: 'nightstand' })
-item('nightstand_b', 'side_table', 'bedroom', [7.05, 5.35], { variant: 'nightstand' })
-item('bedside_a', 'light_table', 'bedroom', [4.95, 5.35], { variant: 'cestita', on: 'nightstand_a' })
-item('bedside_b', 'light_table', 'bedroom', [7.05, 5.35], { variant: 'cestita', on: 'nightstand_b' })
-item('ceiling_fan', 'fan_ceiling', 'bedroom', [6.0, 4.6], { variant: 'classic' })
+// Bedroom: a half wall across the top of the room with the bed against it,
+// a lamp on each nightstand, a fan above and a portable projector on the
+// half wall throwing its picture on a screen over the bottom wall. A slim
+// wardrobe and a window on the right wall, a dresser on the left wall, and
+// the door from the living room.
+item('half_wall', 'half_wall', 'bedroom', [6.0, 5.5], { params: { width: 3.6, depth: 0.2, height: 1 } })
+item('bed', 'bed_double', 'bedroom', [6.0, 4.37], { variant: 'upholstered' })
+item('nightstand_a', 'side_table', 'bedroom', [4.95, 5.17], { variant: 'nightstand' })
+item('nightstand_b', 'side_table', 'bedroom', [7.05, 5.17], { variant: 'nightstand' })
+item('bedside_a', 'light_table', 'bedroom', [4.95, 5.17], { variant: 'cestita', on: 'nightstand_a' })
+item('bedside_b', 'light_table', 'bedroom', [7.05, 5.17], { variant: 'cestita', on: 'nightstand_b' })
+item('projector', 'projector_portable', 'bedroom', [6.0, 5.5], { on: 'half_wall', params: { throw: 3.2 } })
+item('projector_screen', 'projector_screen', 'bedroom', [6.0, 2.26], { params: { inches: 115 } })
+item('ceiling_fan', 'fan_ceiling', 'bedroom', [6.0, 4.4], { variant: 'classic' })
 item('bedroom_rug', 'rug', 'bedroom', [6.0, 3.1], { variant: 'round' })
-item('bedroom_light', 'light_ceiling', 'bedroom', [6.0, 3.6])
-wall('wardrobe', 'wardrobe', 'bedroom', [7.8, 3.0], { variant: 'hinged', colors: { cabinet: '#dcc3a0' } })
+item('bedroom_light', 'light_ceiling', 'bedroom', [6.0, 3.4])
+wall('wardrobe', 'wardrobe', 'bedroom', [7.8, 3.0], {
+  variant: 'hinged',
+  params: { depth: 0.45 },
+  colors: { cabinet: '#dcc3a0' },
+})
 wall('bedroom_window', 'window', 'bedroom', [7.8, 4.5], { variant: 'casement', params: { height: 1.4, sill: 0.7 } })
 wall('dresser', 'dresser', 'bedroom', [4.2, 3.0], { variant: 'oak' })
 item('dresser_plant', 'plant_small', 'bedroom', [4.45, 3.3], { variant: 'pothos', on: 'dresser' })
 wall('bedroom_door', 'door', 'bedroom', [4.2, 4.4], { variant: 'flush' })
-wall('motion', 'motion_sensor', 'bedroom', [6.0, 2.2])
+wall('motion', 'motion_sensor', 'bedroom', [4.4, 2.2])
 
 // Bathroom: a walk-in shower in the far right corner, a wide vanity under a
 // square mirror on the top wall, the toilet on the near wall, a towel rail
@@ -158,6 +178,8 @@ device('switch.towel_rail', 'towel_rail')
 device('switch.coffee_machine', 'coffee_machine')
 device('switch.kettle', 'kettle')
 device('fan.ceiling_fan', 'ceiling_fan')
+// The screen comes down and the projector turns on with it.
+device('cover.projector_screen', 'projector_screen', 'projector')
 device('lock.front_door', 'front_lock')
 device('binary_sensor.front_door', 'front_door')
 device('vacuum.robot', 'vacuum')
@@ -217,6 +239,7 @@ const NAMES: Record<string, string> = {
   'switch.coffee_machine': 'Coffee machine',
   'switch.kettle': 'Kettle',
   'fan.ceiling_fan': 'Ceiling fan',
+  'cover.projector_screen': 'Projector screen',
   'lock.front_door': 'Front door lock',
   'binary_sensor.front_door': 'Front door',
   'vacuum.robot': 'Robot vacuum',
