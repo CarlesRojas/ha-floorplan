@@ -23,6 +23,11 @@ export const CAMERA_FOV_DEG = 40
 export const CAMERA_DIRECTION: [number, number, number] = [0.6, 0.9, 0.8]
 // Extra room around the flat when fitting it to the viewport, as a factor.
 export const CAMERA_FIT_MARGIN = 1.1
+// The same on a card narrower than 600 px, as on a phone, where every
+// pixel counts and the margin looked like wasted space.
+export const CAMERA_FIT_MARGIN_NARROW = 1.03
+// Below this width a card counts as narrow, as on a phone.
+export const NARROW_CARD_PX = 600
 export const CAMERA_MIN_DISTANCE_M = 2
 export const CAMERA_MAX_DISTANCE_M = 60
 export const CAMERA_MIN_POLAR_DEG = 6

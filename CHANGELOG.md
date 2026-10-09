@@ -11,11 +11,29 @@ moves that section under the new version and uses it as the release notes.
 
 ### Added
 
+- Twelve tile cards come with the floorplan card: a heading, and tiles for lights, switches and anything else on or off, buttons and scenes, covers, vacuums, option lists, cameras, thermostats, media players, locks, the weather with its forecast, and any other entity with its state. A tap does the obvious thing, a long press opens the entity's dialog, and each one can be set up in the visual card editor.
+- When the floorplan card flies to a room, the Floorplan tiles of every other area hide and empty sections fold away, until the card goes back to the whole home.
+- A Floorplan Glass theme with a dark gradient background, and dialogs and cards to match the tiles.
+- The floorplan card can show a side panel of tiles, switched on in its editor in any kind of view: the floorplan takes two thirds of the card and a tile for each device on the plan fills the rest, room by room, and on a phone the tiles go under a square floorplan. Scenes, sensors, thermostats and other entities with no piece on the plan can be added to a room's tiles from the same editor. Each room's tiles can be put in order by dragging them in the editor.
+- The tile icons can be picked as `ph:` icons in Home Assistant's icon picker and used on any card.
+- The floorplan card's `aspect_ratio` can be `fill`, to take the whole height of what holds it.
+- A tile's `room_filter` can be `room`, to show only while its room is in view, or `home`, to show only while the whole home is.
+- A leak sensor to put on the floor: it glows blue and a puddle spreads round it when it gets wet.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
+
+### Changed
+
+- A click on a piece bound to something it cannot switch, like a camera or a thermostat, opens its dialog, where it used to do nothing.
+- The air out of an air conditioner is a haze of many fine, soft specks that leave from its outlet, blue when cooling and red when heating, which blends into the room, where it used to be bright blue or orange puffs.
+- A towel rail has an Off the floor setting for how high it hangs, and by default hangs half a meter higher than before.
+- In a panel view, where there is nothing to scroll, the mouse wheel zooms the floorplan and a finger dragged up or down turns it.
+- The view the card opens with always shows the whole home, whatever the card's shape: on a square or tall card the camera backs off along the saved angle until everything fits, and can still be zoomed and turned from there. On a card narrower than 600 px, as on a phone, the home is centered and fills the card with only a thin margin.
+- A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.
 
 ### Fixed
 
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
+- A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.
 
 ## [1.2.5] - 2026-10-08
 

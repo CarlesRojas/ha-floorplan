@@ -138,7 +138,10 @@ export function ahead(scene: Scene, built: Set<string>): Ahead | null {
   const on = collect(scene, p.group, false, { point: [], area: [] })
   const { point, area } = p.level
   built.add(`${point}|${area}`)
-  const top = { point: all.point.length === 0 ? 0 : up(all.point.length, POINT_STEP) + p.budget, area: up(all.area.length, AREA_STEP) }
+  const top = {
+    point: all.point.length === 0 ? 0 : up(all.point.length, POINT_STEP) + p.budget,
+    area: up(all.area.length, AREA_STEP),
+  }
   const first = POINT_STEP + p.budget
   const tries: Counts[] = [
     { point: point === 0 ? first : point + POINT_STEP, area },

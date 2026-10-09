@@ -35,8 +35,23 @@ export type HomeAssistant = {
   areas: Record<string, Area>
   entities?: Record<string, EntityRegistryEntry>
   devices?: Record<string, DeviceRegistryEntry>
-  callService: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown>
+  callService: (
+    domain: string,
+    service: string,
+    data?: Record<string, unknown>,
+    target?: Record<string, unknown>,
+  ) => Promise<unknown>
   themes: { darkMode: boolean }
+  locale?: { language: string }
+  language?: string
+  // The state and attributes as Home Assistant words them, translated and
+  // with their units. Missing on very old versions.
+  formatEntityState?: (entity: EntityState, state?: string) => string
+  formatEntityAttributeValue?: (entity: EntityState, attribute: string, value?: unknown) => string
+  // The websocket, for what is only sent to those who ask, like a forecast.
+  connection?: {
+    subscribeMessage: <T>(callback: (message: T) => void, message: Record<string, unknown>) => Promise<() => void>
+  }
 }
 
 // Plan coordinates in meters. x grows to the right, y grows upward on the plan.
@@ -62,6 +77,12 @@ export type RoomConfig = {
   // Where the camera goes when the room is clicked in the card. A room
   // without one is framed alone, from the side the card opens on.
   camera?: CameraView
+  // Entities with no piece on the plan that still get a tile in this room's
+  // part of the side panel, such as a scene, a sensor or a thermostat.
+  entities?: string[]
+  // The order of the room's tiles in the side panel, as entity ids, both
+  // the devices on the plan and the entities above.
+  order?: string[]
 }
 
 // A Home Assistant entity placed in a room.
@@ -110,7 +131,8 @@ export type CardConfig = {
   radius?: number
   // Gap in meters between adjacent rooms.
   gap?: number
-  // Card aspect ratio as "width:height". 16:9 without one.
+  // Card aspect ratio as "width:height". 16:9 without one. fill takes the
+  // whole of whatever holds the card, which then sets its shape.
   aspect_ratio?: string
   // The aspect ratio while the card is narrower than 600 px, as on a phone.
   // Without it the card keeps `aspect_ratio` at every width, or is square
@@ -126,6 +148,10 @@ export type CardConfig = {
   // room the device stands in while that room is not the one the camera has
   // flown to, so a device only answers from inside its room.
   first_click?: 'device' | 'room'
+  // Puts the floorplan on two thirds of the width and a panel of tiles on
+  // the rest: a heading per room, then a tile for each of its devices and
+  // of its `entities`. On a narrow card the panel goes under the floorplan.
+  side_panel?: boolean
 }
 
 declare global {

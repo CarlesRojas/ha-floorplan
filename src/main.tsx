@@ -3,6 +3,9 @@ import { decorationKind } from '#/decoration/catalog.ts'
 import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
+import { registerTiles } from '#/tiles/index.tsx'
+import { inPanelView } from '#/lib/panelView.ts'
+import WithSidePanel from '#/tiles/WithSidePanel.tsx'
 import type { CardConfig } from '#/types.ts'
 
 // Baked in by the build from package.json.
@@ -167,11 +170,18 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
 
   // Rough height in 50px rows for the masonry layout.
   getCardSize() {
-    return 6
+    return this._config?.side_panel ? 12 : 6
+  }
+
+  // In a sections view, the whole width with the side panel on, and the
+  // section's width without it.
+  getGridOptions() {
+    return { columns: this._config?.side_panel ? 'full' : 12, rows: 'auto' }
   }
 
   protected view() {
-    return <Card hass={this._hass} config={this._config!} />
+    if (this._config!.side_panel) return <WithSidePanel hass={this._hass} config={this._config!} />
+    return <Card hass={this._hass} config={this._config!} panel={inPanelView(this)} />
   }
 }
 
@@ -260,3 +270,5 @@ if (!window.customCards.some(card => card.type === CARD_TYPE))
     name: 'Floorplan 3D',
     description: 'Interactive 3D model of the flat',
   })
+
+registerTiles()

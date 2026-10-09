@@ -698,11 +698,11 @@ export default function ApplianceModel({ kind, item, state, all }: Props) {
       // between the groups to hang a towel through. And a ladder of round
       // uprights that bend back into the wall at both ends,
       // so it needs no brackets, and flat bars across them a hand apart.
-      // The height param is where its top is hung, and it reaches down to
-      // 15 cm off the floor, up to 1.7 m long.
+      // It hangs from its top, its height above how far off the floor it
+      // starts.
       const ladder = style === 'ladder'
       const w = p('width')
-      const h = Math.min(p('height') - 0.15, 1.7)
+      const h = Math.min(p('height'), 1.7)
       const pitch = 0.034
       const groups = Math.max(1, Math.round(h / 0.3))
       const span = h / groups

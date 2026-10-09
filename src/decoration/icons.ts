@@ -112,6 +112,7 @@ const BY_KIND: Record<string, IconDefinition> = {
   doorbell: faBell,
   motion_sensor: faBell,
   smoke_detector: faBell,
+  leak_sensor: faDroplet,
   alarm_panel: faBell,
   smart_lock: faLock,
   air_quality: faWind,

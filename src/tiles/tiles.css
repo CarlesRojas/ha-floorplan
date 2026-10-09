@@ -1,0 +1,527 @@
+/*
+ * The Floorplan tiles. Every look a theme can change is a --fp-* token,
+ * read here into a private --_* variable with its default, so a theme that
+ * sets none of them still gets a finished tile. Never set a --fp-* token on
+ * the host: it would win over the theme's value.
+ */
+:host {
+  display: block;
+  height: 100%;
+  --_radius: var(--fp-tile-radius, 30px);
+  --_padding: var(--fp-tile-padding, 18px);
+  --_bg-active: var(--fp-tile-bg-active, rgba(255, 255, 255, 0.94));
+  --_bg-inactive: var(--fp-tile-bg-inactive, rgba(118, 118, 128, 0.24));
+  --_blur: var(--fp-tile-blur, 24px);
+  --_opacity-inactive: var(--fp-tile-opacity-inactive, 1);
+  --_opacity-unavailable: var(--fp-tile-opacity-unavailable, 0.45);
+  --_shadow: var(--fp-tile-shadow, none);
+  --_text-active: var(--fp-text-active, #1c1c1e);
+  --_text-inactive: var(--fp-text-inactive, #ffffff);
+  --_secondary: var(--fp-text-secondary-opacity, 0.6);
+  --_accent: var(--fp-accent, #0a84ff);
+  --_accent-light: var(--fp-accent-light, #ffb340);
+  --_accent-cover: var(--fp-accent-cover, #32ade6);
+  --_accent-climate: var(--fp-accent-climate, #ff9f0a);
+  --_accent-cool: var(--fp-accent-cool, #64d2ff);
+  /* Deeper blues for the cooling and drying modes, to read on a lit tile. */
+  --_mode-cool: var(--fp-mode-cool, #0a6fd6);
+  --_mode-dry: var(--fp-mode-dry, #13809c);
+  --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);
+  --_font-title: var(--fp-font-title, 'Inter Tight', system-ui, sans-serif);
+  --_title-size: var(--fp-title-size, 30px);
+  --_title-opacity: var(--fp-title-opacity, 0.92);
+  --_icon-size: var(--fp-tile-icon-size, 28px);
+  --_name-size: var(--fp-tile-name-size, 15px);
+  --_state-size: var(--fp-tile-state-size, 13px);
+  --_duration: var(--fp-tile-duration, 200ms);
+  --_press: var(--fp-tile-press-scale, 0.96);
+  --_focus: var(--fp-tile-focus-scale, 1.03);
+}
+
+/* Hidden by the room filter. Home Assistant hides the card around it too,
+   but a tile can sit where nothing does. */
+:host([hidden]) {
+  display: none;
+}
+
+/* On a light dashboard the translucent tile is light too, with dark text. */
+:host([data-light]) {
+  --_bg-inactive: var(--fp-tile-bg-inactive, rgba(120, 120, 128, 0.16));
+  --_text-inactive: var(--fp-text-inactive, #1c1c1e);
+}
+
+.fp-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 112px;
+  padding: var(--_padding);
+  overflow: hidden;
+  border-radius: var(--_radius);
+  background: var(--_bg-inactive);
+  color: var(--_text-inactive);
+  box-shadow: var(--_shadow);
+  -webkit-backdrop-filter: blur(var(--_blur)) saturate(1.6);
+  backdrop-filter: blur(var(--_blur)) saturate(1.6);
+  font-family: var(--_font-tile);
+  font-optical-sizing: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  transition:
+    background-color var(--_duration) ease,
+    color var(--_duration) ease,
+    opacity var(--_duration) ease,
+    transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-tile[data-active] {
+  background: var(--_bg-active);
+  color: var(--_text-active);
+}
+
+/* The color of a light, strongest in the top left corner and fading out to
+   the plain tile. */
+.fp-tile[data-active][style*='--_tile-glow'] {
+  background-image: radial-gradient(
+    140% 140% at 0% 0%,
+    color-mix(in srgb, var(--_tile-glow) 42%, transparent) 0%,
+    color-mix(in srgb, var(--_tile-glow) 14%, transparent) 45%,
+    transparent 80%
+  );
+}
+
+.fp-tile:not([data-active]) .fp-icon,
+.fp-tile:not([data-active]) .fp-text {
+  opacity: var(--_opacity-inactive);
+}
+
+.fp-tile[data-unavailable] {
+  opacity: var(--_opacity-unavailable);
+  cursor: default;
+}
+
+/* A tile in focus from the keyboard grows a little and lifts off the page. */
+.fp-tile:focus-visible {
+  outline: none;
+  transform: scale(var(--_focus));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.fp-tile[data-pressed] {
+  transform: scale(var(--_press));
+}
+
+.fp-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fp-text {
+  min-width: 0;
+}
+
+.fp-icon {
+  display: block;
+  flex: none;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  --mdc-icon-size: var(--_icon-size);
+  transition: color var(--_duration) ease;
+}
+
+.fp-icon > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fp-tile[data-active] .fp-icon {
+  color: var(--_tile-accent, var(--_accent));
+}
+
+.fp-name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--_name-size);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.fp-state {
+  overflow: hidden;
+  font-size: var(--_state-size);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: var(--_secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Round buttons inside a tile, for the wide cover and vacuum tiles. */
+.fp-controls {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  margin: -4px -4px 0 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.fp-control {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--_duration) ease,
+    transform var(--_duration) ease;
+}
+
+.fp-tile .fp-control > .fp-icon {
+  width: 20px;
+  height: 20px;
+  --mdc-icon-size: 20px;
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-control:hover {
+    background: color-mix(in srgb, currentColor 14%, transparent);
+  }
+}
+
+.fp-control:active {
+  transform: scale(0.88);
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.fp-control:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* The minus and plus of a thermostat, with what it aims for between them. */
+/* As wide as the widest temperature it shows, like 99.5° or 100°, so it
+   keeps its width as the number changes. */
+.fp-stepper-value,
+.fp-stepper-end {
+  --_digits: 3.4em;
+  flex: none;
+  align-self: center;
+  width: var(--_digits);
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-stepper-range {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Either end of a range, the one the buttons move filled in. */
+.fp-stepper-end {
+  width: calc(var(--_digits) + 20px);
+  height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  transition:
+    background-color var(--_duration) ease,
+    opacity var(--_duration) ease;
+}
+
+.fp-stepper-end[aria-pressed='true'] {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  opacity: 1;
+}
+
+.fp-stepper-end:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* The row along the bottom of a wide thermostat, with its modes. */
+.fp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 -4px -4px;
+}
+
+.fp-modes {
+  display: flex;
+  min-width: 0;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.fp-footer .fp-control {
+  width: 40px;
+  height: 40px;
+}
+
+/* The mode it runs in, filled and in the color of that mode. */
+.fp-mode[aria-checked='true'] {
+  color: var(--_mode-color, inherit);
+  background: color-mix(in srgb, var(--_mode-color, currentColor) 20%, transparent);
+}
+
+.fp-title {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  min-height: 40px;
+  padding: 4px 4px 2px;
+  box-sizing: border-box;
+  color: var(--fp-title-color, var(--primary-text-color, #fff));
+  font-family: var(--_font-title);
+  font-size: var(--_title-size);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  opacity: var(--_title-opacity);
+}
+
+/* The option menu of the select tile, in the top layer over the dashboard. */
+.fp-menu {
+  position: fixed;
+  inset: auto;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 32px));
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  border: none;
+  border-radius: 18px;
+  background: var(--fp-menu-bg, rgba(44, 44, 48, 0.82));
+  color: var(--fp-menu-text, #fff);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  font-family: var(--_font-tile);
+  font-optical-sizing: auto;
+  opacity: 0;
+  transform: scale(0.94);
+  transform-origin: var(--_origin, top left);
+  transition:
+    opacity var(--_duration) ease,
+    transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay var(--_duration) allow-discrete,
+    display var(--_duration) allow-discrete;
+}
+
+.fp-menu:popover-open {
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .fp-menu:popover-open {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+:host([data-light]) .fp-menu {
+  background: var(--fp-menu-bg, rgba(250, 250, 252, 0.86));
+  color: var(--fp-menu-text, #1c1c1e);
+}
+
+.fp-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fp-option > .fp-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-option:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+}
+
+.fp-option:focus-visible {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.fp-camera {
+  padding: 0;
+  min-height: 0;
+  background: #000;
+}
+
+.fp-camera-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fp-camera-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 28px var(--_padding) var(--_padding);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.62), transparent);
+  color: #fff;
+  pointer-events: none;
+}
+
+/* The weather tile, its background the sky and its type white on it. */
+.fp-weather {
+  min-height: 0;
+  gap: 6px;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.fp-weather > * {
+  position: relative;
+}
+
+.fp-weather-now {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fp-weather .fp-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.fp-weather-temp {
+  font-size: 50px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-weather-sky {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-width: 0;
+  text-align: right;
+}
+
+.fp-weather-condition {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-weather-icon {
+  display: inline-flex;
+  color: #fff;
+}
+
+.fp-weather-sky .fp-icon {
+  width: 24px;
+  height: 24px;
+  --mdc-icon-size: 24px;
+}
+
+.fp-weather-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.fp-weather-step {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-weather-step .fp-icon {
+  width: 22px;
+  height: 22px;
+  --mdc-icon-size: 22px;
+}
+
+.fp-weather-when {
+  font-size: var(--_state-size);
+  font-weight: 600;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.fp-weather-step-temp {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fp-tile,
+  .fp-icon,
+  .fp-control,
+  .fp-stepper-end,
+  .fp-menu {
+    transition: none;
+  }
+
+  .fp-tile[data-pressed],
+  .fp-tile:focus-visible {
+    transform: none;
+  }
+
+  /* With no growth to show focus, a ring inside the edge shows it. */
+  .fp-tile:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+}

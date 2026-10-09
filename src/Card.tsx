@@ -1,7 +1,9 @@
 import { DEFAULT_ASPECT_RATIO_MOBILE } from '#/constants.ts'
 import { aspectRatioCss } from '#/lib/aspect.ts'
+import { cn } from '#/lib/utils.ts'
 import { EDGE_FADE_MASK } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
+import { useRoomFilter } from '#/lib/roomFilter.ts'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import type { CameraView, CardConfig, HomeAssistant } from '#/types.ts'
 import { useRef, useState, type CSSProperties } from 'react'
@@ -9,6 +11,9 @@ import { useRef, useState, type CSSProperties } from 'react'
 type Props = {
   hass: HomeAssistant | null
   config: CardConfig
+  // In a panel view the card has the screen to itself and nothing to
+  // scroll, so the wheel and a finger dragged up or down move the view.
+  panel?: boolean
 }
 
 // Whether the camera stands in a view, give or take the rounding a view is
@@ -18,7 +23,7 @@ const sameView = (a: CameraView, b: CameraView) =>
   a.position.every((v, i) => Math.abs(v - b.position[i]) <= VIEW_TOLERANCE_M) &&
   a.target.every((v, i) => Math.abs(v - b.target[i]) <= VIEW_TOLERANCE_M)
 
-export default function Card({ hass, config }: Props) {
+export default function Card({ hass, config, panel = false }: Props) {
   const hasRooms = (config.rooms?.length ?? 0) > 0
   // Hidden under the fullscreen editor, so it holds its last frame.
   const paused = useEditorOpen()
@@ -27,8 +32,8 @@ export default function Card({ hass, config }: Props) {
   // has, a click on nothing takes it back.
   const [away, setAway] = useState(false)
   // A click on a room's floor takes the camera to the view saved for it. A
-  // second click on that floor, with the camera still standing in the view,
-  // takes it back to the opening one. A room with no view saved has the one
+  // second click on that floor takes it back to the opening one, however
+  // the camera has been turned, panned or zoomed since. A room with no view saved has the one
   // the camera works out for it, the room alone filling the picture.
   //
   // The room flown to stands alone: the rest of the home fades away and
@@ -41,6 +46,8 @@ export default function Card({ hass, config }: Props) {
   }
   // A room that has left the plan holds no focus.
   const focused = focus !== null && roomOf(focus) ? focus : null
+  // The Floorplan tiles on the dashboard follow the room in view.
+  useRoomFilter(focused ? roomOf(focused) : undefined)
   const goHome = () => {
     setFocus(null)
     camera.current?.reset()
@@ -55,7 +62,7 @@ export default function Card({ hass, config }: Props) {
     const id = beyond ?? focused ?? asked
     const view = viewOf(id)
     if (!view || !camera.current) return
-    if (sameView(camera.current.view(), view)) goHome()
+    if (id === focused || sameView(camera.current.view(), view)) goHome()
     else {
       setFocus(id)
       camera.current.flyTo(view)
@@ -76,6 +83,9 @@ export default function Card({ hass, config }: Props) {
     return true
   }
 
+  // A card set to fill takes the shape of whatever holds it, as the split
+  // card's main column does.
+  const fill = config.aspect_ratio === 'fill'
   const wide = aspectRatioCss(config.aspect_ratio)
   // A card given one shape keeps it at every width. Only a card given none
   // turns square when it is narrow.
@@ -84,12 +94,15 @@ export default function Card({ hass, config }: Props) {
   return (
     // No background, border or shadow: nothing says where the card ends and
     // the dashboard begins.
-    <ha-card style={{ background: 'none', border: 'none', boxShadow: 'none' }}>
+    <ha-card style={{ background: 'none', border: 'none', boxShadow: 'none', height: fill ? '100%' : undefined }}>
       {/* The card's shape follows its own width, not the window's: a card
         in a narrow column on a wide screen is as narrow as one on a phone. */}
-      <div className="@container w-full">
+      <div className={cn('@container w-full', fill && 'h-full')}>
         <div
-          className="relative aspect-(--aspect) w-full overflow-hidden @max-[600px]:aspect-(--aspect-narrow)"
+          className={cn(
+            'relative w-full overflow-hidden',
+            fill ? 'h-full' : 'aspect-(--aspect) @max-[600px]:aspect-(--aspect-narrow)',
+          )}
           style={
             {
               '--aspect': wide,
@@ -113,6 +126,7 @@ export default function Card({ hass, config }: Props) {
                   }}
                   focus={focused}
                   roomFirst={roomFirst}
+                  wheelZoom={panel}
                 />
               </div>
             </>

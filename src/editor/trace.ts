@@ -40,7 +40,8 @@ const STORE_MS = 300
 // Whether a point on the plan falls on the picture.
 export function traceCovers(trace: Trace, [x, y]: Point) {
   return (
-    Math.abs(x - trace.center[0]) <= trace.width / 2 && Math.abs(y - trace.center[1]) <= (trace.width * trace.aspect) / 2
+    Math.abs(x - trace.center[0]) <= trace.width / 2 &&
+    Math.abs(y - trace.center[1]) <= (trace.width * trace.aspect) / 2
   )
 }
 

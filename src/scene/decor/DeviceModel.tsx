@@ -7,7 +7,7 @@ import {
   screenSize,
   type DecorationKind,
 } from '#/decoration/catalog.ts'
-import { Bar, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
+import { Bar, Draft, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
 import { roundedShape } from '#/geometry/polygon.ts'
 import ScreenMaterial from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
@@ -145,6 +145,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
   // Anything that lights up fades with this, and anything that spins uses
   // it to run down rather than stopping dead.
   const lit = useEased(on ? 1 : 0, 9)
+  // Sound only comes out of something that is on and not paused or idle, so
+  // a speaker on pause keeps its lights but stops sending out waves.
+  const sounding = on && state?.text !== 'paused' && state?.text !== 'idle'
   // How far open the item is: the percentage feeding it, or its switch when
   // it has none. Without the switch, a cover bound to something that only
   // turns on and off would never move.
@@ -272,7 +275,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           {[-1, 1].map(side => (
             <Waves
               key={side}
-              on={on}
+              on={sounding}
               position={[side * (w / 2 - Math.min(0.12, w * 0.15)), h / 2, d / 2 + 0.02]}
               from={h * 0.5}
               reach={Math.max(0.18, h * 2.4)}
@@ -336,9 +339,11 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       )
     }
     case 'speaker':
-      return <Speaker style={style} r={p('size') / 2} h={p('height')} on={on} lit={lit} look={look} />
+      return (
+        <Speaker style={style} r={p('size') / 2} h={p('height')} on={on} lit={lit} sounding={sounding} look={look} />
+      )
     case 'floor_speaker':
-      return <FloorSpeaker style={style} w={p('width')} h={p('height')} on={on} look={look} />
+      return <FloorSpeaker style={style} w={p('width')} h={p('height')} on={on} sounding={sounding} look={look} />
     case 'game_console':
       return <Console style={style} w={p('width')} h={p('height')} on={on} lit={lit} look={look} />
     case 'projector_portable':
@@ -412,11 +417,12 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // top, a louvre that tips open underneath and a small display. Its
       // height and depth follow its width, within what real units come in.
       const w = p('width')
-      // Warm air out orange and cool air out blue, by what the device says
-      // it is doing, and pale when it only moves the air.
+      // Warm air out a dim red and cool air out a dim blue, dark enough to
+      // blend into the room,
+      // by what the device says it is doing, and plain when it only moves
+      // the air.
       const mode = state?.text ?? ''
-      const air = /heat/.test(mode) ? '#ff7a2e' : /cool/.test(mode) ? '#3f93ff' : '#d6ecff'
-      const tinted = air !== '#d6ecff'
+      const air = /heat/.test(mode) ? '#b4503a' : /cool/.test(mode) ? '#4a6d9e' : '#6b7480'
       if (style === 'duct') {
         // A grille let into the wall, a frame round a dark slot of blades
         // angled down, with the air coming out through them.
@@ -451,22 +457,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
                 {M('grille')}
               </mesh>
             ))}
-            {[-0.3, 0, 0.3].map(k => (
-              <Steam
-                key={k}
-                on={on}
-                position={[k * w, gh * 0.4, 0.02]}
-                radius={Math.min(0.05, w * 0.05)}
-                rise={-0.4}
-                drift={[0, 0.35]}
-                count={6}
-                strength={tinted ? 0.22 : 0.14}
-                speed={0.5}
-                color={air}
-                glow={tinted ? 0.9 : 0.25}
-                phase={k}
-              />
-            ))}
+            <Draft on={on} position={[0, gh * 0.3, 0.02]} width={w * 0.7} color={air} />
           </group>
         )
       }
@@ -510,22 +501,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             <meshStandardMaterial color={c('display')} emissive="#7fb3e8" emissiveIntensity={0.8 * lit} />
           </mesh>
           <Led on={on} position={[w * 0.31, h * 0.42, d + 0.004]} color="#7fb3e8" radius={Math.min(0.008, h * 0.03)} />
-          {/* The draft out of the flap, cool air sinking forward along it. */}
-          {[-0.3, 0, 0.3].map(k => (
-            <Steam
-              key={k}
-              on={on}
-              position={[k * w, h * 0.08, d]}
-              radius={Math.min(0.06, w * 0.05)}
-              rise={-0.4}
-              drift={[0, 0.3]}
-              count={6}
-              strength={tinted ? 0.22 : 0.14}
-              speed={0.5}
-              color={air}
-              glow={tinted ? 0.9 : 0.25}
-            />
-          ))}
+          {/* The draft out of the outlet, from inside it over the flap and
+              sinking forward. */}
+          <Draft on={on} position={[0, h * 0.15, d * 0.9]} width={w - 0.12} color={air} />
         </group>
       )
     }
@@ -1534,6 +1512,51 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           ))}
           {/* The light ring round the button, flashing red while it alarms. */}
           <Alarm on={on} s={s} y={-t} />
+        </group>
+      )
+    }
+    case 'leak_sensor': {
+      // A small round puck that lies on the floor where water would gather,
+      // on three metal probes. Once they get wet a ring round its top
+      // glows blue and a puddle spreads round it, so a leak reads from
+      // across the room.
+      const s = p('size')
+      const t = s * 0.3
+      return (
+        <group>
+          <mesh position={[0, 0.0015, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={0.2 + 0.8 * lit} visible={lit > 0.01}>
+            <circleGeometry args={[s * 2.4, SEG * 2]} />
+            <meshStandardMaterial
+              color="#6fa8d8"
+              roughness={0.05}
+              metalness={0.1}
+              transparent
+              opacity={0.45 * lit}
+              depthWrite={false}
+            />
+          </mesh>
+          {[0, 1, 2].map(i => (
+            <mesh
+              key={i}
+              position={[Math.sin((i * Math.PI * 2) / 3) * s * 0.3, 0.003, Math.cos((i * Math.PI * 2) / 3) * s * 0.3]}
+            >
+              <cylinderGeometry args={[s * 0.06, s * 0.06, 0.006, 12]} />
+              {M('probes')}
+            </mesh>
+          ))}
+          <mesh position={[0, 0.006 + t / 2, 0]} castShadow>
+            <cylinderGeometry args={[s * 0.46, s * 0.5, t, SEG * 2]} />
+            {M('body')}
+          </mesh>
+          <mesh position={[0, 0.006 + t, 0]} scale={[1, 0.18, 1]}>
+            <sphereGeometry args={[s * 0.46, SEG * 2, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            {M('body')}
+          </mesh>
+          <mesh position={[0, 0.006 + t, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[s * 0.3, s * 0.025, 10, SEG * 2]} />
+            <meshStandardMaterial color="#d6e4f0" emissive="#2f8cff" emissiveIntensity={3 * lit} />
+          </mesh>
+          <Halo on={on} position={[0, t + 0.05, 0]} color="#5aa8ff" intensity={0.08} />
         </group>
       )
     }

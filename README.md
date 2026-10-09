@@ -28,6 +28,10 @@ Everything is built inside Home Assistant, in the card's own full-screen editor.
 
 ![The editor with the sofa selected](docs/images/editor.png)
 
+## Tiles to go with it
+
+The same file brings seven small tiles: a heading, and tiles for lights and switches, buttons and scenes, blinds, a robot vacuum, a list of options and a camera. When the 3D card flies to a room, the tiles of every other room step aside, so the dashboard shows only what is in that room. A matching theme is in [themes/floorplan-glass.yaml](themes/floorplan-glass.yaml). Every option is in [docs/TILES.md](docs/TILES.md).
+
 ## Install
 
 1. In Home Assistant open **HACS**, open the three-dot menu in the top right and choose **Custom repositories**.

@@ -7,6 +7,7 @@ import { useLive } from '#/scene/live.ts'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useMemo, useRef, type ReactNode } from 'react'
 import {
+  CanvasTexture,
   CatmullRomCurve3,
   DoubleSide,
   ExtrudeGeometry,
@@ -15,6 +16,7 @@ import {
   Quaternion,
   Shape,
   SphereGeometry,
+  SRGBColorSpace,
   TubeGeometry,
   Object3D,
   Vector3,
@@ -23,6 +25,8 @@ import {
   type Mesh,
   type MeshBasicMaterial,
   type PointLight,
+  type Sprite,
+  type SpriteMaterial,
 } from 'three'
 
 // Building blocks shared by every decoration model. The vocabulary is
@@ -746,6 +750,117 @@ export function Steam({
             emissiveIntensity={glow}
           />
         </mesh>
+      ))}
+    </group>
+  )
+}
+
+// A soft round speck of air for a sprite, bright in the middle and fading
+// to nothing at its edge. Drawn once and shared.
+let speckTexture: CanvasTexture | null = null
+function speckMap() {
+  if (speckTexture) return speckTexture
+  const size = 64
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const g = canvas.getContext('2d')!
+  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  grad.addColorStop(0, 'rgba(255,255,255,0.8)')
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.3)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, size, size)
+  speckTexture = new CanvasTexture(canvas)
+  speckTexture.colorSpace = SRGBColorSpace
+  return speckTexture
+}
+
+// Where along the vent each speck of a draft leaves, how far it strays and
+// when, the same on every render.
+function scatterMotes(count: number) {
+  let seed = 11
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+  return Array.from({ length: count }, () => ({
+    x: rand() - 0.5,
+    phase: rand(),
+    pace: 0.8 + rand() * 0.4,
+    side: (rand() - 0.5) * 2,
+    sink: 0.7 + rand() * 0.6,
+    out: 0.75 + rand() * 0.5,
+    grow: 0.8 + rand() * 0.8,
+    turn: rand() * Math.PI * 2,
+  }))
+}
+
+/**
+ * The draft out of a vent while it runs: a stream of many small, faint
+ * specks that leave anywhere along a line `width` wide, carry forward
+ * `reach`, sink `drop` as they slow, drift apart and fade as they go.
+ * Together they read as a haze of moving air rather than as single puffs.
+ * They ease out when it stops.
+ */
+export function Draft({
+  on,
+  position,
+  width,
+  reach = 0.4,
+  drop = 0.45,
+  size = 0.022,
+  count = 120,
+  strength = 0.6,
+  speed = 0.22,
+  color = '#e6eef4',
+}: {
+  on: boolean
+  position: [number, number, number]
+  width: number
+  reach?: number
+  drop?: number
+  size?: number
+  count?: number
+  strength?: number
+  speed?: number
+  color?: string
+}) {
+  const lit = useEased(on ? 1 : 0, 3)
+  const specks = useRef<(Sprite | null)[]>([])
+  const motes = useMemo(() => scatterMotes(count), [count])
+  useLive(lit >= 0.01)
+  useFrame(({ clock }) => {
+    if (lit < 0.01) {
+      for (const speck of specks.current) if (speck?.visible) speck.visible = false
+      return
+    }
+    const t = clock.elapsedTime
+    specks.current.forEach((speck, i) => {
+      if (!speck) return
+      const m = motes[i]
+      const f = (t * speed * m.pace + m.phase) % 1
+      speck.position.set(
+        m.x * width + (m.side * 0.04 + Math.sin(t * 0.9 + m.turn) * 0.02) * f,
+        -drop * m.sink * f * f + Math.sin(t * 1.3 + m.turn) * 0.01 * f,
+        reach * m.out * (1 - (1 - f) ** 2),
+      )
+      const r = size * m.grow * (1 + f * 1.5)
+      speck.scale.set(r, r, 1)
+      const material = speck.material as SpriteMaterial
+      // Seen as soon as it leaves the vent, fading as it goes.
+      material.opacity = strength * lit * Math.min(1, f * 12) * (1 - f) ** 1.3
+      speck.visible = true
+    })
+  })
+  return (
+    <group position={position}>
+      {motes.map((_, i) => (
+        <sprite
+          key={i}
+          visible={false}
+          ref={el => {
+            specks.current[i] = el
+          }}
+        >
+          <spriteMaterial map={speckMap()} color={color} transparent opacity={0} depthWrite={false} />
+        </sprite>
       ))}
     </group>
   )

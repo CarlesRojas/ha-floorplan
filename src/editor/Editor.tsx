@@ -1,5 +1,5 @@
 import Canvas from '#/editor/Canvas.tsx'
-import ControlsGuide from '#/editor/ControlsGuide.tsx'
+import CardPanel from '#/editor/CardPanel.tsx'
 import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
@@ -32,8 +32,6 @@ import {
   faEye,
   faFloppyDisk,
   faHandPointer,
-  faPenRuler,
-  faSpinner,
   faTrash,
   faXmark,
   type IconDefinition,
@@ -1090,26 +1088,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     )
   }
 
-  return (
-    // What the card's tab in Home Assistant's dialog shows: a word on what
-    // the editor is for, and the way into it, in the middle of the space.
-    <div className="font-montserrat flex min-h-56 flex-col items-center justify-center gap-4 px-6 py-8 text-center text-(--primary-text-color)">
-      <p className="max-w-sm text-sm text-(--secondary-text-color)">
-        Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for.
-      </p>
-      <button
-        type="button"
-        onClick={openEditor}
-        disabled={opening}
-        aria-busy={opening}
-        className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
-      >
-        <FontAwesomeIcon icon={opening ? faSpinner : faPenRuler} spin={opening} className="size-3.5" />
-        {opening ? 'Opening…' : 'Open editor'}
-      </button>
-      <ControlsGuide className="mt-4" />
-    </div>
-  )
+  return <CardPanel hass={hass} config={config} onChange={onChange} opening={opening} onOpen={openEditor} />
 }
 
 // A named button in the corner of the 3D view. Greyed out when there is no
