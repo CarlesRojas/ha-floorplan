@@ -1,42 +1,31 @@
-import { callService, formatAttribute, formatState, haptic, moreInfo, type TileEnv } from '#/tiles/actions.ts'
+import { callService, formatAttribute, formatState, moreInfo, type TileEnv } from '#/tiles/actions.ts'
 import { insideTile } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
-import { Icon } from '#/tiles/Icon.tsx'
-import { menuKeys, openMenu } from '#/tiles/menu.ts'
 import { Control, Tile } from '#/tiles/Tile.tsx'
 import type { EntityState } from '#/types.ts'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
 // How long the minus and plus buttons wait for another press before they
 // send the new temperature, so a few presses make one change.
 const SEND_MS = 700
 
 // The modes a thermostat can run in, in the order its buttons go, each with
-// its icon. One it names that is not here goes at the end.
-const MODES: Record<string, string> = {
-  auto: 'ph:sparkle',
-  heat_cool: 'ph:thermometer',
-  heat: 'ph:fire',
-  cool: 'ph:snowflake',
-  dry: 'ph:drop',
-  fan_only: 'ph:fan',
-  off: 'ph:power',
+// its icon and the color its button takes while chosen. One it names that
+// is not here goes at the end.
+const MODES: Record<string, { icon: string; color?: string }> = {
+  auto: { icon: 'ph:sparkle', color: 'var(--_accent)' },
+  heat_cool: { icon: 'ph:thermometer', color: 'var(--_accent)' },
+  heat: { icon: 'ph:fire', color: 'var(--_accent-climate)' },
+  cool: { icon: 'ph:snowflake', color: 'var(--_accent-cool)' },
+  dry: { icon: 'ph:drop', color: 'var(--_accent-cool)' },
+  fan_only: { icon: 'ph:fan', color: 'var(--_accent)' },
+  off: { icon: 'ph:power-bold' },
 }
+const ORDER = Object.keys(MODES)
 
-// The settings in the menu of a wide tile: the attribute that lists the
-// choices, the one that holds the current choice, and the action that sets it.
-const SETTINGS = [
-  { title: 'Mode', list: 'operation_list', current: 'operation_mode', service: 'set_operation_mode' },
-  { title: 'Fan', list: 'fan_modes', current: 'fan_mode', service: 'set_fan_mode' },
-  { title: 'Preset', list: 'preset_modes', current: 'preset_mode', service: 'set_preset_mode' },
-  { title: 'Swing', list: 'swing_modes', current: 'swing_mode', service: 'set_swing_mode' },
-  {
-    title: 'Side to side swing',
-    list: 'swing_horizontal_modes',
-    current: 'swing_horizontal_mode',
-    service: 'set_swing_horizontal_mode',
-  },
-]
+// How long a new temperature shows after it is sent if Home Assistant never
+// says it took it.
+const HOLD_MS = 5000
 
 type Aim = { temperature?: number; low?: number; high?: number }
 
@@ -46,9 +35,9 @@ type Props = { env: TileEnv; config: TileConfig }
 // doing and how warm it is, and a tap opens its dialog. A wide tile is a
 // row taller: minus and plus around the temperature it aims for, or around
 // the two ends of the range it keeps to, where a tap on one picks which
-// the buttons move. Along the bottom a button for each mode it runs in, and
-// a menu for its fan, preset and swing. Lit while it is on, warm while it
-// heats and cool while it cools.
+// the buttons move. A wide thermostat adds a button for each mode it runs
+// in along the bottom. Lit while it is on, warm while it heats and cool
+// while it cools.
 export default function Climate({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const domain = config.entity!.split('.')[0]
@@ -59,19 +48,29 @@ export default function Climate({ env, config }: Props) {
   const [pending, setPending] = useState<Aim | null>(null)
   const [end, setEnd] = useState<'low' | 'high'>('high')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const anchor = useRef<HTMLDivElement>(null)
-  const menu = useRef<HTMLDivElement>(null)
-  useEffect(() => () => clearTimeout(timer.current), [])
+  const hold = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current)
+      clearTimeout(hold.current)
+    },
+    [],
+  )
 
   const on = !!entity && entity.state !== 'off'
   const action = typeof attributes.hvac_action === 'string' ? attributes.hvac_action : null
   const cooling = action === 'cooling' || (!action && (entity?.state === 'cool' || entity?.state === 'dry'))
   const wide = config.size === 'wide'
 
+  // A new temperature shows until Home Assistant reports it, so the old one
+  // never flashes back in between. Once it does, what it reports shows.
+  const reported = (key: keyof Aim) => number(key === 'temperature' ? key : `target_temp_${key}`)
+  const held =
+    pending && (Object.keys(pending) as (keyof Aim)[]).some(key => pending[key] !== reported(key)) ? pending : null
   const aim = {
-    temperature: pending?.temperature ?? target ?? undefined,
-    low: pending?.low ?? number('target_temp_low') ?? undefined,
-    high: pending?.high ?? number('target_temp_high') ?? undefined,
+    temperature: held?.temperature ?? target ?? undefined,
+    low: held?.low ?? number('target_temp_low') ?? undefined,
+    high: held?.high ?? number('target_temp_high') ?? undefined,
   }
 
   const parts = [
@@ -97,16 +96,16 @@ export default function Climate({ env, config }: Props) {
     const floor = key === 'high' ? Math.max(min, aim.low ?? min) : min
     const ceiling = key === 'low' ? Math.min(max, aim.high ?? max) : max
     const next = Math.min(ceiling, Math.max(floor, Math.round((now + by * step) / step) * step))
-    const merged = { ...pending, [key]: next }
+    const merged = { ...held, [key]: next }
     setPending(merged)
     clearTimeout(timer.current)
+    clearTimeout(hold.current)
     timer.current = setTimeout(() => {
       const data = range
         ? { target_temp_low: merged.low ?? aim.low, target_temp_high: merged.high ?? aim.high }
         : { temperature: next }
-      void callService(env.hass, `${domain}.set_temperature`, { entity_id: config.entity, ...data }).then(() =>
-        setPending(null),
-      )
+      void callService(env.hass, `${domain}.set_temperature`, { entity_id: config.entity, ...data })
+      hold.current = setTimeout(() => setPending(null), HOLD_MS)
     }, SEND_MS)
   }
 
@@ -132,113 +131,47 @@ export default function Climate({ env, config }: Props) {
     </>
   )
 
-  const word = (attribute: string, value: string) => {
-    const worded = entity && env.hass.formatEntityAttributeValue?.(entity, attribute, value)
-    if (worded && worded !== value) return worded
-    const spaced = value.replace(/_/g, ' ')
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1)
-  }
   const modeWord = (mode: string) => {
     const worded = entity && env.hass.formatEntityState?.(entity, mode)
-    return worded && worded !== mode ? worded : word('hvac_mode', mode)
+    if (worded && worded !== mode) return worded
+    const spaced = mode.replace(/_/g, ' ')
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1)
   }
 
-  const modes = listOf(entity, 'hvac_modes').sort(
-    (a, b) => (MODES[a] ? Object.keys(MODES).indexOf(a) : 99) - (MODES[b] ? Object.keys(MODES).indexOf(b) : 99),
-  )
-  const settings = SETTINGS.filter(setting => listOf(entity, setting.list).length > 1)
-  const run = (service: string, data: Record<string, unknown>) =>
-    callService(env.hass, `${domain}.${service}`, { entity_id: config.entity, ...data })
-  const open = () => openMenu(menu.current, anchor.current?.getBoundingClientRect())
-  // With no buttons for its modes, the menu says the first setting it holds.
-  const first = settings[0]
-  const footer = (modes.length > 0 || settings.length > 0) && (
-    <>
-      {modes.length > 0 && (
-        <div className="fp-modes" role="radiogroup" aria-label="Mode">
-          {modes.map(mode => (
-            <Control
-              key={mode}
-              icon={MODES[mode] ?? 'ph:circle'}
-              label={modeWord(mode)}
-              role="radio"
-              checked={entity?.state === mode}
-              className="fp-mode"
-              onPress={() => entity?.state !== mode && run('set_hvac_mode', { hvac_mode: mode })}
-            />
-          ))}
-        </div>
-      )}
-      {settings.length > 0 &&
-        (modes.length > 0 ? (
-          <div className="fp-controls">
-            <Control icon="ph:sliders-horizontal" label="More settings" onPress={open} />
-          </div>
-        ) : (
-          <button
-            {...insideTile}
-            type="button"
-            className="fp-chip"
-            aria-haspopup="menu"
-            onClick={e => {
-              e.stopPropagation()
-              haptic('selection')
-              open()
-            }}
-          >
-            <span className="min-w-0 truncate">
-              {typeof attributes[first.current] === 'string'
-                ? word(first.current, attributes[first.current] as string)
-                : first.title}
-            </span>
-            <Icon icon="ph:caret-down" on className="fp-chip-caret" />
-          </button>
-        ))}
-    </>
+  const rank = (mode: string) => (ORDER.includes(mode) ? ORDER.indexOf(mode) : ORDER.length)
+  const modes = listOf(entity, 'hvac_modes').sort((a, b) => rank(a) - rank(b))
+  const footer = modes.length > 0 && (
+    <div className="fp-modes" role="radiogroup" aria-label="Mode">
+      {modes.map(mode => (
+        <Control
+          key={mode}
+          icon={MODES[mode]?.icon ?? 'ph:circle'}
+          label={modeWord(mode)}
+          role="radio"
+          checked={entity?.state === mode}
+          className="fp-mode"
+          style={{ '--_mode-color': MODES[mode]?.color } as CSSProperties}
+          onPress={() =>
+            entity?.state !== mode &&
+            callService(env.hass, 'climate.set_hvac_mode', { entity_id: config.entity, hvac_mode: mode })
+          }
+        />
+      ))}
+    </div>
   )
 
   return (
-    <div ref={anchor} className="h-full">
-      <Tile
-        env={env}
-        config={config}
-        entity={entity}
-        active={on}
-        accent={cooling ? 'var(--_accent-cool)' : 'var(--_accent-climate)'}
-        state={parts.filter(Boolean).join(' · ')}
-        onTap={() => moreInfo(env.host, config.entity)}
-        controls={stepper}
-        footer={footer}
-      />
-      {settings.length > 0 && (
-        <div ref={menu} popover="auto" role="menu" className="fp-menu" onKeyDown={menuKeys}>
-          {settings.map(setting => (
-            <div key={setting.list} role="group" aria-label={setting.title}>
-              <div className="fp-menu-heading">{setting.title}</div>
-              {listOf(entity, setting.list).map(option => {
-                const chosen = attributes[setting.current] === option
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={chosen}
-                    className="fp-option"
-                    onClick={() => {
-                      menu.current?.hidePopover()
-                      if (!chosen) run(setting.service, { [setting.current]: option })
-                    }}
-                  >
-                    <span className="min-w-0 flex-1 truncate">{word(setting.current, option)}</span>
-                    {chosen && <Icon icon="ph:check" className="fp-check" />}
-                  </button>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <Tile
+      env={env}
+      config={config}
+      entity={entity}
+      active={on}
+      accent={cooling ? 'var(--_accent-cool)' : 'var(--_accent-climate)'}
+      state={parts.filter(Boolean).join(' · ')}
+      onTap={() => moreInfo(env.host, config.entity)}
+      controls={stepper}
+      footer={footer}
+    />
   )
 }
 

@@ -259,17 +259,13 @@
   outline-offset: -2px;
 }
 
-/* The row along the bottom of a wide thermostat: its modes and its menu. */
+/* The row along the bottom of a wide thermostat, with its modes. */
 .fp-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin: 0 -4px -4px;
-}
-
-.fp-footer .fp-controls {
-  margin: 0;
 }
 
 .fp-modes {
@@ -286,44 +282,10 @@
   height: 40px;
 }
 
-/* The mode it runs in, filled and in the tile's color. */
+/* The mode it runs in, filled and in the color of that mode. */
 .fp-mode[aria-checked='true'] {
-  background: color-mix(in srgb, currentColor 18%, transparent);
-}
-
-.fp-tile[data-active] .fp-mode[aria-checked='true'] {
-  color: var(--_tile-accent, var(--_accent));
-  background: color-mix(in srgb, var(--_tile-accent, var(--_accent)) 18%, transparent);
-}
-
-/* A button that opens a menu and says what is chosen in it. */
-.fp-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  height: 40px;
-  padding: 0 12px 0 16px;
-  border: none;
-  border-radius: 999px;
-  background: color-mix(in srgb, currentColor 12%, transparent);
-  color: inherit;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.fp-tile .fp-chip > .fp-chip-caret {
-  width: 14px;
-  height: 14px;
-  --mdc-icon-size: 14px;
-  color: inherit;
-}
-
-.fp-chip:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: -2px;
+  color: var(--_mode-color, inherit);
+  background: color-mix(in srgb, var(--_mode-color, currentColor) 20%, transparent);
 }
 
 .fp-title {
@@ -402,20 +364,6 @@
   font-size: 15px;
   text-align: left;
   cursor: pointer;
-}
-
-.fp-menu-heading {
-  padding: 10px 12px 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  opacity: 0.55;
-}
-
-.fp-menu-heading:not(:first-child),
-[role='group'] + [role='group'] > .fp-menu-heading {
-  margin-top: 4px;
 }
 
 .fp-option > .fp-check {
