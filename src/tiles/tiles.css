@@ -217,10 +217,15 @@
 }
 
 /* The minus and plus of a thermostat, with what it aims for between them. */
+/* As wide as the widest temperature it shows, like 99.5° or 100°, so it
+   keeps its width as the number changes. */
 .fp-stepper-value,
 .fp-stepper-end {
+  --_digits: 3.4em;
+  flex: none;
   align-self: center;
-  min-width: 52px;
+  width: var(--_digits);
+  white-space: nowrap;
   font-size: 17px;
   font-weight: 600;
   text-align: center;
@@ -235,8 +240,9 @@
 
 /* Either end of a range, the one the buttons move filled in. */
 .fp-stepper-end {
+  width: calc(var(--_digits) + 20px);
   height: 36px;
-  padding: 0 8px;
+  padding: 0 10px;
   border: none;
   border-radius: 999px;
   background: transparent;
