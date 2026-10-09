@@ -29,6 +29,7 @@ moves that section under the new version and uses it as the release notes.
 ### Fixed
 
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
+- A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.
 
 ## [1.2.5] - 2026-10-08
 

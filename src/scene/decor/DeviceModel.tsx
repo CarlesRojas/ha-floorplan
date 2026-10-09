@@ -145,6 +145,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
   // Anything that lights up fades with this, and anything that spins uses
   // it to run down rather than stopping dead.
   const lit = useEased(on ? 1 : 0, 9)
+  // Sound only comes out of something that is on and not paused or idle, so
+  // a speaker on pause keeps its lights but stops sending out waves.
+  const sounding = on && state?.text !== 'paused' && state?.text !== 'idle'
   // How far open the item is: the percentage feeding it, or its switch when
   // it has none. Without the switch, a cover bound to something that only
   // turns on and off would never move.
@@ -272,7 +275,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           {[-1, 1].map(side => (
             <Waves
               key={side}
-              on={on}
+              on={sounding}
               position={[side * (w / 2 - Math.min(0.12, w * 0.15)), h / 2, d / 2 + 0.02]}
               from={h * 0.5}
               reach={Math.max(0.18, h * 2.4)}
@@ -336,9 +339,11 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       )
     }
     case 'speaker':
-      return <Speaker style={style} r={p('size') / 2} h={p('height')} on={on} lit={lit} look={look} />
+      return (
+        <Speaker style={style} r={p('size') / 2} h={p('height')} on={on} lit={lit} sounding={sounding} look={look} />
+      )
     case 'floor_speaker':
-      return <FloorSpeaker style={style} w={p('width')} h={p('height')} on={on} look={look} />
+      return <FloorSpeaker style={style} w={p('width')} h={p('height')} on={on} sounding={sounding} look={look} />
     case 'game_console':
       return <Console style={style} w={p('width')} h={p('height')} on={on} lit={lit} look={look} />
     case 'projector_portable':

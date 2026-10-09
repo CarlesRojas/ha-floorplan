@@ -148,6 +148,7 @@ export function Speaker({
   h,
   on,
   lit,
+  sounding,
   look,
 }: {
   style: string
@@ -155,6 +156,7 @@ export function Speaker({
   h: number
   on: boolean
   lit: number
+  sounding: boolean
   look: Look
 }) {
   const { paint } = look
@@ -178,7 +180,7 @@ export function Speaker({
           {paint('top')}
         </mesh>
         <Swirl r={pole * 0.8} y={half + 0.001} lit={lit} />
-        <Waves on={on} position={[0, 0, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
+        <Waves on={sounding} position={[0, 0, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
       </group>
     )
   }
@@ -200,7 +202,7 @@ export function Speaker({
           {paint('base')}
         </mesh>
         <Led on={on} position={[0, h + 0.002, r * 0.45]} radius={Math.min(0.007, r * 0.1)} />
-        <Waves on={on} position={[0, h * 0.55, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
+        <Waves on={sounding} position={[0, h * 0.55, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
       </group>
     )
   }
@@ -230,7 +232,7 @@ export function Speaker({
         {paint('top')}
       </mesh>
       <Swirl r={top * 0.7} y={h + 0.002} lit={lit} />
-      <Waves on={on} position={[0, h * 0.5, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
+      <Waves on={sounding} position={[0, h * 0.5, 0]} rotation={FLAT} from={r * 1.1} reach={r * 2.2} />
     </group>
   )
 }
@@ -287,12 +289,14 @@ export function FloorSpeaker({
   w,
   h,
   on,
+  sounding,
   look,
 }: {
   style: string
   w: number
   h: number
   on: boolean
+  sounding: boolean
   look: Look
 }) {
   const { paint } = look
@@ -325,7 +329,13 @@ export function FloorSpeaker({
           {paint('metal')}
         </mesh>
         <Led on={on} position={[0, h - cap * 0.5, r + 0.001]} color="#e8f2f6" radius={Math.min(0.004, r * 0.08)} />
-        <Waves on={on} position={[0, disc + neck + body * 0.6, 0]} rotation={FLAT} from={r * 1.15} reach={r * 3} />
+        <Waves
+          on={sounding}
+          position={[0, disc + neck + body * 0.6, 0]}
+          rotation={FLAT}
+          from={r * 1.15}
+          reach={r * 3}
+        />
       </group>
     )
   }
@@ -369,7 +379,7 @@ export function FloorSpeaker({
         {paint('trim')}
       </mesh>
       <Led on={on} position={[w * 0.36, ty, front + 0.002]} radius={0.004} />
-      <Waves on={on} position={[0, my, front + 0.03]} from={mid * 1.3} reach={w * 0.9} />
+      <Waves on={sounding} position={[0, my, front + 0.03]} from={mid * 1.3} reach={w * 0.9} />
     </group>
   )
 }
