@@ -23,6 +23,9 @@
   --_accent-cover: var(--fp-accent-cover, #32ade6);
   --_accent-climate: var(--fp-accent-climate, #ff9f0a);
   --_accent-cool: var(--fp-accent-cool, #64d2ff);
+  /* Deeper blues for the cooling and drying modes, to read on a lit tile. */
+  --_mode-cool: var(--fp-mode-cool, #0a6fd6);
+  --_mode-dry: var(--fp-mode-dry, #13809c);
   --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);
   --_font-title: var(--fp-font-title, 'Inter Tight', system-ui, sans-serif);
   --_title-size: var(--fp-title-size, 30px);

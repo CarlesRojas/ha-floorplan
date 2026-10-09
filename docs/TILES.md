@@ -202,6 +202,8 @@ The tiles look finished without it, and change with any theme that sets these:
 | `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                   |
 | `fp-accent-climate`           | `#ff9f0a`                  | The icon of a thermostat or water heater that heats         |
 | `fp-accent-cool`              | `#64d2ff`                  | The icon of a thermostat that cools                         |
+| `fp-mode-cool`                | `#0a6fd6`                  | A thermostat's cooling mode button while chosen             |
+| `fp-mode-dry`                 | `#13809c`                  | A thermostat's drying mode button while chosen              |
 | `fp-font-tile`                | Inter                      | The tiles' font                                             |
 | `fp-font-title`               | Inter Tight                | The headings' font                                          |
 | `fp-title-size`               | `30px`                     | The headings' size                                          |

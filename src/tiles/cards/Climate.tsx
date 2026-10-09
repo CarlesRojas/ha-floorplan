@@ -14,10 +14,10 @@ const SEND_MS = 700
 // is not here goes at the end.
 const MODES: Record<string, { icon: string; color?: string }> = {
   auto: { icon: 'ph:sparkle', color: 'var(--_accent)' },
-  heat_cool: { icon: 'ph:thermometer', color: 'var(--_accent)' },
+  heat_cool: { icon: 'ph:thermometer', color: 'var(--_accent-climate)' },
   heat: { icon: 'ph:fire', color: 'var(--_accent-climate)' },
-  cool: { icon: 'ph:snowflake', color: 'var(--_accent-cool)' },
-  dry: { icon: 'ph:drop', color: 'var(--_accent-cool)' },
+  cool: { icon: 'ph:snowflake', color: 'var(--_mode-cool)' },
+  dry: { icon: 'ph:drop', color: 'var(--_mode-dry)' },
   fan_only: { icon: 'ph:fan', color: 'var(--_accent)' },
   off: { icon: 'ph:power-bold' },
 }
