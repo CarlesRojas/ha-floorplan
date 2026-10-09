@@ -28,6 +28,12 @@ Every save rebuilds and reloads the dashboard. No cache busting needed. Keep onl
 
 The dashboard fetches that URL on every load, so the dev server has to be running whenever the card is on screen. When it is not, Home Assistant says **Custom element doesn't exist: floorplan-3d**: nothing answered, so the module never ran and never registered the element. A reload will not help while the server is down. Start `pnpm dev` again, or switch the resource to the `/local` build below.
 
+### Floorplan tiles
+
+The tiles live in `src/tiles/` and are registered from `src/main.tsx`, so they ship in the same `card.js`. `host.tsx` is the base every tile's element extends: it loads the styles from `tiles.css` into the shadow root, checks the config and follows the room filter. `Tile.tsx` is the shell the entity tiles share, and `cards/` holds one view per card. The room filter itself is `src/lib/roomFilter.ts`, which the floorplan card sets whenever it flies to a room.
+
+`http://localhost:5173/src/dev/tiles.html` shows every tile against a mock Home Assistant whose states change when tapped, in a mock sections grid, with buttons to set the room filter. Add `?light=1` for a light dashboard. Service calls and more info requests are logged in the page. The user facing reference is `docs/TILES.md`.
+
 ### Production build into Home Assistant
 
 This is what the mini PC will use. It also works locally to test the real bundle.

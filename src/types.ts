@@ -35,8 +35,15 @@ export type HomeAssistant = {
   areas: Record<string, Area>
   entities?: Record<string, EntityRegistryEntry>
   devices?: Record<string, DeviceRegistryEntry>
-  callService: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown>
+  callService: (
+    domain: string,
+    service: string,
+    data?: Record<string, unknown>,
+    target?: Record<string, unknown>,
+  ) => Promise<unknown>
   themes: { darkMode: boolean }
+  locale?: { language: string }
+  language?: string
 }
 
 // Plan coordinates in meters. x grows to the right, y grows upward on the plan.

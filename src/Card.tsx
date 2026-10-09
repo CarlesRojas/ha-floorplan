@@ -2,6 +2,7 @@ import { DEFAULT_ASPECT_RATIO_MOBILE } from '#/constants.ts'
 import { aspectRatioCss } from '#/lib/aspect.ts'
 import { EDGE_FADE_MASK } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
+import { useRoomFilter } from '#/lib/roomFilter.ts'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import type { CameraView, CardConfig, HomeAssistant } from '#/types.ts'
 import { useRef, useState, type CSSProperties } from 'react'
@@ -41,6 +42,8 @@ export default function Card({ hass, config }: Props) {
   }
   // A room that has left the plan holds no focus.
   const focused = focus !== null && roomOf(focus) ? focus : null
+  // The Floorplan tiles on the dashboard follow the room in view.
+  useRoomFilter(focused ? roomOf(focused) : undefined)
   const goHome = () => {
     setFocus(null)
     camera.current?.reset()
