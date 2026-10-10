@@ -446,8 +446,9 @@
 
 .fp-weather-sky {
   display: flex;
+  align-self: flex-start;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   min-width: 0;
   text-align: right;
 }
