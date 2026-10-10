@@ -32,9 +32,10 @@ type Props = {
   toggles?: boolean
   // Buttons shown in the top right corner of a wide tile.
   controls?: ReactNode
-  // A row of buttons along the bottom of a wide tile, under the name. The
-  // feature the config names takes its place, at any size.
-  footer?: ReactNode
+  // Buttons across from the name along the bottom of a wide tile, so the
+  // name and the state stay in the bottom left corner. A feature beside
+  // the icon takes their place.
+  aside?: ReactNode
   // Whether an unknown state counts as unavailable. A button that was
   // never pressed has no time to show and says unknown, yet still works.
   unknownIsUnavailable?: boolean
@@ -65,7 +66,7 @@ export function Tile({
   role = 'button',
   toggles = false,
   controls,
-  footer,
+  aside,
   unknownIsUnavailable = true,
 }: Props) {
   const unavailable = !entity || entity.state === 'unavailable' || (unknownIsUnavailable && entity.state === 'unknown')
@@ -90,6 +91,12 @@ export function Tile({
   const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? said)
   const name = entityName(config, entity)
   const on = active && !unavailable
+  const text = (
+    <div className="fp-text">
+      <div className="fp-name">{name}</div>
+      <div className="fp-state">{shown}</div>
+    </div>
+  )
   return (
     <div
       {...handlers}
@@ -132,17 +139,19 @@ export function Tile({
           wide && controls && !unavailable && <div className="fp-controls">{controls}</div>
         )}
       </div>
-      <div className="fp-text">
-        <div className="fp-name">{name}</div>
-        <div className="fp-state">{shown}</div>
-      </div>
-      {addsRow(config.feature)
-        ? !unavailable && (
-            <div className="fp-footer">
-              <Feature env={env} config={config} entity={entity!} />
-            </div>
-          )
-        : wide && footer && !unavailable && !besideIcon(config.feature) && <div className="fp-footer">{footer}</div>}
+      {wide && aside && !unavailable && !config.feature ? (
+        <div className="fp-bottom">
+          {text}
+          <div className="fp-aside">{aside}</div>
+        </div>
+      ) : (
+        text
+      )}
+      {addsRow(config.feature) && !unavailable && (
+        <div className="fp-footer">
+          <Feature env={env} config={config} entity={entity!} />
+        </div>
+      )}
     </div>
   )
 }

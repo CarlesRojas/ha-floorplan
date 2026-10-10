@@ -42,6 +42,8 @@ export type HomeAssistant = {
     target?: Record<string, unknown>,
   ) => Promise<unknown>
   themes: { darkMode: boolean }
+  // The units the home measures in, like °C or °F for a temperature.
+  config?: { unit_system?: { temperature?: string } }
   locale?: { language: string }
   language?: string
   // The state and attributes as Home Assistant words them, translated and

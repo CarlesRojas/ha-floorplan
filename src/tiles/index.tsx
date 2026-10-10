@@ -20,7 +20,7 @@ import MapCard, { type MapConfig } from '#/tiles/cards/Map.tsx'
 import MediaControl from '#/tiles/cards/MediaControl.tsx'
 import Todo from '#/tiles/cards/Todo.tsx'
 import Weather, { type WeatherConfig } from '#/tiles/cards/Weather.tsx'
-import { besideIcon, featuresFor, isWide } from '#/tiles/features/index.tsx'
+import { featuresFor, isWide } from '#/tiles/features/index.tsx'
 import type { HomeAssistant } from '#/types.ts'
 import type { ReactNode } from 'react'
 
@@ -137,26 +137,6 @@ class WeatherCard extends entityCard<WeatherConfig>(WEATHER_DOMAINS, Weather, ['
   }
 }
 
-// A wide thermostat, not a water heater, is a row taller, for its modes
-// along the bottom, unless a feature sits beside its icon instead.
-class ClimateCard extends entityCard(CLIMATE_DOMAINS, Climate, [], true) {
-  getCardSize() {
-    return this.tall() ? 3 : 2
-  }
-
-  getGridOptions(): GridOptions {
-    return this.tall() ? { columns: 12, rows: 3 } : super.getGridOptions()
-  }
-
-  private tall() {
-    return (
-      this._config?.size === 'wide' &&
-      !!this._config.entity?.startsWith('climate.') &&
-      !besideIcon(this._config.feature)
-    )
-  }
-}
-
 // A card bigger than a tile, like the calendar, as wide and as tall as the
 // grid says, whatever size its config names.
 function panelCard<C extends TileConfig>(
@@ -243,7 +223,7 @@ const CARDS: Card[] = [
   },
   {
     type: 'fp-climate',
-    element: ClimateCard,
+    element: entityCard(CLIMATE_DOMAINS, Climate, [], true),
     wide: true,
     domains: CLIMATE_DOMAINS,
     name: 'Floorplan Climate',

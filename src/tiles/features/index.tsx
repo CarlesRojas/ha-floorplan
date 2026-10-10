@@ -127,7 +127,14 @@ export const FEATURES: FeatureDef[] = [
     supports: bit(cover.FAN.oscillate),
     View: cover.FanOscillate,
   },
-  { id: 'hvac-modes', label: 'Modes', domains: ['climate'], supports: has('hvac_modes'), View: climate.HvacModes },
+  {
+    id: 'hvac-modes',
+    label: 'Modes',
+    domains: ['climate'],
+    supports: has('hvac_modes'),
+    View: climate.HvacModes,
+    wide: true,
+  },
   {
     id: 'target-temperature',
     label: 'Target temperature',

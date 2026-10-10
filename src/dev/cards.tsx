@@ -487,6 +487,15 @@ hass = {
   devices: {},
   themes: { darkMode: !light },
   locale: { language: 'en' },
+  config: { unit_system: { temperature: '°C' } },
+  // Home Assistant's words for an attribute, near enough: 20.5 °C for a
+  // temperature and Heating for heating.
+  formatEntityAttributeValue: (entity, attribute, value = entity.attributes[attribute]) => {
+    if (typeof value === 'number') return /temp/.test(attribute) ? `${value} °C` : String(value)
+    if (typeof value !== 'string') return String(value)
+    const words = value.replace(/_/g, ' ')
+    return words.charAt(0).toUpperCase() + words.slice(1)
+  },
   // Home Assistant's words for a state, near enough: Heat cool for heat_cool.
   formatEntityState: (entity, value = entity.state) => {
     const unit = entity.attributes.unit_of_measurement

@@ -1,7 +1,7 @@
 import { closest, inPanelView } from '#/lib/panelView.ts'
 import { onRoomFilter, roomFilter } from '#/lib/roomFilter.ts'
 import { autoGroups } from '#/tiles/auto.ts'
-import { besideIcon, isWide } from '#/tiles/features/index.tsx'
+import { addsRow, isWide } from '#/tiles/features/index.tsx'
 import type { CardConfig as PlanConfig, HomeAssistant } from '#/types.ts'
 
 type CardConfig = {
@@ -45,15 +45,7 @@ function span(config: CardConfig, hass: HomeAssistant | null) {
     )
       ? 12
       : 6
-    // A wide thermostat has a row of modes along its bottom, unless a
-    // feature sits beside its icon instead.
-    rows =
-      config.size === 'wide' &&
-      type === 'fp-climate' &&
-      String(config.entity).startsWith('climate.') &&
-      !besideIcon(config.feature as string | undefined)
-        ? 3
-        : 2
+    rows = addsRow(config.feature as string | undefined) ? 3 : 2
   }
   columns = own?.columns ?? columns
   rows = own?.rows ?? rows

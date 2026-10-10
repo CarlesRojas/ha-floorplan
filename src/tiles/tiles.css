@@ -282,6 +282,25 @@
   min-width: 0;
 }
 
+/* The name and the state in the bottom left corner, with buttons across
+   from them, like a thermostat's modes, level with the state line. */
+.fp-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fp-bottom > .fp-text {
+  flex: 1 1 auto;
+}
+
+.fp-aside {
+  display: flex;
+  flex: none;
+  margin: 0 -4px -4px 0;
+}
+
 .fp-icon {
   display: block;
   flex: none;
@@ -508,11 +527,11 @@
 }
 
 /* The minus and plus of a thermostat, with what it aims for between them. */
-/* As wide as the widest temperature it shows, like 99.5° or 100°, so it
+/* As wide as the widest temperature it shows, like 99.5 °F, so it
    keeps its width as the number changes. */
 .fp-stepper-value,
 .fp-stepper-end {
-  --_digits: 3.4em;
+  --_digits: 4.2em;
   flex: none;
   align-self: center;
   width: var(--_digits);

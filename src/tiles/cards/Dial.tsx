@@ -2,7 +2,7 @@ import { callService, formatState, haptic, type TileEnv } from '#/tiles/actions.
 import { Control } from '#/tiles/Control.tsx'
 import { HvacModes, MENUS, ModeMenu } from '#/tiles/features/climate.tsx'
 import { Toggle } from '#/tiles/features/light.tsx'
-import { formatNumber, listOf, numberOf, optionWord } from '#/tiles/features/parts.tsx'
+import { formatDegrees, listOf, numberOf, optionWord } from '#/tiles/features/parts.tsx'
 import { insideTile } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { HVAC_MODES } from '#/tiles/modes.ts'
@@ -39,8 +39,6 @@ type Model = {
   // Off, the ring is dim and drags nothing.
   off?: boolean
 }
-
-const degrees = (hass: HomeAssistant, value: number) => `${formatNumber(hass, value)}°`
 
 function model(hass: HomeAssistant, entity: EntityState): Model | null {
   const domain = entity.entity_id.split('.')[0]
@@ -120,8 +118,8 @@ function model(hass: HomeAssistant, entity: EntityState): Model | null {
       : mode === 'off'
         ? 'Off'
         : formatState(hass, entity),
-    now: current !== null ? `Now ${degrees(hass, current)}` : undefined,
-    format: value => degrees(hass, value),
+    now: current !== null ? `Now ${formatDegrees(hass, current)}` : undefined,
+    format: value => formatDegrees(hass, value),
     send: values =>
       callService(
         hass,

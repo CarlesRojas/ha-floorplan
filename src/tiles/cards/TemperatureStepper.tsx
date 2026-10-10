@@ -1,5 +1,6 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import { Control } from '#/tiles/Control.tsx'
+import { formatDegrees } from '#/tiles/features/parts.tsx'
 import { insideTile } from '#/tiles/gestures.ts'
 import { useEffect, useRef, useState } from 'react'
 
@@ -72,10 +73,7 @@ export default function TemperatureStepper({ env, entityId }: Props) {
     }, SEND_MS)
   }
 
-  const degrees = (value: number | undefined) =>
-    value === undefined
-      ? ''
-      : `${new Intl.NumberFormat(env.hass.locale?.language, { maximumFractionDigits: 1 }).format(value)}°`
+  const degrees = (value: number | undefined) => (value === undefined ? '' : formatDegrees(env.hass, value))
 
   if (!range && aim.temperature === undefined) return null
   return (
