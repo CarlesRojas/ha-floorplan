@@ -45,6 +45,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- The rainbow of a light's color bar is softer, so it no longer glares on the tile.
 - The on and off switch under a light's or a humidifier's dial and a fan's oscillate control are now pills that fill in while on, in place of switches.
 - A cover that cannot stop shows only up and down on its wide tile.
 - The weather tile can show the next hours or the next days, and the card picker offers both.

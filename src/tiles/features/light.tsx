@@ -85,7 +85,8 @@ export const hueState = (entity: EntityState) => {
   return Array.isArray(hs) && typeof hs[0] === 'number' && !inWhite(entity) ? hueText(hs[0]) : undefined
 }
 
-const HUES = [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h} 100% 55%) ${(h / 360) * 100}%`).join(', ')
+// A little short of full saturation, so the rainbow does not glare.
+const HUES = [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h} 60% 64%) ${(h / 360) * 100}%`).join(', ')
 
 // The hue it shines in, along a slim rainbow beside the icon.
 export function Hue({ env, entity, onPreview }: FeatureProps) {
