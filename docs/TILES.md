@@ -129,7 +129,7 @@ rooms:
       - scene.movie_night
 ```
 
-Some tiles are for the whole home rather than a room, like a scene that sets up the bedroom for the projector, a light group that turns every light off, or the weather. Put them under **Home** in the card's editor, above **Tiles by room**. It takes any entity, the same tiles as the rooms, and the same handles to put them in order. Its heading reads Home, and the field at the top of the section renames it. With any entity there, the panel shows only this section while the whole home is in view, and each room's tiles only while that room is. With none, every room shows as before. In YAML it is the card's `home`, with an optional `name` and its `entities` in the order they show.
+Some tiles are for the whole home rather than a room, like a scene that sets up the bedroom for the projector, a switch that turns every light off, or the weather. Put them under **Home** in the card's editor, above **Tiles by room**. It takes any entity, the same tiles as the rooms, and the same handles to put them in order. Its heading reads Home, and the field at the top of the section renames it. With any entity there, the panel shows only this section while the whole home is in view, and each room's tiles only while that room is. With none, every room shows as before. In YAML it is the card's `home`, with an optional `name` and its `entities` in the order they show.
 
 ```yaml
 type: custom:floorplan-3d
@@ -137,9 +137,9 @@ side_panel: true
 home:
   name: Home
   entities:
-    - scene.projector
-    - scene.tv_mode
-    - light.all_lights
+    - switch.projector_scene
+    - switch.tv_scene
+    - switch.all_lights
     - weather.home
 rooms:
   - id: living
@@ -148,7 +148,7 @@ rooms:
     points: [[0, 0], [5, 0], [5, 4], [0, 4]]
 ```
 
-A scene or a script runs on a tap. An automation is a toggle that turns the automation itself on or off, so to run one from a tile, put its actions in a script. A light group made with Home Assistant's Group helper is on while any of its lights is, and a tap turns them all off, or all on when every one is off. A scene in Home Assistant has no on or off, so for one that shows whether it is in place and undoes itself, make a template switch: its state says when the scene is on, `turn_on` sets it up and `turn_off` undoes what should be undone. The demo's Projector scene is on while the projector screen is down, turns off the bedroom lights and brings the screen down when turned on, and only rolls the screen up when turned off.
+A scene or a script runs on a tap. An automation is a toggle that turns the automation itself on or off, so to run one from a tile, put its actions in a script. A light group made with Home Assistant's Group helper is a light, so its tile has brightness and color. For a plain on and off over many lights, make a template switch instead, like the demo's All lights: on while any light is, and a tap turns them all off, or all on when every one is off. A scene in Home Assistant has no on or off, so for one that shows whether it is in place and undoes itself, make a template switch: its state says when the scene is on, `turn_on` sets it up and `turn_off` undoes what should be undone. The demo's Projector scene is on while the projector screen is down, turns off the bedroom lights and brings the screen down when turned on, and only rolls the screen up when turned off.
 
 To choose every tile yourself, leave the side panel off and put the tiles next to the floorplan card in a sections view.
 

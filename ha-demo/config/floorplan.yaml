@@ -12,7 +12,7 @@ views:
           entities:
             - switch.projector_scene
             - switch.tv_scene
-            - light.all_lights
+            - switch.all_lights
             - weather.demo_weather_south
         rooms:
           - id: living

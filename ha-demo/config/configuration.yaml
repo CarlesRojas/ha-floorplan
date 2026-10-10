@@ -18,7 +18,9 @@ homeassistant:
 # is on while the screen is down: turning it on turns off the bedroom
 # lights and brings the screen down, and turning it off only rolls the
 # screen up. TV scene is the same around the living room TV, turning off
-# the living room and the kitchen.
+# the living room and the kitchen. All lights is a plain switch, not a
+# light, so its tile has no brightness or color: on while any light is,
+# and a tap turns them all off, or all on when every one is off.
 input_boolean:
   projector_screen_down:
     name: Projector screen down
@@ -77,20 +79,30 @@ template:
           - action: media_player.turn_off
             target:
               entity_id: media_player.living_room
-
-# One light for all of them, on while any is, so a tap turns them all off,
-# or all on when every one is off.
-light:
-  - platform: group
-    name: All lights
-    unique_id: all_lights
-    entities:
-      - light.living_room_rgbww_lights
-      - light.entrance_color_white_lights
-      - light.kitchen_lights
-      - light.office_rgbw_lights
-      - light.bed_light
-      - light.ceiling_lights
+      - name: All lights
+        unique_id: all_lights
+        icon: mdi:lightbulb-group
+        state: "{{ ['light.living_room_rgbww_lights', 'light.entrance_color_white_lights', 'light.kitchen_lights', 'light.office_rgbw_lights', 'light.bed_light', 'light.ceiling_lights'] | select('is_state', 'on') | list | count > 0 }}"
+        turn_on:
+          - action: light.turn_on
+            target:
+              entity_id:
+                - light.living_room_rgbww_lights
+                - light.entrance_color_white_lights
+                - light.kitchen_lights
+                - light.office_rgbw_lights
+                - light.bed_light
+                - light.ceiling_lights
+        turn_off:
+          - action: light.turn_off
+            target:
+              entity_id:
+                - light.living_room_rgbww_lights
+                - light.entrance_color_white_lights
+                - light.kitchen_lights
+                - light.office_rgbw_lights
+                - light.bed_light
+                - light.ceiling_lights
 
 # The Demo integration's lights come up red and pink. This sets them to a
 # warm white at full brightness every time Home Assistant starts.
