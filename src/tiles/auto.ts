@@ -2,10 +2,11 @@ import type { CardConfig, DecorationConfig, DeviceConfig, RoomConfig } from '#/t
 
 // The tiles of the floorplan's side panel, made from the devices placed on
 // the floorplan and the entities given to each room: a heading per room,
-// then a tile for each of its entities, in the room's order.
+// then a tile for each of its entities, in the room's order. The card's
+// scenes come first, under a heading of their own, in a group with no room.
 
 export type AutoCard = { type: string; [key: string]: unknown }
-export type AutoGroup = { room: string; cards: AutoCard[] }
+export type AutoGroup = { room: string | null; cards: AutoCard[] }
 
 const TILE_TYPES: Record<string, string> = {
   light: 'fp-toggle',
@@ -138,6 +139,11 @@ function heading(room: RoomConfig): AutoCard {
 export function autoGroups(plan: CardConfig): AutoGroup[] {
   const pieces = new Map((plan.decorations ?? []).map(piece => [piece.id, piece]))
   const groups: AutoGroup[] = []
+  const scenes = [...new Set(plan.scenes ?? [])]
+  if (scenes.length) {
+    const title: AutoCard = { type: 'custom:fp-title', title: 'Scenes', room_filter: 'show' }
+    groups.push({ room: null, cards: [title, ...scenes.map(entityTile)] })
+  }
   for (const room of plan.rooms ?? []) {
     const devices = new Map(
       (plan.devices ?? []).filter(device => device.room === room.id).map(device => [device.entity_id, device]),

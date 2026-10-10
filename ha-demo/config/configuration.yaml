@@ -34,6 +34,41 @@ template:
             target:
               entity_id: input_boolean.projector_screen_down
 
+# The scenes the side panel shows with the whole flat in view. Projector
+# turns off the bedroom lights and brings the screen down, and TV mode turns
+# off the living room and the kitchen and leaves the TV on.
+scene:
+  - id: projector
+    name: Projector
+    icon: mdi:projector
+    entities:
+      light.bed_light: "off"
+      light.office_rgbw_lights: "off"
+      cover.projector_screen: open
+  - id: tv_mode
+    name: TV mode
+    icon: mdi:television
+    entities:
+      light.living_room_rgbww_lights: "off"
+      light.entrance_color_white_lights: "off"
+      light.kitchen_lights: "off"
+      switch.decorative_lights: "off"
+      media_player.living_room: "on"
+
+# One light for all of them, on while any is, so a tap turns them all off,
+# or all on when every one is off.
+light:
+  - platform: group
+    name: All lights
+    unique_id: all_lights
+    entities:
+      - light.living_room_rgbww_lights
+      - light.entrance_color_white_lights
+      - light.kitchen_lights
+      - light.office_rgbw_lights
+      - light.bed_light
+      - light.ceiling_lights
+
 # The Demo integration's lights come up red and pink. This sets them to a
 # warm white at full brightness every time Home Assistant starts.
 automation:

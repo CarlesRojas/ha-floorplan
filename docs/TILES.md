@@ -129,6 +129,24 @@ rooms:
       - scene.movie_night
 ```
 
+Some tiles are for the whole home rather than a room, like a scene that sets up the bedroom for the projector or a light group that turns every light off. Put them under **Scenes** in the card's editor, above **Tiles by room**. It takes any entity, the same tiles as the rooms, and the same handles to put them in order. With any entity there, the panel shows only the scenes while the whole home is in view, and each room's tiles only while that room is. With none, every room shows as before. In YAML it is the card's `scenes`, a list of entity ids in the order they show.
+
+```yaml
+type: custom:floorplan-3d
+side_panel: true
+scenes:
+  - scene.projector
+  - scene.tv_mode
+  - light.all_lights
+rooms:
+  - id: living
+    name: Living room
+    area_id: living_room
+    points: [[0, 0], [5, 0], [5, 4], [0, 4]]
+```
+
+A scene or a script runs on a tap. An automation is a toggle that turns the automation itself on or off, so to run one from a tile, put its actions in a script. A light group made with Home Assistant's Group helper is on while any of its lights is, and a tap turns them all off, or all on when every one is off.
+
 To choose every tile yourself, leave the side panel off and put the tiles next to the floorplan card in a sections view.
 
 ## Icons

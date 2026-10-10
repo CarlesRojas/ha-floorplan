@@ -152,6 +152,10 @@ export type CardConfig = {
   // the rest: a heading per room, then a tile for each of its devices and
   // of its `entities`. On a narrow card the panel goes under the floorplan.
   side_panel?: boolean
+  // Entities whose tiles the side panel shows with the whole home in view,
+  // in this order, under a heading of their own. With any set, each room's
+  // tiles show only while that room is in view.
+  scenes?: string[]
 }
 
 declare global {

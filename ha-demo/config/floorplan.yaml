@@ -8,6 +8,10 @@ views:
       - type: custom:floorplan-3d
         side_panel: true
         first_click: room
+        scenes:
+          - scene.projector
+          - scene.tv_mode
+          - light.all_lights
         rooms:
           - id: living
             name: Living room

@@ -49,6 +49,12 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
     onChange({ ...config, rooms: next })
   }
 
+  const scenes = config.scenes ?? []
+  const setScenes = (next: string[]) => {
+    const { scenes: _, ...rest } = config
+    onChange(next.length ? { ...rest, scenes: next } : rest)
+  }
+
   // An entity has one place: a piece on the plan, or one room's list.
   const taken = [
     ...(config.devices ?? []).map(device => device.entity_id),
@@ -87,6 +93,33 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           />
         </label>
       </Section>
+
+      {sidePanel && (
+        <Section
+          title="Scenes"
+          description="Entities to have at hand with the whole home in view, such as a scene, a script or an automation. With any here, they are all the panel shows until a room is in view, and each room's tiles show only inside it. Leave it empty to show every room."
+        >
+          <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
+            {scenes.length > 0 && (
+              <SortableList
+                items={scenes.map(id => ({
+                  id,
+                  title: hass ? entityName(hass, id) : id,
+                  onRemove: () => setScenes(scenes.filter(other => other !== id)),
+                }))}
+                onReorder={setScenes}
+              />
+            )}
+            {hass && (
+              <EntityPicker
+                hass={hass}
+                exclude={scenes}
+                onPick={id => !scenes.includes(id) && setScenes([...scenes, id])}
+              />
+            )}
+          </div>
+        </Section>
+      )}
 
       {sidePanel && (
         <Section
@@ -264,7 +297,7 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
             {item.onRemove && (
               <button
                 type="button"
-                aria-label={`Take ${item.title} out of this room`}
+                aria-label={`Remove ${item.title}`}
                 onClick={item.onRemove}
                 className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-(--secondary-text-color) hover:bg-[color-mix(in_srgb,var(--primary-text-color)_8%,transparent)] hover:text-(--primary-text-color)"
               >
