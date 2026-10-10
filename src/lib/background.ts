@@ -144,14 +144,18 @@ export function backgroundOf(config: BackgroundConfig | undefined, dark: boolean
   return background ? background[dark ? 'dark' : 'light'] : null
 }
 
+// Where a card's background goes: the element and the style property it is
+// set through, and whether that element can be fixed to the window.
+type Spot = { element: HTMLElement; property: string; fixable: boolean }
+
 // Lays a background behind the view a card is in, and takes it away again.
 // Home Assistant draws a view's background in an element of its own, from
 // a variable a view's own background setting also goes through. The card
 // sets that variable on the element, and puts back what was there before
-// once it lets go. A card outside a view, such as the preview in the card
-// dialog, has none to set.
+// once it lets go. In the card dialog it goes behind the preview instead,
+// so the choice shows there as it is made.
 export class ViewBackground {
-  private target: HTMLElement | null = null
+  private spot: Spot | null = null
   private before: { value: string; fixed: boolean } | null = null
 
   private readonly card: HTMLElement
@@ -160,33 +164,44 @@ export class ViewBackground {
     this.card = card
   }
 
+  private find(): Spot | null {
+    const container = closest(this.card, 'hui-view-container')
+    const view = container?.querySelector<HTMLElement>(':scope > hui-view-background')
+    if (view) return { element: view, property: '--view-background', fixable: true }
+    const dialog = closest(this.card, 'hui-dialog-edit-card')
+    const preview = dialog?.shadowRoot?.querySelector<HTMLElement>('.element-preview')
+    if (preview) return { element: preview, property: 'background', fixable: false }
+    return null
+  }
+
   apply(config: BackgroundConfig | undefined, hass: HomeAssistant | null) {
     if (!hass || !this.card.isConnected) return
-    const container = closest(this.card, 'hui-view-container')
-    const target = container?.querySelector<HTMLElement>(':scope > hui-view-background') ?? null
-    if (target !== this.target) this.release()
+    const spot = this.find()
+    if (spot?.element !== this.spot?.element) this.release()
     const value = backgroundOf(config, hass.themes?.darkMode !== false)
-    if (!target || value === null) return this.release()
+    if (!spot || value === null) return this.release()
+    const { element, property, fixable } = spot
     if (!this.before) {
       this.before = {
-        value: target.style.getPropertyValue('--view-background'),
-        fixed: target.hasAttribute('fixed-background'),
+        value: element.style.getPropertyValue(property),
+        fixed: element.hasAttribute('fixed-background'),
       }
     }
-    this.target = target
-    target.style.setProperty('--view-background', value)
+    this.spot = spot
+    element.style.setProperty(property, value)
     // Fixed to the window, so the colors stay put while the page scrolls.
-    target.toggleAttribute('fixed-background', true)
+    if (fixable) element.toggleAttribute('fixed-background', true)
   }
 
   release() {
-    const target = this.target
+    const spot = this.spot
     const before = this.before
-    this.target = null
+    this.spot = null
     this.before = null
-    if (!target || !before) return
-    if (before.value) target.style.setProperty('--view-background', before.value)
-    else target.style.removeProperty('--view-background')
-    target.toggleAttribute('fixed-background', before.fixed)
+    if (!spot || !before) return
+    const { element, property, fixable } = spot
+    if (before.value) element.style.setProperty(property, before.value)
+    else element.style.removeProperty(property)
+    if (fixable) element.toggleAttribute('fixed-background', before.fixed)
   }
 }
