@@ -1,7 +1,7 @@
 import { formatAttribute, formatState, moreInfo, type TileEnv } from '#/tiles/actions.ts'
 import TemperatureStepper from '#/tiles/cards/TemperatureStepper.tsx'
 import { HvacModes } from '#/tiles/features/climate.tsx'
-import { HVAC_MODES } from '#/tiles/modes.ts'
+import { climateColor } from '#/tiles/modes.ts'
 import { formatDegrees, listOf } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
@@ -15,13 +15,14 @@ type Props = { env: TileEnv; config: TileConfig }
 // picks which the buttons move. A wide thermostat adds a button for each
 // mode it runs in across from the name, unless a feature sits beside the
 // icon instead. Lit while it is on, in the color of the mode it runs in,
-// which washes down from the top of the tile.
+// or in auto of what it is doing, which washes down from the top of the
+// tile.
 export default function Climate({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const attributes = entity?.attributes ?? {}
   const on = !!entity && entity.state !== 'off'
   const action = typeof attributes.hvac_action === 'string' ? attributes.hvac_action : null
-  const color = (entity && HVAC_MODES[entity.state]?.color) ?? 'var(--_mode-heat)'
+  const color = (entity && climateColor(entity.state, action)) ?? 'var(--_mode-heat)'
   const wide = config.size === 'wide'
 
   // A tile with minus and plus shows what it aims for between them.

@@ -5,7 +5,7 @@ import { Toggle } from '#/tiles/features/light.tsx'
 import { formatDegrees, listOf, numberOf, optionWord } from '#/tiles/features/parts.tsx'
 import { insideTile } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
-import { HVAC_MODES } from '#/tiles/modes.ts'
+import { climateColor } from '#/tiles/modes.ts'
 import { Panel } from '#/tiles/Panel.tsx'
 import { kelvinToRgb } from '#/signals.ts'
 import type { EntityState, HomeAssistant } from '#/types.ts'
@@ -112,7 +112,7 @@ function model(hass: HomeAssistant, entity: EntityState): Model | null {
     color:
       domain === 'water_heater'
         ? 'var(--_accent-climate)'
-        : (HVAC_MODES[mode]?.color ?? (mode === 'off' ? 'currentColor' : 'var(--_accent-climate)')),
+        : (climateColor(mode, action) ?? (mode === 'off' ? 'currentColor' : 'var(--_accent-climate)')),
     label: action
       ? optionWord(hass, entity, action, 'hvac_action')
       : mode === 'off'

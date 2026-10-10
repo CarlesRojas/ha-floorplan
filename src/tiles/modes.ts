@@ -12,3 +12,21 @@ export const HVAC_MODES: Record<string, { icon: string; color?: string }> = {
   off: { icon: 'ph:power-bold' },
 }
 export const HVAC_ORDER = Object.keys(HVAC_MODES)
+
+// The mode whose color each thing a thermostat does takes.
+const ACTION_MODES: Record<string, string> = {
+  heating: 'heat',
+  preheating: 'heat',
+  defrosting: 'heat',
+  cooling: 'cool',
+  drying: 'dry',
+  fan: 'fan_only',
+}
+
+// The color of a thermostat's tiles: the mode it runs in, or in auto what
+// it is doing right now, like orange while it heats, and grey while it
+// waits.
+export const climateColor = (state: string, action: unknown) => {
+  const mode = state === 'auto' && typeof action === 'string' ? (ACTION_MODES[action] ?? state) : state
+  return HVAC_MODES[mode]?.color
+}

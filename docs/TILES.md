@@ -236,45 +236,45 @@ Then pick **Floorplan Glass** in your profile, or as the dashboard's theme.
 
 The tiles look finished without it, and change with any theme that sets these:
 
-| Token                         | Default                    | What it changes                                                                   |
-| ----------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
-| `fp-tile-radius`              | `30px`                     | The corner radius                                                                 |
-| `fp-tile-padding`             | `18px`                     | The space inside a tile                                                           |
-| `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                                        |
-| `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on, `rgba(28, 28, 30, .94)` on a light dashboard |
-| `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                                              |
-| `fp-tile-blur`                | `24px`                     | How much the glass blurs what is behind it                                        |
-| `fp-tile-shadow`              | `none`                     | A box shadow under every tile                                                     |
-| `fp-tile-opacity-inactive`    | `1`                        | The icon and text of a tile that is off                                           |
-| `fp-tile-opacity-unavailable` | `.45`                      | A tile whose entity is unavailable                                                |
-| `fp-tile-icon-size`           | `28px`                     | The icon                                                                          |
-| `fp-tile-name-size`           | `15px`                     | The name                                                                          |
-| `fp-tile-state-size`          | `13px`                     | The line under the name                                                           |
-| `fp-slider-handle`            | the lit tile background    | The round handle of a slim slider beside the icon                                 |
-| `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                   |
-| `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                              |
-| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                             |
-| `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on, `#ffffff` on a light dashboard                     |
-| `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                                                    |
-| `fp-text-secondary-opacity`   | `.72`                      | The line under the name                                                           |
-| `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                       |
-| `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                        |
-| `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                         |
-| `fp-accent-climate`           | `#ff9f0a`                  | A water heater that is on, and the heating mode unless it is set                  |
-| `fp-accent-cool`              | `#64d2ff`                  | A humidifier, and the cooling mode unless it is set                               |
-| `fp-mode-auto`                | `#30d158`                  | A thermostat in its automatic mode                                                |
-| `fp-mode-heat-cool`           | `#bf5af2`                  | A thermostat that both heats and cools to keep a range                            |
-| `fp-mode-heat`                | `fp-accent-climate`        | A thermostat that heats                                                           |
-| `fp-mode-cool`                | `fp-accent-cool`           | A thermostat that cools                                                           |
-| `fp-mode-dry`                 | `#ffd60a`                  | A thermostat that dries the air                                                   |
-| `fp-mode-fan`                 | `#7d7aff`                  | A thermostat that only runs its fan                                               |
-| `fp-font-tile`                | Inter                      | The tiles' font                                                                   |
-| `fp-font-title`               | Inter Tight                | The headings' font                                                                |
-| `fp-title-size`               | `30px`                     | The headings' size                                                                |
-| `fp-title-opacity`            | `.92`                      | The headings' opacity                                                             |
-| `fp-title-color`              | the theme's text color     | The headings' color                                                               |
-| `fp-menu-bg`                  | dark frosted glass         | The select tile's menu                                                            |
-| `fp-menu-text`                | `#ffffff`                  | The text in that menu                                                             |
+| Token                         | Default                    | What it changes                                                                                                                 |
+| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `fp-tile-radius`              | `30px`                     | The corner radius                                                                                                               |
+| `fp-tile-padding`             | `18px`                     | The space inside a tile                                                                                                         |
+| `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                                                                                      |
+| `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on, `rgba(28, 28, 30, .94)` on a light dashboard                                               |
+| `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                                                                                            |
+| `fp-tile-blur`                | `24px`                     | How much the glass blurs what is behind it                                                                                      |
+| `fp-tile-shadow`              | `none`                     | A box shadow under every tile                                                                                                   |
+| `fp-tile-opacity-inactive`    | `1`                        | The icon and text of a tile that is off                                                                                         |
+| `fp-tile-opacity-unavailable` | `.45`                      | A tile whose entity is unavailable                                                                                              |
+| `fp-tile-icon-size`           | `28px`                     | The icon                                                                                                                        |
+| `fp-tile-name-size`           | `15px`                     | The name                                                                                                                        |
+| `fp-tile-state-size`          | `13px`                     | The line under the name                                                                                                         |
+| `fp-slider-handle`            | the lit tile background    | The round handle of a slim slider beside the icon                                                                               |
+| `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                                                                 |
+| `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                                                                            |
+| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                                                                           |
+| `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on, `#ffffff` on a light dashboard                                                                   |
+| `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                                                                                                  |
+| `fp-text-secondary-opacity`   | `.72`                      | The line under the name                                                                                                         |
+| `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                                                                     |
+| `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                                                                      |
+| `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                                                                       |
+| `fp-accent-climate`           | `#ff9f0a`                  | A water heater that is on, and the heating mode unless it is set                                                                |
+| `fp-accent-cool`              | `#64d2ff`                  | A humidifier, and the cooling mode unless it is set                                                                             |
+| `fp-mode-auto`                | `#8e8e93`                  | A thermostat in its automatic mode while it waits; while it heats, cools, dries or runs its fan it takes the color of that mode |
+| `fp-mode-heat-cool`           | `#bf5af2`                  | A thermostat that both heats and cools to keep a range                                                                          |
+| `fp-mode-heat`                | `fp-accent-climate`        | A thermostat that heats                                                                                                         |
+| `fp-mode-cool`                | `fp-accent-cool`           | A thermostat that cools                                                                                                         |
+| `fp-mode-dry`                 | `#ffd60a`                  | A thermostat that dries the air                                                                                                 |
+| `fp-mode-fan`                 | `#7d7aff`                  | A thermostat that only runs its fan                                                                                             |
+| `fp-font-tile`                | Inter                      | The tiles' font                                                                                                                 |
+| `fp-font-title`               | Inter Tight                | The headings' font                                                                                                              |
+| `fp-title-size`               | `30px`                     | The headings' size                                                                                                              |
+| `fp-title-opacity`            | `.92`                      | The headings' opacity                                                                                                           |
+| `fp-title-color`              | the theme's text color     | The headings' color                                                                                                             |
+| `fp-menu-bg`                  | dark frosted glass         | The select tile's menu                                                                                                          |
+| `fp-menu-text`                | `#ffffff`                  | The text in that menu                                                                                                           |
 
 On a light dashboard, a tile that is off is lighter glass with dark text, unless the theme sets its own.
 
