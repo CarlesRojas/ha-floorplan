@@ -250,7 +250,7 @@ The tiles look finished without it, and change with any theme that sets these:
 | `fp-tile-icon-size`           | `28px`                     | The icon                                                                                             |
 | `fp-tile-name-size`           | `15px`                     | The name                                                                                             |
 | `fp-tile-state-size`          | `13px`                     | The line under the name                                                                              |
-| `fp-slider-handle`            | `#1c1c1e`                  | The round handle of a slim slider beside the icon, `#f5f5f7` on a light dashboard                    |
+| `fp-slider-handle`            | `#f5f5f7`                  | The round handle of a slim slider beside the icon, `#1c1c1e` on a light dashboard                    |
 | `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                                      |
 | `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                                                 |
 | `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                                                |
