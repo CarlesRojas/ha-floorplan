@@ -139,13 +139,12 @@ export function FanDirection({ env, entity }: FeatureProps) {
 }
 
 export function FanOscillate({ env, entity }: FeatureProps) {
-  // A fan that is off shows no oscillation, even when it will once it is on.
   const oscillating = entity.attributes.oscillating === true
   return (
     <TogglePill
       icon="ph:arrows-left-right"
       label="Oscillate"
-      on={entity.state === 'on' && oscillating}
+      on={oscillating}
       onToggle={() =>
         callService(env.hass, 'fan.oscillate', { entity_id: entity.entity_id, oscillating: !oscillating })
       }
