@@ -409,7 +409,10 @@ function suggestions(card: Card, hass: HomeAssistant, entityId: string): Suggest
   if (card.extra) return base
   const features = featuresFor(hass.states[entityId]).map(feature => {
     const featured = { ...config, feature: feature.id }
-    return { label: feature.label, config: isWide(featured) ? { ...featured, size: 'wide' } : featured }
+    return {
+      label: feature.label,
+      config: isWide(featured, hass.states[entityId]) ? { ...featured, size: 'wide' } : featured,
+    }
   })
   return [...base, ...features]
 }

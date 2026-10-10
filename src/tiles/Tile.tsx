@@ -85,7 +85,7 @@ export function Tile({
     return () => clearTimeout(timer)
   }, [preview])
   const beside = besideIcon(config.feature) && !unavailable
-  const wide = isWide(config)
+  const wide = isWide(config, entity)
   const said = (active && !unavailable && featureState(config.feature, entity!)) || state
   const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? said)
   const name = entityName(config, entity)

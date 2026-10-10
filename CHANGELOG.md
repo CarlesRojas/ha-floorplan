@@ -82,6 +82,7 @@ moves that section under the new version and uses it as the release notes.
 - On a small tile, a pill that does something, like Press, is as wide as its words and sits at the right, as on a wide tile.
 - The position tile of a blind, a shutter, a garage door or another cover that goes up and down fills from the bottom as it rises and is dragged up and down, an inverted one like a projector screen fills from the top as it comes down, and curtains, gates, doors and valves still fill from the left.
 - A slider tile that is empty shows a faint handle at the side to pull it from, and the handles at both ends sit exactly halfway across the tile's padding.
+- A thermostat's target temperature tile is always wide when it holds a range of two temperatures, since a small one had no room for them.
 
 ### Fixed
 

@@ -80,7 +80,7 @@ const ENTITIES: EntityState[] = [
     min_temp: 7,
     max_temp: 35,
     target_temp_step: 0.5,
-    hvac_modes: ['off', 'heat', 'cool', 'auto'],
+    hvac_modes: ['off', 'heat', 'cool', 'auto', 'dry', 'fan_only', 'heat_cool'],
     preset_modes: ['home', 'eco', 'away'],
     preset_mode: 'home',
     fan_modes: ['auto', 'low', 'high'],

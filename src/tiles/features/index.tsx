@@ -26,8 +26,8 @@ export type FeatureDef = {
   // the tile a row taller.
   row?: boolean
   // Too many buttons to fit beside the icon of a small tile, so a tile
-  // with it is always wide.
-  wide?: boolean
+  // with it is always wide, or only for an entity it says.
+  wide?: boolean | ((entity: EntityState) => boolean)
   // What the tile says under its name while it is on, in place of what it
   // would say without the feature, like a light's white in kelvin.
   state?: (entity: EntityState) => string | undefined
@@ -134,6 +134,8 @@ export const FEATURES: FeatureDef[] = [
     domains: ['climate', 'water_heater'],
     supports: e => numberOf(e, 'temperature') !== null || numberOf(e, 'target_temp_low') !== null,
     View: climate.TargetTemperature,
+    // A range is two temperatures with minus and plus around them.
+    wide: e => numberOf(e, 'temperature') === null && numberOf(e, 'target_temp_low') !== null,
   },
   {
     id: 'preset-modes',
@@ -277,11 +279,16 @@ export const featureState = (feature: string | undefined, entity: EntityState) =
   FEATURES.find(f => f.id === feature && f.domains.includes(domainOf(entity)))?.state?.(entity)
 
 // Whether a tile is wide, because its config says so or because its
-// feature only fits a wide one.
-export const isWide = (config: { size?: string; entity?: string; feature?: string }) =>
+// feature only fits a wide one, for its entity when it is known.
+export const isWide = (config: { size?: string; entity?: string; feature?: string }, entity?: EntityState) =>
   config.size === 'wide' ||
   (!!config.feature &&
-    !!FEATURES.find(f => f.id === config.feature && f.wide && f.domains.includes(config.entity?.split('.')[0] ?? '')))
+    FEATURES.some(
+      f =>
+        f.id === config.feature &&
+        f.domains.includes(config.entity?.split('.')[0] ?? '') &&
+        (typeof f.wide === 'function' ? !!entity && f.wide(entity) : !!f.wide),
+    ))
 
 // Whether the feature is drawn across from the icon.
 export const besideIcon = (feature: string | undefined) =>

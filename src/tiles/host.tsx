@@ -142,7 +142,10 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
 
   getGridOptions(): GridOptions {
     const rows = addsRow(this._config?.feature) ? 3 : 2
-    return { columns: this._config && isWide(this._config) ? 12 : 6, rows }
+    return {
+      columns: this._config && isWide(this._config, this._hass?.states[this._config.entity ?? '']) ? 12 : 6,
+      rows,
+    }
   }
 
   // Set by Home Assistant while the dashboard is edited, when every card

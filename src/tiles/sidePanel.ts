@@ -30,7 +30,7 @@ const FADE_IN_MS = 220
 
 // How many of the 12 columns and how many rows a side card takes, read from
 // its config so the layout is known before the card has loaded.
-function span(config: CardConfig) {
+function span(config: CardConfig, hass: HomeAssistant | null) {
   const own = config.grid_options
   const type = config.type.replace(/^custom:/, '')
   let columns: number | 'full' = 12
@@ -39,7 +39,12 @@ function span(config: CardConfig) {
   else if (type === 'fp-camera') columns = 12
   else if (type === 'fp-weather') rows = 3
   else if (type.startsWith('fp-')) {
-    columns = isWide(config as { size?: string; entity?: string; feature?: string }) ? 12 : 6
+    columns = isWide(
+      config as { size?: string; entity?: string; feature?: string },
+      hass?.states[String(config.entity)],
+    )
+      ? 12
+      : 6
     // A wide thermostat has a row of modes along its bottom, unless a
     // feature sits beside its icon instead.
     rows =
@@ -273,7 +278,7 @@ export class SidePanel extends HTMLElement {
     const children = autoGroups(config).flatMap(group => group.cards.map(card => ({ card, room: group.room })))
     this.side = children.map(({ card: child, room }) => {
       const card = this.create(child)
-      const { columns, rows } = span(child)
+      const { columns, rows } = span(child, this._hass)
       card.style.gridColumn = `span ${columns}`
       card.toggleAttribute('data-sized', rows !== 'auto')
       if (rows !== 'auto') card.style.height = `calc(${rows * ROW_PX}px + ${rows - 1} * var(--_gap))`
