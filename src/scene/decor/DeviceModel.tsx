@@ -1426,6 +1426,10 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // sits over the existing cylinder.
       const s = p('size')
       const h = s * 1.9
+      // Its light glows red while the door is locked and green once it can
+      // be opened, for as long as it has an entity to report.
+      const bound = state != null
+      const glow = on ? '#e5484d' : '#46c46e'
       return (
         <group>
           <Slab size={[s, h, 0.026]} radius={s / 2} bevel={0.008} position={[0, -h / 2, 0.013]}>
@@ -1448,11 +1452,11 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
             </Slab>
             <mesh position={[0, 0, 0.0795]}>
               <planeGeometry args={[s * 0.04, s * 0.4]} />
-              <meshStandardMaterial color="#3a3d40" emissive="#8fd6a0" emissiveIntensity={2.6 * lit} />
+              <meshStandardMaterial color="#3a3d40" emissive={glow} emissiveIntensity={bound ? 2.6 : 0} />
             </mesh>
           </group>
-          <Led on={on} position={[0, -h * 0.16, 0.03]} radius={0.008} />
-          <Halo on={on} position={[0, -h * 0.4, 0.11]} />
+          <Led on={bound} color={glow} position={[0, -h * 0.16, 0.03]} radius={0.008} />
+          <Halo on={bound} color={glow} position={[0, -h * 0.4, 0.11]} />
         </group>
       )
     }

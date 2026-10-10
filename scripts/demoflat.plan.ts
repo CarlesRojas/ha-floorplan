@@ -39,7 +39,6 @@ const BATHROOM: Point[] = [
   [7.8, 2.2],
   [4.2, 2.2],
 ]
-const POINTS: Record<string, Point[]> = { living: LIVING, kitchen: KITCHEN, bedroom: BEDROOM, bathroom: BATHROOM }
 
 // Every piece in the flat, placed and colored in the editor.
 const decorations: DecorationConfig[] = [
