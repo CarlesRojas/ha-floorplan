@@ -1,5 +1,5 @@
 import { entityName, moreInfo, runAction, type TileEnv } from '#/tiles/actions.ts'
-import { addsRow, besideIcon, Feature } from '#/tiles/features/index.tsx'
+import { addsRow, besideIcon, Feature, featureState } from '#/tiles/features/index.tsx'
 import type { Preview } from '#/tiles/features/parts.tsx'
 import { useTileGestures } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
@@ -72,7 +72,8 @@ export function Tile({
   // until the finger lifts.
   const [preview, setPreview] = useState<Preview | null>(null)
   const beside = besideIcon(config.feature) && !unavailable
-  const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? state)
+  const said = (active && !unavailable && featureState(config.feature, entity!)) || state
+  const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? said)
   const name = entityName(config, entity)
   const on = active && !unavailable
   return (

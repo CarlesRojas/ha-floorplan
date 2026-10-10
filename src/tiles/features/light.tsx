@@ -32,7 +32,7 @@ export function ColorTemp({ env, entity, onPreview }: FeatureProps) {
   const max = numberOf(entity, 'max_color_temp_kelvin') ?? 6500
   const kelvin = numberOf(entity, 'color_temp_kelvin') ?? Math.round((min + max) / 2)
   const stops = [0, 0.25, 0.5, 0.75, 1].map(t => `${rgb(min + (max - min) * t)} ${t * 100}%`)
-  const format = (v: number) => `${Math.round(v / 50) * 50} K`
+  const format = kelvinText
   return (
     <SlimSlider
       label="Color temperature"
@@ -48,6 +48,34 @@ export function ColorTemp({ env, entity, onPreview }: FeatureProps) {
   )
 }
 
+// What a light's white says on its tile, in kelvin.
+export const kelvinText = (v: number) => `${Math.round(v / 50) * 50} K`
+
+const NAMES: [number, string][] = [
+  [15, 'Red'],
+  [40, 'Orange'],
+  [65, 'Yellow'],
+  [150, 'Green'],
+  [195, 'Cyan'],
+  [255, 'Blue'],
+  [290, 'Purple'],
+  [335, 'Pink'],
+  [360, 'Red'],
+]
+
+// The name of the hue a light shines in, for its tile.
+export const hueText = (hue: number) => NAMES.find(([upTo]) => hue <= upTo)?.[1] ?? 'Red'
+
+// What a light's white or color reads on its tile, when it has one.
+export const tempState = (entity: EntityState) => {
+  const kelvin = numberOf(entity, 'color_temp_kelvin')
+  return kelvin == null ? undefined : kelvinText(kelvin)
+}
+export const hueState = (entity: EntityState) => {
+  const hs = entity.attributes.hs_color
+  return Array.isArray(hs) && typeof hs[0] === 'number' ? hueText(hs[0]) : undefined
+}
+
 const HUES = [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h} 100% 55%) ${(h / 360) * 100}%`).join(', ')
 
 // The hue it shines in, along a slim rainbow beside the icon.
@@ -55,7 +83,7 @@ export function Hue({ env, entity, onPreview }: FeatureProps) {
   const hs = entity.attributes.hs_color
   const hue = Array.isArray(hs) ? Math.round(hs[0]) : 0
   const saturation = Array.isArray(hs) && hs[1] > 20 ? hs[1] : 100
-  const format = (v: number) => `${v}°`
+  const format = hueText
   return (
     <SlimSlider
       label="Color"

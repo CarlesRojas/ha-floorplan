@@ -23,6 +23,9 @@ export type FeatureDef = {
   View?: ComponentType<FeatureProps>
   // Drawn across from the icon instead, so it adds no row either.
   beside?: boolean
+  // What the tile says under its name while it is on, in place of what it
+  // would say without the feature, like a light's white in kelvin.
+  state?: (entity: EntityState) => string | undefined
 }
 
 const has = (attribute: string) => (entity: EntityState) => listOf(entity, attribute).length > 0
@@ -43,8 +46,17 @@ export const FEATURES: FeatureDef[] = [
     supports: light.warms,
     View: light.ColorTemp,
     beside: true,
+    state: light.tempState,
   },
-  { id: 'color', label: 'Color', domains: ['light'], supports: light.colors, View: light.Hue, beside: true },
+  {
+    id: 'color',
+    label: 'Color',
+    domains: ['light'],
+    supports: light.colors,
+    View: light.Hue,
+    beside: true,
+    state: light.hueState,
+  },
   {
     id: 'color-favorites',
     label: 'Favorite colors',
@@ -254,6 +266,11 @@ export function featuresFor(entity: EntityState | undefined) {
 // Whether a tile's feature goes along its bottom, making it a row taller.
 export const addsRow = (feature: string | undefined) =>
   !!feature && !!FEATURES.find(f => f.id === feature && f.View && !f.beside)
+
+// What a tile with the feature says under its name, when the feature
+// has something to say.
+export const featureState = (feature: string | undefined, entity: EntityState) =>
+  FEATURES.find(f => f.id === feature && f.domains.includes(domainOf(entity)))?.state?.(entity)
 
 // Whether the feature is drawn across from the icon.
 export const besideIcon = (feature: string | undefined) =>
