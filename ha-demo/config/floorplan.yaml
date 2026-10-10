@@ -10,8 +10,8 @@ views:
         first_click: room
         home:
           entities:
-            - scene.projector
-            - scene.tv_mode
+            - switch.projector_scene
+            - switch.tv_scene
             - light.all_lights
             - weather.demo_weather_south
         rooms:

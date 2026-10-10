@@ -13,7 +13,12 @@ homeassistant:
       friendly_name: Bedroom speaker
 
 # A projector screen that rolls down and up, which the Demo integration does
-# not have, kept as a toggle behind a cover.
+# not have, kept as a toggle behind a cover. Then two scenes for the side
+# panel's Home section, as switches so they have a state. Projector scene
+# is on while the screen is down: turning it on turns off the bedroom
+# lights and brings the screen down, and turning it off only rolls the
+# screen up. TV scene is the same around the living room TV, turning off
+# the living room and the kitchen.
 input_boolean:
   projector_screen_down:
     name: Projector screen down
@@ -33,27 +38,45 @@ template:
           - action: input_boolean.turn_off
             target:
               entity_id: input_boolean.projector_screen_down
-
-# Scenes for the side panel's Home section, with the whole flat in view. Projector
-# turns off the bedroom lights and brings the screen down, and TV mode turns
-# off the living room and the kitchen and leaves the TV on.
-scene:
-  - id: projector
-    name: Projector
-    icon: mdi:projector
-    entities:
-      light.bed_light: "off"
-      light.office_rgbw_lights: "off"
-      cover.projector_screen: open
-  - id: tv_mode
-    name: TV mode
-    icon: mdi:television
-    entities:
-      light.living_room_rgbww_lights: "off"
-      light.entrance_color_white_lights: "off"
-      light.kitchen_lights: "off"
-      switch.decorative_lights: "off"
-      media_player.living_room: "on"
+  - switch:
+      - name: Projector scene
+        unique_id: projector_scene
+        icon: mdi:projector
+        state: "{{ is_state('cover.projector_screen', 'open') }}"
+        turn_on:
+          - action: light.turn_off
+            target:
+              entity_id:
+                - light.bed_light
+                - light.office_rgbw_lights
+          - action: cover.open_cover
+            target:
+              entity_id: cover.projector_screen
+        turn_off:
+          - action: cover.close_cover
+            target:
+              entity_id: cover.projector_screen
+      - name: TV scene
+        unique_id: tv_scene
+        icon: mdi:television
+        state: "{{ states('media_player.living_room') not in ['off', 'standby', 'unavailable', 'unknown'] }}"
+        turn_on:
+          - action: light.turn_off
+            target:
+              entity_id:
+                - light.living_room_rgbww_lights
+                - light.entrance_color_white_lights
+                - light.kitchen_lights
+          - action: switch.turn_off
+            target:
+              entity_id: switch.decorative_lights
+          - action: media_player.turn_on
+            target:
+              entity_id: media_player.living_room
+        turn_off:
+          - action: media_player.turn_off
+            target:
+              entity_id: media_player.living_room
 
 # One light for all of them, on while any is, so a tap turns them all off,
 # or all on when every one is off.

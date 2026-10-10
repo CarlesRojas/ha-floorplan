@@ -5,8 +5,8 @@ side_panel: true
 first_click: room
 home:
   entities:
-    - scene.projector
-    - scene.tv_mode
+    - switch.projector_scene
+    - switch.tv_scene
     - light.all_lights
     - weather.home
 rooms:

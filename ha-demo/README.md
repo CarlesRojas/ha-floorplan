@@ -25,7 +25,7 @@ It runs on port 8124, so it can sit next to another Home Assistant on the usual 
 ## What is in it
 
 - `compose.yaml` mounts the repo's `dist` folder, so the dashboard always runs the card you last built, and the `themes` folder, for the Floorplan Glass theme the dashboard uses.
-- `config/configuration.yaml` loads the Demo integration and registers the card and the dashboard in YAML. It adds a projector screen, which the Demo integration does not have, the Projector and TV mode scenes and an All lights group for the side panel's Home section, and sets the demo lights to a warm white on every start.
+- `config/configuration.yaml` loads the Demo integration and registers the card and the dashboard in YAML. It adds a projector screen, which the Demo integration does not have, Projector scene and TV scene switches and an All lights group for the side panel's Home section, and sets the demo lights to a warm white on every start.
 - `config/floorplan.yaml` is the dashboard. It is written by `pnpm demoflat` from `scripts/demoflat.plan.ts`, the same plan as `demoflat.yaml`, with each piece bound to its Demo integration entity. Do not edit it by hand.
 - `seed/core.config_entries` sets up the backyard camera on the first start, since that kind of camera can only be added from the UI. It loops `config/cameras/backyard.gif`, made from [a clip on Pexels](https://www.pexels.com/video/a-black-cat-on-the-backyard-9337775/).
 
