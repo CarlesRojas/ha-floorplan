@@ -66,12 +66,6 @@ export const FEATURES: FeatureDef[] = [
   },
   { id: 'effect', label: 'Effect', domains: ['light'], supports: has('effect_list'), View: light.Effect },
   {
-    id: 'toggle',
-    label: 'Toggle',
-    domains: ['light', 'switch', 'input_boolean', 'fan', 'humidifier', 'siren', 'automation', 'remote'],
-    View: light.Toggle,
-  },
-  {
     id: 'open-close',
     label: 'Open and close',
     domains: COVERS,

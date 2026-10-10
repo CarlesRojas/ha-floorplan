@@ -156,7 +156,7 @@ export function Effect({ env, entity }: FeatureProps) {
 
 const ON_STATES = ['on', 'open', 'opening']
 
-// A switch along the bottom, for anything on or off.
+// A switch to turn it on or off, under the dial.
 export function Toggle({ env, entity }: FeatureProps) {
   const domain = domainOf(entity)
   const on = ON_STATES.includes(entity.state)
