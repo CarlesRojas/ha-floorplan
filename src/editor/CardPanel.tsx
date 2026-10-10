@@ -1,11 +1,13 @@
 import { BACKGROUNDS, DEFAULT_BACKGROUND, THEME_BACKGROUND } from '#/lib/background.ts'
 import { cn } from '#/lib/utils.ts'
+import { field, group, iconButton } from '#/editor/look.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
 import { Switch } from '#/editor/panel.tsx'
+import { EDITOR_TINT_COLOR } from '#/theme.ts'
 import { entityName } from '#/devices/catalog.ts'
 import type { BackgroundConfig, CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
 import { roomEntities } from '#/tiles/auto.ts'
-import { faGripVertical, faPen, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faGripVertical, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   useEffect,
@@ -78,35 +80,42 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
   ]
 
   return (
-    <div className="font-montserrat flex flex-col gap-8 px-6 py-8 text-(--primary-text-color)">
+    <div
+      data-light={hass?.themes?.darkMode === false || undefined}
+      className="fp-editor font-system flex flex-col gap-6 px-5 py-6 text-(--primary-text-color) antialiased"
+    >
       <Section
         title="Floorplan"
         description="Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for."
       >
-        <button
-          type="button"
-          onClick={onOpen}
-          disabled={opening}
-          aria-busy={opening}
-          className="flex h-10 cursor-pointer items-center gap-2 self-start rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
-        >
-          <FontAwesomeIcon icon={opening ? faSpinner : faPenRuler} spin={opening} className="size-3.5" />
-          {opening ? 'Opening…' : 'Open editor'}
-        </button>
+        <div className={cn(group, 'flex-row items-center gap-3')}>
+          <span className="bg-tint-fill flex size-9 shrink-0 items-center justify-center rounded-[10px] text-white">
+            <FontAwesomeIcon icon={faPenRuler} className="size-4" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[13px] font-semibold">Floorplan editor</span>
+            <span className="text-label-2 truncate text-xs">Rooms, furniture and devices</span>
+          </span>
+          <button
+            type="button"
+            onClick={onOpen}
+            disabled={opening}
+            aria-busy={opening}
+            className="bg-tint-fill flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold text-white transition-[filter,transform] hover:brightness-[1.06] active:scale-[0.97] disabled:cursor-progress disabled:opacity-70"
+          >
+            {opening && <FontAwesomeIcon icon={faSpinner} spin className="size-3" />}
+            {opening ? 'Opening…' : 'Open editor'}
+          </button>
+        </div>
       </Section>
 
       <Section
         title="Side panel"
         description="Tiles beside the floorplan, a heading for each room and a tile for each of its devices. With a room in view only its tiles show. On a narrow card the panel goes under the floorplan."
       >
-        <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-(--divider-color) px-4 py-3">
-          <span className="text-sm font-medium">Show the side panel</span>
-          <Switch
-            checked={sidePanel}
-            accent="var(--primary-color)"
-            label="Show the side panel"
-            onChange={setSidePanel}
-          />
+        <label className={cn(group, 'cursor-pointer flex-row items-center justify-between gap-4 py-2.5')}>
+          <span className="text-[13px]">Show the side panel</span>
+          <Switch checked={sidePanel} accent={EDITOR_TINT_COLOR} label="Show the side panel" onChange={setSidePanel} />
         </label>
       </Section>
 
@@ -114,18 +123,20 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
         title="Background"
         description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Theme leaves the dashboard's own background."
       >
-        <BackgroundPicker
-          title="Light"
-          mode="light"
-          value={config.background?.light ?? DEFAULT_BACKGROUND}
-          onChange={id => setBackground('light', id)}
-        />
-        <BackgroundPicker
-          title="Dark"
-          mode="dark"
-          value={config.background?.dark ?? DEFAULT_BACKGROUND}
-          onChange={id => setBackground('dark', id)}
-        />
+        <div className={cn(group, 'gap-4')}>
+          <BackgroundPicker
+            title="Light"
+            mode="light"
+            value={config.background?.light ?? DEFAULT_BACKGROUND}
+            onChange={id => setBackground('light', id)}
+          />
+          <BackgroundPicker
+            title="Dark"
+            mode="dark"
+            value={config.background?.dark ?? DEFAULT_BACKGROUND}
+            onChange={id => setBackground('dark', id)}
+          />
+        </div>
       </Section>
 
       {sidePanel && (
@@ -133,19 +144,15 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           title="Home"
           description="Tiles for the whole home rather than a room, such as a scene, a script, the weather or a group of lights, under a heading of their own. With any here, they are all the panel shows until a room is in view, and each room's tiles show only inside it. Leave it empty to show every room."
         >
-          <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
-            <label className="group flex h-9 cursor-text items-center gap-2 rounded-lg px-1 focus-within:bg-[color-mix(in_srgb,var(--primary-text-color)_7%,transparent)] focus-within:px-3">
+          <div className={group}>
+            <label className="grid grid-cols-[auto_1fr] items-center gap-3 text-[13px]">
+              <span>Heading</span>
               <input
                 type="text"
                 value={home.name ?? ''}
                 placeholder="Home"
-                aria-label="Heading"
                 onChange={event => setHome({ name: event.target.value })}
-                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-(--primary-text-color) outline-none placeholder:text-(--primary-text-color) focus:placeholder:text-(--secondary-text-color)"
-              />
-              <FontAwesomeIcon
-                icon={faPen}
-                className="size-3 text-(--secondary-text-color) group-focus-within:hidden"
+                className={cn(field, 'bg-fill-strong hover:bg-fill-stronger focus:bg-fill-strong outline-none')}
               />
             </label>
             {homeEntities.length > 0 && (
@@ -175,7 +182,7 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           description="Every device on the plan already has a tile in its room. Add the entities that have no piece on the plan, such as a scene, a sensor or a thermostat, and drag the handles to put the tiles in the order the panel shows them."
         >
           {rooms.length === 0 ? (
-            <p className="text-sm text-(--secondary-text-color)">Draw a room in the editor first.</p>
+            <p className={cn(group, 'text-label-2 text-[13px]')}>Draw a room in the editor first.</p>
           ) : (
             rooms.map(room => (
               <RoomEntities
@@ -192,7 +199,9 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
       )}
 
       <Section title="Moving the view">
-        <ControlsGuide className="justify-start" />
+        <div className={cn(group, 'py-3')}>
+          <ControlsGuide className="justify-start" />
+        </div>
       </Section>
     </div>
   )
@@ -200,12 +209,10 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-base font-semibold">{title}</h3>
-        {description && <p className="text-xs text-(--secondary-text-color)">{description}</p>}
-      </div>
+    <section className="flex flex-col gap-2">
+      <h3 className="text-label-2 px-3 text-[13px] font-semibold">{title}</h3>
       {children}
+      {description && <p className="text-label-2 px-3 text-xs leading-snug">{description}</p>}
     </section>
   )
 }
@@ -228,9 +235,9 @@ function BackgroundPicker({
     { id: THEME_BACKGROUND, name: 'Theme', swatch: null },
   ]
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
-      <p className="px-1 text-sm font-semibold">{title}</p>
-      <div role="radiogroup" aria-label={`${title} background`} className="grid grid-cols-3 gap-2">
+    <div className="flex flex-col gap-2">
+      <p className="px-0.5 text-[13px] font-medium">{title}</p>
+      <div role="radiogroup" aria-label={`${title} background`} className="grid grid-cols-3 gap-x-2.5 gap-y-3">
         {options.map(option => {
           const chosen = option.id === value
           return (
@@ -244,15 +251,13 @@ function BackgroundPicker({
             >
               <span
                 className={cn(
-                  'block aspect-4/3 w-full rounded-lg ring-offset-2 ring-offset-(--card-background-color) transition-shadow',
-                  chosen ? 'ring-2 ring-(--primary-color)' : 'ring-1 ring-(--divider-color) group-hover:ring-2',
-                  !option.swatch && 'border border-dashed border-(--secondary-text-color) ring-0',
+                  'block aspect-[16/10] w-full rounded-[10px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)] ring-offset-2 ring-offset-(--card-background-color) transition-[box-shadow,transform] group-active:scale-[0.97]',
+                  chosen ? 'ring-tint ring-[2.5px]' : 'group-hover:ring-separator group-hover:ring-2',
+                  !option.swatch && 'border-label-2 border border-dashed shadow-none',
                 )}
                 style={option.swatch ? { background: option.swatch } : undefined}
               />
-              <span className={cn('text-xs', chosen ? 'font-semibold' : 'text-(--secondary-text-color)')}>
-                {option.name}
-              </span>
+              <span className={cn('text-xs', chosen ? 'text-tint font-semibold' : 'text-label-2')}>{option.name}</span>
             </button>
           )
         })}
@@ -285,8 +290,8 @@ function RoomEntities({
     onChange({ entities: extra.filter(other => other !== id), order: room.order?.filter(other => other !== id) })
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
-      <p className="px-1 text-sm font-semibold">{roomName(hass, room)}</p>
+    <div className={group}>
+      <p className="px-0.5 text-[13px] font-semibold">{roomName(hass, room)}</p>
       {ids.length > 0 && (
         <SortableList
           items={ids.map(id => ({
@@ -376,7 +381,7 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
   }
 
   return (
-    <ul className="relative flex flex-col gap-1.5">
+    <ul className="bg-raised relative flex flex-col overflow-visible rounded-lg shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
       {ids.map(id => {
         const item = byId.get(id)!
         const dragging = held === id
@@ -388,17 +393,21 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
               else rows.current.delete(id)
             }}
             className={cn(
-              'flex h-11 items-center gap-0.5 rounded-lg bg-[color-mix(in_srgb,var(--primary-text-color)_7%,var(--card-background-color,#fff))] pr-1 pl-3',
-              dragging && 'relative z-10 shadow-lg ring-1 ring-(--divider-color)',
+              'bg-raised not-first:border-separator flex h-10 items-center gap-0.5 pr-1 pl-3 not-first:border-t first:rounded-t-lg last:rounded-b-lg',
+              dragging &&
+                'relative z-10 rounded-lg border-transparent shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45),0_0_0_0.5px_rgba(0,0,0,0.1)]',
             )}
           >
-            <span className="min-w-0 flex-1 truncate text-sm">{item.title}</span>
+            <span className="min-w-0 flex-1 truncate text-[13px]">{item.title}</span>
             {item.onRemove && (
               <button
                 type="button"
                 aria-label={`Remove ${item.title}`}
                 onClick={item.onRemove}
-                className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-(--secondary-text-color) hover:bg-[color-mix(in_srgb,var(--primary-text-color)_8%,transparent)] hover:text-(--primary-text-color)"
+                className={cn(
+                  iconButton,
+                  'text-label-2 size-8 shrink-0 cursor-pointer hover:text-(--primary-text-color)',
+                )}
               >
                 <FontAwesomeIcon icon={faXmark} className="size-3.5" />
               </button>
@@ -412,7 +421,8 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
               onPointerCancel={end}
               onKeyDown={event => nudge(event, id)}
               className={cn(
-                'flex size-8 shrink-0 touch-none items-center justify-center rounded-lg text-(--secondary-text-color) hover:bg-[color-mix(in_srgb,var(--primary-text-color)_8%,transparent)] hover:text-(--primary-text-color)',
+                iconButton,
+                'text-label-2 size-8 shrink-0 touch-none hover:text-(--primary-text-color)',
                 dragging ? 'cursor-grabbing' : 'cursor-grab',
               )}
             >
@@ -491,5 +501,12 @@ function EntityPicker({
     picker.current.excludeEntities = exclude
   })
 
-  return <div ref={holder} className="[&>*]:block [&>*]:w-full" />
+  // Its field takes the fill of the fields around it, with no line under it
+  // and the corners rounded the same.
+  return (
+    <div
+      ref={holder}
+      className="overflow-hidden rounded-lg [--ha-color-border-neutral-loud:transparent] [--ha-color-form-background:var(--fp-fill-strong)] [--mdc-theme-primary:var(--fp-tint)] [&>*]:block [&>*]:w-full"
+    />
+  )
 }
