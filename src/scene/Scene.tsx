@@ -140,6 +140,7 @@ export default function Scene({
           rooms={rooms}
           decorations={config.decorations ?? []}
           view={config.camera}
+          focus={focus}
           handle={cameraRef}
           onAway={onCameraAway}
           wheelZoom={wheelZoom}

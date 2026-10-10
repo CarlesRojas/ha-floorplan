@@ -2,6 +2,7 @@ import {
   CAMERA_FIT_MARGIN,
   CAMERA_FIT_MARGIN_NARROW,
   CAMERA_FLIGHT_S,
+  CAMERA_ROOM_FIT_MARGIN,
   CAMERA_TURN_S,
   NARROW_CARD_PX,
 } from '#/constants.ts'
@@ -36,6 +37,9 @@ type Props = {
   // The angle to open with, closer in when the whole plan fits. Without one
   // the camera frames the plan from the standard side.
   view?: CameraView
+  // The room the card has flown to, which the camera keeps fitted to the
+  // card as it changes shape until the viewer moves it.
+  focus?: string | null
   handle?: RefObject<CameraHandle | null>
   // Told when the camera leaves the view it opened with, and when it is
   // back there.
@@ -110,7 +114,7 @@ const triple = (v: Vector3): [number, number, number] => [round(v.x), round(v.y)
 // camera is theirs and is never moved again, so editing the plan does not
 // throw the view away. A flight to a saved view is the one exception, and
 // the camera is the viewer's again the moment it lands.
-export default function CameraRig({ rooms, decorations, view, handle, onAway, wheelZoom = false }: Props) {
+export default function CameraRig({ rooms, decorations, view, focus, handle, onAway, wheelZoom = false }: Props) {
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const controls = useThree(state => state.controls) as OrbitControlsImpl | null
@@ -119,6 +123,8 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   // canvas that three fiber listens on.
   const canvas = useThree(state => (state.events.connected as HTMLElement | undefined) ?? state.gl.domElement)
   const moved = useRef(false)
+  // Whether the camera stands where it was last sent, untouched since.
+  const resting = useRef(true)
   const flight = useRef<Flight | null>(null)
   // The fade around a focused room reads how long the flight there takes.
   useLayoutEffect(() => {
@@ -161,10 +167,14 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   // kept when they all show in it, and otherwise backed off along its angle
   // until they do. On a card as narrow as a phone the angle frames them
   // closely. With no view they are framed from the standard side.
-  const fit = (saved: CameraView | undefined, shown: RoomConfig[], items: DecorationConfig[]): CameraView => {
+  const fit = (
+    saved: CameraView | undefined,
+    shown: RoomConfig[],
+    items: DecorationConfig[],
+    margin = fitMargin(size.width),
+  ): CameraView => {
     const aspect = size.width / size.height
     const height = sceneHeight(items)
-    const margin = fitMargin(size.width)
     const narrow = size.width < NARROW_CARD_PX
     const { position, target } = saved
       ? fitView(saved, shown, aspect, height, margin, narrow)
@@ -198,7 +208,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       size.width / size.height,
       height,
       [from.x, from.y, from.z],
-      fitMargin(size.width),
+      CAMERA_ROOM_FIT_MARGIN,
       true,
     )
     return { position: triple(position), target: triple(target) }
@@ -214,6 +224,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
           room.camera,
           [room],
           decorations.filter(d => d.room === room.id),
+          CAMERA_ROOM_FIT_MARGIN,
         )
       : frame(room)
 
@@ -243,12 +254,14 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     show,
     flyTo: to => {
       moved.current = true
+      resting.current = true
       setAway(true)
       // Any input during a flight, an orbit or a wheel, takes it over.
       flight.current = plan(to, false)
       invalidate()
     },
     reset: () => {
+      resting.current = true
       flight.current = plan(home(), true)
       invalidate()
     },
@@ -286,6 +299,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     if (!controls) return
     const onStart = () => {
       moved.current = true
+      resting.current = false
       flight.current = null
       setAway(true)
     }
@@ -590,18 +604,34 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     }
   }, [controls])
 
+  // The camera follows the card's shape: the opening view while untouched,
+  // and the room flown to while it rests there. A flight under way is sent
+  // on to where its end now is, so it still lands in one move.
+  const room = focus ? rooms.find(r => r.id === focus) : undefined
   useLayoutEffect(() => {
-    if (moved.current) return
     // A canvas that has not been laid out yet has no shape to frame for.
     if (size.width <= 0 || size.height <= 0) return
-    const aspect = size.width / size.height
-    const height = sceneHeight(decorations)
-    const margin = fitMargin(size.width)
-    const { position, target } = view
-      ? fitView(view, rooms, aspect, height, margin, size.width < NARROW_CARD_PX)
-      : frameRooms(rooms, aspect, height, undefined, margin, size.width < NARROW_CARD_PX)
-    place(position, target)
-  }, [rooms, decorations, view, size.width, size.height, place])
+    const f = flight.current
+    if (f) {
+      const to = f.home ? home() : room ? show(room) : null
+      if (!to) return
+      f.to = to
+      f.b = stance(to)
+      f.around = turn(f.a.theta, f.b.theta)
+      invalidate()
+      return
+    }
+    if (room) {
+      if (!resting.current) return
+      const { position, target } = show(room)
+      place(C.set(...position), D.set(...target))
+      return
+    }
+    if (moved.current) return
+    const { position, target } = home()
+    place(C.set(...position), D.set(...target))
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, decorations, view, room, size.width, size.height, place])
 
   return null
 }

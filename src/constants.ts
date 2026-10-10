@@ -26,6 +26,8 @@ export const CAMERA_FIT_MARGIN = 1.1
 // The same on a card narrower than 600 px, as on a phone, where every
 // pixel counts and the margin looked like wasted space.
 export const CAMERA_FIT_MARGIN_NARROW = 1.03
+// A room flown to fills the card right to its edges, on any card.
+export const CAMERA_ROOM_FIT_MARGIN = 1
 // Below this width a card counts as narrow, as on a phone.
 export const NARROW_CARD_PX = 600
 export const CAMERA_MIN_DISTANCE_M = 2
