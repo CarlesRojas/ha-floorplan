@@ -1,7 +1,6 @@
 import { itemLevels, type DecorationKind } from '#/decoration/catalog.ts'
 import { Slider, Switch } from '#/editor/panel.tsx'
 import {
-  initialTry,
   isPositioned,
   levelTry,
   switchTry,
@@ -17,6 +16,8 @@ import { cn } from '#/lib/utils.ts'
 type Props = {
   kind: DecorationKind
   state: TryState | undefined
+  // What it shows until something is tried, and what Reset goes back to.
+  start: TryState
   accent: string
   onChange: (state: TryState | null) => void
 }
@@ -36,11 +37,12 @@ const TINTS: { mode: Tint['mode'] | 'default'; label: string }[] = [
   { mode: 'color', label: 'Color' },
 ]
 
-// The states a piece with no device can be tried in, one control for each
-// thing it shows: a switch for on and off, a slider for each level, and a
-// light's color. Only for the editor; nothing here is saved.
-export default function TrySection({ kind, state, accent, onChange }: Props) {
-  const s = state ?? initialTry(kind)
+// The states a piece can be tried in, one control for each thing it shows: a
+// switch for on and off, a slider for each level, and a light's color. Only
+// for the editor; nothing here is saved, and a device behind the piece is
+// never told.
+export default function TrySection({ kind, state, start, accent, onChange }: Props) {
+  const s = state ?? start
   const levels = itemLevels(kind)
   // A positioned piece's switch opens and shuts it, so it is named for that.
   const switchLabel = SWITCH_LABELS[kind.id] ?? (isPositioned(kind) ? 'Open' : 'On')
@@ -145,7 +147,10 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
           )}
         </>
       )}
-      <p className={note}>Clicking it in 3D switches it too. Only for the editor: none of this is saved.</p>
+      <p className={note}>
+        Clicking it in 3D switches it too. Only for the editor: the real device is never touched and none of this is
+        saved.
+      </p>
     </div>
   )
 }

@@ -14,6 +14,7 @@ import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
 import { entityGone } from '#/devices/catalog.ts'
 import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
+import { deviceTry } from '#/scene/Devices.tsx'
 import { DEFAULT_FLOOR_MATERIAL, SCENE_BACKGROUND_CSS } from '#/theme.ts'
 import { useFlash } from '#/lib/flash.ts'
 import { cn } from '#/lib/utils.ts'
@@ -135,19 +136,45 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     }
     setSelection(next)
   }
-  // States tried on pieces with no device, to see every look they have.
-  // Held here only: never saved, and gone when the editor closes.
+  // The home as it was when the editor opened. The editor's 3D view draws
+  // it and never anything newer, and trying a piece starts from it.
+  const [home, setHome] = useState(hass)
+  // States tried on pieces, to see every look they have, the ones with a
+  // device included: in the editor a click only tries a device and never
+  // switches the real one. Held here only: never saved, and dropped when the
+  // editor opens again, so it starts from the home as it is.
   const [tries, setTries] = useState<TryStates>({})
+  // Where trying a piece starts: its device as the home had it, or off.
+  const startOf = (id: string, kind: DecorationKind) => {
+    const device = devices.find(d => d.decorations?.includes(id))
+    return device && home ? deviceTry(home, device, kind) : initialTry(kind)
+  }
+  // The pieces trying one also sets, the way a device moves every piece it
+  // stands behind. Only those of the same kind, which share its controls.
+  const together = (id: string, kind: string) => {
+    const device = devices.find(d => d.decorations?.includes(id))
+    return (device?.decorations ?? [id]).filter(
+      other => other === id || decorations.find(d => d.id === other)?.kind === kind,
+    )
+  }
   const setTry = (id: string, state: TryState | null) =>
     setTries(all => {
       const next = { ...all }
-      if (state) next[id] = state
-      else delete next[id]
+      for (const other of together(id, decorations.find(d => d.id === id)?.kind ?? '')) {
+        if (state) next[other] = state
+        else delete next[other]
+      }
       return next
     })
   const stepTry = (id: string) => {
     const kind = decorationKind(decorations.find(d => d.id === id)?.kind ?? '')
-    if (kind) setTries(all => ({ ...all, [id]: toggleTry(kind, all[id] ?? initialTry(kind)) }))
+    if (!kind) return
+    setTries(all => {
+      const state = toggleTry(kind, all[id] ?? startOf(id, kind))
+      const next = { ...all }
+      for (const other of together(id, kind.id)) next[other] = state
+      return next
+    })
   }
   const pickDecoration = (id: string | null) => {
     if (id) {
@@ -612,6 +639,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         setOpened({ rooms, devices, decorations })
+        setHome(hass)
+        setTries({})
         setFullscreen(true)
         setOpening(false)
       }),
@@ -913,6 +942,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       onStandOn={standOn}
       onSelect={pickDecoration}
       tries={tries}
+      tryStart={startOf}
       onTry={setTry}
     />
   )
@@ -1033,7 +1063,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       />
                     </div>
                     <Scene
-                      hass={hass}
+                      hass={home ?? hass}
                       config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
                       sky={hour}
                       wheelZoom

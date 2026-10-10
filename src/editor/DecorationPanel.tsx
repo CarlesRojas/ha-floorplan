@@ -63,6 +63,8 @@ type Props = {
   onSelect: (id: string | null) => void
   // States tried on pieces with no device, only while editing.
   tries: TryStates
+  // Where trying a piece starts: its device as the home was, or off.
+  tryStart: (id: string, kind: DecorationKind) => TryState
   onTry: (id: string, state: TryState | null) => void
 }
 
@@ -82,6 +84,7 @@ export default function DecorationPanel({
   onStandOn,
   onSelect,
   tries,
+  tryStart,
   onTry,
 }: Props) {
   const [hovered, setHovered] = useState<DecorationKind | null>(null)
@@ -366,10 +369,16 @@ export default function DecorationPanel({
           ))}
         </div>
 
-        {/* Every look the piece has, tried without a device. A bound one
-            shows its device instead, so there is nothing to try there. */}
-        {canTry(kind) && !boundDevice && (
-          <TrySection kind={kind} state={tries[item.id]} accent={accent} onChange={s => onTry(item.id, s)} />
+        {/* Every look the piece has, tried in the editor only. One with a
+            device starts from the device and never changes the real one. */}
+        {canTry(kind) && (
+          <TrySection
+            kind={kind}
+            state={tries[item.id]}
+            start={tryStart(item.id, kind)}
+            accent={accent}
+            onChange={s => onTry(item.id, s)}
+          />
         )}
 
         {/* What in Home Assistant this piece stands for. Only entities that

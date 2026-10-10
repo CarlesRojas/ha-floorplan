@@ -49,7 +49,8 @@ type Props = {
   // What the editor has picked, as `decoration:<id>` or `room:<id>`, drawn
   // with a blue outline. The card never passes one.
   selected?: string | null
-  // States the editor tries on pieces with no device. The card passes none.
+  // States the editor tries on pieces, in place of their devices. The card
+  // passes none.
   tries?: TryStates
   onTry?: (id: string) => void
   // Stops drawing and holds the last frame, for a card nobody can see.

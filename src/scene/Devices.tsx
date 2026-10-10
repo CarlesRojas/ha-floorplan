@@ -1,6 +1,6 @@
 import { betweenOf, coverAt, coversOver, roomLookedFrom } from '#/decoration/between.ts'
-import { decorationKind } from '#/decoration/catalog.ts'
-import { canTry, tryItemState, type TryStates } from '#/editor/tryState.ts'
+import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
+import { canTry, initialTry, tryItemState, type TryState, type TryStates } from '#/editor/tryState.ts'
 import DecorationModel from '#/scene/decor/DecorationModel.tsx'
 import type { PressAction } from '#/scene/decor/press.ts'
 import { deskRise } from '#/scene/decor/state.ts'
@@ -25,8 +25,9 @@ type Props = {
   config: CardConfig
   // In the editor, a press also picks the piece it landed on.
   onPick?: (id: string) => void
-  // In the editor, the states tried on pieces with no device, and a click on
-  // one of those steps its state the way a device's click would.
+  // In the editor, the states tried on pieces, and a click on one steps its
+  // state the way a device's click would. A piece with a device starts from
+  // what the device says, and its click never reaches the device.
   tries?: TryStates
   onTry?: (id: string) => void
   // Asked before a click acts on a device, with the room its piece stands
@@ -106,6 +107,22 @@ function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<strin
     value: v.value,
     text: v.state,
   }
+}
+
+// What a piece with a device is tried from in the editor: the device as it
+// is, put in the editor's own terms, so trying it starts where the home is.
+export function deviceTry(hass: HomeAssistant, device: DeviceConfig, kind: DecorationKind): TryState {
+  const start = initialTry(kind)
+  const state = itemState(hass, device, new Map())
+  if (!state) return start
+  const v = signalValues(hass, device.entity_id)
+  const hex = (n: number) => Math.round(n).toString(16).padStart(2, '0')
+  const tint: TryState['tint'] = v.color
+    ? { mode: 'color', hex: `#${v.color.map(hex).join('')}` }
+    : v.warmth
+      ? { mode: 'white', kelvin: v.warmth }
+      : undefined
+  return { on: state.on, levels: { ...start.levels, ...state.levels }, tint }
 }
 
 export default function Devices({ hass, config, onPick, tries, onTry, roomFirst, onRoom }: Props) {
@@ -190,12 +207,15 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
   const stateOf = (item: (typeof decorations)[number]) => {
     const device = boundTo.get(item.id)
     const kind = decorationKind(item.kind)
-    // With nothing behind it, a piece the editor can try states on shows
-    // the one tried last, and a click steps it.
-    const tried = !device && onTry && kind && canTry(kind)
+    // In the editor, a piece that has states to try shows the one tried
+    // last, and a click steps it. Until then one with a device shows the
+    // device, and one without shows its first look.
+    const tried = onTry && kind && canTry(kind)
     const tryState = tried ? tries?.[item.id] : undefined
-    const state =
-      device && hass ? itemState(hass, device, guesses) : kind && tryState ? tryItemState(kind, tryState) : null
+    const real = device && hass ? itemState(hass, device, guesses) : null
+    // What the device says that trying has no control for, like a reading,
+    // is kept.
+    const state = kind && tryState ? { ...real, ...tryItemState(kind, tryState) } : real
     return { device, kind, tried, state }
   }
   const states = new Map(decorations.map(item => [item.id, stateOf(item)]))
@@ -246,9 +266,10 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
           device || onPick || tried
             ? () => {
                 onPick?.(item.id)
-                if (device) {
-                  if (!roomFirst?.(roomOf())) act(device.entity_id)
-                } else if (tried) onTry?.(item.id)
+                // The editor only tries a device, and leaves the real one be.
+                if (onTry) {
+                  if (tried && !(device && roomFirst?.(roomOf()))) onTry(item.id)
+                } else if (device && !roomFirst?.(roomOf())) act(device.entity_id)
               }
             : covers.length > 0
               ? at => {
@@ -258,14 +279,18 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
               : between && onRoom
                 ? () => onRoom(roomOf(), between.rooms)
                 : undefined
-        const onOpen: PressAction | undefined = device
-          ? () => openMoreInfo(device.entity_id)
-          : covers.length > 0
-            ? at => {
-                const over = covering(at)
-                if (over) openMoreInfo(over.entity_id)
-              }
-            : undefined
+        // Home Assistant's dialog would let the editor change the real
+        // device, so the editor has none.
+        const onOpen: PressAction | undefined = onTry
+          ? undefined
+          : device
+            ? () => openMoreInfo(device.entity_id)
+            : covers.length > 0
+              ? at => {
+                  const over = covering(at)
+                  if (over) openMoreInfo(over.entity_id)
+                }
+              : undefined
         actions.set(item.id, { click: onClick, open: onOpen })
         const h = handler(item.id)
         return (
