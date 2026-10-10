@@ -38,7 +38,7 @@ The tiles live in `src/tiles/` and are registered from `src/main.tsx`, so they s
 
 `http://localhost:5173/src/dev/tiles.html` shows every tile against a mock Home Assistant whose states change when tapped, in a mock sections grid, with buttons to set the room filter. Add `?light=1` for a light dashboard. Service calls and more info requests are logged in the page. The user facing reference is `docs/TILES.md`.
 
-`http://localhost:5173/src/dev/cards.html` shows every card the card picker suggests for a mock entity of each kind, one kind of card at a time from the menu at the top, each style at every size it comes in. Tapping, dragging and typing change the mock states the same way. Add `?light=1` for a light dashboard.
+`http://localhost:5173/src/dev/cards.html` shows every card the card picker suggests for a mock entity of each kind, one kind of card at a time from the menu at the top, each style at every size it comes in, and only one entity for each card that looks the same. Tapping, dragging and typing change the mock states the same way. Add `?light=1` for a light dashboard.
 
 ### Production build into Home Assistant
 

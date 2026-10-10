@@ -650,13 +650,40 @@ for (const { entity, suggestion } of picked.found) {
   styles.get(style)!.push({ entity, config: suggestion.config })
 }
 
+// The shape of a rendered card: its elements and their classes, without
+// the words, the colors or what is drawn inside an icon. Two entities with
+// the same shape show the same card, like two lamps, one on and one off.
+const shapeOf = (node: Element): string => {
+  if (node.tagName === 'svg' && !node.classList.length) return 'svg'
+  const own = `${node.tagName.toLowerCase()}.${[...node.classList].sort().join('.')}`
+  // A span with no elements in it only holds words, like a unit that one
+  // reading has and another does not.
+  const parts = [...node.children].filter(child => child.tagName !== 'SPAN' || child.children.length > 0)
+  return `${own}(${parts.map(shapeOf).join(',')})`
+}
+
+// Keeps the first entity of a style for each card that looks different,
+// once React has drawn them, so a style shows each of its shapes once.
+const dedupe = (shown: { group: HTMLElement[]; made: Card[] }[]) =>
+  setTimeout(() => {
+    const seen = new Set<string>()
+    for (const { group, made } of shown) {
+      const shape = made.map(card => [...(card.shadowRoot?.children ?? [])].map(shapeOf).join()).join('|')
+      if (seen.has(shape)) for (const cell of group) cell.remove()
+      seen.add(shape)
+    }
+  }, 400)
+
 for (const [style, uses] of styles) {
   const section = document.createElement('section')
   section.style.cssText = 'margin-top:28px'
   section.innerHTML = `<h2 style="margin:0 0 4px;font:600 17px system-ui">${style}</h2>`
   const row = document.createElement('div')
   row.style.cssText = 'display:flex;flex-wrap:wrap;gap:24px 32px;align-items:flex-start'
+  const shown: { group: HTMLElement[]; made: Card[] }[] = []
   for (const { entity, config } of uses) {
+    const group: HTMLElement[] = []
+    const made: Card[] = []
     for (const size of sizesOf(config)) {
       const card = make(size.config)
       cards.push(card)
@@ -677,8 +704,12 @@ for (const [style, uses] of styles) {
       box.appendChild(card)
       cell.append(caption, box)
       row.appendChild(cell)
+      group.push(cell)
+      made.push(card)
     }
+    shown.push({ group, made })
   }
+  dedupe(shown)
   section.appendChild(row)
   main.appendChild(section)
 }
