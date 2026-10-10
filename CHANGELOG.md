@@ -85,7 +85,7 @@ moves that section under the new version and uses it as the release notes.
 - A thermostat's target temperature tile is always wide when it holds a range of two temperatures, since a small one had no room for them.
 - A wide thermostat is two rows tall, with its mode buttons across from its name so the name and the state stay in the bottom left corner like on every other tile.
 - A thermostat's modes tile is always wide, since a small one had no room for every mode.
-- Temperatures on thermostats and dials show the home's unit, like 22 °C, and a thermostat's state reads as one phrase, like 20.5 °C to 22 °C.
+- Temperatures on thermostats, dials and the weather card show their unit, like 22 °C, and a thermostat's state reads as one phrase, like 20.5 °C to 22 °C.
 - A thermostat's icon takes the color of the mode it runs in on every one of its tiles, and that color washes down from the top of the tile while it is on.
 - Each thermostat mode has its own color: green for auto, purple for heating and cooling, orange for heating, blue for cooling, yellow for drying and indigo for the fan alone.
 

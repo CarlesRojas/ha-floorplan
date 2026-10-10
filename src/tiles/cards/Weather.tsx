@@ -77,8 +77,6 @@ function useForecast(hass: HomeAssistant, entityId: string | undefined, kind: Ki
   return forecast
 }
 
-const degrees = (value: number | undefined) => (typeof value === 'number' ? `${Math.round(value)}°` : '')
-
 // White icons, but for the sun, which is yellow.
 const iconColor = (condition: string | undefined) => (condition === 'sunny' ? '#ffd60a' : undefined)
 
@@ -127,6 +125,12 @@ export default function Weather({ env, config }: Props) {
       ? date.toLocaleTimeString(language, { hour: 'numeric' })
       : date.toLocaleDateString(language, { weekday: 'short' })
   }
+  // Whole degrees in the unit the weather comes in, like 21 °C.
+  const unit =
+    typeof attributes.temperature_unit === 'string'
+      ? attributes.temperature_unit
+      : (env.hass.config?.unit_system?.temperature ?? '°C')
+  const degrees = (value: number | undefined) => (typeof value === 'number' ? `${Math.round(value)} ${unit}` : '')
   const unavailable = !entity || entity.state === 'unavailable' || entity.state === 'unknown'
 
   return (
