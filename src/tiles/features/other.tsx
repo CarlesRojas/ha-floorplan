@@ -14,6 +14,7 @@ import {
   Stepper,
   supports,
   type FeatureProps,
+  useFlash,
 } from '#/tiles/features/parts.tsx'
 import { linePaths, useHistory } from '#/tiles/history.ts'
 import type { EntityState } from '#/types.ts'
@@ -391,11 +392,16 @@ const PRESS: Record<string, [string, string]> = {
 // One wide pill that does what the button does.
 export function PressButton({ env, entity }: FeatureProps) {
   const [action, label] = PRESS[domainOf(entity)] ?? PRESS.button
+  const [flash, start] = useFlash()
   return (
     <Pill
       icon="ph:hand-tap"
       label={label}
-      onPress={() => callService(env.hass, action, { entity_id: entity.entity_id })}
+      flash={flash}
+      onPress={() => {
+        start()
+        callService(env.hass, action, { entity_id: entity.entity_id })
+      }}
     />
   )
 }

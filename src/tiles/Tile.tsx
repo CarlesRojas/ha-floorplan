@@ -16,6 +16,8 @@ type Props = {
   // Looks like a tile that is off while it still says it is on, for a
   // tile drawn on in part over it, like a light's brightness.
   looksOff?: boolean
+  // Going back to off slowly, like a button a moment after it was pressed.
+  fading?: boolean
   // The color the icon takes while the tile is active.
   accent?: string
   // A color that washes over an active tile from its top left corner, like
@@ -55,6 +57,7 @@ export function Tile({
   entity,
   active = false,
   looksOff = false,
+  fading = false,
   accent,
   glow,
   state,
@@ -98,6 +101,7 @@ export function Tile({
       aria-disabled={unavailable || undefined}
       data-active={(on && !looksOff) || undefined}
       data-pressed={(pressed && !unavailable) || undefined}
+      data-fading={fading || undefined}
       data-unavailable={unavailable || undefined}
       data-wide={wide || undefined}
       className="fp-tile"
@@ -118,7 +122,7 @@ export function Tile({
             config.piece_icon ??
             defaultIcon(config.entity, entity?.attributes.device_class, entity?.state)
           }
-          on={on && !looksOff}
+          on={(on && !looksOff) || fading}
         />
         {beside ? (
           <div className="fp-beside">

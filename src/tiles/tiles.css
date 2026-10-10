@@ -115,6 +115,19 @@
   color: var(--_text-active);
 }
 
+/* A button lights up at once when pressed and a moment later fades slowly
+   back to off. */
+.fp-tile[data-fading] {
+  --_duration: 1000ms;
+}
+
+.fp-tile[data-fading] .fp-icon,
+.fp-tile[data-fading] .fp-text {
+  transition:
+    color var(--_duration) ease,
+    opacity var(--_duration) ease;
+}
+
 /* The color of a light, strongest in the top left corner and fading out to
    the plain tile. */
 .fp-tile[data-active][style*='--_tile-glow'] {
@@ -983,6 +996,16 @@
     flex: 1 1 auto;
     text-align: left;
   }
+}
+
+/* A pill that does what a button does lights up the same way. */
+.fp-pill-action[data-flash='lit'] {
+  background-color: var(--_bg-active);
+  color: var(--_text-active);
+}
+
+.fp-pill-action[data-flash='fading'] {
+  --_duration: 1000ms;
 }
 
 /* A pill that stays pressed while what it says is on, filled in the color

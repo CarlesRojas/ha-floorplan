@@ -1,9 +1,8 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
+import { useFlash } from '#/tiles/features/parts.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 import { useEffect, useState } from 'react'
-
-const FLASH_MS = 600
 
 const PRESS: Record<string, string> = {
   button: 'button.press',
@@ -45,17 +44,12 @@ function relative(when: number, now: number, language: string | undefined) {
 }
 
 // A button, a script or a scene. A tap runs it and the tile lights up for
-// a moment. The line under the name says when it last ran.
+// a moment, then slowly fades back. The line under the name says when it last ran.
 export default function Button({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const domain = config.entity!.split('.')[0]
-  const [flash, setFlash] = useState(0)
+  const [flash, start] = useFlash()
   const now = useNow(30_000)
-  useEffect(() => {
-    if (!flash) return
-    const id = setTimeout(() => setFlash(0), FLASH_MS)
-    return () => clearTimeout(id)
-  }, [flash])
   // Scripts keep when they last ran in an attribute, the rest as their state.
   const last = domain === 'script' ? entity?.attributes.last_triggered : entity?.state
   const when = typeof last === 'string' ? Date.parse(last) : NaN
@@ -71,11 +65,12 @@ export default function Button({ env, config }: Props) {
       env={env}
       config={config}
       entity={entity}
-      active={flash > 0}
+      active={flash === 'lit'}
+      fading={flash === 'fading'}
       unknownIsUnavailable={false}
       state={state}
       onTap={() => {
-        setFlash(n => n + 1)
+        start()
         callService(env.hass, PRESS[domain], { entity_id: config.entity })
       }}
     />

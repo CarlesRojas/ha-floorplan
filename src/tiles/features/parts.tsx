@@ -377,6 +377,27 @@ export function TogglePill({ icon, label, on, onToggle }: TogglePillProps) {
   )
 }
 
+// How long a pressed button stays lit, and then how long it takes to fade.
+export const FLASH_MS = 1000
+export const FADE_MS = 1000
+
+export type Flash = 'lit' | 'fading' | null
+
+// A press that lights something up at once, holds it for a moment and
+// then lets it fade slowly back, like a button that was pressed.
+export function useFlash() {
+  const [flash, setFlash] = useState<{ phase: Flash; n: number }>({ phase: null, n: 0 })
+  useEffect(() => {
+    if (!flash.phase) return
+    const id = setTimeout(
+      () => setFlash(f => ({ ...f, phase: f.phase === 'lit' ? 'fading' : null })),
+      flash.phase === 'lit' ? FLASH_MS : FADE_MS,
+    )
+    return () => clearTimeout(id)
+  }, [flash])
+  return [flash.phase, () => setFlash(f => ({ phase: 'lit', n: f.n + 1 }))] as const
+}
+
 type PillProps = {
   icon?: string
   label: ReactNode
@@ -386,10 +407,12 @@ type PillProps = {
   checked?: boolean
   // Spoken instead of the label, for a pill that is only a number.
   ariaLabel?: string
+  // Lit for a moment after a press, then fading back.
+  flash?: Flash
 }
 
 // A pill with words, for an action the words say better than an icon.
-export function Pill({ icon, label, onPress, disabled, checked, ariaLabel }: PillProps) {
+export function Pill({ icon, label, onPress, disabled, checked, ariaLabel, flash }: PillProps) {
   return (
     <button
       type="button"
@@ -397,6 +420,7 @@ export function Pill({ icon, label, onPress, disabled, checked, ariaLabel }: Pil
       aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
       role={checked === undefined ? undefined : 'radio'}
       aria-checked={checked}
+      data-flash={flash ?? undefined}
       className="fp-pill fp-pill-action"
       {...press(onPress)}
     >

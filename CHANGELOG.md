@@ -78,6 +78,7 @@ moves that section under the new version and uses it as the release notes.
 - A room flown to is fitted to the card the same way, with almost no margin: its saved view keeps its angle and backs off until the whole room shows, on a phone the room is centered and fills the card, and a room with no saved view is centered in the card. The camera flies straight to that view, and keeps the room fitted while the card changes size until it is turned, panned or zoomed.
 - A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.
 - In the card's settings, pressing or changing the tiles of a room flies the preview to that room, and the Home tiles take it back to the whole home.
+- A button, script or scene tile lights up when pressed, stays lit for a second and then fades slowly back, and its Press pill does the same on its own.
 
 ### Fixed
 
