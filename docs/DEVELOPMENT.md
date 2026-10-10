@@ -204,19 +204,19 @@ Only entities that drive at least one of the things an item can show are on offe
 
 ## Card config
 
-| Key                   | Default  | Description                                                                                                                                                          |
-| --------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rooms`               | `[]`     | List of rooms, see below                                                                                                                                             |
-| `radius`              | `0.07`   | Corner radius in meters for rooms without their own, at corners touching no other room                                                                               |
-| `gap`                 | `0`      | Gap in meters between adjacent rooms. With none, floors that touch meet square                                                                                       |
-| `aspect_ratio`        | `16:9`   | Card aspect ratio as `width:height`, or `fill` to take the whole height of what holds it                                                                             |
-| `aspect_ratio_mobile` | `1:1`    | Aspect ratio while the card is narrower than 600 px, as on a phone. A card that sets only `aspect_ratio` keeps it at every width                                     |
-| `sun_direction`       | `145`    | Where the sun comes from, in degrees clockwise from the top of the plan                                                                                              |
-| `camera`              |          | The view the card opens with, saved from the editor's 3D view, see below                                                                                             |
-| `first_click`         | `device` | What a click on a device goes to first: `device` acts on it from anywhere, `room` flies to its room first                                                            |
-| `background`          |          | The background laid behind the view, as `light` and `dark`, each `graphite` (the default), `dusk`, `ocean`, `forest`, `ember` or `theme` to keep the dashboard's own |
-| `devices`             | `[]`     | Entities bound to decoration items, see below                                                                                                                        |
-| `decorations`         | `[]`     | List of placed decoration items, see below                                                                                                                           |
+| Key                   | Default  | Description                                                                                                                                                                                |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `rooms`               | `[]`     | List of rooms, see below                                                                                                                                                                   |
+| `radius`              | `0.07`   | Corner radius in meters for rooms without their own, at corners touching no other room                                                                                                     |
+| `gap`                 | `0`      | Gap in meters between adjacent rooms. With none, floors that touch meet square                                                                                                             |
+| `aspect_ratio`        | `16:9`   | Card aspect ratio as `width:height`, or `fill` to take the whole height of what holds it                                                                                                   |
+| `aspect_ratio_mobile` | `1:1`    | Aspect ratio while the card is narrower than 600 px, as on a phone. A card that sets only `aspect_ratio` keeps it at every width                                                           |
+| `sun_direction`       | `145`    | Where the sun comes from, in degrees clockwise from the top of the plan                                                                                                                    |
+| `camera`              |          | The view the card opens with, saved from the editor's 3D view, see below                                                                                                                   |
+| `first_click`         | `device` | What a click on a device goes to first: `device` acts on it from anywhere, `room` flies to its room first                                                                                  |
+| `background`          |          | The background laid behind the view, as `light` and `dark`, each `graphite` (the default), `dusk`, `ocean`, `forest`, `ember` or `theme` (Plain in the editor) to keep the dashboard's own |
+| `devices`             | `[]`     | Entities bound to decoration items, see below                                                                                                                                              |
+| `decorations`         | `[]`     | List of placed decoration items, see below                                                                                                                                                 |
 
 Defaults for these and other visual values live in `src/theme.ts`.
 

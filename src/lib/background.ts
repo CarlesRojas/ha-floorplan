@@ -133,8 +133,10 @@ export const BACKGROUNDS: Background[] = [
 
 // The one laid behind the view when the config names none.
 export const DEFAULT_BACKGROUND = 'graphite'
-// Leaves the dashboard's own background as its theme has it.
+// Leaves the dashboard's own background as its theme has it. The editor
+// calls it Plain and shows it as the flat color of the default themes.
 export const THEME_BACKGROUND = 'theme'
+export const PLAIN_SWATCH = { light: '#fafafa', dark: '#111111' }
 
 // The background chosen for a light or a dark dashboard, as CSS, or null to
 // leave the theme's.

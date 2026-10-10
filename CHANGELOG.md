@@ -36,6 +36,7 @@ moves that section under the new version and uses it as the release notes.
 
 - The full screen editor has a cleaner look, with softer colors, settings gathered in rounded groups, frosted menus and tooltips, switches, slim sliders with a pill shaped handle and lighter buttons.
 - The card's settings in the dashboard dialog share the editor's look, with each setting in a rounded group and its explanation under it.
+- The background that keeps the dashboard's own is now called Plain and shows as a flat swatch like the others, without the dotted outline.
 - Under the pointer, the sign that leads into the next room darkens a little instead of lighting up.
 - Up to eight lamps cast shadows at once on a computer and four on a phone or tablet, up from four and two.
 - When a lamp hands its shadow to a brighter light that comes on, the shadow fades out and the new one fades in instead of switching at once.

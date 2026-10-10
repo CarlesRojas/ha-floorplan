@@ -1,4 +1,4 @@
-import { BACKGROUNDS, DEFAULT_BACKGROUND, THEME_BACKGROUND } from '#/lib/background.ts'
+import { BACKGROUNDS, DEFAULT_BACKGROUND, PLAIN_SWATCH, THEME_BACKGROUND } from '#/lib/background.ts'
 import { cn } from '#/lib/utils.ts'
 import { field, group, iconButton } from '#/editor/look.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
@@ -121,7 +121,7 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
 
       <Section
         title="Background"
-        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Theme leaves the dashboard's own background."
+        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Plain leaves the dashboard's own background."
       >
         <div className={cn(group, 'gap-4')}>
           <BackgroundPicker
@@ -232,7 +232,7 @@ function BackgroundPicker({
 }) {
   const options = [
     ...BACKGROUNDS.map(b => ({ id: b.id, name: b.name, swatch: b[mode] })),
-    { id: THEME_BACKGROUND, name: 'Theme', swatch: null },
+    { id: THEME_BACKGROUND, name: 'Plain', swatch: PLAIN_SWATCH[mode] },
   ]
   return (
     <div className="flex flex-col gap-2">
@@ -253,9 +253,8 @@ function BackgroundPicker({
                 className={cn(
                   'block aspect-[16/10] w-full rounded-[10px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)] ring-offset-2 ring-offset-(--card-background-color) transition-[box-shadow,transform] group-active:scale-[0.97]',
                   chosen ? 'ring-tint ring-[2.5px]' : 'group-hover:ring-separator group-hover:ring-2',
-                  !option.swatch && 'border-label-2 border border-dashed shadow-none',
                 )}
-                style={option.swatch ? { background: option.swatch } : undefined}
+                style={{ background: option.swatch }}
               />
               <span className={cn('text-xs', chosen ? 'text-tint font-semibold' : 'text-label-2')}>{option.name}</span>
             </button>
