@@ -8,11 +8,14 @@ import type { Light, LightShadow, Object3D, Scene } from 'three'
 // things themselves stay where they are and only move to a layer the camera
 // does not look at. Three draws, shades and picks by layer, and a light is
 // never moved, so nothing about the lights changes.
-const HIDDEN_LAYER = 31
+export const HIDDEN_LAYER = 31
 
 const ROOM = 'room:'
 const MERGED = 'merged:'
 const DECORATION = 'decoration:'
+// A sign on the floor that leads out of the room it is named for. Unlike
+// everything else it only shows around that room, never with the whole home.
+export const PASSAGE = 'passage:'
 
 // Whether a thing in a wall between two rooms has this one on its other side.
 const alsoIn = (object: Object3D, room: string) =>
@@ -23,6 +26,10 @@ const kept = new WeakMap<Object3D, number>()
 
 function sweep(object: Object3D, room: string | null, hide: boolean) {
   const name = object.name
+  if (name.startsWith(PASSAGE)) {
+    object.layers.set(room !== null && name.slice(PASSAGE.length) === room ? 0 : HIDDEN_LAYER)
+    return
+  }
   if (room === null) hide = false
   else if (name.startsWith(ROOM)) hide = name.slice(ROOM.length) !== room
   else if (name.startsWith(MERGED)) hide = name.slice(MERGED.length) !== room

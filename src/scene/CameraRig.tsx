@@ -6,6 +6,7 @@ import {
   CAMERA_TURN_S,
   NARROW_CARD_PX,
 } from '#/constants.ts'
+import { passageFootprint, passagesOf } from '#/geometry/passages.ts'
 import { flights } from '#/scene/flights.ts'
 import { fitView, frameRooms, sceneHeight } from '#/scene/framing.ts'
 import { multiTouchSince, sent } from '#/scene/touches.ts'
@@ -189,7 +190,7 @@ export default function CameraRig({ rooms, decorations, view, focus, handle, onA
   // height as the opening view, so flying there only closes in.
   // With no room, the whole plan from the standard side, which is the view
   // the card opens with when none is saved.
-  const frame = (room?: RoomConfig): CameraView => {
+  const frame = (room?: RoomConfig, signs: RoomConfig[] = []): CameraView => {
     if (!room) {
       const whole = frameRooms(
         rooms,
@@ -204,7 +205,7 @@ export default function CameraRig({ rooms, decorations, view, focus, handle, onA
     const from = A.set(...opening.position).sub(B.set(...opening.target))
     const height = sceneHeight(decorations.filter(d => d.room === room.id))
     const { position, target } = frameRooms(
-      [room],
+      [room, ...signs],
       size.width / size.height,
       height,
       [from.x, from.y, from.z],
@@ -218,15 +219,22 @@ export default function CameraRig({ rooms, decorations, view, focus, handle, onA
   // off so the flight goes straight there: its saved view fitted to this
   // card the way the opening view is, or without one, the room framed from
   // the opening view's side.
-  const show = (room: RoomConfig): CameraView =>
-    room.camera
+  // The signs on the floor that lead out of it into the rooms open beside
+  // it are kept in the picture too.
+  const show = (room: RoomConfig): CameraView => {
+    const signs = passagesOf(room, rooms, decorations).map((passage): RoomConfig => ({
+      id: '',
+      points: passageFootprint(passage),
+    }))
+    return room.camera
       ? fit(
           room.camera,
-          [room],
+          [room, ...signs],
           decorations.filter(d => d.room === room.id),
           CAMERA_ROOM_FIT_MARGIN,
         )
-      : frame(room)
+      : frame(room, signs)
+  }
 
   // A flight that turns further round the home takes longer, so it moves
   // no faster than a short one.
