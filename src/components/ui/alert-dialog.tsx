@@ -87,8 +87,8 @@ export function AlertDialogAction({
       className={cn(
         button,
         variant === 'destructive'
-          ? 'bg-danger text-white hover:brightness-110'
-          : 'bg-tint text-white hover:brightness-110',
+          ? 'bg-danger-fill text-white hover:brightness-[1.06]'
+          : 'bg-tint-fill text-white hover:brightness-[1.06]',
       )}
     >
       {children}

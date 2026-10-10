@@ -25,16 +25,75 @@
   --radius-md: 8px;
   --radius-sm: 6px;
 
-  /* The editor's palette. Fills and separators are the text color thinned
-     out, so they read the same over a light theme and a dark one. */
-  --color-fill: color-mix(in srgb, var(--primary-text-color, #212121) 6%, transparent);
-  --color-fill-strong: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
-  --color-fill-stronger: color-mix(in srgb, var(--primary-text-color, #212121) 15%, transparent);
-  --color-separator: color-mix(in srgb, var(--primary-text-color, #212121) 11%, transparent);
-  --color-label-2: var(--secondary-text-color, #727272);
-  --color-tint: #0a84ff;
-  --color-danger: #ff453a;
-  --color-success: #30d158;
+  /* The editor's palette, set on the editor's root below. */
+  --color-fill: var(--fp-fill);
+  --color-fill-strong: var(--fp-fill-strong);
+  --color-fill-stronger: var(--fp-fill-stronger);
+  --color-separator: var(--fp-separator);
+  --color-label-2: var(--fp-label-2);
+  --color-tint: var(--fp-tint);
+  --color-danger: var(--fp-danger);
+  --color-success: var(--fp-success);
+  --color-tint-fill: var(--fp-tint-fill);
+  --color-danger-fill: var(--fp-danger-fill);
+  --color-raised: var(--fp-raised);
+}
+
+/* Fills, separators and the secondary text are the text color thinned out,
+   so they read the same over a light theme and a dark one. The colors are
+   vivid over a dark theme and deeper over a light one, so text in them
+   keeps a contrast of at least 4.5 to 1 on either. */
+.fp-editor {
+  --fp-fill: color-mix(in srgb, var(--primary-text-color, #212121) 6%, transparent);
+  --fp-fill-strong: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
+  --fp-fill-stronger: color-mix(in srgb, var(--primary-text-color, #212121) 15%, transparent);
+  --fp-separator: color-mix(in srgb, var(--primary-text-color, #212121) 11%, transparent);
+  --fp-label-2: color-mix(in srgb, var(--primary-text-color, #212121) 68%, transparent);
+  --fp-tint: #0a84ff;
+  --fp-danger: #ff453a;
+  --fp-success: #30d158;
+  /* Behind white text a shade deeper, for the same contrast. */
+  --fp-tint-fill: #0a6cdf;
+  --fp-danger-fill: #e0241b;
+  /* The chosen segment of a segmented control, lifted off its track. */
+  --fp-raised: color-mix(in srgb, var(--primary-text-color, #e1e1e1) 24%, var(--card-background-color, #1c1c1c));
+}
+.fp-editor[data-light] {
+  --fp-tint: #0066cc;
+  --fp-danger: #d70015;
+  --fp-success: #1f7f38;
+  --fp-tint-fill: #0066cc;
+  --fp-danger-fill: #d70015;
+  --fp-raised: var(--card-background-color, #fff);
+}
+
+/* With more contrast asked for, the fills and lines are drawn firmer. */
+@media (prefers-contrast: more) {
+  .fp-editor {
+    --fp-fill: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
+    --fp-fill-strong: color-mix(in srgb, var(--primary-text-color, #212121) 16%, transparent);
+    --fp-fill-stronger: color-mix(in srgb, var(--primary-text-color, #212121) 24%, transparent);
+    --fp-separator: color-mix(in srgb, var(--primary-text-color, #212121) 35%, transparent);
+    --fp-label-2: color-mix(in srgb, var(--primary-text-color, #212121) 82%, transparent);
+  }
+}
+
+/* With less transparency asked for, what floats is solid. */
+@media (prefers-reduced-transparency: reduce) {
+  .fp-floating {
+    background-color: var(--card-background-color);
+    backdrop-filter: none;
+  }
+}
+
+/* With less motion asked for, the editor changes without easing. */
+@media (prefers-reduced-motion: reduce) {
+  .fp-editor *,
+  .fp-editor *::before,
+  .fp-editor *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }
 
 @custom-variant mouse (@media (hover: hover) and (pointer: fine));
@@ -50,5 +109,11 @@
   svg,
   canvas {
     @apply block;
+  }
+
+  /* A ring in the tint round whatever the keyboard has reached. */
+  .fp-editor :focus-visible {
+    outline: 2px solid var(--fp-tint);
+    outline-offset: 1px;
   }
 }

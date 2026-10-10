@@ -13,7 +13,6 @@ import {
 } from '#/editor/tryState.ts'
 import { colorWell, group, groupTitle, note, row } from '#/editor/look.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_ACCENT_COLOR } from '#/theme.ts'
 
 type Props = {
   kind: DecorationKind
@@ -67,12 +66,7 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
           anything in between. Each moves the other. */}
       <label className={cn(row, 'grid-cols-[96px_1fr]')}>
         {switchLabel}
-        <Switch
-          checked={s.on}
-          accent={EDITOR_ACCENT_COLOR}
-          label={switchLabel}
-          onChange={on => onChange(switchTry(kind, s, on))}
-        />
+        <Switch checked={s.on} accent={accent} label={switchLabel} onChange={on => onChange(switchTry(kind, s, on))} />
       </label>
       {levels.map(level => {
         const value = s.levels[level.id] ?? 0
@@ -117,7 +111,7 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
                   className={cn(
                     'flex-1 rounded-md py-1 text-xs font-medium transition-colors',
                     tintMode === t.mode
-                      ? 'bg-(--card-background-color) text-(--primary-text-color) shadow-[0_1px_3px_rgba(0,0,0,0.2)]'
+                      ? 'bg-raised text-(--primary-text-color) shadow-[0_1px_3px_rgba(0,0,0,0.2)]'
                       : 'text-label-2 hover:text-(--primary-text-color)',
                   )}
                 >

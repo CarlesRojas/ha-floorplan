@@ -30,7 +30,7 @@ import {
 } from '#/components/ui/alert-dialog.tsx'
 import { cn } from '#/lib/utils.ts'
 import { deviceSignals, levelChannels } from '#/signals.ts'
-import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, EDITOR_TINT_COLOR, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_BOUND_COLOR, EDITOR_TINT_COLOR, ROOM_COLORS } from '#/theme.ts'
 import { colorWell, deleteButton, field, group, groupTitle, iconButton, note, plainButton, row } from '#/editor/look.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
@@ -194,7 +194,7 @@ export default function DecorationPanel({
                   {p.label}
                   <Switch
                     checked={value > 0.5}
-                    accent={EDITOR_ACCENT_COLOR}
+                    accent={accent}
                     label={p.label}
                     onChange={on => onUpdate(item.id, { params: { ...item.params, [p.id]: on ? 1 : 0 } })}
                   />
@@ -611,9 +611,9 @@ export default function DecorationPanel({
                     <span
                       className={cn(
                         'flex size-6 items-center justify-center rounded-full transition-colors',
-                        hovered?.id === k.id ? 'bg-tint text-white' : 'bg-tint/12',
+                        hovered?.id === k.id ? 'bg-tint/22' : 'bg-tint/12',
                       )}
-                      style={hovered?.id === k.id ? undefined : { color: accent }}
+                      style={{ color: accent }}
                     >
                       <FontAwesomeIcon icon={faPlus} className="size-3" />
                     </span>

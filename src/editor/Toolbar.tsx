@@ -83,7 +83,7 @@ export default function Toolbar({
   return (
     <div className="flex items-center gap-0.5">
       {/* The tools are one control, of which one is always chosen. */}
-      <div className="bg-fill flex items-center gap-0.5 rounded-[10px] p-0.5">
+      <div className="bg-fill-strong flex items-center gap-0.5 rounded-[10px] p-0.5">
         {TOOLS.map(t => (
           <ToolButton key={t.id} action={t} active={tool === t.id} color={color} onClick={() => onTool(t.id)} />
         ))}
@@ -375,8 +375,8 @@ function Dial({
   )
 }
 
-// A toggle shows its state through the icon color alone, a tool through a
-// filled background.
+// A toggle shows its state through the icon color on a faint tint, a tool
+// as the raised segment of the control the tools sit in.
 function ToolButton({
   action,
   active,
@@ -396,11 +396,11 @@ function ToolButton({
         type="button"
         aria-label={action.title}
         onClick={onClick}
-        style={active ? (toggle ? { color } : { backgroundColor: color }) : undefined}
+        style={active ? { color } : undefined}
         className={cn(
           iconButton,
           'size-8',
-          active && !toggle && 'hover:bg-tint active:bg-tint text-white shadow-[0_1px_3px_rgba(0,0,0,0.25)]',
+          active && !toggle && 'bg-raised hover:bg-raised active:bg-raised shadow-[0_1px_3px_rgba(0,0,0,0.2)]',
           active && toggle && 'bg-tint/12 hover:bg-tint/18',
         )}
       >

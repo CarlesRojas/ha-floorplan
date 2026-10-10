@@ -98,9 +98,9 @@ export function ContextMenuItem({
       disabled={disabled}
       onClick={onSelect}
       className={cn(
-        'group/item hover:bg-tint focus:bg-tint relative flex h-7 w-full cursor-default items-center gap-2 rounded-md px-2 text-left text-[13px] outline-none select-none hover:text-white focus:text-white',
+        'group/item hover:bg-tint-fill focus:bg-tint-fill relative flex h-7 w-full cursor-default items-center gap-2 rounded-md px-2 text-left text-[13px] outline-none select-none hover:text-white focus:text-white',
         'disabled:pointer-events-none disabled:opacity-40',
-        variant === 'destructive' && 'text-danger hover:bg-danger focus:bg-danger',
+        variant === 'destructive' && 'text-danger hover:bg-danger-fill focus:bg-danger-fill',
         className,
       )}
     >

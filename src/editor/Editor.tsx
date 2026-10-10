@@ -920,7 +920,10 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   if (fullscreen) {
     return (
       <Overlay>
-        <div className="font-system flex h-full flex-col gap-3 bg-(--card-background-color) px-4 pt-3 pb-4 text-(--primary-text-color) antialiased outline-none">
+        <div
+          data-light={hass?.themes?.darkMode === false || undefined}
+          className="fp-editor font-system flex h-full flex-col gap-3 bg-(--card-background-color) px-4 pt-3 pb-4 text-(--primary-text-color) antialiased outline-none"
+        >
           <div className="flex h-10 items-center justify-between">
             {toolbar}
             <div className="flex items-center gap-2">
@@ -940,7 +943,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                 type="button"
                 onClick={saveAndClose}
                 disabled={saving !== null}
-                className="bg-tint flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-[filter,transform] hover:brightness-110 active:scale-[0.98] active:brightness-95 disabled:opacity-50"
+                className="bg-tint-fill flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-[filter,transform] hover:brightness-[1.06] active:scale-[0.98] active:brightness-95 disabled:opacity-50"
               >
                 <FontAwesomeIcon icon={faCheck} className="size-3" />
                 {saving === 'close' ? 'Saving' : 'Save & Close'}
@@ -1127,7 +1130,7 @@ function PreviewButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'border-separator flex h-7 items-center gap-1.5 rounded-full border bg-(--card-background-color)/75 px-3 text-xs font-medium text-(--primary-text-color) shadow-[0_2px_10px_-2px_rgba(0,0,0,0.25)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,transform] hover:bg-(--card-background-color)/95 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45',
+        'fp-floating border-separator flex h-7 items-center gap-1.5 rounded-full border bg-(--card-background-color)/75 px-3 text-xs font-medium text-(--primary-text-color) shadow-[0_2px_10px_-2px_rgba(0,0,0,0.25)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,transform] hover:bg-(--card-background-color)/95 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45',
         done && 'text-success',
       )}
     >

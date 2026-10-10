@@ -37,7 +37,7 @@ export const deleteButton =
 // Anything that floats over the editor: tips, popovers, menus and dialogs.
 // Frosted, so what is under it shows through, with a soft deep shadow.
 export const floating =
-  'rounded-xl border border-separator bg-(--card-background-color)/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.4),0_2px_8px_-2px_rgba(0,0,0,0.12)] backdrop-blur-2xl backdrop-saturate-150'
+  'fp-floating rounded-xl border border-separator bg-(--card-background-color)/80 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.4),0_2px_8px_-2px_rgba(0,0,0,0.12)] backdrop-blur-2xl backdrop-saturate-150'
 
 // A key to press, in a tip.
 export const kbd =

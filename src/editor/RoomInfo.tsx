@@ -1,7 +1,7 @@
 import { decorationKind } from '#/decoration/catalog.ts'
 import { SelectedHeader, Switch } from '#/editor/panel.tsx'
 import { neighboursOf } from '#/geometry/passages.ts'
-import { EDITOR_ACCENT_COLOR, EDITOR_TINT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_TINT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFlash } from '#/lib/flash.ts'
 import { cn } from '#/lib/utils.ts'
@@ -57,7 +57,7 @@ export default function RoomInfo({
 }: Props) {
   // The save button shows for a moment that the view was taken.
   const [saved, flashSaved] = useFlash()
-  const accent = EDITOR_ACCENT_COLOR
+  const accent = EDITOR_TINT_COLOR
   const index = rooms.findIndex(r => r.id === room.id)
   const sorted = [...areas].sort((a, b) => a.name.localeCompare(b.name))
   const used = new Map(rooms.filter(r => r.area_id).map(r => [r.area_id!, r.id]))
