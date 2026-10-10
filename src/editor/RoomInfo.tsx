@@ -1,5 +1,5 @@
 import { decorationKind } from '#/decoration/catalog.ts'
-import { SelectedHeader, Switch } from '#/editor/panel.tsx'
+import { SelectedHeader, Slider, Switch } from '#/editor/panel.tsx'
 import { neighboursOf } from '#/geometry/passages.ts'
 import { EDITOR_TINT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, DecorationConfig, RoomConfig } from '#/types.ts'
@@ -73,13 +73,11 @@ export default function RoomInfo({
     return (
       <label className={cn(row, 'grid-cols-[96px_1fr_56px]')}>
         {label}
-        <input
-          type="range"
+        <Slider
           min={min}
           max={max}
           step={step}
           value={value}
-          style={{ accentColor: EDITOR_TINT_COLOR }}
           onChange={e => onFloor(room.id, { ...room.floor!, [key]: Number(e.target.value) })}
         />
         <span className="text-label-2 text-right text-xs tabular-nums">

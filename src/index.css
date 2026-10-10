@@ -96,6 +96,68 @@
   }
 }
 
+/* The editor's slider: a thin track, filled in the tint up to the thumb, and
+   a white lozenge of a thumb that grows a little while it is held. The fill
+   ends at the thumb's middle, which travels half a thumb in from each end.
+   --fp-share is how far along the value is, from 0 to 1. */
+.fp-slider {
+  --fp-thumb: 22px;
+  --fp-reach: calc(var(--fp-thumb) / 2 + (100% - var(--fp-thumb)) * var(--fp-share, 0));
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  background: transparent;
+  border-radius: 999px;
+}
+.fp-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--fp-tint) var(--fp-reach), var(--fp-fill-stronger) var(--fp-reach));
+}
+.fp-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fp-fill-stronger);
+}
+.fp-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fp-tint);
+}
+.fp-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--fp-thumb);
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 3px rgb(0 0 0 / 0.28);
+  transition: transform 150ms ease-out;
+}
+.fp-slider::-moz-range-thumb {
+  width: var(--fp-thumb);
+  height: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 3px rgb(0 0 0 / 0.28);
+  transition: transform 150ms ease-out;
+}
+.fp-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.fp-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}
+.fp-slider:disabled {
+  opacity: 0.4;
+}
+
 @custom-variant mouse (@media (hover: hover) and (pointer: fine));
 @custom-variant touch (@media (hover: none) or (pointer: coarse));
 

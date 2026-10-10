@@ -2,6 +2,7 @@ import type { Trace, TraceMode } from '#/editor/trace.ts'
 import type { Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
 import { field, floating, iconButton, kbd, plainButton } from '#/editor/look.ts'
+import { Slider } from '#/editor/panel.tsx'
 import { EDITOR_TINT_COLOR } from '#/theme.ts'
 import {
   type IconDefinition,
@@ -262,13 +263,11 @@ function TracePanel({
               </label>
               <label className="flex flex-col gap-1.5 text-[13px]">
                 Opacity
-                <input
-                  type="range"
+                <Slider
                   min={0.1}
                   max={1}
                   step={0.05}
                   value={trace.opacity}
-                  style={{ accentColor: color }}
                   onChange={e => onTrace({ ...trace, opacity: Number(e.target.value) })}
                 />
               </label>
@@ -357,14 +356,12 @@ function Dial({
             <kbd className={kbd}>{shortcut}</kbd>
           </p>
           <p className="text-label-2 mt-0.5 text-xs tabular-nums">{note}</p>
-          <input
-            type="range"
+          <Slider
             className="mt-3 w-full"
             min={min}
             max={max}
             step={step}
             value={value}
-            style={{ accentColor: color }}
             onChange={e => onChange(Number(e.target.value))}
             onPointerUp={onDone}
             onKeyUp={onDone}

@@ -1,5 +1,5 @@
 import { itemLevels, type DecorationKind } from '#/decoration/catalog.ts'
-import { Switch } from '#/editor/panel.tsx'
+import { Slider, Switch } from '#/editor/panel.tsx'
 import {
   initialTry,
   isPositioned,
@@ -74,14 +74,12 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
         return (
           <label key={level.id} className={cn(row, 'grid-cols-[96px_1fr_56px]')}>
             {label}
-            <input
-              type="range"
+            <Slider
               min={0}
               max={1}
               step={0.01}
               value={value}
               aria-label={label}
-              style={{ accentColor: accent }}
               onChange={e => onChange(levelTry(kind, s, level.id, Number(e.target.value)))}
             />
             <span className="text-label-2 text-right text-xs tabular-nums">{Math.round(value * 100)}%</span>
@@ -123,14 +121,12 @@ export default function TrySection({ kind, state, accent, onChange }: Props) {
           {s.tint?.mode === 'white' && (
             <label className={cn(row, 'grid-cols-[96px_1fr_56px]')}>
               Warmth
-              <input
-                type="range"
+              <Slider
                 min={KELVIN_MIN}
                 max={KELVIN_MAX}
                 step={100}
                 value={s.tint.kelvin}
                 aria-label="Warmth"
-                style={{ accentColor: accent }}
                 onChange={e => set({ tint: { mode: 'white', kelvin: Number(e.target.value) } })}
               />
               <span className="text-label-2 text-right text-xs tabular-nums">{s.tint.kelvin} K</span>

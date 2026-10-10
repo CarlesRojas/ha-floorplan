@@ -4,7 +4,7 @@ import { cn } from '#/lib/utils.ts'
 import type { Signal } from '#/signals.ts'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useRef, type ReactNode } from 'react'
+import { useRef, type CSSProperties, type InputHTMLAttributes, type ReactNode } from 'react'
 
 // Pieces both sidebars share.
 
@@ -134,5 +134,34 @@ export function Switch({
         )}
       />
     </button>
+  )
+}
+
+// A slider: a thin track filled in the tint up to a white lozenge of a
+// thumb. It is the native range input underneath, so the keyboard and screen
+// readers work it as they would any other.
+export function Slider({
+  value,
+  min,
+  max,
+  className,
+  style,
+  ...rest
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'min' | 'max'> & {
+  value: number
+  min: number
+  max: number
+}) {
+  const share = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0
+  return (
+    <input
+      type="range"
+      min={min}
+      max={max}
+      value={value}
+      className={cn('fp-slider', className)}
+      style={{ '--fp-share': share, ...style } as CSSProperties}
+      {...rest}
+    />
   )
 }

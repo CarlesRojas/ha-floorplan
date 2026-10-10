@@ -17,7 +17,7 @@ import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import TrySection from '#/editor/TrySection.tsx'
 import { canTry, type TryState, type TryStates } from '#/editor/tryState.ts'
-import { PreviewHandle, SelectedHeader, Signals, Sticky, Switch } from '#/editor/panel.tsx'
+import { PreviewHandle, SelectedHeader, Signals, Slider, Sticky, Switch } from '#/editor/panel.tsx'
 import { Select } from '#/components/ui/select.tsx'
 import {
   AlertDialog,
@@ -285,13 +285,11 @@ export default function DecorationPanel({
             return (
               <label key={p.id} className={cn(row, 'grid-cols-[96px_1fr_56px_24px]')}>
                 {p.label}
-                <input
-                  type="range"
+                <Slider
                   min={p.min}
                   max={p.max}
                   step={p.step}
                   value={value}
-                  style={{ accentColor: accent }}
                   onChange={e => onUpdate(item.id, { params: { ...item.params, [p.id]: Number(e.target.value) } })}
                 />
                 <span className="text-label-2 text-right text-xs tabular-nums">
@@ -304,13 +302,11 @@ export default function DecorationPanel({
           })}
           <label className={cn(row, 'grid-cols-[96px_1fr_56px_24px]')}>
             Rotation
-            <input
-              type="range"
+            <Slider
               min={0}
               max={345}
               step={15}
               value={item.rotation ?? 0}
-              style={{ accentColor: accent }}
               onChange={e => onUpdate(item.id, { rotation: Number(e.target.value) })}
             />
             <span className="text-label-2 text-right text-xs tabular-nums">{item.rotation ?? 0}°</span>
