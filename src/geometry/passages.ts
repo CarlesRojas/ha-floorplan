@@ -17,9 +17,9 @@ export const PASSAGE_GAP_M = 0.2
 // The sign, pointing along plan +x from its back edge, which sits at the
 // origin: a triangle, rounded all over, that fills this outline.
 export const PASSAGE_ARROW: Point[] = [
-  [0, -0.36],
-  [0.42, 0],
-  [0, 0.36],
+  [0, -0.43],
+  [0.5, 0],
+  [0, 0.43],
 ]
 // How round its corners are on the plan beyond the rounding of its edges.
 export const PASSAGE_CORNER_RADIUS_M = 0.03

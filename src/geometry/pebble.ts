@@ -49,7 +49,7 @@ export function pebbleGeometry(
   }
   for (let j = 0; j <= segments; j++) {
     const a = Math.PI / 2 + (j / segments) * (Math.PI / 2)
-    rings.push({ out: fillet * Math.sin(a), y: -fillet - depth - fillet * Math.cos(a), s: Math.sin(a), c: Math.cos(a) })
+    rings.push({ out: fillet * Math.sin(a), y: -fillet - depth + fillet * Math.cos(a), s: Math.sin(a), c: Math.cos(a) })
   }
 
   const position: number[] = []
