@@ -686,7 +686,7 @@ const shapeOf = (node: Element): string => {
 // drawn them, so every card that looks different shows once. A style whose
 // cards all look like an earlier one is left out, and the earlier one
 // names it, like a fan's speed that is a light's brightness.
-type Shown = { style: string; section: HTMLElement; group: HTMLElement[]; made: Card[] }
+type Shown = { style: string; section: HTMLElement; group: HTMLElement[]; made: Card[]; keep: boolean }
 const shown: Shown[] = []
 const dedupe = () =>
   setTimeout(() => {
@@ -695,6 +695,7 @@ const dedupe = () =>
     for (const one of shown) {
       const shape = one.made.map(card => [...(card.shadowRoot?.children ?? [])].map(shapeOf).join()).join('|')
       const earlier = first.get(shape)
+      if (one.keep) continue
       if (!earlier) {
         first.set(shape, one)
         continue
@@ -755,7 +756,9 @@ for (const [style, uses] of styles) {
       group.push(cell)
       made.push(card)
     }
-    shown.push({ style, section, group, made })
+    // The projector screen always shows, inverted beside the blinds, to
+    // try that its arrows and its fill go the other way.
+    shown.push({ style, section, group, made, keep: entity.entity_id === 'cover.projector_screen' })
   }
   section.appendChild(row)
   main.appendChild(section)
