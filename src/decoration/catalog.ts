@@ -228,8 +228,8 @@ export function styleParams(kind: DecorationKind, variant?: string) {
 const NONE: Signal[] = []
 const TOGGLE: Signal[] = ['toggle']
 // Pieces that also do one thing for a press: a litter box scoops, a feeder
-// drops a portion, a doorbell rings, a door buzzes open, a coffee machine
-// makes one cup.
+// drops a portion, a doorbell lights the ring round its button, a door buzzes
+// open, a coffee machine makes one cup.
 const TOGGLE_PRESS: Signal[] = ['toggle', 'press']
 const TOGGLE_LEVEL: Signal[] = ['toggle', 'level']
 const LIGHT_SIGNALS: Signal[] = ['toggle', 'level', 'color', 'warmth']

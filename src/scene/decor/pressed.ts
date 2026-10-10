@@ -5,8 +5,8 @@ export const LITTER_TURN = 0.12
 
 // How long each piece runs for one press of a button behind it, in seconds:
 // what it does while on, once. A litter box goes one turn over and back, a
-// feeder drops one portion, a doorbell rings, a door stays open while it
-// buzzes, a coffee machine makes one cup.
+// feeder drops one portion, a doorbell lights the ring round its button, a
+// door stays open while it buzzes, a coffee machine makes one cup.
 const PRESS_SECONDS: Record<string, number> = {
   litter_box: 1 / LITTER_TURN,
   pet_feeder: 3,
