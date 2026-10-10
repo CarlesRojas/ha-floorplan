@@ -15,15 +15,14 @@ const MIN_STRETCH_M = 0.5
 export const PASSAGE_GAP_M = 0.2
 
 // The sign, pointing along plan +x from its back edge, which sits at the
-// origin: a plain triangle. The scene rounds its corners off.
+// origin: a triangle, rounded all over, that fills this outline.
 export const PASSAGE_ARROW: Point[] = [
-  [0, -0.28],
+  [0, -0.36],
   [0.42, 0],
-  [0, 0.28],
+  [0, 0.36],
 ]
-// How round the triangle's corners are, wider than the rounding of its
-// edges so the two run into each other smoothly.
-export const PASSAGE_CORNER_RADIUS_M = 0.1
+// How round its corners are on the plan beyond the rounding of its edges.
+export const PASSAGE_CORNER_RADIUS_M = 0.03
 
 // The kinds a person walks through. A window in the shared stretch leaves
 // it open, a door closes it off and leads through itself instead.
@@ -78,11 +77,34 @@ export function passagesOf(room: RoomConfig, rooms: RoomConfig[], decorations: D
   return result
 }
 
-// Where a passage's sign lies on the plan, its outline turned and moved
-// into place, so the camera can keep it in the picture.
-export function passageFootprint(passage: Passage): Point[] {
+// `outline` turned and moved into place for a passage's sign on the plan.
+function place(passage: Passage, outline: Point[]): Point[] {
   const [ox, oy] = passage.out
   const bx = passage.at[0] + ox * PASSAGE_GAP_M
   const by = passage.at[1] + oy * PASSAGE_GAP_M
-  return PASSAGE_ARROW.map(([x, y]): Point => [bx + ox * x - oy * y, by + oy * x + ox * y])
+  return outline.map(([x, y]): Point => [bx + ox * x - oy * y, by + oy * x + ox * y])
+}
+
+// Where a passage's sign lies on the plan, so the camera can keep it in the
+// picture.
+export function passageFootprint(passage: Passage): Point[] {
+  return place(passage, PASSAGE_ARROW)
+}
+
+// The sharp core of a passage's sign on the plan: its outline drawn in by
+// `by` all round, which the rounding then grows back out to the outline.
+export function passageCore(passage: Passage, by: number): Point[] {
+  const outline = ensureCounterClockwise(PASSAGE_ARROW)
+  const n = outline.length
+  const normalOf = (a: Point, b: Point): Point => {
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1])
+    return [(b[1] - a[1]) / length, -(b[0] - a[0]) / length]
+  }
+  const core = outline.map((c, i): Point => {
+    const n1 = normalOf(outline[(i - 1 + n) % n], c)
+    const n2 = normalOf(c, outline[(i + 1) % n])
+    const k = by / (1 + n1[0] * n2[0] + n1[1] * n2[1])
+    return [c[0] - (n1[0] + n2[0]) * k, c[1] - (n1[1] + n2[1]) * k]
+  })
+  return place(passage, core)
 }
