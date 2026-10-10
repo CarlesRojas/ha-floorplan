@@ -30,6 +30,10 @@ export function injectProperties() {
   document.head.appendChild(style)
 }
 
+// The tree of a card the preview in the card dialog has just thrown away,
+// kept for a tick so the card that replaces it can take it over.
+let parked: { root: Root; mount: HTMLDivElement; config: unknown } | null = null
+
 // Custom element that hosts a React tree in a shadow root with the card styles.
 // HA detaches and re-attaches elements when a view re-renders, so everything
 // that must happen exactly once lives in the constructor.
@@ -66,6 +70,36 @@ export abstract class ReactHost<Config> extends HTMLElement {
       this.root.unmount()
       this.root = null
     }, 0)
+  }
+
+  // Leaves this element's tree for the one that replaces it to take over
+  // with `adopt`, and tears it down if none does by the next tick.
+  protected park() {
+    if (!this.root) return
+    const handed = { root: this.root, mount: this.mount, config: this._config }
+    parked?.root.unmount()
+    parked = handed
+    this.root = null
+    setTimeout(() => {
+      if (parked !== handed) return
+      parked = null
+      handed.root.unmount()
+    }, 0)
+  }
+
+  // Takes over the tree another element parked, so React updates it to
+  // this element's config instead of building a new one from nothing.
+  // Returns the config that tree was last drawn with.
+  protected adopt(): Config | null {
+    if (!parked || this.root) return null
+    const { root, mount, config } = parked
+    parked = null
+    if (mount !== this.mount) {
+      this.mount.replaceWith(mount)
+      this.mount = mount
+    }
+    this.root = root
+    return config as Config | null
   }
 
   // Called by HA on every state change.

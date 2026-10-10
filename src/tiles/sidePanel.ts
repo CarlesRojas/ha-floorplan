@@ -22,6 +22,11 @@ type HuiCard = HTMLElement & { config: CardConfig; hass: HomeAssistant; preview:
 const ROW_PX = 56
 const GAP_PX = 10
 
+// How long the tiles take to fade out of a room, and the next room's to
+// fade in, in milliseconds.
+const FADE_OUT_MS = 140
+const FADE_IN_MS = 220
+
 // How many of the 12 columns and how many rows a side card takes, read from
 // its config so the layout is known before the card has loaded.
 function span(config: CardConfig) {
@@ -154,11 +159,17 @@ export class SidePanel extends HTMLElement {
   private side: HuiCard[] = []
   private root: HTMLDivElement
   private mainSlot: HTMLDivElement
+  private sideSlot: HTMLDivElement
   private cardsSlot: HTMLDivElement
   private empty: HTMLDivElement
   private observer: ResizeObserver
   private unsubscribe: (() => void) | null = null
   private panel = false
+  // The room whose tiles show, null for the whole home, and undefined
+  // before any show.
+  private shown: string | null | undefined = undefined
+  private fade: Animation | null = null
+  private fadingOut = false
 
   constructor() {
     super()
@@ -172,6 +183,7 @@ export class SidePanel extends HTMLElement {
     this.mainSlot.className = 'main'
     const side = document.createElement('div')
     side.className = 'side'
+    this.sideSlot = side
     this.cardsSlot = document.createElement('div')
     this.cardsSlot.className = 'cards'
     this.empty = document.createElement('div')
@@ -274,11 +286,56 @@ export class SidePanel extends HTMLElement {
     return card
   }
 
+  // A change of room fades the tiles of the one before out and those of
+  // the next one in, unless the panel cannot be seen or asks for no motion.
+  private updateRoom() {
+    const room = roomFilter()?.room_id ?? null
+    const before = this.shown
+    this.shown = room
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (
+      before === undefined ||
+      before === room ||
+      still ||
+      !this.isConnected ||
+      !this.cardsSlot.getClientRects().length
+    ) {
+      if (before !== room) this.cancelFade()
+      return this.showRoom(room)
+    }
+    // Fading out already, it shows whichever room is in view once it is done.
+    if (this.fadingOut) return
+    this.cancelFade()
+    this.fadingOut = true
+    const out = this.cardsSlot.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(6px)' }], {
+      duration: FADE_OUT_MS,
+      easing: 'ease-in',
+      fill: 'forwards',
+    })
+    this.fade = out
+    out.onfinish = () => {
+      this.fadingOut = false
+      // The room may have changed again while this one faded out.
+      this.showRoom(this.shown ?? null)
+      this.sideSlot.scrollTop = 0
+      this.fade = this.cardsSlot.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1 }], {
+        duration: FADE_IN_MS,
+        easing: 'ease-out',
+      })
+      out.cancel()
+    }
+  }
+
+  private cancelFade() {
+    this.fade?.cancel()
+    this.fade = null
+    this.fadingOut = false
+  }
+
   // A card is away while another room is in view. With the home's own
   // tiles set, they are all the whole home shows, and they go away once a
   // room is in view.
-  private updateRoom() {
-    const room = roomFilter()?.room_id
+  private showRoom(room: string | null) {
     const home = this.side.some(card => card.dataset.home !== undefined)
     for (const card of this.side) {
       const away =

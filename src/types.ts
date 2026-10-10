@@ -94,6 +94,14 @@ export type HomeConfig = {
   entities?: string[]
 }
 
+// The background laid behind the view the card is in, for a light and for
+// a dark dashboard: one of the card's own by its id, or `theme` to leave
+// the dashboard's. Graphite when not set.
+export type BackgroundConfig = {
+  light?: string
+  dark?: string
+}
+
 // A Home Assistant entity placed in a room.
 // An entity a decoration item stands in for. A device is never placed on
 // its own: the room and position follow the item that stands behind it.
@@ -166,6 +174,7 @@ export type CardConfig = {
   // set, it is all the panel shows with the whole home in view, and each
   // room's tiles show only while that room is in view.
   home?: HomeConfig
+  background?: BackgroundConfig
 }
 
 // A card Home Assistant's card picker offers for an entity.

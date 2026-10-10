@@ -11,6 +11,10 @@ moves that section under the new version and uses it as the release notes.
 
 ### Added
 
+- The floorplan card lays a soft gradient behind its view, with five to choose from in the card's editor and a separate choice for a light and a dark dashboard.
+- The preview in the card's editor shows the chosen background, and picking another one there changes only the background without loading the flat again.
+- The side panel's tiles fade out and the next room's fade in when the floorplan card flies to a room or back to the whole home.
+- On a light dashboard a tile that is on is dark with white text, so it stands out from the page.
 - A room flown to shows a small rounded triangle, made of the next room's floor, just past each stretch it shares with a room beside it that has no door in between, and a click on it flies to that room, the way a click on a door does.
 - A room selected in the editor lists the rooms beside it, shows which ones a door leads into, and has a switch for each open one to show or hide the triangle into it.
 - Twelve tile cards come with the floorplan card: a heading, and tiles for lights, switches and anything else on or off, buttons and scenes, covers, vacuums, option lists, cameras, thermostats, media players, locks, the weather with its forecast, and any other entity with its state. A tap does the obvious thing, a long press opens the entity's dialog, and each one can be set up in the visual card editor.
