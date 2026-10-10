@@ -115,18 +115,6 @@ export function AlarmModes({ env, entity }: FeatureProps) {
   )
 }
 
-// Lock and unlock, side by side, the one it is in filled.
-export function LockCommands({ env, entity }: FeatureProps) {
-  const run = (service: string) => () => callService(env.hass, `lock.${service}`, { entity_id: entity.entity_id })
-  const locked = entity.state === 'locked' || entity.state === 'locking'
-  return (
-    <div className="fp-group" role="radiogroup" aria-label="Lock">
-      <Pill icon="ph:lock" label="Lock" checked={locked} onPress={run('lock')} />
-      <Pill icon="ph:lock-open" label="Unlock" checked={!locked} onPress={run('unlock')} />
-    </div>
-  )
-}
-
 // How long a press on Open waits for the second press that opens the door.
 const CONFIRM_MS = 4000
 
