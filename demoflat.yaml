@@ -8,6 +8,7 @@ home:
     - switch.projector_scene
     - switch.tv_scene
     - switch.all_lights
+    - switch.cleaning
     - weather.home
 rooms:
   - id: living

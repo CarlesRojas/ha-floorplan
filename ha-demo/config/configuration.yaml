@@ -20,7 +20,9 @@ homeassistant:
 # screen up. TV scene is the same around the living room TV, turning off
 # the living room and the kitchen. All lights is a plain switch, not a
 # light, so its tile has no brightness or color: on while any light is,
-# and a tap turns them all off, or all on when every one is off.
+# and a tap turns them all off, or all on when every one is off. Cleaning is
+# on while the robot vacuum cleans: it sends the robot out, and turning it
+# off sends the robot back to its dock.
 input_boolean:
   projector_screen_down:
     name: Projector screen down
@@ -103,6 +105,18 @@ template:
                 - light.office_rgbw_lights
                 - light.bed_light
                 - light.ceiling_lights
+      - name: Cleaning
+        unique_id: cleaning
+        icon: ph:broom
+        state: "{{ is_state('vacuum.demo_vacuum_0_ground_floor', 'cleaning') }}"
+        turn_on:
+          - action: vacuum.start
+            target:
+              entity_id: vacuum.demo_vacuum_0_ground_floor
+        turn_off:
+          - action: vacuum.return_to_base
+            target:
+              entity_id: vacuum.demo_vacuum_0_ground_floor
 
 # The Demo integration's lights come up red and pink. This sets them to a
 # warm white at full brightness every time Home Assistant starts.
