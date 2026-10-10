@@ -289,9 +289,8 @@ export default function Shadows() {
     three.scene.traverse(object => {
       if (object instanceof PointLight) {
         // The light that comes through a shade never casts: that is the
-        // whole point of a shade you can see the bulb through. Nor does a
-        // light that says so, like the glow of a screen.
-        if (!object.userData.through && !object.userData.noShadow && !isPad(object)) lamps.push(object)
+        // whole point of a shade you can see the bulb through.
+        if (!object.userData.through && !isPad(object)) lamps.push(object)
         return
       }
       if (!(object instanceof Mesh)) return

@@ -2,7 +2,8 @@ import { useFrame } from '@react-three/fiber'
 import { useEased } from '#/scene/decor/ease.ts'
 import { useLive } from '#/scene/live.ts'
 import { useWarmed } from '#/scene/warm.ts'
-import { useMemo, useRef } from 'react'
+import { LAMP_SHADOW_MAP_PX } from '#/constants.ts'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import type { PointLight, ShaderMaterial } from 'three'
 
 // A screen that is playing. Soft blocks of changing color glow out of black
@@ -99,8 +100,19 @@ export function ScreenGlow({
 }) {
   const lit = useEased(on ? 1 : 0, 4)
   const light = useRef<PointLight>(null)
+  // Ranked for the shadow sweep by where it is heading, the way a lamp is,
+  // and casting from the first frame it is lit. Ranked by its fade, it took
+  // a shadow from a lamp already on while it came up, and the shadows of
+  // both jumped about.
+  const rank = on ? intensity : 0
+  const latestRank = useRef(rank)
+  useLayoutEffect(() => {
+    latestRank.current = rank
+  })
   const shown = useWarmed(lit > 0.01, visible => {
-    if (light.current) light.current.visible = visible
+    if (!light.current) return
+    light.current.visible = visible
+    if (visible && latestRank.current > 0) light.current.castShadow = true
   })
   const rgb = useMemo<[number, number, number]>(() => [0, 0, 0], [])
   useLive(on)
@@ -119,10 +131,12 @@ export function ScreenGlow({
       distance={distance}
       decay={1}
       visible={shown}
-      // A wash of color, not a lamp: it casts nothing, and it is kept out
-      // of the shadow sweep, which would rank it by its fade and have the
-      // lamps' shadows shuffle while it comes on.
-      userData={{ noShadow: true }}
+      userData={{ rank }}
+      shadow-mapSize={[LAMP_SHADOW_MAP_PX, LAMP_SHADOW_MAP_PX]}
+      shadow-bias={-0.0012}
+      shadow-normalBias={0.008}
+      shadow-camera-near={0.05}
+      shadow-camera-far={distance}
     />
   )
 }
