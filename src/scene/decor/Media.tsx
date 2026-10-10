@@ -1,8 +1,11 @@
 import { Halo, Led, Material, SEG, Slab, Spinner, Waves } from '#/scene/decor/parts.tsx'
 import { useBeamScene } from '#/scene/decor/beam.ts'
-import { useMemo, type ReactNode } from 'react'
+import { ScreenGlow } from '#/scene/decor/Screen.tsx'
+import { useThrow } from '#/scene/decor/throw.ts'
+import { useMemo, useRef, type ReactNode } from 'react'
 import {
   AdditiveBlending,
+  type Group,
   BufferGeometry,
   DoubleSide,
   ExtrudeGeometry,
@@ -34,6 +37,8 @@ const BEAM_REACH = 0.85
 
 export function Beam({ length, width, strength }: { length: number; width: number; strength: number }) {
   const material = useBeamScene(0.28 * strength)
+  const from = useRef<Group>(null)
+  useThrow(from, length, strength)
   const geometry = useMemo(() => {
     const rows = 24
     const lens = 0.012
@@ -70,21 +75,26 @@ export function Beam({ length, width, strength }: { length: number; width: numbe
     g.setIndex(index)
     return g
   }, [length, width])
-  if (strength < 0.01) return null
   return (
-    <mesh geometry={geometry} renderOrder={2}>
-      <meshBasicMaterial
-        ref={material}
-        color="#eef3ff"
-        vertexColors
-        transparent
-        opacity={0.28 * strength}
-        blending={AdditiveBlending}
-        depthWrite={false}
-        side={DoubleSide}
-        toneMapped={false}
-      />
-    </mesh>
+    <group ref={from}>
+      {strength >= 0.01 && (
+        <mesh geometry={geometry} renderOrder={2}>
+          <meshBasicMaterial
+            ref={material}
+            color="#eef3ff"
+            vertexColors
+            transparent
+            opacity={0.28 * strength}
+            blending={AdditiveBlending}
+            depthWrite={false}
+            side={DoubleSide}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
+      {/* Three quarters of the way along the haze, the picture's colors light the room. */}
+      <ScreenGlow on={strength > 0.5} position={[0, 0, length * BEAM_REACH * 0.75]} intensity={0.6} distance={3} />
+    </group>
   )
 }
 

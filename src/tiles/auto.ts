@@ -2,10 +2,11 @@ import type { CardConfig, DecorationConfig, DeviceConfig, RoomConfig } from '#/t
 
 // The tiles of the floorplan's side panel, made from the devices placed on
 // the floorplan and the entities given to each room: a heading per room,
-// then a tile for each of its entities, in the room's order.
+// then a tile for each of its entities, in the room's order. The home's own
+// entities come first, under the home's heading, in a group with no room.
 
 export type AutoCard = { type: string; [key: string]: unknown }
-export type AutoGroup = { room: string; cards: AutoCard[] }
+export type AutoGroup = { room: string | null; cards: AutoCard[] }
 
 const TILE_TYPES: Record<string, string> = {
   light: 'fp-toggle',
@@ -107,7 +108,7 @@ function tile(device: DeviceConfig, pieces: Map<string, DecorationConfig>): Auto
   const card = entityTile(device.entity_id)
   const kind = device.decorations?.map(id => pieces.get(id)?.kind).find(Boolean)
   const icon = kind && KIND_ICONS[kind]
-  if (icon) card.icon = icon
+  if (icon) card.piece_icon = icon
   // A projector screen comes down to open.
   if (kind === 'projector_screen') card.invert = true
   return card
@@ -138,6 +139,11 @@ function heading(room: RoomConfig): AutoCard {
 export function autoGroups(plan: CardConfig): AutoGroup[] {
   const pieces = new Map((plan.decorations ?? []).map(piece => [piece.id, piece]))
   const groups: AutoGroup[] = []
+  const home = [...new Set(plan.home?.entities ?? [])]
+  if (home.length) {
+    const title: AutoCard = { type: 'custom:fp-title', title: plan.home?.name || 'Home', room_filter: 'show' }
+    groups.push({ room: null, cards: [title, ...home.map(entityTile)] })
+  }
   for (const room of plan.rooms ?? []) {
     const devices = new Map(
       (plan.devices ?? []).filter(device => device.room === room.id).map(device => [device.entity_id, device]),

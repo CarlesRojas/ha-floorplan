@@ -11,6 +11,9 @@ export type TileConfig = {
   entity?: string
   name?: string
   icon?: string
+  // The icon of the piece on the plan the tile stands for, which the icon
+  // set for the entity in Home Assistant takes over.
+  piece_icon?: string
   // The color the icon takes while the tile is on, any CSS color.
   color?: string
   // Replaces the line under the name.
@@ -73,8 +76,20 @@ export function resolveArea(hass: HomeAssistant, area: string | undefined, entit
   return entityId ? entityArea(hass, entityId) : null
 }
 
+// The states of an entity that is not in use.
+const IDLE = ['off', 'standby', 'idle', 'unavailable', 'unknown']
+
 export function stubEntity(hass: HomeAssistant | undefined, domains: string[]) {
-  return Object.keys(hass?.states ?? {}).find(id => domains.includes(id.split('.')[0]))
+  const ids = Object.keys(hass?.states ?? {})
+  // One in use first, like a player that is playing, so the preview shows
+  // its controls.
+  const idle = (id: string) => IDLE.includes(hass!.states[id].state)
+  // Domain by domain in the card's order, so a toggle shows a light first.
+  for (const domain of domains) {
+    const all = ids.filter(id => id.split('.')[0] === domain)
+    const id = all.find(id => !idle(id)) ?? all[0]
+    if (id) return id
+  }
 }
 
 // The base of every tile. It follows the floorplan card's room filter:

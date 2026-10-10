@@ -3,6 +3,13 @@ grid_options:
   columns: full
 side_panel: true
 first_click: room
+home:
+  entities:
+    - switch.projector_scene
+    - switch.tv_scene
+    - switch.all_lights
+    - switch.cleaning
+    - weather.home
 rooms:
   - id: living
     name: Living room

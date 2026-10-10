@@ -336,6 +336,9 @@ export const DEMO_FLAT: CardConfig = {
   side_panel: true,
   // A click on a piece in another room flies to that room first.
   first_click: 'room',
+  // With the whole flat in view the panel shows only these, and each room's
+  // tiles show once that room is.
+  home: { entities: ['switch.projector_scene', 'switch.tv_scene', 'switch.all_lights', 'switch.cleaning', 'weather.home'] },
   rooms: [
     {
       id: 'living',

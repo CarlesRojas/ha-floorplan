@@ -55,10 +55,10 @@ export const SUN_SHADOW_MAP_PX = 1024
 // A lamp lights the room around it and casts shadows from what it stands
 // among. Each one costs six shadow renders, so only the first few get them.
 export const LAMP_SHADOW_MAP_PX = 512
-export const MAX_SHADOW_LAMPS = 4
+export const MAX_SHADOW_LAMPS = 8
 // Every shadowed lamp is looked up in every pixel drawn, which a phone or
 // a tablet can afford fewer of.
-export const MAX_SHADOW_LAMPS_TOUCH = 2
+export const MAX_SHADOW_LAMPS_TOUCH = 4
 // The hour the editor lights its preview at, and the one its N key flips to.
 export const EDITOR_HOUR = 13
 export const EDITOR_NIGHT_HOUR = 23

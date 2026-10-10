@@ -17,12 +17,20 @@ moves that section under the new version and uses it as the release notes.
 - The floorplan card can show a side panel of tiles, switched on in its editor in any kind of view: the floorplan takes two thirds of the card and a tile for each device on the plan fills the rest, room by room, and on a phone the tiles go under a square floorplan. Scenes, sensors, thermostats and other entities with no piece on the plan can be added to a room's tiles from the same editor. Each room's tiles can be put in order by dragging them in the editor.
 - The tile icons can be picked as `ph:` icons in Home Assistant's icon picker and used on any card.
 - The floorplan card's `aspect_ratio` can be `fill`, to take the whole height of what holds it.
+- The side panel can have a section for the whole home, set in the card's editor above the tiles by room, with a heading that reads Home unless it is renamed and any entities, such as a scene, a script, the weather or a group of lights; with any there, the whole home shows only those tiles and each room's tiles show only while that room is in view.
+- A tile with no icon of its own shows the icon picked for its entity in Home Assistant.
+- A TV or a monitor that is on lights the room around it in the colors on its screen, so it shows it is on even when the screen faces away.
+- The tile cards show a preview in Home Assistant's card picker, and the ones made for an entity show up under Community when a card is added by entity, with the cover, media, vacuum and climate tiles offered wide with their buttons and also small.
 - A tile's `room_filter` can be `room`, to show only while its room is in view, or `home`, to show only while the whole home is.
 - A leak sensor to put on the floor: it glows blue and a puddle spreads round it when it gets wet.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
+- A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
 
 ### Changed
 
+- Up to eight lamps cast shadows at once on a computer and four on a phone or tablet, up from four and two.
+- When a lamp hands its shadow to a brighter light that comes on, the shadow fades out and the new one fades in instead of switching at once.
+- A projector's beam goes through the same colors as a TV that is on, where it used to be white.
 - The demo flat in demoflat.yaml is refurnished, with a camera, an alarm panel, a humidifier and a water heater, its side panel on with the tiles of each room in order, and a click on another room flying to it first.
 - A TV or laptop that is on shows deep, muted colors glowing out of black, swaying between greens and blues and now and then going round every other color, and moves faster than before.
 - A smart lock glows red while it is locked and green while it is unlocked.

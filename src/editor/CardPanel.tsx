@@ -2,9 +2,9 @@ import { cn } from '#/lib/utils.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
 import { Switch } from '#/editor/panel.tsx'
 import { entityName } from '#/devices/catalog.ts'
-import type { CardConfig, HomeAssistant, RoomConfig } from '#/types.ts'
+import type { CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
 import { roomEntities } from '#/tiles/auto.ts'
-import { faGripVertical, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faGripVertical, faPen, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   useEffect,
@@ -49,6 +49,18 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
     onChange({ ...config, rooms: next })
   }
 
+  // Writes the home section, leaving out what is empty so the YAML stays
+  // as short as it was.
+  const home = config.home ?? {}
+  const homeEntities = home.entities ?? []
+  const setHome = (changes: HomeConfig) => {
+    const next: HomeConfig = { ...home, ...changes }
+    if (!next.name) delete next.name
+    if (!next.entities?.length) delete next.entities
+    const { home: _, ...rest } = config
+    onChange(Object.keys(next).length ? { ...rest, home: next } : rest)
+  }
+
   // An entity has one place: a piece on the plan, or one room's list.
   const taken = [
     ...(config.devices ?? []).map(device => device.entity_id),
@@ -87,6 +99,47 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           />
         </label>
       </Section>
+
+      {sidePanel && (
+        <Section
+          title="Home"
+          description="Tiles for the whole home rather than a room, such as a scene, a script, the weather or a group of lights, under a heading of their own. With any here, they are all the panel shows until a room is in view, and each room's tiles show only inside it. Leave it empty to show every room."
+        >
+          <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
+            <label className="group flex h-9 cursor-text items-center gap-2 rounded-lg px-1 focus-within:bg-[color-mix(in_srgb,var(--primary-text-color)_7%,transparent)] focus-within:px-3">
+              <input
+                type="text"
+                value={home.name ?? ''}
+                placeholder="Home"
+                aria-label="Heading"
+                onChange={event => setHome({ name: event.target.value })}
+                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-(--primary-text-color) outline-none placeholder:text-(--primary-text-color) focus:placeholder:text-(--secondary-text-color)"
+              />
+              <FontAwesomeIcon
+                icon={faPen}
+                className="size-3 text-(--secondary-text-color) group-focus-within:hidden"
+              />
+            </label>
+            {homeEntities.length > 0 && (
+              <SortableList
+                items={homeEntities.map(id => ({
+                  id,
+                  title: hass ? entityName(hass, id) : id,
+                  onRemove: () => setHome({ entities: homeEntities.filter(other => other !== id) }),
+                }))}
+                onReorder={entities => setHome({ entities })}
+              />
+            )}
+            {hass && (
+              <EntityPicker
+                hass={hass}
+                exclude={homeEntities}
+                onPick={id => !homeEntities.includes(id) && setHome({ entities: [...homeEntities, id] })}
+              />
+            )}
+          </div>
+        </Section>
+      )}
 
       {sidePanel && (
         <Section
@@ -264,7 +317,7 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
             {item.onRemove && (
               <button
                 type="button"
-                aria-label={`Take ${item.title} out of this room`}
+                aria-label={`Remove ${item.title}`}
                 onClick={item.onRemove}
                 className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-(--secondary-text-color) hover:bg-[color-mix(in_srgb,var(--primary-text-color)_8%,transparent)] hover:text-(--primary-text-color)"
               >

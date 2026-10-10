@@ -1,6 +1,4 @@
-import { MAX_SHADOW_LAMPS, MAX_SHADOW_LAMPS_TOUCH } from '#/constants.ts'
-import { coarseOnly } from '#/scene/device.ts'
-import { ahead, balance, isPad } from '#/scene/pad.ts'
+import { ahead, balance } from '#/scene/pad.ts'
 import { useWarm } from '#/scene/warm.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
@@ -38,9 +36,9 @@ function edits(position?: BufferAttribute | InterleavedBufferAttribute) {
 // Glass and the other see through parts are left out: a pane that cast a
 // solid shadow would read as a wall.
 //
-// The same sweep hands out the lamp shadows. A point light costs six renders
-// a frame, so only the brightest few lamps cast, and which ones they are
-// follows whatever is switched on.
+// The lamp shadows are handed out on every draw instead, see `balance`. A
+// point light costs six renders a frame, so only the brightest few lamps
+// cast, and which ones they are follows whatever is switched on.
 const CLEAR_ENOUGH = 0.6
 const SWEEP_S = 0.25
 // The pause before each round of shaders built ahead.
@@ -213,8 +211,10 @@ export default function Shadows() {
     const before = scene.onBeforeRender
     scene.onBeforeRender = (...args) => {
       before.apply(scene, args)
-      // Before three counts the lights, they are topped up to their step.
-      balance(scene)
+      // Before three counts the lights, they are topped up to their step,
+      // and the shadows handed to the lamps that should have them. While
+      // one fades from a lamp to another, the frames keep coming.
+      if (balance(scene, true)) get().invalidate()
       if (!armed.current) return
       armed.current = false
       check()
@@ -230,10 +230,9 @@ export default function Shadows() {
 
   const warm = useWarm()
   const since = useRef(SWEEP_S)
-  const budget = coarseOnly() ? MAX_SHADOW_LAMPS_TOUCH : MAX_SHADOW_LAMPS
   // Frames are drawn on request, so a frame that came too soon for a sweep
   // books one for when a sweep is due, in case no other frame follows it:
-  // a lamp switched on in a single frame still has to be handed its shadow.
+  // a thing put in the room in a single frame still has to cast.
   const owed = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => clearTimeout(owed.current ?? undefined), [])
   // In the background, a little after the card is up, the shaders for the
@@ -285,14 +284,7 @@ export default function Shadows() {
     }
     since.current = 0
     look.current()
-    const lamps: PointLight[] = []
     three.scene.traverse(object => {
-      if (object instanceof PointLight) {
-        // The light that comes through a shade never casts: that is the
-        // whole point of a shade you can see the bulb through.
-        if (!object.userData.through && !isPad(object)) lamps.push(object)
-        return
-      }
       if (!(object instanceof Mesh)) return
       // A lamp shade is the one thing that is meant to pass light on: its
       // frame casts, the parchment or opal in it does not. A fish or a
@@ -301,41 +293,6 @@ export default function Shadows() {
       const solid = !object.userData.transmits && !object.userData.noShadow && !clear(object.material)
       if (object.castShadow !== solid) object.castShadow = solid
       if (!object.receiveShadow) object.receiveShadow = true
-    })
-    // A lamp asks for its shadow itself, so it casts from the frame it
-    // lights up. Six renders each is too much for a room full of them, so
-    // the dimmer ones past the budget give theirs up until they are needed.
-    // Ranked by the intensity a lamp is heading for, when it says, so one
-    // fading in is placed by what it will be rather than by the fade.
-    const rank = (lamp: PointLight): number => lamp.userData.rank ?? lamp.intensity
-    lamps.sort((a, b) => rank(b) - rank(a))
-    lamps.forEach((lamp, i) => {
-      // A lamp that is hidden is not counted, and casts nothing whatever it
-      // says, so it is left as it is: it comes on with its shadow already
-      // asked for, and the shaders built for that.
-      if (!lamp.visible) return
-      // A lamp that is off has nothing to throw.
-      const cast = i < budget && rank(lamp) > 0.001
-      if (lamp.castShadow === cast) return
-      // Whether a lamp casts is in every shader, like whether it is lit, so
-      // the switch waits for the shaders too. Asked once: the next sweep
-      // asks again if it is still wanted.
-      warm(
-        lamp,
-        {
-          apply: () => {
-            lamp.castShadow = cast
-          },
-          revert: () => {
-            lamp.castShadow = !cast
-          },
-          commit: () => {
-            if (lamp.visible) lamp.castShadow = cast
-            three.invalidate()
-          },
-        },
-        false,
-      )
     })
   })
   return null

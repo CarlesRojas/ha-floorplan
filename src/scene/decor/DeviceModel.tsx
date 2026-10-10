@@ -9,7 +9,7 @@ import {
 } from '#/decoration/catalog.ts'
 import { Bar, Draft, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
 import { roundedShape } from '#/geometry/polygon.ts'
-import ScreenMaterial from '#/scene/decor/Screen.tsx'
+import ScreenMaterial, { Projection, ScreenGlow } from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
@@ -210,6 +210,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         <planeGeometry args={[w - 0.012, h - 0.012]} />
         {on ? <ScreenMaterial /> : <meshStandardMaterial color={c('screen')} roughness={0.12} metalness={0.25} />}
       </mesh>
+      {/* The picture's light on the room round it, more for a bigger screen. */}
+      <ScreenGlow
+        on={on}
+        position={[0, h / 2, z + 0.25]}
+        intensity={Math.min(1.8, 0.6 + w * 0.9)}
+        distance={2.5 + w * 2}
+      />
     </group>
   )
 
@@ -1220,10 +1227,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </Slab>
           {drop > 0.01 && (
             <>
-              <mesh position={[0, -caseH - drop / 2, 0]} scale={[1, openAmount, 1]}>
-                <planeGeometry args={[w, h]} />
-                <meshStandardMaterial color={c('screen')} roughness={0.9} side={DoubleSide} />
-              </mesh>
+              <group position={[0, -caseH - drop / 2, 0]}>
+                <mesh scale={[1, openAmount, 1]}>
+                  <planeGeometry args={[w, h]} />
+                  <meshStandardMaterial color={c('screen')} roughness={0.9} side={DoubleSide} />
+                </mesh>
+                <Projection w={w} h={h} open={openAmount} />
+              </group>
               {/* The weighted bar along the bottom edge keeps its own size. */}
               <Slab size={[w, 0.03, 0.03]} radius={0.008} position={[0, -caseH - drop, 0]}>
                 <Material color={c('case')} material={m('case')} />

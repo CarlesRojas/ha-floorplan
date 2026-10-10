@@ -85,6 +85,12 @@ export type RoomConfig = {
   order?: string[]
 }
 
+// The side panel's section for the whole home.
+export type HomeConfig = {
+  name?: string
+  entities?: string[]
+}
+
 // A Home Assistant entity placed in a room.
 // An entity a decoration item stands in for. A device is never placed on
 // its own: the room and position follow the item that stands behind it.
@@ -152,10 +158,26 @@ export type CardConfig = {
   // the rest: a heading per room, then a tile for each of its devices and
   // of its `entities`. On a narrow card the panel goes under the floorplan.
   side_panel?: boolean
+  // The side panel's own section for the whole home, under its `name`,
+  // Home by default: the tiles of its `entities`, in this order. With any
+  // set, it is all the panel shows with the whole home in view, and each
+  // room's tiles show only while that room is in view.
+  home?: HomeConfig
 }
+
+// A card Home Assistant's card picker offers for an entity.
+type Suggestion = { label?: string; config: Record<string, unknown> }
 
 declare global {
   interface Window {
-    customCards?: { type: string; name: string; description?: string }[]
+    customCards?: {
+      type: string
+      name: string
+      description?: string
+      // Draws the card from its stub config in Home Assistant's card picker.
+      preview?: boolean
+      // The cards Home Assistant offers for an entity picked by entity.
+      getEntitySuggestion?: (hass: HomeAssistant, entityId: string) => Suggestion | Suggestion[] | null
+    }[]
   }
 }

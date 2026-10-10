@@ -32,6 +32,11 @@ type Pads = {
   // The counts the scene was last topped up to, without the extra.
   level: Counts
   budget: number
+  // The lamps that cast, each with how strong its shadow is, from 0 to 1,
+  // and whether it is on its way up or down.
+  shade: Map<PointLight, { level: number; goal: number }>
+  // When the shadows last moved, in milliseconds.
+  last: number
 }
 
 const pads = new WeakMap<Scene, Pads>()
@@ -52,6 +57,8 @@ function of(scene: Scene): Pads {
       extra: { point: 0, area: 0 },
       level: { point: 0, area: 0 },
       budget: coarseOnly() ? MAX_SHADOW_LAMPS_TOUCH : MAX_SHADOW_LAMPS,
+      shade: new Map(),
+      last: 0,
     }
     pads.set(scene, p)
   }
@@ -59,9 +66,6 @@ function of(scene: Scene): Pads {
   if (p.group.parent !== scene) scene.add(p.group)
   return p
 }
-
-// Whether a light is one of the dark ones, which the shadow sweep leaves be.
-export const isPad = (object: Object3D) => object.userData.pad === true
 
 const up = (n: number, step: number) => Math.ceil(n / step) * step
 
@@ -83,7 +87,6 @@ const rank = (lamp: PointLight): number => lamp.userData.rank ?? lamp.intensity
 function fit<T extends Object3D>(p: Pads, list: T[], wanted: number, make: () => T) {
   while (list.length < wanted) {
     const light = make()
-    light.userData.pad = true
     p.group.add(light)
     light.updateMatrixWorld(true)
     list.push(light)
@@ -103,20 +106,82 @@ function pointPad(casting: boolean) {
   return light
 }
 
+// How long a shadow takes to fade out, or in, when a lamp hands it over.
+const FADE_S = 0.7
+
+const ease = (t: number) => t * t * (3 - 2 * t)
+
+// Which lamps cast. The brightest lamps that are on hold the shadows, up to
+// the budget. A lamp past it gives its shadow up, and the one that takes it
+// over gets it, but the count of shadows is in every shader and cannot go
+// over the budget even for a frame, so the two cannot both cast at once.
+// The shadow that is going fades out first, and only then does the other
+// fade in. Switched at once, a shadow vanished from under a lamp the moment
+// a brighter one came on, and it caught the eye. A lamp that comes on when
+// there is a shadow to spare casts straight away, since its light is still
+// coming up anyway. Says whether a shadow is on the move, so the frames
+// keep coming until it is done.
+function hand(p: Pads, lamps: PointLight[]) {
+  const now = performance.now()
+  // Long gaps are frames that were not drawn, not time a fade had to take.
+  const step = Math.min(0.05, (now - p.last) / 1000) / FADE_S
+  p.last = now
+  const lit = new Set(lamps)
+  for (const lamp of p.shade.keys()) if (!lit.has(lamp) || !lamp.castShadow) p.shade.delete(lamp)
+  const wanted = lamps
+    .filter(lamp => !lamp.userData.through && rank(lamp) > 0.001)
+    .sort((a, b) => rank(b) - rank(a))
+    .slice(0, p.budget)
+  const keep = new Set(wanted)
+  // A lamp that asked for its shadow itself, as it came on.
+  for (const lamp of lamps) {
+    if (!lamp.castShadow || p.shade.has(lamp)) continue
+    if (p.shade.size < p.budget) p.shade.set(lamp, { level: 1, goal: 1 })
+    else lamp.castShadow = false
+  }
+  let moving = false
+  for (const [lamp, s] of p.shade) {
+    s.goal = keep.has(lamp) ? 1 : 0
+    s.level = s.goal > s.level ? Math.min(1, s.level + step) : Math.max(0, s.level - step)
+    if (s.goal === 0 && s.level === 0) {
+      lamp.castShadow = false
+      p.shade.delete(lamp)
+    } else {
+      lamp.shadow.intensity = ease(s.level)
+      if (s.level !== s.goal) moving = true
+    }
+  }
+  // The shadows that were let go of are taken up by the lamps waiting.
+  for (const lamp of wanted) {
+    if (p.shade.size >= p.budget) break
+    if (p.shade.has(lamp)) continue
+    lamp.castShadow = true
+    lamp.shadow.intensity = 0
+    p.shade.set(lamp, { level: 0, goal: 1 })
+    moving = true
+  }
+  return moving
+}
+
 // Tops the lights up to their step. Called before every draw, ahead of
-// three counting the lights, and before shaders are built ahead.
-export function balance(scene: Scene) {
+// three counting the lights, and before shaders are built ahead. Only the
+// draw, `live`, moves the shadows from lamp to lamp. Building ahead only
+// keeps the count of shadows to the budget, by leaving out a lamp that
+// asked for one when there is none to spare, and says nothing.
+export function balance(scene: Scene, live = false) {
   const p = of(scene)
   const on = collect(scene, p.group, false, { point: [], area: [] })
-  // A lamp comes on asking for its shadow. Past the budget the dimmest
-  // gives its own up here and now, rather than at the next shadow sweep,
-  // so the count of shadows never leaves the one the shaders are built for.
-  const casters = on.point.filter(lamp => lamp.castShadow)
-  if (casters.length > p.budget) {
-    casters.sort((a, b) => rank(b) - rank(a))
-    for (const lamp of casters.slice(p.budget)) lamp.castShadow = false
+  let moving = false
+  if (live) moving = hand(p, on.point)
+  else {
+    let free = p.budget - on.point.filter(lamp => lamp.castShadow && p.shade.has(lamp)).length
+    for (const lamp of on.point) {
+      if (!lamp.castShadow || p.shade.has(lamp)) continue
+      if (free > 0) free--
+      else lamp.castShadow = false
+    }
   }
-  const real = Math.min(casters.length, p.budget)
+  const real = Math.min(on.point.filter(lamp => lamp.castShadow).length, p.budget)
   p.level.point = on.point.length === 0 ? 0 : up(on.point.length, POINT_STEP) + p.budget
   p.level.area = up(on.area.length, AREA_STEP)
   const point = p.level.point + p.extra.point
@@ -124,6 +189,7 @@ export function balance(scene: Scene) {
   fit(p, p.casting, casting, () => pointPad(true))
   fit(p, p.plain, Math.max(0, point - on.point.length - casting), () => pointPad(false))
   fit(p, p.area, p.level.area + p.extra.area - on.area.length, () => new RectAreaLight('#000000', 0, 0.01, 0.01))
+  return moving
 }
 
 export type Ahead = { key: string; apply: () => void; revert: () => void }
