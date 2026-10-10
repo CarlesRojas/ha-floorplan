@@ -262,8 +262,6 @@ The tiles look finished without it, and change with any theme that sets these:
 | `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                         |
 | `fp-accent-climate`           | `#ff9f0a`                  | A water heater that is on, and the heating mode unless it is set                  |
 | `fp-accent-cool`              | `#64d2ff`                  | A humidifier                                                                      |
-| `fp-mode-auto`                | `#8e8e93`                  | The automatic mode button while chosen                                            |
-| `fp-mode-heat-cool`           | `#30d158`                  | The button of the mode that heats or cools to keep a range, while chosen          |
 | `fp-mode-heat`                | `fp-accent-climate`        | A thermostat that heats                                                           |
 | `fp-mode-cool`                | `#409cff`                  | A thermostat that cools                                                           |
 | `fp-mode-dry`                 | `#ffd60a`                  | A thermostat that dries the air                                                   |

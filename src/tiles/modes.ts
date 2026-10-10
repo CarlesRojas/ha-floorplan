@@ -1,10 +1,10 @@
 // The modes a thermostat can run in, in the order its buttons go, each with
-// its icon and its color, which its button takes while chosen and the
+// its icon and its color, none for the ones that are plain like off, which its button takes while chosen and the
 // thermostat's tiles take while it runs in it. One it names that
 // is not here goes at the end.
 export const HVAC_MODES: Record<string, { icon: string; color?: string }> = {
-  auto: { icon: 'ph:sparkle', color: 'var(--_mode-auto)' },
-  heat_cool: { icon: 'ph:thermometer', color: 'var(--_mode-heat-cool)' },
+  auto: { icon: 'ph:sparkle' },
+  heat_cool: { icon: 'ph:thermometer' },
   heat: { icon: 'ph:fire', color: 'var(--_mode-heat)' },
   cool: { icon: 'ph:snowflake', color: 'var(--_mode-cool)' },
   dry: { icon: 'ph:drop', color: 'var(--_mode-dry)' },
