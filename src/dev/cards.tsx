@@ -63,6 +63,13 @@ const ENTITIES: EntityState[] = [
     current_position: 70,
     current_tilt_position: 50,
   }),
+  // Rolls down to open, so its tiles are inverted and fill from the top.
+  state('cover.projector_screen', 'open', {
+    friendly_name: 'Projector Screen',
+    device_class: 'shade',
+    supported_features: 1 | 2 | 4 | 8,
+    current_position: 40,
+  }),
   state('cover.garage', 'closed', { friendly_name: 'Garage Door', device_class: 'garage', supported_features: 1 | 2 }),
   state('valve.garden', 'closed', { friendly_name: 'Garden Valve', supported_features: 1 | 2 | 4 | 8 }),
   state('climate.living', 'heat', {
@@ -654,7 +661,10 @@ for (const { entity, suggestion } of picked.found) {
   if (suggestion.label === 'Small') continue
   const style = suggestion.label ?? 'Default'
   if (!styles.has(style)) styles.set(style, [])
-  styles.get(style)!.push({ entity, config: suggestion.config })
+  // A projector screen is a cover set to inverted, as a piece of that kind is.
+  const config =
+    entity.entity_id === 'cover.projector_screen' ? { ...suggestion.config, invert: true } : suggestion.config
+  styles.get(style)!.push({ entity, config })
 }
 
 // The shape of a rendered card: its elements and their classes, without
@@ -662,7 +672,10 @@ for (const { entity, suggestion } of picked.found) {
 // the same shape show the same card, like two lamps, one on and one off.
 const shapeOf = (node: Element): string => {
   if (node.tagName === 'svg' && !node.classList.length) return 'svg'
-  const own = `${node.tagName.toLowerCase()}.${[...node.classList].sort().join('.')}`
+  // Where a fill grows from, so a projector screen filling from the top shows
+  // beside blinds filling from the bottom.
+  const from = node.getAttribute('data-from')
+  const own = `${node.tagName.toLowerCase()}.${[...node.classList].sort().join('.')}${from ? `[${from}]` : ''}`
   // A span with no elements in it only holds words, like a unit that one
   // reading has and another does not.
   const parts = [...node.children].filter(child => child.tagName !== 'SPAN' || child.children.length > 0)

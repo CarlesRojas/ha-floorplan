@@ -154,6 +154,7 @@ export function FillTile({
       className="fp-fill"
       data-dragging={drag !== null || undefined}
       data-vertical={from !== 'left' || undefined}
+      data-from={from}
       onPointerDownCapture={down}
       onKeyDown={keys}
     >
