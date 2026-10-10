@@ -378,7 +378,7 @@ export function TogglePill({ icon, label, on, onToggle }: TogglePillProps) {
 }
 
 // How long a pressed button stays lit, and then how long it takes to fade.
-export const FLASH_MS = 1000
+export const FLASH_MS = 500
 export const FADE_MS = 1000
 
 export type Flash = 'lit' | 'fading' | null
