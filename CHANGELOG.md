@@ -80,6 +80,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Fixed
 
+- Buttons keep their fill and stay readable under the pointer, on a tile that is on or off and on a light or a dark dashboard.
+- Colored icons, words and lines on the tiles, like the chosen mode, the Clear link of a to-do list or a light's icon, now stand out clearly from the tile in light and in dark, and the dimmer second lines are a little stronger.
 - The editor's Discard changes dialog shows its buttons in their proper colors.
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
 - A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.

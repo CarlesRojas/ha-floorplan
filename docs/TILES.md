@@ -236,42 +236,44 @@ Then pick **Floorplan Glass** in your profile, or as the dashboard's theme.
 
 The tiles look finished without it, and change with any theme that sets these:
 
-| Token                         | Default                    | What it changes                                                                                      |
-| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `fp-tile-radius`              | `30px`                     | The corner radius                                                                                    |
-| `fp-tile-padding`             | `18px`                     | The space inside a tile                                                                              |
-| `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                                                           |
-| `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on, `rgba(28, 28, 30, .94)` on a light dashboard                    |
-| `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                                                                 |
-| `fp-tile-blur`                | `24px`                     | How much the glass blurs what is behind it                                                           |
-| `fp-tile-shadow`              | `none`                     | A box shadow under every tile                                                                        |
-| `fp-tile-opacity-inactive`    | `1`                        | The icon and text of a tile that is off                                                              |
-| `fp-tile-opacity-unavailable` | `.45`                      | A tile whose entity is unavailable                                                                   |
-| `fp-tile-icon-size`           | `28px`                     | The icon                                                                                             |
-| `fp-tile-name-size`           | `15px`                     | The name                                                                                             |
-| `fp-tile-state-size`          | `13px`                     | The line under the name                                                                              |
-| `fp-slider-handle`            | the lit tile background    | The round handle of a slim slider beside the icon                                                    |
-| `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                                      |
-| `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                                                 |
-| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                                                |
-| `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on, `#ffffff` on a light dashboard                                        |
-| `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                                                                       |
-| `fp-text-secondary-opacity`   | `.6`                       | The line under the name                                                                              |
-| `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                                          |
-| `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                                           |
-| `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                                            |
-| `fp-accent-climate`           | `#ff9f0a`                  | The icon of a thermostat or water heater that heats                                                  |
-| `fp-accent-cool`              | `#64d2ff`                  | The icon of a thermostat that cools                                                                  |
-| `fp-mode-cool`                | `#0a6fd6`                  | A thermostat's cooling mode button while chosen, `#64d2ff` on a tile that is on on a light dashboard |
-| `fp-mode-dry`                 | `#13809c`                  | A thermostat's drying mode button while chosen, `#5ac8e0` on a tile that is on on a light dashboard  |
-| `fp-font-tile`                | Inter                      | The tiles' font                                                                                      |
-| `fp-font-title`               | Inter Tight                | The headings' font                                                                                   |
-| `fp-title-size`               | `30px`                     | The headings' size                                                                                   |
-| `fp-title-opacity`            | `.92`                      | The headings' opacity                                                                                |
-| `fp-title-color`              | the theme's text color     | The headings' color                                                                                  |
-| `fp-menu-bg`                  | dark frosted glass         | The select tile's menu                                                                               |
-| `fp-menu-text`                | `#ffffff`                  | The text in that menu                                                                                |
+| Token                         | Default                    | What it changes                                                                   |
+| ----------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| `fp-tile-radius`              | `30px`                     | The corner radius                                                                 |
+| `fp-tile-padding`             | `18px`                     | The space inside a tile                                                           |
+| `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                                        |
+| `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on, `rgba(28, 28, 30, .94)` on a light dashboard |
+| `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                                              |
+| `fp-tile-blur`                | `24px`                     | How much the glass blurs what is behind it                                        |
+| `fp-tile-shadow`              | `none`                     | A box shadow under every tile                                                     |
+| `fp-tile-opacity-inactive`    | `1`                        | The icon and text of a tile that is off                                           |
+| `fp-tile-opacity-unavailable` | `.45`                      | A tile whose entity is unavailable                                                |
+| `fp-tile-icon-size`           | `28px`                     | The icon                                                                          |
+| `fp-tile-name-size`           | `15px`                     | The name                                                                          |
+| `fp-tile-state-size`          | `13px`                     | The line under the name                                                           |
+| `fp-slider-handle`            | the lit tile background    | The round handle of a slim slider beside the icon                                 |
+| `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                   |
+| `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                              |
+| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                             |
+| `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on, `#ffffff` on a light dashboard                     |
+| `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                                                    |
+| `fp-text-secondary-opacity`   | `.72`                      | The line under the name                                                           |
+| `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                       |
+| `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                        |
+| `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                         |
+| `fp-accent-climate`           | `#ff9f0a`                  | The icon of a thermostat or water heater that heats                               |
+| `fp-accent-cool`              | `#64d2ff`                  | The icon of a thermostat that cools                                               |
+| `fp-mode-cool`                | `#64d2ff`                  | A thermostat's cooling mode button while chosen                                   |
+| `fp-mode-dry`                 | `#5ac8e0`                  | A thermostat's drying mode button while chosen                                    |
+| `fp-font-tile`                | Inter                      | The tiles' font                                                                   |
+| `fp-font-title`               | Inter Tight                | The headings' font                                                                |
+| `fp-title-size`               | `30px`                     | The headings' size                                                                |
+| `fp-title-opacity`            | `.92`                      | The headings' opacity                                                             |
+| `fp-title-color`              | the theme's text color     | The headings' color                                                               |
+| `fp-menu-bg`                  | dark frosted glass         | The select tile's menu                                                            |
+| `fp-menu-text`                | `#ffffff`                  | The text in that menu                                                             |
 
 On a light dashboard, a tile that is off is lighter glass with dark text, unless the theme sets its own.
+
+The accent and mode colors are drawn lighter on a dark tile and deeper on a light one, so an icon or a line stands out at least three to one from its tile and words at least four and a half to one.
 
 The fonts load from Google Fonts. Without a connection the tiles fall back to the system font.

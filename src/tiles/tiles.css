@@ -17,15 +17,14 @@
   --_shadow: var(--fp-tile-shadow, none);
   --_text-active: var(--fp-text-active, #1c1c1e);
   --_text-inactive: var(--fp-text-inactive, #ffffff);
-  --_secondary: var(--fp-text-secondary-opacity, 0.6);
+  --_secondary: var(--fp-text-secondary-opacity, 0.72);
   --_accent: var(--fp-accent, #0a84ff);
   --_accent-light: var(--fp-accent-light, #ffb340);
   --_accent-cover: var(--fp-accent-cover, #32ade6);
   --_accent-climate: var(--fp-accent-climate, #ff9f0a);
   --_accent-cool: var(--fp-accent-cool, #64d2ff);
-  /* Deeper blues for the cooling and drying modes, to read on a lit tile. */
-  --_mode-cool: var(--fp-mode-cool, #0a6fd6);
-  --_mode-dry: var(--fp-mode-dry, #13809c);
+  --_mode-cool: var(--fp-mode-cool, #64d2ff);
+  --_mode-dry: var(--fp-mode-dry, #5ac8e0);
   --_alarm-armed: var(--fp-alarm-armed, #ff453a);
   --_alarm-disarmed: var(--fp-alarm-disarmed, #30d158);
   --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);
@@ -57,10 +56,27 @@
   --_text-active: var(--fp-text-active, #ffffff);
 }
 
-/* The paler blues read on the dark tile where the deeper ones would not. */
-:host([data-light]) .fp-tile[data-active] {
-  --_mode-cool: var(--fp-mode-cool, #64d2ff);
-  --_mode-dry: var(--fp-mode-dry, #5ac8e0);
+/* The accent and mode colors, toward white on a dark tile and toward
+   black on a light one, a tile that is on on a dark dashboard or one that
+   is off on a light dashboard, enough for an icon or a line to stand out
+   three to one from the tile and for words four and a half to one. */
+.fp-tile {
+  --_ink-to: white;
+  --_deep: 20%;
+  --_deep-text: 35%;
+}
+
+:host(:not([data-light])) .fp-tile[data-active] {
+  --_ink-to: black;
+  --_deep: 30%;
+  --_deep-text: 40%;
+}
+
+/* The glass of a light dashboard is grey, so it takes more. */
+:host([data-light]) .fp-tile:not([data-active]) {
+  --_ink-to: black;
+  --_deep: 40%;
+  --_deep-text: 45%;
 }
 
 .fp-tile {
@@ -224,7 +240,7 @@
 }
 
 .fp-tile[data-active] .fp-icon {
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
 }
 
 .fp-name {
@@ -399,6 +415,7 @@
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--_duration) ease,
+    box-shadow var(--_duration) ease,
     transform var(--_duration) ease;
 }
 
@@ -409,15 +426,18 @@
   color: inherit;
 }
 
+/* Under the pointer and the finger, a button takes a wash of the color of
+   its words over whatever fill it has, so a chosen, colored or filled one
+   keeps its look and its contrast. */
 @media (hover: hover) and (pointer: fine) {
   .fp-control:hover {
-    background: color-mix(in srgb, currentColor 14%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 14%, transparent);
   }
 }
 
 .fp-control:active {
   transform: scale(0.88);
-  background: color-mix(in srgb, currentColor 22%, transparent);
+  box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 22%, transparent);
 }
 
 .fp-control:focus-visible {
@@ -457,7 +477,7 @@
   background: transparent;
   color: inherit;
   font-family: inherit;
-  opacity: 0.55;
+  opacity: var(--_secondary);
   cursor: pointer;
   transition:
     background-color var(--_duration) ease,
@@ -499,7 +519,7 @@
 
 /* The mode it runs in, filled and in the color of that mode. */
 .fp-mode[aria-checked='true'] {
-  color: var(--_mode-color, inherit);
+  color: color-mix(in oklab, var(--_mode-color, currentColor), var(--_ink-to) var(--_deep));
   background: color-mix(in srgb, var(--_mode-color, currentColor) 20%, transparent);
 }
 
@@ -589,7 +609,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .fp-option:hover {
-    background: color-mix(in srgb, currentColor 10%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 10%, transparent);
   }
 }
 
@@ -889,6 +909,7 @@
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--_duration) ease,
+    box-shadow var(--_duration) ease,
     color var(--_duration) ease,
     transform var(--_duration) ease;
 }
@@ -903,13 +924,13 @@
 
 @media (hover: hover) and (pointer: fine) {
   .fp-pill:not(:disabled):hover {
-    background: color-mix(in srgb, currentColor 18%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 7%, transparent);
   }
 }
 
 .fp-pill:not(:disabled):active {
   transform: scale(0.96);
-  background: color-mix(in srgb, currentColor 24%, transparent);
+  box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 14%, transparent);
 }
 
 .fp-pill:focus-visible {
@@ -972,6 +993,21 @@
   color: var(--_text-inactive);
 }
 
+/* Pressed, a wash of its own color would not show, so under the pointer
+   and the finger it lets a little of the tile through instead, little
+   enough for the words to stay readable. */
+@media (hover: hover) and (pointer: fine) {
+  .fp-pill-toggle[aria-pressed='true']:not(:disabled):hover {
+    background: color-mix(in srgb, currentColor 80%, transparent);
+    box-shadow: none;
+  }
+}
+
+.fp-pill-toggle[aria-pressed='true']:not(:disabled):active {
+  background: color-mix(in srgb, currentColor 70%, transparent);
+  box-shadow: none;
+}
+
 /* One of a set, like the position of a lock, filled while it is the one. */
 .fp-pill[aria-checked='true'] {
   background: color-mix(in srgb, currentColor 22%, transparent);
@@ -983,7 +1019,7 @@
 
 /* The action a sheet is for, like Disarm, in the accent. */
 .fp-pill-primary:not(:disabled) {
-  background: var(--_accent);
+  background: color-mix(in oklab, var(--_accent), black 15%);
   color: #fff;
 }
 
@@ -1032,7 +1068,7 @@
   display: block;
   width: 100%;
   height: 44px;
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
   overflow: visible;
 }
 
@@ -1233,12 +1269,13 @@
   cursor: pointer;
   transition:
     background-color var(--_duration) ease,
+    box-shadow var(--_duration) ease,
     transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .fp-panel-head:hover {
-    background: color-mix(in srgb, currentColor 8%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 8%, transparent);
   }
 }
 
@@ -1264,7 +1301,7 @@
   place-items: center;
   border-radius: 999px;
   background: color-mix(in srgb, var(--_tile-accent, var(--_accent)) 22%, transparent);
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
   transition:
     background-color var(--_duration) ease,
     color var(--_duration) ease;
@@ -1306,7 +1343,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep-text));
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -1314,7 +1351,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .fp-link:hover {
-    background: color-mix(in srgb, currentColor 12%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 12%, transparent);
   }
 }
 
@@ -1352,7 +1389,7 @@
 }
 
 .fp-agenda-day[data-today] {
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep-text));
   opacity: 1;
 }
 
@@ -1491,7 +1528,7 @@
 
 .fp-todo-item[data-done] .fp-todo-text {
   text-decoration: line-through;
-  opacity: 0.5;
+  opacity: var(--_secondary);
 }
 
 .fp-todo-head {
@@ -1537,6 +1574,7 @@
 .fp-todo-item > .fp-check[aria-checked='true'] {
   border-color: var(--_tile-accent, var(--_accent));
   background: var(--_tile-accent, var(--_accent));
+  color: #1c1c1e;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1574,7 +1612,7 @@
   flex-direction: column;
   gap: 6px;
   min-height: 72px;
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
 }
 
 .fp-graph-chart > svg {
@@ -1700,7 +1738,7 @@
   width: 100%;
   height: 100%;
   max-height: 150px;
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
 }
 
 .fp-gauge-track,
@@ -1756,7 +1794,7 @@
   display: grid;
   justify-items: center;
   align-items: center;
-  color: var(--_dial, var(--_accent));
+  color: color-mix(in oklab, var(--_dial, var(--_accent)), var(--_ink-to) var(--_deep));
 }
 
 .fp-dial-ring,
@@ -1851,7 +1889,7 @@
   color: inherit;
   font: inherit;
   font-size: 34px;
-  opacity: 0.45;
+  opacity: 0.6;
   pointer-events: auto;
   cursor: pointer;
   transition:
