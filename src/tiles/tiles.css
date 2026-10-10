@@ -35,7 +35,7 @@
   --_icon-size: var(--fp-tile-icon-size, 28px);
   --_name-size: var(--fp-tile-name-size, 15px);
   --_state-size: var(--fp-tile-state-size, 13px);
-  --_handle: var(--fp-slider-handle, #f5f5f7);
+  --_handle: var(--fp-slider-handle, var(--_bg-active));
   --_duration: var(--fp-tile-duration, 200ms);
   --_press: var(--fp-tile-press-scale, 0.96);
   --_focus: var(--fp-tile-focus-scale, 1.03);
@@ -55,7 +55,6 @@
   --_text-inactive: var(--fp-text-inactive, #1c1c1e);
   --_bg-active: var(--fp-tile-bg-active, rgba(28, 28, 30, 0.94));
   --_text-active: var(--fp-text-active, #ffffff);
-  --_handle: var(--fp-slider-handle, #1c1c1e);
 }
 
 /* The paler blues read on the dark tile where the deeper ones would not. */
@@ -286,7 +285,8 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  background: var(--_handle);
+  /* Tinted by the light's color like the tile around it. */
+  background: linear-gradient(color-mix(in srgb, var(--_tile-glow, transparent) 25%, transparent) 0 0), var(--_handle);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.1),
     0 1px 4px rgba(0, 0, 0, 0.3);
