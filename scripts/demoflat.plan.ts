@@ -338,7 +338,7 @@ export const DEMO_FLAT: CardConfig = {
   first_click: 'room',
   // With the whole flat in view the panel shows only these, and each room's
   // tiles show once that room is.
-  scenes: ['scene.projector', 'scene.tv_mode', 'light.all_lights'],
+  home: { entities: ['scene.projector', 'scene.tv_mode', 'light.all_lights', 'weather.home'] },
   rooms: [
     {
       id: 'living',

@@ -258,7 +258,7 @@ export class SidePanel extends HTMLElement {
       card.toggleAttribute('data-sized', rows !== 'auto')
       if (rows !== 'auto') card.style.height = `calc(${rows * ROW_PX}px + ${rows - 1} * var(--_gap))`
       if (room) card.dataset.room = room
-      else card.dataset.scene = ''
+      else card.dataset.home = ''
       return card
     })
     this.cardsSlot.replaceChildren(...this.side, this.empty)
@@ -274,14 +274,15 @@ export class SidePanel extends HTMLElement {
     return card
   }
 
-  // A card is away while another room is in view. With scenes set, they
-  // are all the whole home shows, and they go away once a room is in view.
+  // A card is away while another room is in view. With the home's own
+  // tiles set, they are all the whole home shows, and they go away once a
+  // room is in view.
   private updateRoom() {
     const room = roomFilter()?.room_id
-    const scenes = this.side.some(card => card.dataset.scene !== undefined)
+    const home = this.side.some(card => card.dataset.home !== undefined)
     for (const card of this.side) {
       const away =
-        card.dataset.scene !== undefined ? !!room : room ? !!card.dataset.room && card.dataset.room !== room : scenes
+        card.dataset.home !== undefined ? !!room : room ? !!card.dataset.room && card.dataset.room !== room : home
       card.toggleAttribute('data-away', away)
     }
     this.updateEmpty()

@@ -129,15 +129,18 @@ rooms:
       - scene.movie_night
 ```
 
-Some tiles are for the whole home rather than a room, like a scene that sets up the bedroom for the projector or a light group that turns every light off. Put them under **Scenes** in the card's editor, above **Tiles by room**. It takes any entity, the same tiles as the rooms, and the same handles to put them in order. With any entity there, the panel shows only the scenes while the whole home is in view, and each room's tiles only while that room is. With none, every room shows as before. In YAML it is the card's `scenes`, a list of entity ids in the order they show.
+Some tiles are for the whole home rather than a room, like a scene that sets up the bedroom for the projector, a light group that turns every light off, or the weather. Put them under **Home** in the card's editor, above **Tiles by room**. It takes any entity, the same tiles as the rooms, and the same handles to put them in order. Its heading reads Home, and the field at the top of the section renames it. With any entity there, the panel shows only this section while the whole home is in view, and each room's tiles only while that room is. With none, every room shows as before. In YAML it is the card's `home`, with an optional `name` and its `entities` in the order they show.
 
 ```yaml
 type: custom:floorplan-3d
 side_panel: true
-scenes:
-  - scene.projector
-  - scene.tv_mode
-  - light.all_lights
+home:
+  name: Home
+  entities:
+    - scene.projector
+    - scene.tv_mode
+    - light.all_lights
+    - weather.home
 rooms:
   - id: living
     name: Living room

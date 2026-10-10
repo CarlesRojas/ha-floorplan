@@ -34,7 +34,7 @@ template:
             target:
               entity_id: input_boolean.projector_screen_down
 
-# The scenes the side panel shows with the whole flat in view. Projector
+# Scenes for the side panel's Home section, with the whole flat in view. Projector
 # turns off the bedroom lights and brings the screen down, and TV mode turns
 # off the living room and the kitchen and leaves the TV on.
 scene:
