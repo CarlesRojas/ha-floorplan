@@ -4,6 +4,7 @@ import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomInfo from '#/editor/RoomInfo.tsx'
+import { plainButton } from '#/editor/look.ts'
 import Toolbar from '#/editor/Toolbar.tsx'
 import { traceFrom, useTrace } from '#/editor/trace.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
@@ -919,39 +920,34 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   if (fullscreen) {
     return (
       <Overlay>
-        <div className="font-montserrat flex h-full flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none">
-          <div className="flex items-center justify-between">
+        <div className="font-system flex h-full flex-col gap-3 bg-(--card-background-color) px-4 pt-3 pb-4 text-(--primary-text-color) antialiased outline-none">
+          <div className="flex h-10 items-center justify-between">
             {toolbar}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmDiscard(true)}
-                className="bg-destructive flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white hover:opacity-90"
+                className="text-danger hover:bg-danger/10 active:bg-danger/16 flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors"
               >
-                <FontAwesomeIcon icon={faTrash} className="size-3.5" />
+                <FontAwesomeIcon icon={faTrash} className="size-3" />
                 Discard
               </button>
-              <button
-                type="button"
-                onClick={save}
-                disabled={saving !== null}
-                className="flex h-10 items-center gap-2 rounded-xl border border-(--divider-color) px-4 text-sm font-semibold hover:opacity-90 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faFloppyDisk} className="size-3.5" />
+              <button type="button" onClick={save} disabled={saving !== null} className={plainButton}>
+                <FontAwesomeIcon icon={faFloppyDisk} className="size-3" />
                 {saving === 'save' ? 'Saving' : 'Save'}
               </button>
               <button
                 type="button"
                 onClick={saveAndClose}
                 disabled={saving !== null}
-                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+                className="bg-tint flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-[filter,transform] hover:brightness-110 active:scale-[0.98] active:brightness-95 disabled:opacity-50"
               >
-                <FontAwesomeIcon icon={faCheck} className="size-3.5" />
+                <FontAwesomeIcon icon={faCheck} className="size-3" />
                 {saving === 'close' ? 'Saving' : 'Save & Close'}
               </button>
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 gap-2">
+          <div className="flex min-h-0 flex-1 gap-1">
             <div ref={plan} className="flex min-w-0 flex-1 flex-col">
               <div className="flex min-h-0" style={{ flex: showPreview ? 1 - previewShare : 1 }}>
                 {canvas}
@@ -960,7 +956,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                 <>
                   {/* Drag to share the column between the plan and the view. */}
                   <div
-                    className="group flex h-3 shrink-0 cursor-row-resize touch-none items-center justify-center"
+                    className="group flex h-4 shrink-0 cursor-row-resize touch-none items-center justify-center"
                     onPointerDown={e => {
                       if (e.button !== 0) return
                       e.currentTarget.setPointerCapture(e.pointerId)
@@ -982,10 +978,10 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       e.currentTarget.releasePointerCapture(e.pointerId)
                     }}
                   >
-                    <span className="h-1 w-14 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
+                    <span className="bg-fill-stronger group-hover:bg-label-2 h-[5px] w-10 rounded-full transition-colors" />
                   </div>
                   <div
-                    className="relative min-h-0 overflow-hidden rounded-xl"
+                    className="ring-separator relative min-h-0 overflow-hidden rounded-2xl ring-1"
                     style={{ flex: previewShare, background: SCENE_BACKGROUND_CSS }}
                   >
                     {/* The view the card opens with: saved from where the
@@ -993,7 +989,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         buttons in the corner, over the view. */}
                     {/* What a click in the card goes to first, a device or
                         the room it stands in. */}
-                    <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
+                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
                       <PreviewButton
                         icon={roomsFirst ? faDoorOpen : faHandPointer}
                         label={roomsFirst ? 'Click: rooms first' : 'Click: devices first'}
@@ -1005,7 +1001,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                         onClick={toggleFirstClick}
                       />
                     </div>
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                    <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
                       <PreviewButton
                         icon={faXmark}
                         label="Forget view"
@@ -1061,7 +1057,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
             </div>
             {/* Drag to resize the sidebar, between a minimum and half the window. */}
             <div
-              className="group flex w-3 shrink-0 cursor-col-resize touch-none items-center justify-center"
+              className="group flex w-4 shrink-0 cursor-col-resize touch-none items-center justify-center"
               onPointerDown={e => {
                 if (e.button !== 0) return
                 e.currentTarget.setPointerCapture(e.pointerId)
@@ -1078,9 +1074,9 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                 e.currentTarget.releasePointerCapture(e.pointerId)
               }}
             >
-              <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
+              <span className="bg-fill-stronger group-hover:bg-label-2 h-10 w-[5px] rounded-full transition-colors" />
             </div>
-            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
+            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1 pl-1" style={{ width: sidebarWidth }}>
               {roomInfo ?? panels}
             </div>
           </div>
@@ -1131,11 +1127,11 @@ function PreviewButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'flex h-8 items-center gap-1.5 rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2.5 text-xs text-(--primary-text-color) shadow transition-colors hover:bg-(--secondary-background-color) disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-(--card-background-color)',
-        done && 'border-emerald-600 text-emerald-600',
+        'border-separator flex h-7 items-center gap-1.5 rounded-full border bg-(--card-background-color)/75 px-3 text-xs font-medium text-(--primary-text-color) shadow-[0_2px_10px_-2px_rgba(0,0,0,0.25)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,transform] hover:bg-(--card-background-color)/95 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45',
+        done && 'text-success',
       )}
     >
-      <FontAwesomeIcon icon={icon} className="size-3.5" />
+      <FontAwesomeIcon icon={icon} className="size-3" />
       <span>{label}</span>
     </button>
   )

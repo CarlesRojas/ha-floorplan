@@ -3,6 +3,8 @@
 
 @theme {
   --font-montserrat: 'Montserrat', sans-serif;
+  /* The editor is set in the system's own interface font. */
+  --font-system: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --transition-duration-slow: 300ms;
 }
 
@@ -22,6 +24,17 @@
   --color-border: var(--divider-color, #e0e0e0);
   --radius-md: 8px;
   --radius-sm: 6px;
+
+  /* The editor's palette. Fills and separators are the text color thinned
+     out, so they read the same over a light theme and a dark one. */
+  --color-fill: color-mix(in srgb, var(--primary-text-color, #212121) 6%, transparent);
+  --color-fill-strong: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
+  --color-fill-stronger: color-mix(in srgb, var(--primary-text-color, #212121) 15%, transparent);
+  --color-separator: color-mix(in srgb, var(--primary-text-color, #212121) 11%, transparent);
+  --color-label-2: var(--secondary-text-color, #727272);
+  --color-tint: #0a84ff;
+  --color-danger: #ff453a;
+  --color-success: #30d158;
 }
 
 @custom-variant mouse (@media (hover: hover) and (pointer: fine));

@@ -547,7 +547,7 @@ export default function Canvas({
   const sizing = fill ? 'h-full w-full' : 'w-full'
   const style = fill ? undefined : { height: EDITOR_CANVAS_HEIGHT_PX }
 
-  if (!view) return <svg ref={svgRef} className={cn(sizing, 'rounded-xl')} style={style} />
+  if (!view) return <svg ref={svgRef} className={cn(sizing, 'rounded-2xl')} style={style} />
 
   const screenPoint = (e: React.PointerEvent | React.MouseEvent): Point => {
     const rect = svgRef.current!.getBoundingClientRect()
@@ -1044,7 +1044,10 @@ export default function Canvas({
       <svg
         ref={svgRef}
         tabIndex={-1}
-        className={cn(sizing, 'touch-none rounded-xl bg-(--secondary-background-color) outline-none select-none')}
+        className={cn(
+          sizing,
+          'ring-separator touch-none rounded-2xl bg-(--secondary-background-color) ring-1 outline-none select-none',
+        )}
         style={{ ...style, cursor }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -1224,7 +1227,7 @@ export default function Canvas({
             <polyline
               points={polygon(hoverSnapped ? [...draft, hoverSnapped] : draft)}
               fill="none"
-              stroke={hoverSnapped && !draftPointValid(hoverSnapped) ? 'var(--error-color)' : 'var(--primary-color)'}
+              stroke={hoverSnapped && !draftPointValid(hoverSnapped) ? 'var(--error-color)' : EDITOR_SELECTED_COLOR}
               strokeWidth={2}
               strokeDasharray="6 4"
               className="pointer-events-none"
@@ -1237,8 +1240,8 @@ export default function Canvas({
                   cx={sx}
                   cy={sy}
                   r={i === 0 ? HANDLE : HANDLE * 0.6}
-                  fill={i === 0 ? 'var(--primary-color)' : 'var(--card-background-color)'}
-                  stroke="var(--primary-color)"
+                  fill={i === 0 ? EDITOR_SELECTED_COLOR : 'var(--card-background-color)'}
+                  stroke={EDITOR_SELECTED_COLOR}
                   strokeWidth={2}
                   className="pointer-events-none"
                 />
@@ -1291,13 +1294,13 @@ export default function Canvas({
                       height={20}
                       rx={10}
                       fill="var(--card-background-color)"
-                      stroke="var(--primary-color)"
+                      stroke={EDITOR_SELECTED_COLOR}
                     />
                     <text
                       x={mx}
                       y={my + 4}
                       textAnchor="middle"
-                      className="font-montserrat fill-(--primary-text-color) text-[11px] font-semibold"
+                      className="font-system fill-(--primary-text-color) text-[11px] font-semibold tabular-nums"
                     >
                       {label}
                     </text>
@@ -1312,8 +1315,8 @@ export default function Canvas({
                   cx={sx}
                   cy={sy}
                   r={HANDLE}
-                  fill={selection.vertex === i ? 'var(--primary-color)' : 'var(--card-background-color)'}
-                  stroke="var(--primary-color)"
+                  fill={selection.vertex === i ? EDITOR_SELECTED_COLOR : 'var(--card-background-color)'}
+                  stroke={EDITOR_SELECTED_COLOR}
                   strokeWidth={2}
                   className="cursor-move"
                   onPointerDown={e => onVertexDown(e, selectedRoom, i)}

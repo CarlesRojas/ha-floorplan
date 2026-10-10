@@ -17,7 +17,7 @@ import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import TrySection from '#/editor/TrySection.tsx'
 import { canTry, type TryState, type TryStates } from '#/editor/tryState.ts'
-import { PreviewHandle, SelectedHeader, Signals, Sticky } from '#/editor/panel.tsx'
+import { PreviewHandle, SelectedHeader, Signals, Sticky, Switch } from '#/editor/panel.tsx'
 import { Select } from '#/components/ui/select.tsx'
 import {
   AlertDialog,
@@ -30,13 +30,15 @@ import {
 } from '#/components/ui/alert-dialog.tsx'
 import { cn } from '#/lib/utils.ts'
 import { deviceSignals, levelChannels } from '#/signals.ts'
-import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, EDITOR_TINT_COLOR, ROOM_COLORS } from '#/theme.ts'
+import { colorWell, deleteButton, field, group, groupTitle, iconButton, note, plainButton, row } from '#/editor/look.ts'
 import type { DecorationConfig, DeviceConfig, HomeAssistant, RoomConfig } from '#/types.ts'
 import { decorationIcon, FAMILY_LABELS } from '#/decoration/icons.ts'
 import {
   faArrowsRotate,
   faChevronDown,
   faChevronUp,
+  faMagnifyingGlass,
   faMinus,
   faPlus,
   faRotateLeft,
@@ -64,9 +66,7 @@ type Props = {
   onTry: (id: string, state: TryState | null) => void
 }
 
-const input =
-  'min-w-0 rounded border border-(--divider-color) bg-transparent px-2 py-1.5 text-sm text-(--primary-text-color)'
-const accent = EDITOR_ACCENT_COLOR
+const accent = EDITOR_TINT_COLOR
 
 export default function DecorationPanel({
   hass,
@@ -98,10 +98,7 @@ export default function DecorationPanel({
       return Math.min(Math.max(from + dy, 120), 520)
     })
   const previewShape = {
-    className: cn(
-      'w-full overflow-hidden rounded-xl bg-(--secondary-background-color)',
-      !previewHeight && 'aspect-square',
-    ),
+    className: cn('bg-fill w-full overflow-hidden rounded-2xl', !previewHeight && 'aspect-square'),
     style: previewHeight ? { height: previewHeight } : undefined,
   }
   // The item a trash icon in the device's list was clicked on, waiting for
@@ -156,7 +153,7 @@ export default function DecorationPanel({
     const roomIndex = rooms.findIndex(r => r.id === item.room)
     const roomTag = itemRoom ? (
       <span
-        className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
+        className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-black/80"
         style={{ backgroundColor: itemRoom.color ?? ROOM_COLORS[roomIndex % ROOM_COLORS.length] }}
       >
         {itemRoom.name ?? itemRoom.id}
@@ -171,160 +168,166 @@ export default function DecorationPanel({
           <Signals signals={kind.expresses} accent={accent} />
         </Sticky>
 
-        {/* Which style of the kind this one is. A pendant is listed once in
+        <div className={group}>
+          {/* Which style of the kind this one is. A pendant is listed once in
             the catalog and says here which of them it is. */}
-        {kind.variants && kind.variants.length > 1 && (
-          <label className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-            Style
-            <Select
-              aria-label="Style"
-              value={decorationVariant(kind, item.variant)?.id ?? ''}
-              options={kind.variants.map(v => ({ value: v.id, label: v.label }))}
-              onChange={v => onUpdate(item.id, { variant: v, params: withoutStyleDefaults(kind, item.params, v) })}
-            />
-          </label>
-        )}
+          {kind.variants && kind.variants.length > 1 && (
+            <label className={cn(row, 'grid-cols-[96px_1fr]')}>
+              Style
+              <Select
+                aria-label="Style"
+                value={decorationVariant(kind, item.variant)?.id ?? ''}
+                options={kind.variants.map(v => ({ value: v.id, label: v.label }))}
+                onChange={v => onUpdate(item.id, { variant: v, params: withoutStyleDefaults(kind, item.params, v) })}
+              />
+            </label>
+          )}
 
-        {styleParams(kind, item.variant).map(p => {
-          // Read through the catalog, so a size saved before this slider's
-          // steps changed shows on a stop rather than between two of them.
-          const value = paramValue(kind, item.params, p.id, item.variant)
-          // A two state parameter is a switch, not a slider with two stops.
-          if (p.toggle)
-            return (
-              <label key={p.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-                {p.label}
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 justify-self-start"
-                  checked={value > 0.5}
-                  style={{ accentColor: accent }}
-                  onChange={e => onUpdate(item.id, { params: { ...item.params, [p.id]: e.target.checked ? 1 : 0 } })}
-                />
-              </label>
-            )
-          // A place in a row is stepped through with a button, and wraps
-          // round however many places there are now.
-          if (p.cycle) {
-            const count = cycleLength(kind, item.params, item.variant)
-            const at = ((Math.round(value) % count) + count) % count
-            return (
-              <div key={p.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
-                {p.label}
-                <button
-                  type="button"
-                  disabled={count < 2}
-                  onClick={() => onUpdate(item.id, { params: { ...item.params, [p.id]: (at + 1) % count } })}
-                  className="flex items-center gap-2 justify-self-start rounded-md border border-(--divider-color) px-2 py-1 text-xs hover:bg-(--secondary-background-color) disabled:opacity-50"
-                >
-                  <FontAwesomeIcon icon={faArrowsRotate} className="size-3" />
-                  {at + 1} of {count}
-                </button>
-              </div>
-            )
-          }
-          // What the slider starts at for this style: a pendant's real size.
-          const initial = paramValue(kind, undefined, p.id, item.variant)
-          const { [p.id]: _, ...rest } = item.params ?? {}
-          // Back to the default, by forgetting the saved value, so the item
-          // follows its style again.
-          const reset = (
-            <button
-              type="button"
-              aria-label={`Reset ${p.label.toLowerCase()} to default`}
-              title="Reset to default"
-              disabled={value === initial}
-              onClick={e => {
-                e.preventDefault()
-                onUpdate(item.id, { params: Object.keys(rest).length > 0 ? rest : undefined })
-              }}
-              className="flex size-6 items-center justify-center rounded-md text-(--secondary-text-color) hover:bg-(--secondary-background-color) disabled:invisible"
-            >
-              <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
-            </button>
-          )
-          // A count the size gives, with parts added or taken away. The
-          // buttons show and step the count that results, and the value
-          // saved is how far it is from what the size gives.
-          if (p.adjust) {
-            const { count, max } = adjustedCount(kind, item.params, item.variant)
-            const step = (by: number) =>
-              onUpdate(item.id, { params: { ...item.params, [p.id]: Math.round(value) + by } })
-            const stepper =
-              'flex size-6 items-center justify-center rounded-md border border-(--divider-color) hover:bg-(--secondary-background-color) disabled:opacity-50'
-            return (
-              <div key={p.id} className="grid grid-cols-[96px_1fr_24px] items-center gap-2 text-sm">
-                {p.label}
-                <div className="flex items-center gap-2 justify-self-start">
+          {styleParams(kind, item.variant).map(p => {
+            // Read through the catalog, so a size saved before this slider's
+            // steps changed shows on a stop rather than between two of them.
+            const value = paramValue(kind, item.params, p.id, item.variant)
+            // A two state parameter is a switch, not a slider with two stops.
+            if (p.toggle)
+              return (
+                <label key={p.id} className={cn(row, 'grid-cols-[96px_1fr]')}>
+                  {p.label}
+                  <Switch
+                    checked={value > 0.5}
+                    accent={EDITOR_ACCENT_COLOR}
+                    label={p.label}
+                    onChange={on => onUpdate(item.id, { params: { ...item.params, [p.id]: on ? 1 : 0 } })}
+                  />
+                </label>
+              )
+            // A place in a row is stepped through with a button, and wraps
+            // round however many places there are now.
+            if (p.cycle) {
+              const count = cycleLength(kind, item.params, item.variant)
+              const at = ((Math.round(value) % count) + count) % count
+              return (
+                <div key={p.id} className={cn(row, 'grid-cols-[96px_1fr]')}>
+                  {p.label}
                   <button
                     type="button"
-                    aria-label={`Fewer ${p.label.toLowerCase()}`}
-                    disabled={count <= 0 || value <= p.min}
-                    onClick={() => step(-1)}
-                    className={stepper}
+                    disabled={count < 2}
+                    onClick={() => onUpdate(item.id, { params: { ...item.params, [p.id]: (at + 1) % count } })}
+                    className={cn(plainButton, 'h-7 justify-self-start px-2.5 text-xs tabular-nums')}
                   >
-                    <FontAwesomeIcon icon={faMinus} className="size-3" />
-                  </button>
-                  <span className="w-5 text-center text-xs">{count}</span>
-                  <button
-                    type="button"
-                    aria-label={`More ${p.label.toLowerCase()}`}
-                    disabled={count >= max || value >= p.max}
-                    onClick={() => step(1)}
-                    className={stepper}
-                  >
-                    <FontAwesomeIcon icon={faPlus} className="size-3" />
+                    <FontAwesomeIcon icon={faArrowsRotate} className="size-3" />
+                    {at + 1} of {count}
                   </button>
                 </div>
-                {reset}
-              </div>
+              )
+            }
+            // What the slider starts at for this style: a pendant's real size.
+            const initial = paramValue(kind, undefined, p.id, item.variant)
+            const { [p.id]: _, ...rest } = item.params ?? {}
+            // Back to the default, by forgetting the saved value, so the item
+            // follows its style again.
+            const reset = (
+              <button
+                type="button"
+                aria-label={`Reset ${p.label.toLowerCase()} to default`}
+                title="Reset to default"
+                disabled={value === initial}
+                onClick={e => {
+                  e.preventDefault()
+                  onUpdate(item.id, { params: Object.keys(rest).length > 0 ? rest : undefined })
+                }}
+                className={cn(
+                  iconButton,
+                  'text-label-2 size-6 rounded-full hover:text-(--primary-text-color) disabled:invisible',
+                )}
+              >
+                <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
+              </button>
             )
-          }
-          return (
-            <label key={p.id} className="grid grid-cols-[96px_1fr_56px_24px] items-center gap-2 text-sm">
-              {p.label}
-              <input
-                type="range"
-                min={p.min}
-                max={p.max}
-                step={p.step}
-                value={value}
-                style={{ accentColor: accent }}
-                onChange={e => onUpdate(item.id, { params: { ...item.params, [p.id]: Number(e.target.value) } })}
-              />
-              <span className="text-right text-xs text-(--secondary-text-color)">
-                {/* The parameter says its unit, and means meters when silent. */}
-                {p.unit === undefined ? `${value.toFixed(2)} m` : `${value}${p.unit}`}
-              </span>
-              {reset}
-            </label>
-          )
-        })}
-        <label className="grid grid-cols-[96px_1fr_56px_24px] items-center gap-2 text-sm">
-          Rotation
-          <input
-            type="range"
-            min={0}
-            max={345}
-            step={15}
-            value={item.rotation ?? 0}
-            style={{ accentColor: accent }}
-            onChange={e => onUpdate(item.id, { rotation: Number(e.target.value) })}
-          />
-          <span className="text-right text-xs text-(--secondary-text-color)">{item.rotation ?? 0}°</span>
-          {/* Keeps the slider as wide as the ones above it. */}
-          <span />
-        </label>
+            // A count the size gives, with parts added or taken away. The
+            // buttons show and step the count that results, and the value
+            // saved is how far it is from what the size gives.
+            if (p.adjust) {
+              const { count, max } = adjustedCount(kind, item.params, item.variant)
+              const step = (by: number) =>
+                onUpdate(item.id, { params: { ...item.params, [p.id]: Math.round(value) + by } })
+              const stepper =
+                'flex h-7 w-9 items-center justify-center text-(--primary-text-color) transition-colors hover:bg-fill-strong active:bg-fill-stronger disabled:pointer-events-none disabled:opacity-35'
+              return (
+                <div key={p.id} className={cn(row, 'grid-cols-[96px_1fr_24px]')}>
+                  {p.label}
+                  <div className="bg-fill-strong flex items-center justify-self-start overflow-hidden rounded-lg">
+                    <button
+                      type="button"
+                      aria-label={`Fewer ${p.label.toLowerCase()}`}
+                      disabled={count <= 0 || value <= p.min}
+                      onClick={() => step(-1)}
+                      className={stepper}
+                    >
+                      <FontAwesomeIcon icon={faMinus} className="size-3" />
+                    </button>
+                    <span className="bg-separator h-4 w-px" />
+                    <span className="w-7 text-center text-xs font-medium tabular-nums">{count}</span>
+                    <span className="bg-separator h-4 w-px" />
+                    <button
+                      type="button"
+                      aria-label={`More ${p.label.toLowerCase()}`}
+                      disabled={count >= max || value >= p.max}
+                      onClick={() => step(1)}
+                      className={stepper}
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="size-3" />
+                    </button>
+                  </div>
+                  {reset}
+                </div>
+              )
+            }
+            return (
+              <label key={p.id} className={cn(row, 'grid-cols-[96px_1fr_56px_24px]')}>
+                {p.label}
+                <input
+                  type="range"
+                  min={p.min}
+                  max={p.max}
+                  step={p.step}
+                  value={value}
+                  style={{ accentColor: accent }}
+                  onChange={e => onUpdate(item.id, { params: { ...item.params, [p.id]: Number(e.target.value) } })}
+                />
+                <span className="text-label-2 text-right text-xs tabular-nums">
+                  {/* The parameter says its unit, and means meters when silent. */}
+                  {p.unit === undefined ? `${value.toFixed(2)} m` : `${value}${p.unit}`}
+                </span>
+                {reset}
+              </label>
+            )
+          })}
+          <label className={cn(row, 'grid-cols-[96px_1fr_56px_24px]')}>
+            Rotation
+            <input
+              type="range"
+              min={0}
+              max={345}
+              step={15}
+              value={item.rotation ?? 0}
+              style={{ accentColor: accent }}
+              onChange={e => onUpdate(item.id, { rotation: Number(e.target.value) })}
+            />
+            <span className="text-label-2 text-right text-xs tabular-nums">{item.rotation ?? 0}°</span>
+            {/* Keeps the slider as wide as the ones above it. */}
+            <span />
+          </label>
+        </div>
 
         {/* Up and down through the heights there are where it stands. With
             only one, there is nothing to step through. */}
         {levels.length > 1 && levelAt >= 0 && (
-          <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-            <p className="text-xs font-semibold text-(--secondary-text-color)">Standing on</p>
-            <div className="flex items-center gap-2 text-sm">
+          <div className={group}>
+            <p className={groupTitle}>Standing on</p>
+            <div className="flex items-center gap-2 text-[13px]">
               <span className="min-w-0 flex-1 truncate">
                 {levelName(levels[levelAt])}
-                <span className="ml-2 text-xs text-(--secondary-text-color)">
+                <span className="text-label-2 ml-2 text-xs tabular-nums">
                   {Math.round(levels[levelAt].height * 100)} cm
                 </span>
               </span>
@@ -341,7 +344,7 @@ export default function DecorationPanel({
                   title={levels[levelAt + by] ? `${label}: ${levelName(levels[levelAt + by])}` : label}
                   disabled={!levels[levelAt + by]}
                   onClick={() => onStandOn(item.id, levels[levelAt + by])}
-                  className="flex size-7 items-center justify-center rounded-md border border-(--divider-color) hover:bg-(--secondary-background-color) disabled:opacity-50"
+                  className={cn(iconButton, 'bg-fill-strong hover:bg-fill-stronger size-7')}
                 >
                   <FontAwesomeIcon icon={icon} className="size-3" />
                 </button>
@@ -352,14 +355,14 @@ export default function DecorationPanel({
 
         {/* The surface of each part is part of what the piece is. Only its
             color is the viewer's to pick. */}
-        <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-          <p className="text-xs font-semibold text-(--secondary-text-color)">Colors</p>
+        <div className={group}>
+          <p className={groupTitle}>Colors</p>
           {Object.entries(kindColors(kind, item.variant)).map(([slot, fallback]) => (
-            <label key={slot} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm capitalize">
+            <label key={slot} className={cn(row, 'grid-cols-[96px_1fr] capitalize')}>
               {slot}
               <input
                 type="color"
-                className="h-8 w-full cursor-pointer rounded border border-(--divider-color) bg-transparent"
+                className={colorWell}
                 value={item.colors?.[slot] ?? fallback}
                 onChange={e => onUpdate(item.id, { colors: { ...item.colors, [slot]: e.target.value } })}
               />
@@ -376,12 +379,10 @@ export default function DecorationPanel({
         {/* What in Home Assistant this piece stands for. Only entities that
             can drive at least one thing the item does are on offer, each
             listed with the controls it brings. */}
-        <div className="flex flex-col gap-2 border-t border-(--divider-color) pt-3">
-          <p className="text-xs font-semibold text-(--secondary-text-color)">Device</p>
+        <div className={group}>
+          <p className={groupTitle}>Device</p>
           {kind.expresses.length === 0 ? (
-            <p className="text-xs text-(--secondary-text-color)">
-              This item shows nothing a device could drive, so it stands for nothing.
-            </p>
+            <p className={note}>This item shows nothing a device could drive, so it stands for nothing.</p>
           ) : (
             <>
               <Select
@@ -404,7 +405,7 @@ export default function DecorationPanel({
                     ) : undefined,
                     detail:
                       driving(e.entity_id).length > 0 ? (
-                        <span className="block text-xs text-(--secondary-text-color)">
+                        <span className="text-label-2 block text-xs">
                           {driving(e.entity_id).map(d => (
                             <span key={d.id} className="block truncate">
                               {d.label}
@@ -416,11 +417,7 @@ export default function DecorationPanel({
                 ]}
                 onChange={v => onBind(item.id, v || null)}
               />
-              {fits.length === 0 && (
-                <p className="text-xs text-(--secondary-text-color)">
-                  Nothing in Home Assistant drives what this item shows.
-                </p>
-              )}
+              {fits.length === 0 && <p className={note}>Nothing in Home Assistant drives what this item shows.</p>}
               {boundDevice && (
                 <>
                   <Signals signals={boundSignals} accent={accent} />
@@ -430,7 +427,7 @@ export default function DecorationPanel({
                   {channels.length > 0 &&
                     (channels.length > 1 || itemLevels(kind).length > 1) &&
                     itemLevels(kind).map(level => (
-                      <label key={level.id} className="grid grid-cols-[96px_1fr] items-center gap-2 text-sm">
+                      <label key={level.id} className={cn(row, 'grid-cols-[96px_1fr]')}>
                         {level.label}
                         <Select
                           aria-label={level.label}
@@ -451,8 +448,8 @@ export default function DecorationPanel({
                   {/* The other pieces this same device drives. A row goes to
                       that piece, the bin lets go of it. */}
                   {siblings.length > 0 && (
-                    <div className="flex flex-col gap-1">
-                      <p className="text-xs font-semibold text-(--secondary-text-color)">Also driving</p>
+                    <div className="flex flex-col gap-0.5">
+                      <p className={cn(groupTitle, 'mt-1 mb-0.5')}>Also driving</p>
                       {siblings.map(other => {
                         const k = decorationKind(other.kind)
                         const room = rooms.find(r => r.id === other.room)
@@ -461,24 +458,20 @@ export default function DecorationPanel({
                             <button
                               type="button"
                               onClick={() => onSelect(other.id)}
-                              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1 text-left text-sm hover:bg-(--secondary-background-color)"
+                              className="hover:bg-fill-strong active:bg-fill-stronger flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg px-2 text-left text-[13px] transition-colors"
                             >
                               <FontAwesomeIcon
                                 icon={decorationIcon(other.kind, k?.family ?? 'decor')}
-                                className="size-3.5 shrink-0 text-(--secondary-text-color)"
+                                className="text-label-2 size-3.5 shrink-0"
                               />
                               <span className="min-w-0 flex-1 truncate">{k?.label ?? other.kind}</span>
-                              {room && (
-                                <span className="shrink-0 text-xs text-(--secondary-text-color)">
-                                  {room.name ?? room.id}
-                                </span>
-                              )}
+                              {room && <span className="text-label-2 shrink-0 text-xs">{room.name ?? room.id}</span>}
                             </button>
                             <button
                               type="button"
                               aria-label={`Unbind ${k?.label ?? other.kind}`}
                               onClick={() => setUnbinding(other)}
-                              className="flex size-7 shrink-0 items-center justify-center rounded-lg text-(--error-color)/70 hover:bg-(--secondary-background-color) hover:text-(--error-color)"
+                              className="text-danger/70 hover:bg-danger/10 hover:text-danger flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors"
                             >
                               <FontAwesomeIcon icon={faTrash} className="size-3.5" />
                             </button>
@@ -487,7 +480,7 @@ export default function DecorationPanel({
                       })}
                     </div>
                   )}
-                  <p className="text-xs text-(--secondary-text-color)">
+                  <p className={note}>
                     Clicking this item in 3D acts on the device. Right click it, or hold it on a touch screen, for the
                     device's own dialog in Home Assistant, where brightness, color and the rest live.
                   </p>
@@ -497,11 +490,7 @@ export default function DecorationPanel({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => onRemove(item.id)}
-          className="mt-1 flex h-9 items-center justify-center gap-2 rounded-lg border border-(--divider-color) text-sm font-semibold text-(--error-color)"
-        >
+        <button type="button" onClick={() => onRemove(item.id)} className={deleteButton}>
           <FontAwesomeIcon icon={faTrash} className="size-3.5" />
           Delete {kind.label}
         </button>
@@ -539,7 +528,9 @@ export default function DecorationPanel({
   return (
     <div className="flex flex-col gap-3">
       {rooms.length === 0 && (
-        <p className="text-sm text-(--secondary-text-color)">Draw a room first, with the draw tool.</p>
+        <p className="bg-fill text-label-2 rounded-xl px-3 py-2.5 text-[13px]">
+          Draw a room first, with the draw tool.
+        </p>
       )}
 
       <Sticky>
@@ -547,15 +538,19 @@ export default function DecorationPanel({
           {previewItem ? (
             <ModelPreview item={previewItem} className="h-full w-full" />
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-(--secondary-text-color)">
+            <div className="text-label-2 flex h-full items-center justify-center text-xs">
               Hover an item to preview it
             </div>
           )}
         </div>
         <PreviewHandle onDrag={resize} />
         <div className="relative flex min-w-0 items-center">
+          <FontAwesomeIcon
+            icon={faMagnifyingGlass}
+            className="text-label-2 pointer-events-none absolute left-2.5 size-3"
+          />
           <input
-            className={cn(input, 'w-full pr-8')}
+            className={cn(field, 'h-9 w-full rounded-[10px] pr-8 pl-8')}
             placeholder="Search items"
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -565,9 +560,9 @@ export default function DecorationPanel({
               type="button"
               aria-label="Clear the search"
               onClick={() => setQuery('')}
-              className="absolute right-1 flex size-6 items-center justify-center rounded text-(--secondary-text-color) hover:bg-(--secondary-background-color) hover:text-(--primary-text-color)"
+              className="bg-label-2/60 hover:bg-label-2 absolute right-2 flex size-[18px] items-center justify-center rounded-full text-(--card-background-color) transition-colors"
             >
-              <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+              <FontAwesomeIcon icon={faXmark} className="size-2.5" />
             </button>
           )}
         </div>
@@ -583,44 +578,51 @@ export default function DecorationPanel({
         )
         if (shown.length === 0) return null
         return (
-          <div key={family} className="flex flex-col gap-1">
-            <p className="text-xs font-semibold text-(--secondary-text-color)">{FAMILY_LABELS[family] ?? family}</p>
-            {shown.map(k => (
-              // The whole row adds the piece, not the plus alone: the plus
-              // is what the row does, not the only place it can be asked.
-              <button
-                key={k.id}
-                type="button"
-                disabled={rooms.length === 0}
-                aria-label={`Add ${k.label}`}
-                onMouseEnter={() => setHovered(k)}
-                onMouseLeave={() => setHovered(h => (h?.id === k.id ? null : h))}
-                onClick={() => onAdd(k)}
-                className={cn(
-                  'grid w-full grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-1 text-left disabled:cursor-default',
-                  hovered?.id === k.id && 'bg-(--secondary-background-color)',
-                )}
-              >
-                <FontAwesomeIcon
-                  icon={decorationIcon(k.id, k.family)}
-                  className="size-4 text-(--secondary-text-color)"
-                />
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2 text-sm text-(--primary-text-color)">
-                    <span className="truncate">{k.label}</span>
-                    <Signals signals={k.expresses} size="sm" />
-                  </p>
-                  <p className="truncate text-xs text-(--secondary-text-color) capitalize">{k.mount}</p>
-                </div>
-                {rooms.length > 0 ? (
-                  <span className="flex size-8 items-center justify-center" style={{ color: accent }}>
-                    <FontAwesomeIcon icon={faPlus} className="size-4" />
+          <div key={family} className="flex flex-col gap-1.5">
+            <p className={cn(groupTitle, 'px-2')}>{FAMILY_LABELS[family] ?? family}</p>
+            <div className="bg-fill flex flex-col overflow-hidden rounded-xl p-1">
+              {shown.map(k => (
+                // The whole row adds the piece, not the plus alone: the plus
+                // is what the row does, not the only place it can be asked.
+                <button
+                  key={k.id}
+                  type="button"
+                  disabled={rooms.length === 0}
+                  aria-label={`Add ${k.label}`}
+                  onMouseEnter={() => setHovered(k)}
+                  onMouseLeave={() => setHovered(h => (h?.id === k.id ? null : h))}
+                  onClick={() => onAdd(k)}
+                  className={cn(
+                    'active:bg-fill-stronger grid w-full grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors disabled:cursor-default',
+                    hovered?.id === k.id && 'bg-fill-strong',
+                  )}
+                >
+                  <span className="bg-fill-strong flex size-7 items-center justify-center rounded-[7px]">
+                    <FontAwesomeIcon icon={decorationIcon(k.id, k.family)} className="text-label-2 size-3.5" />
                   </span>
-                ) : (
-                  <span />
-                )}
-              </button>
-            ))}
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-[13px] text-(--primary-text-color)">
+                      <span className="truncate">{k.label}</span>
+                      <Signals signals={k.expresses} size="sm" />
+                    </p>
+                    <p className="text-label-2 truncate text-[11px] capitalize">{k.mount}</p>
+                  </div>
+                  {rooms.length > 0 ? (
+                    <span
+                      className={cn(
+                        'flex size-6 items-center justify-center rounded-full transition-colors',
+                        hovered?.id === k.id ? 'bg-tint text-white' : 'bg-tint/12',
+                      )}
+                      style={hovered?.id === k.id ? undefined : { color: accent }}
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="size-3" />
+                    </span>
+                  ) : (
+                    <span />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         )
       })}

@@ -1,4 +1,5 @@
 import { cn } from '#/lib/utils.ts'
+import { field, floating } from '#/editor/look.ts'
 import { faCheck, faChevronDown, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
@@ -145,21 +146,19 @@ export function Select({
           setOpen(!open)
         }}
         style={style}
-        className={cn(
-          'flex w-full min-w-0 items-center gap-2 rounded border border-(--divider-color) px-2 py-1.5 text-left text-sm text-(--primary-text-color)',
-          className,
-        )}
+        className={cn(field, 'flex w-full items-center gap-2 text-left', open && 'ring-tint/30 ring-3', className)}
       >
-        <span className={cn('min-w-0 flex-1 truncate', !current && 'text-(--secondary-text-color)')}>
+        <span className={cn('min-w-0 flex-1 truncate', !current && 'text-label-2')}>
           {current?.label ?? placeholder}
         </span>
-        <FontAwesomeIcon icon={faChevronDown} className="size-3 shrink-0 text-(--secondary-text-color)" />
+        <FontAwesomeIcon icon={faChevronDown} className="text-label-2 size-2.5 shrink-0" />
       </button>
       {open && (
         <div
           ref={list}
           className={cn(
-            'fixed z-50 flex max-h-80 flex-col overflow-hidden rounded-md border border-(--divider-color) bg-(--card-background-color) shadow-lg',
+            floating,
+            'fixed z-50 flex max-h-80 flex-col overflow-hidden transition-opacity duration-100',
             // Hidden by opacity, not by visibility, for the one frame before
             // it is placed: a hidden element cannot take focus, and the
             // search box wants it the moment the panel opens.
@@ -168,8 +167,8 @@ export function Select({
           style={{ left: drop?.x, top: drop?.y, width: drop?.width }}
         >
           {searchable && (
-            <div className="flex items-center gap-2 border-b border-(--divider-color) px-2">
-              <FontAwesomeIcon icon={faMagnifyingGlass} className="size-3 shrink-0 text-(--secondary-text-color)" />
+            <div className="bg-fill m-1.5 mb-0 flex items-center gap-2 rounded-lg px-2.5">
+              <FontAwesomeIcon icon={faMagnifyingGlass} className="text-label-2 size-3 shrink-0" />
               <input
                 ref={search}
                 value={query}
@@ -179,7 +178,7 @@ export function Select({
                   setActive(0)
                 }}
                 onKeyDown={onSearchKey}
-                className="min-w-0 flex-1 bg-transparent py-2 text-sm text-(--primary-text-color) outline-none"
+                className="placeholder:text-label-2 min-w-0 flex-1 bg-transparent py-1.5 text-[13px] text-(--primary-text-color) outline-none"
               />
               {query && (
                 <button
@@ -190,17 +189,15 @@ export function Select({
                     setActive(0)
                     search.current?.focus()
                   }}
-                  className="flex size-6 shrink-0 items-center justify-center rounded text-(--secondary-text-color) hover:bg-(--secondary-background-color) hover:text-(--primary-text-color)"
+                  className="bg-label-2/60 hover:bg-label-2 flex size-[18px] shrink-0 items-center justify-center rounded-full text-(--card-background-color) transition-colors"
                 >
-                  <FontAwesomeIcon icon={faXmark} className="size-3.5" />
+                  <FontAwesomeIcon icon={faXmark} className="size-2.5" />
                 </button>
               )}
             </div>
           )}
-          <div role="listbox" className="min-h-0 flex-1 overflow-y-auto p-1">
-            {shown.length === 0 && (
-              <p className="px-2 py-3 text-center text-sm text-(--secondary-text-color)">Nothing matches.</p>
-            )}
+          <div role="listbox" className="min-h-0 flex-1 overflow-y-auto p-1.5">
+            {shown.length === 0 && <p className="text-label-2 px-2 py-3 text-center text-[13px]">Nothing matches.</p>}
             {shown.map((o, i) => (
               <button
                 key={o.value}
@@ -210,13 +207,13 @@ export function Select({
                 onPointerEnter={() => setActive(i)}
                 onClick={() => pick(o.value)}
                 className={cn(
-                  'flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left text-sm',
-                  i === active && 'bg-(--secondary-background-color)',
+                  'flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-[13px]',
+                  i === active && 'bg-fill-strong',
                 )}
               >
                 <FontAwesomeIcon
                   icon={faCheck}
-                  className={cn('mt-1 size-3 shrink-0', o.value === value ? 'opacity-100' : 'opacity-0')}
+                  className={cn('text-tint mt-[3px] size-3 shrink-0', o.value === value ? 'opacity-100' : 'opacity-0')}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

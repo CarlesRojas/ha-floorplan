@@ -1,4 +1,5 @@
 import { cn } from '#/lib/utils.ts'
+import { floating } from '#/editor/look.ts'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 // Context menu in the shadcn style. It does not wrap Radix: the fullscreen
@@ -60,7 +61,8 @@ export function ContextMenu({ position, onClose, children, className }: ContextM
       ref={ref}
       role="menu"
       className={cn(
-        'bg-popover text-popover-foreground border-border fixed z-50 min-w-40 overflow-hidden rounded-md border p-1 shadow-md',
+        floating,
+        'text-popover-foreground fixed z-50 min-w-48 overflow-hidden rounded-[10px] p-1.5',
         !placed && 'invisible',
         className,
       )}
@@ -96,23 +98,26 @@ export function ContextMenuItem({
       disabled={disabled}
       onClick={onSelect}
       className={cn(
-        'focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none select-none',
-        'disabled:pointer-events-none disabled:opacity-50',
-        variant === 'destructive' &&
-          'text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive',
+        'group/item hover:bg-tint focus:bg-tint relative flex h-7 w-full cursor-default items-center gap-2 rounded-md px-2 text-left text-[13px] outline-none select-none hover:text-white focus:text-white',
+        'disabled:pointer-events-none disabled:opacity-40',
+        variant === 'destructive' && 'text-danger hover:bg-danger focus:bg-danger',
         className,
       )}
     >
       {children}
-      {shortcut && <span className="text-muted-foreground ml-auto text-sm tracking-widest">{shortcut}</span>}
+      {shortcut && (
+        <span className="text-label-2 ml-auto pl-4 text-xs tracking-widest group-hover/item:text-white/80 group-focus/item:text-white/80">
+          {shortcut}
+        </span>
+      )}
     </button>
   )
 }
 
 export function ContextMenuSeparator({ className }: { className?: string }) {
-  return <div role="separator" className={cn('bg-border -mx-1 my-1 h-px', className)} />
+  return <div role="separator" className={cn('bg-separator mx-2 my-1 h-px', className)} />
 }
 
 export function ContextMenuLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('text-muted-foreground px-2 py-1.5 text-sm font-semibold', className)}>{children}</div>
+  return <div className={cn('text-label-2 px-2 pt-1 pb-0.5 text-[11px] font-semibold', className)}>{children}</div>
 }
