@@ -25,36 +25,6 @@ export const colors = (entity: EntityState) => colorModes(entity).some(mode => C
 
 const rgb = (kelvin: number) => `rgb(${kelvinToRgb(kelvin).map(c => Math.round(c * 255))})`
 
-// The color the light shines in, for the bar its brightness fills.
-function lightColor(entity: EntityState) {
-  const hs = entity.attributes.hs_color
-  if (Array.isArray(hs)) return `hsl(${hs[0]} 100% ${Math.min(62, 100 - hs[1] / 2)}%)`
-  return 'var(--_accent-light)'
-}
-
-const lit = (entity: EntityState) => entity.state === 'on'
-
-// How bright the light is, nothing when it is off. Down to nothing turns
-// it off.
-export function Brightness({ env, entity }: FeatureProps) {
-  const brightness = numberOf(entity, 'brightness')
-  const value = lit(entity) ? Math.max(1, Math.round(((brightness ?? 255) / 255) * 100)) : 0
-  return (
-    <Slider
-      label="Brightness"
-      icon="ph:sun-dim"
-      value={value}
-      fill={lightColor(entity)}
-      format={v => (v === 0 ? 'Off' : `${v}%`)}
-      onChange={v =>
-        v === 0
-          ? callService(env.hass, 'light.turn_off', { entity_id: entity.entity_id })
-          : callService(env.hass, 'light.turn_on', { entity_id: entity.entity_id, brightness_pct: v })
-      }
-    />
-  )
-}
-
 // How warm or cool its white is, along a bar that runs from candle light
 // to daylight.
 export function ColorTemp({ env, entity }: FeatureProps) {

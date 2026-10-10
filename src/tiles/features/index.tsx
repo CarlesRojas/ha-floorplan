@@ -18,7 +18,9 @@ export type FeatureDef = {
   label: string
   domains: string[]
   supports?: (entity: EntityState) => boolean
-  View: ComponentType<FeatureProps>
+  // What it draws along the bottom. A feature without one is the whole
+  // tile instead, drawn by the tile itself, and adds no row.
+  View?: ComponentType<FeatureProps>
 }
 
 const has = (attribute: string) => (entity: EntityState) => listOf(entity, attribute).length > 0
@@ -31,7 +33,7 @@ const menu = (id: keyof typeof climate.MENUS) => (props: FeatureProps) => (
 const COVERS = ['cover', 'valve']
 
 export const FEATURES: FeatureDef[] = [
-  { id: 'brightness', label: 'Brightness', domains: ['light'], supports: light.dims, View: light.Brightness },
+  { id: 'brightness', label: 'Brightness', domains: ['light'], supports: light.dims },
   {
     id: 'color-temp',
     label: 'Color temperature',
@@ -246,6 +248,9 @@ export function featuresFor(entity: EntityState | undefined) {
   return FEATURES.filter(f => f.domains.includes(domain) && (f.supports?.(entity) ?? true))
 }
 
+// Whether a tile's feature goes along its bottom, making it a row taller.
+export const addsRow = (feature: string | undefined) => !!feature && !!FEATURES.find(f => f.id === feature && f.View)
+
 // The features of a domain, for the editor, whatever the entity has.
 export function featuresOf(domains: string[] | 'any') {
   const seen = new Map<string, string>()
@@ -258,7 +263,7 @@ export function featuresOf(domains: string[] | 'any') {
 export function Feature(props: FeatureProps) {
   const domain = domainOf(props.entity)
   const def = FEATURES.find(f => f.id === props.config.feature && f.domains.includes(domain))
-  if (!def) return null
+  if (!def?.View) return null
   const View = def.View
   return (
     <div className="fp-feature">

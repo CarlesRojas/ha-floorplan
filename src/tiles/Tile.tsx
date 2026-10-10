@@ -1,5 +1,5 @@
 import { entityName, moreInfo, runAction, type TileEnv } from '#/tiles/actions.ts'
-import { Feature } from '#/tiles/features/index.tsx'
+import { addsRow, Feature } from '#/tiles/features/index.tsx'
 import { useTileGestures } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
@@ -12,6 +12,9 @@ type Props = {
   config: TileConfig
   entity: EntityState | undefined
   active?: boolean
+  // Looks like a tile that is off while it still says it is on, for a
+  // tile drawn on in part over it, like a light's brightness.
+  looksOff?: boolean
   // The color the icon takes while the tile is active.
   accent?: string
   // A color that washes over an active tile from its top left corner, like
@@ -47,6 +50,7 @@ export function Tile({
   config,
   entity,
   active = false,
+  looksOff = false,
   accent,
   glow,
   state,
@@ -75,7 +79,7 @@ export function Tile({
       aria-pressed={role === 'button' && toggles ? on : undefined}
       aria-checked={role === 'switch' ? on : undefined}
       aria-disabled={unavailable || undefined}
-      data-active={on || undefined}
+      data-active={(on && !looksOff) || undefined}
       data-pressed={(pressed && !unavailable) || undefined}
       data-unavailable={unavailable || undefined}
       className="fp-tile"
@@ -89,7 +93,7 @@ export function Tile({
             config.piece_icon ??
             defaultIcon(config.entity, entity?.attributes.device_class, entity?.state)
           }
-          on={on}
+          on={on && !looksOff}
         />
         {config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>}
       </div>
@@ -97,7 +101,7 @@ export function Tile({
         <div className="fp-name">{name}</div>
         <div className="fp-state">{shown}</div>
       </div>
-      {config.feature
+      {addsRow(config.feature)
         ? !unavailable && (
             <div className="fp-footer">
               <Feature env={env} config={config} entity={entity!} />

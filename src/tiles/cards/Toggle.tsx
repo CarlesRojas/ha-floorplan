@@ -1,4 +1,6 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
+import { BrightnessTile } from '#/tiles/cards/Brightness.tsx'
+import { dims } from '#/tiles/features/light.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 
@@ -11,7 +13,8 @@ type Props = { env: TileEnv; config: TileConfig }
 // closed instead, and takes the cover's color. A light that is on washes
 // its tile from the top left corner with the color it shines in, read from
 // its hue and saturation at full brightness, and its icon takes that color
-// too.
+// too. A light that dims, with the brightness feature, is its brightness
+// across the whole tile.
 export default function Toggle({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const domain = config.entity!.split('.')[0]
@@ -43,6 +46,11 @@ export default function Toggle({ env, config }: Props) {
       : domain === 'input_boolean' || domain === 'automation'
         ? 'var(--_accent)'
         : 'var(--_accent-light)'
+  const unavailable = !entity || entity.state === 'unavailable' || entity.state === 'unknown'
+  if (domain === 'light' && config.feature === 'brightness' && !unavailable && dims(entity)) {
+    const { feature: _, ...plain } = config
+    return <BrightnessTile env={env} config={plain} entity={entity} accent={accent} glow={glow!} />
+  }
   return (
     <Tile
       env={env}

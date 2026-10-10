@@ -35,7 +35,8 @@ moves that section under the new version and uses it as the release notes.
 - A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
 - Every setting of a piece or a room, its sizes, rotation, colors, style and floor included, has a button beside it that puts it back to its default, and the button only shows once the setting has changed.
 - The 3D preview of a selected piece in the editor can be zoomed and panned as well as turned, and a button in its corner brings the view back.
-- When a card is added by entity, every tile is also offered with each control it can show under its name, like a brightness slider, a fan's speed, a thermostat's modes, an alarm's modes or a media player's volume, the same way Home Assistant offers its own tile.
+- When a card is added by entity, every tile is also offered with each control it can show under its name, like a fan's speed, a thermostat's modes, an alarm's modes or a media player's volume, the same way Home Assistant offers its own tile.
+- A light tile can be its own brightness slider: the whole tile fills as far as the light is bright, a drag sideways anywhere on it dims or brightens it, and a tap still turns it on or off.
 - Eight larger cards come with the tiles and are offered beside them when a card is added by entity: an alarm panel with a keypad, a dial for a thermostat, a water heater, a humidifier or a light's brightness, a media control with the cover art, a calendar agenda, a to-do list, a history graph, a gauge and a map.
 
 ### Changed
