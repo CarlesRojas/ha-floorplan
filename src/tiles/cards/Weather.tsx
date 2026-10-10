@@ -135,17 +135,17 @@ export default function Weather({ env, config }: Props) {
           <div className="fp-weather-temp">{degrees(attributes.temperature as number | undefined)}</div>
         </div>
         <div className="fp-weather-sky">
-          <span className="fp-weather-icon" style={{ color: iconColor(looks) }}>
-            <Icon icon={config.icon ?? defaultIcon(config.entity, undefined, looks)} on />
-          </span>
           <div>
             <div className="fp-weather-condition">{unavailable ? 'Unavailable' : formatState(env.hass, entity)}</div>
             {today && (
-              <div className="fp-weather-condition">
+              <div className="fp-weather-condition fp-weather-range">
                 H:{degrees(today.temperature)} L:{degrees(today.templow)}
               </div>
             )}
           </div>
+          <span className="fp-weather-icon" style={{ color: iconColor(looks) }}>
+            <Icon icon={config.icon ?? defaultIcon(config.entity, undefined, looks)} on />
+          </span>
         </div>
       </div>
       {steps && steps.length > 0 && (

@@ -446,9 +446,8 @@
 
 .fp-weather-sky {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
   text-align: right;
 }
@@ -460,15 +459,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+.fp-weather-range {
+  opacity: 0.7;
+}
+
 .fp-weather-icon {
   display: inline-flex;
   color: #fff;
 }
 
 .fp-weather-sky .fp-icon {
-  width: 24px;
-  height: 24px;
-  --mdc-icon-size: 24px;
+  width: 44px;
+  height: 44px;
+  --mdc-icon-size: 44px;
 }
 
 .fp-weather-steps {
