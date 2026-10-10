@@ -33,7 +33,7 @@ export const BACKGROUNDS: Background[] = [
     id: 'graphite',
     name: 'Graphite',
     dark: 'linear-gradient(160deg, #3a3f4f 0%, #1d2029 45%, #0d0e13 100%)',
-    light: 'linear-gradient(160deg, #f7f8fa 0%, #eceef2 45%, #e1e4ea 100%)',
+    light: 'linear-gradient(160deg, #fcfcfd 0%, #eaecf0 45%, #d9dde4 100%)',
   },
   {
     id: 'dusk',
