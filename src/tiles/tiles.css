@@ -972,10 +972,16 @@
   opacity: var(--_secondary);
 }
 
-/* A narrow tile has room for the choice only. */
+/* A narrow tile has room for the choice only, or for what the menu picks
+   while nothing is chosen, like a fan running at a speed of its own. */
 @container (max-width: 220px) {
-  .fp-pill-menu .fp-pill-label {
+  .fp-pill-menu:not([data-empty]) .fp-pill-label {
     display: none;
+  }
+
+  .fp-pill-menu[data-empty] .fp-pill-label {
+    flex: 1 1 auto;
+    text-align: left;
   }
 }
 

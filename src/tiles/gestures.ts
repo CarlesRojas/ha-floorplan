@@ -95,3 +95,11 @@ export const insideTile = {
   onPointerDown: (e: PointerEvent) => e.stopPropagation(),
   onKeyDown: (e: KeyboardEvent) => e.stopPropagation(),
 }
+
+// Spread on a menu or a sheet that pops up from inside a tile, so picking
+// anything in it never also presses the tile under it.
+export const popsOver = {
+  onPointerDown: (e: PointerEvent) => e.stopPropagation(),
+  onClick: (e: MouseEvent) => e.stopPropagation(),
+  onKeyDown: (e: KeyboardEvent) => e.stopPropagation(),
+}

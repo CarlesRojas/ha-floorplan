@@ -87,6 +87,8 @@ moves that section under the new version and uses it as the release notes.
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
 - A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.
 - A piece can be set on top of a basin, where it used to sink into it.
+- Picking an option from a menu on a tile, like the mode of a humidifier, or typing an alarm code, no longer also turns the tile on or off.
+- A small tile with a menu where nothing is chosen, like a fan running without a preset, now says what the menu picks instead of showing an empty pill.
 
 ## [1.2.5] - 2026-10-08
 

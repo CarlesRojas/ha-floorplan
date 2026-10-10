@@ -18,6 +18,7 @@ import {
 import { linePaths, useHistory } from '#/tiles/history.ts'
 import type { EntityState } from '#/types.ts'
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
+import { popsOver } from '#/tiles/gestures.ts'
 
 // The features of the rest: an alarm, a lock, a vacuum, a mower, a counter,
 // a timer, a select, a number, a date, an update, a button and a sensor.
@@ -86,6 +87,7 @@ export function AlarmModes({ env, entity }: FeatureProps) {
         ))}
       </Group>
       <div
+        {...popsOver}
         ref={sheet}
         popover="auto"
         className="fp-sheet"

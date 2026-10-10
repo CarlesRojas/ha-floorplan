@@ -25,6 +25,7 @@ export function openMenu(menu: HTMLElement | null, box: DOMRect | undefined) {
 // The arrow keys move between the options of a menu, round from the last
 // to the first.
 export function menuKeys(e: KeyboardEvent<HTMLElement>) {
+  e.stopPropagation()
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
   e.preventDefault()
   const items = [...e.currentTarget.querySelectorAll<HTMLElement>('.fp-option')]

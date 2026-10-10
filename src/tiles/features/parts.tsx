@@ -1,6 +1,6 @@
 import { cn } from '#/lib/utils.ts'
 import { haptic, type TileEnv } from '#/tiles/actions.ts'
-import { insideTile } from '#/tiles/gestures.ts'
+import { insideTile, popsOver } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
 import { menuKeys, openMenu } from '#/tiles/menu.ts'
@@ -316,6 +316,7 @@ export function MenuPill({ icon, label, options, current, word, onPick }: MenuPr
         ref={anchor}
         type="button"
         aria-haspopup="menu"
+        data-empty={current === null || undefined}
         className="fp-pill fp-pill-menu"
         {...press(() => openMenu(menu.current, anchor.current?.getBoundingClientRect()))}
       >
@@ -324,7 +325,15 @@ export function MenuPill({ icon, label, options, current, word, onPick }: MenuPr
         <span className="fp-pill-value">{current !== null ? word(current) : ''}</span>
         <Icon icon="ph:caret-down" className="fp-pill-caret" on />
       </button>
-      <div ref={menu} popover="auto" role="menu" aria-label={label} className="fp-menu" onKeyDown={menuKeys}>
+      <div
+        {...popsOver}
+        ref={menu}
+        popover="auto"
+        role="menu"
+        aria-label={label}
+        className="fp-menu"
+        onKeyDown={menuKeys}
+      >
         {options.map(option => (
           <button
             key={option}
