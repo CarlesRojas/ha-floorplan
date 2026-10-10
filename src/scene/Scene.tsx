@@ -15,6 +15,7 @@ import Cleanup from '#/scene/cleanup.tsx'
 import Devices from '#/scene/Devices.tsx'
 import Effects from '#/scene/Effects.tsx'
 import Merged from '#/scene/Merged.tsx'
+import Passages from '#/scene/Passages.tsx'
 import PickFallback from '#/scene/pick.tsx'
 import Room from '#/scene/Room.tsx'
 import Shadows from '#/scene/shadows.tsx'
@@ -140,6 +141,7 @@ export default function Scene({
           rooms={rooms}
           decorations={config.decorations ?? []}
           view={config.camera}
+          focus={focus}
           handle={cameraRef}
           onAway={onCameraAway}
           wheelZoom={wheelZoom}
@@ -162,6 +164,10 @@ export default function Scene({
           to act on, so small things are still easy to hit, and only then
           asks whether it landed on a room's floor. */}
         <PickFallback onHandled={markFallback} onRoom={onPickRoom} />
+        {/* In the card, a focused room shows the way into a room open beside it. */}
+        {!onPickDecoration && onPickRoom && (
+          <Passages rooms={rooms} decorations={config.decorations ?? []} onRoom={onPickRoom} />
+        )}
         {/* The frame is finished from a buffer: shaded where things meet,
           tone mapped, softly darkened at the corners, and in the editor with
           the picked thing outlined. */}

@@ -11,6 +11,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Added
 
+- A room flown to shows a small rounded triangle, made of the next room's floor, just past each stretch it shares with a room beside it that has no door in between, and a click on it flies to that room, the way a click on a door does.
+- A room selected in the editor lists the rooms beside it, shows which ones a door leads into, and has a switch for each open one to show or hide the triangle into it.
 - Twelve tile cards come with the floorplan card: a heading, and tiles for lights, switches and anything else on or off, buttons and scenes, covers, vacuums, option lists, cameras, thermostats, media players, locks, the weather with its forecast, and any other entity with its state. A tap does the obvious thing, a long press opens the entity's dialog, and each one can be set up in the visual card editor.
 - When the floorplan card flies to a room, the Floorplan tiles of every other area hide and empty sections fold away, until the card goes back to the whole home.
 - A Floorplan Glass theme with a dark gradient background, and dialogs and cards to match the tiles.
@@ -39,6 +41,7 @@ moves that section under the new version and uses it as the release notes.
 - A towel rail has an Off the floor setting for how high it hangs, and by default hangs half a meter higher than before.
 - In a panel view, where there is nothing to scroll, the mouse wheel zooms the floorplan and a finger dragged up or down turns it.
 - The view the card opens with always shows the whole home, whatever the card's shape: on a square or tall card the camera backs off along the saved angle until everything fits, and can still be zoomed and turned from there. On a card narrower than 600 px, as on a phone, the home is centered and fills the card with only a thin margin.
+- A room flown to is fitted to the card the same way, with almost no margin: its saved view keeps its angle and backs off until the whole room shows, on a phone the room is centered and fills the card, and a room with no saved view is centered in the card. The camera flies straight to that view, and keeps the room fitted while the card changes size until it is turned, panned or zoomed.
 - A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.
 
 ### Fixed

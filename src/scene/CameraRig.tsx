@@ -2,9 +2,11 @@ import {
   CAMERA_FIT_MARGIN,
   CAMERA_FIT_MARGIN_NARROW,
   CAMERA_FLIGHT_S,
+  CAMERA_ROOM_FIT_MARGIN,
   CAMERA_TURN_S,
   NARROW_CARD_PX,
 } from '#/constants.ts'
+import { passageFootprint, passagesOf } from '#/geometry/passages.ts'
 import { flights } from '#/scene/flights.ts'
 import { fitView, frameRooms, sceneHeight } from '#/scene/framing.ts'
 import { multiTouchSince, sent } from '#/scene/touches.ts'
@@ -17,10 +19,12 @@ import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/cont
 // What the outside can ask of the camera: where it is now, as a view that
 // can be saved, to travel to a saved view, and to go back to the view it
 // opened with. It also says where it would stand to look at one room alone,
-// which is the view of a room that has none saved.
+// which is the view of a room that has none saved, and where it stands to
+// show a room in this card, its saved view fitted to the card's shape.
 export type CameraHandle = {
   view: () => CameraView
   frame: (room?: RoomConfig) => CameraView
+  show: (room: RoomConfig) => CameraView
   flyTo: (view: CameraView) => void
   reset: () => void
 }
@@ -34,6 +38,9 @@ type Props = {
   // The angle to open with, closer in when the whole plan fits. Without one
   // the camera frames the plan from the standard side.
   view?: CameraView
+  // The room the card has flown to, which the camera keeps fitted to the
+  // card as it changes shape until the viewer moves it.
+  focus?: string | null
   handle?: RefObject<CameraHandle | null>
   // Told when the camera leaves the view it opened with, and when it is
   // back there.
@@ -108,7 +115,7 @@ const triple = (v: Vector3): [number, number, number] => [round(v.x), round(v.y)
 // camera is theirs and is never moved again, so editing the plan does not
 // throw the view away. A flight to a saved view is the one exception, and
 // the camera is the viewer's again the moment it lands.
-export default function CameraRig({ rooms, decorations, view, handle, onAway, wheelZoom = false }: Props) {
+export default function CameraRig({ rooms, decorations, view, focus, handle, onAway, wheelZoom = false }: Props) {
   const camera = useThree(state => state.camera)
   const size = useThree(state => state.size)
   const controls = useThree(state => state.controls) as OrbitControlsImpl | null
@@ -117,6 +124,8 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   // canvas that three fiber listens on.
   const canvas = useThree(state => (state.events.connected as HTMLElement | undefined) ?? state.gl.domElement)
   const moved = useRef(false)
+  // Whether the camera stands where it was last sent, untouched since.
+  const resting = useRef(true)
   const flight = useRef<Flight | null>(null)
   // The fade around a focused room reads how long the flight there takes.
   useLayoutEffect(() => {
@@ -155,24 +164,33 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     return { position: triple(camera.position), target: triple(target) }
   }
 
-  // The view the camera opened with: the saved one, backed off if the
-  // whole plan would not show in it at this shape, or the plan framed. On
-  // a card as narrow as a phone the saved angle frames the plan closely.
-  const home = (): CameraView => {
+  // A saved view, or none, fitted to the card's shape around these rooms:
+  // kept when they all show in it, and otherwise backed off along its angle
+  // until they do. On a card as narrow as a phone the angle frames them
+  // closely. With no view they are framed from the standard side.
+  const fit = (
+    saved: CameraView | undefined,
+    shown: RoomConfig[],
+    items: DecorationConfig[],
+    margin = fitMargin(size.width),
+  ): CameraView => {
     const aspect = size.width / size.height
-    const height = sceneHeight(decorations)
-    const margin = fitMargin(size.width)
-    const { position, target } = view
-      ? fitView(view, rooms, aspect, height, margin, size.width < NARROW_CARD_PX)
-      : frameRooms(rooms, aspect, height, undefined, margin, size.width < NARROW_CARD_PX)
+    const height = sceneHeight(items)
+    const narrow = size.width < NARROW_CARD_PX
+    const { position, target } = saved
+      ? fitView(saved, shown, aspect, height, margin, narrow)
+      : frameRooms(shown, aspect, height, undefined, margin, narrow)
     return { position: triple(position), target: triple(target) }
   }
+
+  // The view the camera opened with.
+  const home = () => fit(view, rooms, decorations)
 
   // One room alone, filling the picture, looked at from the same side and
   // height as the opening view, so flying there only closes in.
   // With no room, the whole plan from the standard side, which is the view
   // the card opens with when none is saved.
-  const frame = (room?: RoomConfig): CameraView => {
+  const frame = (room?: RoomConfig, signs: RoomConfig[] = []): CameraView => {
     if (!room) {
       const whole = frameRooms(
         rooms,
@@ -187,13 +205,35 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     const from = A.set(...opening.position).sub(B.set(...opening.target))
     const height = sceneHeight(decorations.filter(d => d.room === room.id))
     const { position, target } = frameRooms(
-      [room],
+      [room, ...signs],
       size.width / size.height,
       height,
       [from.x, from.y, from.z],
-      fitMargin(size.width),
+      CAMERA_ROOM_FIT_MARGIN,
+      true,
     )
     return { position: triple(position), target: triple(target) }
+  }
+
+  // A room as the card shows it, worked out in full before the camera sets
+  // off so the flight goes straight there: its saved view fitted to this
+  // card the way the opening view is, or without one, the room framed from
+  // the opening view's side.
+  // The signs on the floor that lead out of it into the rooms open beside
+  // it are kept in the picture too.
+  const show = (room: RoomConfig): CameraView => {
+    const signs = passagesOf(room, rooms, decorations).map((passage): RoomConfig => ({
+      id: '',
+      points: passageFootprint(passage),
+    }))
+    return room.camera
+      ? fit(
+          room.camera,
+          [room, ...signs],
+          decorations.filter(d => d.room === room.id),
+          CAMERA_ROOM_FIT_MARGIN,
+        )
+      : frame(room, signs)
   }
 
   // A flight that turns further round the home takes longer, so it moves
@@ -219,14 +259,17 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   useImperativeHandle(handle, () => ({
     view: current,
     frame,
+    show,
     flyTo: to => {
       moved.current = true
+      resting.current = true
       setAway(true)
       // Any input during a flight, an orbit or a wheel, takes it over.
       flight.current = plan(to, false)
       invalidate()
     },
     reset: () => {
+      resting.current = true
       flight.current = plan(home(), true)
       invalidate()
     },
@@ -264,6 +307,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     if (!controls) return
     const onStart = () => {
       moved.current = true
+      resting.current = false
       flight.current = null
       setAway(true)
     }
@@ -568,18 +612,34 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     }
   }, [controls])
 
+  // The camera follows the card's shape: the opening view while untouched,
+  // and the room flown to while it rests there. A flight under way is sent
+  // on to where its end now is, so it still lands in one move.
+  const room = focus ? rooms.find(r => r.id === focus) : undefined
   useLayoutEffect(() => {
-    if (moved.current) return
     // A canvas that has not been laid out yet has no shape to frame for.
     if (size.width <= 0 || size.height <= 0) return
-    const aspect = size.width / size.height
-    const height = sceneHeight(decorations)
-    const margin = fitMargin(size.width)
-    const { position, target } = view
-      ? fitView(view, rooms, aspect, height, margin, size.width < NARROW_CARD_PX)
-      : frameRooms(rooms, aspect, height, undefined, margin, size.width < NARROW_CARD_PX)
-    place(position, target)
-  }, [rooms, decorations, view, size.width, size.height, place])
+    const f = flight.current
+    if (f) {
+      const to = f.home ? home() : room ? show(room) : null
+      if (!to) return
+      f.to = to
+      f.b = stance(to)
+      f.around = turn(f.a.theta, f.b.theta)
+      invalidate()
+      return
+    }
+    if (room) {
+      if (!resting.current) return
+      const { position, target } = show(room)
+      place(C.set(...position), D.set(...target))
+      return
+    }
+    if (moved.current) return
+    const { position, target } = home()
+    place(C.set(...position), D.set(...target))
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, decorations, view, room, size.width, size.height, place])
 
   return null
 }

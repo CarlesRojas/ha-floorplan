@@ -169,7 +169,7 @@ const decorations: DecorationConfig[] = [
     id: 'bedroom_window',
     kind: 'window',
     room: 'bedroom',
-    position: [7.8, 4.6],
+    position: [7.8, 4.45],
     rotation: 270,
     variant: 'casement',
     params: { height: 1.4, sill: 0.7, width: 0.75 },
@@ -378,7 +378,7 @@ export const DEMO_FLAT: CardConfig = {
       area_id: 'bedroom',
       points: BEDROOM,
       floor: { material: 'carpet', color: '#ababab' },
-      camera: { position: [10.23, 4.83, -6.21], target: [5.79, 0.3, -3.35] },
+      camera: { position: [10.82, 4.79, -5.06], target: [5.79, 0.3, -3.35] },
       order: [
         'light.bedside_lamps',
         'light.bedroom',

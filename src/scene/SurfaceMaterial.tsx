@@ -20,6 +20,10 @@ type Props = {
   span?: number
   emissive?: [number, number, number]
   emissiveIntensity?: number
+  // Whether the surface has its relief. A piece rounded tighter than the
+  // pattern is wide takes the pattern's colors only, as its relief bends
+  // into rings and creases round the curve.
+  relief?: boolean
   doubleSide?: boolean
 }
 
@@ -35,6 +39,7 @@ export default function SurfaceMaterial({
   span,
   emissive,
   emissiveIntensity = 0,
+  relief = true,
   doubleSide = false,
 }: Props) {
   const s = surface(kind, intensity)
@@ -80,7 +85,7 @@ export default function SurfaceMaterial({
     <meshStandardMaterial
       color={color}
       map={maps.map}
-      normalMap={maps.normalMap}
+      normalMap={relief ? maps.normalMap : null}
       normalScale={normalScale}
       roughness={s.roughness}
       side={doubleSide ? DoubleSide : undefined}
