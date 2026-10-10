@@ -148,9 +148,9 @@
 .fp-tile[data-active][data-glow='top'][style*='--_tile-glow'] {
   background-image: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--_tile-glow) 38%, transparent) 0%,
-    color-mix(in srgb, var(--_tile-glow) 12%, transparent) 50%,
-    transparent 90%
+    color-mix(in srgb, var(--_tile-glow) 24%, transparent) 0%,
+    color-mix(in srgb, var(--_tile-glow) 7%, transparent) 45%,
+    transparent 80%
   );
 }
 
