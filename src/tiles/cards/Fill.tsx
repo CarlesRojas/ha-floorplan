@@ -23,8 +23,9 @@ type Props = {
   format?: (value: number) => string
   onTap: () => void
   onSend: (value: number) => void
-  // Fills from the top down instead, dragged up and down, like a blind.
-  vertical?: boolean
+  // The side it fills from: the left, or the bottom or the top for one
+  // dragged up and down, like a blind or a screen that comes down.
+  from?: 'left' | 'bottom' | 'top'
 }
 
 // How far a finger goes along the fill before the press is a drag.
@@ -43,8 +44,8 @@ const SEND_MS = 700
 // where it was, following the finger smoothly, and when it lifts the value
 // goes to the nearest step; down to nothing turns it off. A tap still turns
 // it on or off. Near the end, where the edge is about to go, a short bar
-// fades in just inside it to show there is something to drag. A vertical
-// one does the same from the top down, dragged up and down.
+// fades in just inside it to show there is something to drag. One that
+// fills from the bottom or the top does the same up and down.
 export function FillTile({
   env,
   config,
@@ -57,7 +58,7 @@ export function FillTile({
   format = v => (v === 0 ? 'Off' : `${v}%`),
   onTap,
   onSend,
-  vertical = false,
+  from = 'left',
 }: Props) {
   const [value, hold] = useHeld(reported)
   const [drag, setDrag] = useState<number | null>(null)
@@ -79,17 +80,18 @@ export function FillTile({
   }
   // The window listeners outlive a render, so they reach the latest ones
   // through here.
-  const latest = useRef({ send, drag, snap, vertical })
+  const latest = useRef({ send, drag, snap, from })
   useEffect(() => {
-    latest.current = { send, drag, snap, vertical }
+    latest.current = { send, drag, snap, from }
   })
 
   useEffect(() => {
     const move = (e: PointerEvent) => {
       const s = start.current
       if (!s || !box.current) return
-      const { vertical } = latest.current
-      const along = vertical ? e.clientY - s.y : e.clientX - s.x
+      const { from } = latest.current
+      const vertical = from !== 'left'
+      const along = from === 'left' ? e.clientX - s.x : from === 'top' ? e.clientY - s.y : s.y - e.clientY
       const across = vertical ? e.clientX - s.x : e.clientY - s.y
       if (!s.dragging) {
         if (Math.abs(along) < SLOP_PX || Math.abs(along) < Math.abs(across)) return
@@ -125,10 +127,14 @@ export function FillTile({
     start.current = { x: e.clientX, y: e.clientY, from: shown, dragging: false }
   }
 
-  // The left and right arrows, or down and up on a vertical one, move a
-  // tenth, or a step when steps are bigger.
+  // The arrows toward and away from where it fills from move a tenth, or a
+  // step when steps are bigger.
   const keys = (e: KeyboardEvent) => {
-    const [more, less] = vertical ? ['ArrowDown', 'ArrowUp'] : ['ArrowRight', 'ArrowLeft']
+    const [more, less] = {
+      left: ['ArrowRight', 'ArrowLeft'],
+      top: ['ArrowDown', 'ArrowUp'],
+      bottom: ['ArrowUp', 'ArrowDown'],
+    }[from]
     const by = e.key === more ? 1 : e.key === less ? -1 : 0
     if (!by) return
     e.preventDefault()
@@ -147,7 +153,7 @@ export function FillTile({
       ref={box}
       className="fp-fill"
       data-dragging={drag !== null || undefined}
-      data-vertical={vertical || undefined}
+      data-vertical={from !== 'left' || undefined}
       onPointerDownCapture={down}
       onKeyDown={keys}
     >
@@ -165,13 +171,20 @@ export function FillTile({
       <div
         className="fp-fill-lit"
         inert
-        style={{ clipPath: vertical ? `inset(0 0 ${100 - shown}% 0)` : `inset(0 ${100 - shown}% 0 0)` }}
+        style={{
+          clipPath: {
+            left: `inset(0 ${100 - shown}% 0 0)`,
+            top: `inset(0 0 ${100 - shown}% 0)`,
+            bottom: `inset(${100 - shown}% 0 0 0)`,
+          }[from],
+        }}
       >
         <Tile env={env} config={config} entity={entity} active accent={accent} glow={glow} state={state} />
         <span
           className="fp-fill-grip"
           style={{
-            [vertical ? 'top' : 'left']: `calc(${shown}% - 12px)`,
+            [from === 'left' ? 'left' : 'top']:
+              from === 'bottom' ? `calc(${100 - shown}% + 8px)` : `calc(${shown}% - 12px)`,
             opacity: GRIP_OPACITY * Math.max(0, (shown - GRIP_FROM) / (100 - GRIP_FROM)),
           }}
         />
@@ -185,7 +198,8 @@ const SIDEWAYS = ['curtain', 'gate', 'door']
 // A cover's or a valve's tile that is how far it is open, or with `tilt`
 // how far its slats are tilted. A tap opens or closes it. A cover that
 // goes up and down, like a blind, a shutter or a garage door, fills from
-// the top; one that slides aside, like a curtain or a gate, from the left.
+// the bottom as it rises, or from the top for a screen that comes down to
+// open; one that slides aside, like a curtain or a gate, from the left.
 export function PositionTile({
   env,
   config,
@@ -207,7 +221,7 @@ export function PositionTile({
   const sideways = valve || tilt || SIDEWAYS.includes(String(entity.attributes.device_class))
   return (
     <FillTile
-      vertical={!sideways}
+      from={sideways ? 'left' : (config as { invert?: boolean }).invert ? 'top' : 'bottom'}
       env={env}
       config={config}
       entity={entity}
