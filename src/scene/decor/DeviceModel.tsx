@@ -211,7 +211,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         {on ? <ScreenMaterial /> : <meshStandardMaterial color={c('screen')} roughness={0.12} metalness={0.25} />}
       </mesh>
       {/* The picture's light on the room round it, more for a bigger screen. */}
-      <ScreenGlow on={on} position={[0, h / 2, z + 0.25]} intensity={Math.min(2.5, 0.8 + w * 1.2)} distance={2.5 + w * 2} />
+      <ScreenGlow on={on} position={[0, h / 2, z + 0.25]} intensity={Math.min(1.8, 0.6 + w * 0.9)} distance={2.5 + w * 2} />
     </group>
   )
 

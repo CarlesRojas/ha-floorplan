@@ -119,6 +119,10 @@ export function ScreenGlow({
       distance={distance}
       decay={1}
       visible={shown}
+      // A wash of color, not a lamp: it casts nothing, and it is kept out
+      // of the shadow sweep, which would rank it by its fade and have the
+      // lamps' shadows shuffle while it comes on.
+      userData={{ noShadow: true }}
     />
   )
 }
