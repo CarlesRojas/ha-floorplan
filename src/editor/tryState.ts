@@ -18,6 +18,9 @@ export type TryState = {
   // Lights only. Missing is the light's own warm glow, the one it shows
   // bound to a light that says nothing about its color.
   tint?: Tint
+  // How many times its button has been tried, for the pieces that do one
+  // thing for a press.
+  presses?: number
 }
 
 export type TryStates = Record<string, TryState>
@@ -94,5 +97,7 @@ export function tryItemState(kind: DecorationKind, state: TryState): ItemState {
     level: kind.expresses.includes('level') ? state.levels.open : undefined,
     levels: state.levels,
     glow,
+    // Left out until it is pressed, so a device's own count shows through.
+    ...(state.presses !== undefined && { presses: state.presses }),
   }
 }

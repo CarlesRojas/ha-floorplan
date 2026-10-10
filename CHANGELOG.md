@@ -12,6 +12,8 @@ moves that section under the new version and uses it as the release notes.
 ### Added
 
 - The floorplan card lays a soft gradient behind its view, with five to choose from in the card's editor and a separate choice for a light and a dark dashboard.
+- Buttons, scripts and scenes can drive a litter box, a pet feeder, a doorbell, a door or a coffee machine: each press plays it once, so a scoop turns the litter box over and back a single time.
+
 - The preview in the card's editor shows the chosen background, and picking another one there changes only the background without loading the flat again.
 - The side panel's tiles fade out and the next room's fade in when the floorplan card flies to a room or back to the whole home.
 - On a light dashboard a tile that is on is dark with white text, so it stands out from the page.

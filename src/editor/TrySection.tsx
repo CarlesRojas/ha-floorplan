@@ -10,8 +10,10 @@ import {
   type Tint,
   type TryState,
 } from '#/editor/tryState.ts'
-import { colorWell, group, groupTitle, note, row } from '#/editor/look.ts'
+import { colorWell, group, groupTitle, note, plainButton, row } from '#/editor/look.ts'
 import { cn } from '#/lib/utils.ts'
+import { faHandPointer } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
   kind: DecorationKind
@@ -29,6 +31,15 @@ const SWITCH_LABELS: Record<string, string> = {
   vacuum_robot: 'Running',
   sprinkler: 'Watering',
   desk: 'Standing',
+}
+
+// What a press does on each piece that takes one.
+const PRESS_LABELS: Record<string, string> = {
+  litter_box: 'Scoop',
+  pet_feeder: 'Dispense',
+  doorbell: 'Ring',
+  door: 'Buzz open',
+  coffee_machine: 'Brew a cup',
 }
 
 const TINTS: { mode: Tint['mode'] | 'default'; label: string }[] = [
@@ -70,6 +81,19 @@ export default function TrySection({ kind, state, start, accent, onChange }: Pro
         {switchLabel}
         <Switch checked={s.on} accent={accent} label={switchLabel} onChange={on => onChange(switchTry(kind, s, on))} />
       </label>
+      {kind.expresses.includes('press') && (
+        <div className={cn(row, 'grid-cols-[96px_1fr]')}>
+          Press
+          <button
+            type="button"
+            onClick={() => set({ presses: (s.presses ?? 0) + 1 })}
+            className={cn(plainButton, 'justify-self-start')}
+          >
+            <FontAwesomeIcon icon={faHandPointer} className="size-3" />
+            {PRESS_LABELS[kind.id] ?? 'Press'}
+          </button>
+        </div>
+      )}
       {levels.map(level => {
         const value = s.levels[level.id] ?? 0
         const label = isLight ? 'Brightness' : level.label

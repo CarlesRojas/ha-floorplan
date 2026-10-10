@@ -8,6 +8,7 @@ import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useLive } from '#/scene/live.ts'
+import { LITTER_TURN } from '#/scene/decor/pressed.ts'
 import { useMemo, useRef, type ReactNode } from 'react'
 import { Color, Vector3, type Group } from 'three'
 
@@ -730,9 +731,7 @@ function TankHeater({ p, M, on }: Look) {
   )
 }
 
-// How fast a litter box turns while it cleans, in turns a second, and how
-// fast it comes back to rest once it stops.
-const LITTER_TURN = 0.12
+// How fast a litter box comes back to rest once it stops, in turns a second.
 const LITTER_HOME = 0.3
 
 // Rocks its children about the x axis while `on`: the entry lifts, goes

@@ -15,6 +15,9 @@ export type ItemState = {
   value?: number
   // Raw state string, for enum devices.
   text?: string
+  // Goes up by one with every press of a button behind it. The piece plays
+  // what it does once, then goes back to how it was.
+  presses?: number
 }
 
 // Whether two states draw the same. Each render builds its states afresh, so
@@ -22,7 +25,8 @@ export type ItemState = {
 export function sameState(a: ItemState | null, b: ItemState | null) {
   if (a === b) return true
   if (!a || !b) return false
-  if (a.on !== b.on || a.level !== b.level || a.value !== b.value || a.text !== b.text) return false
+  if (a.on !== b.on || a.level !== b.level || a.value !== b.value || a.text !== b.text || a.presses !== b.presses)
+    return false
   if (a.glow[0] !== b.glow[0] || a.glow[1] !== b.glow[1] || a.glow[2] !== b.glow[2]) return false
   const keys = Object.keys(a.levels)
   if (keys.length !== Object.keys(b.levels).length) return false

@@ -6,9 +6,10 @@
 export const field =
   'h-8 min-w-0 rounded-lg border border-transparent bg-fill px-2.5 text-[13px] text-(--primary-text-color) transition-[background-color,box-shadow] placeholder:text-label-2 hover:bg-fill-strong focus:bg-fill focus:ring-3 focus:ring-tint/30'
 
-// A color well, rounded and borderless.
+// A color well, rounded, with a hairline round it so a dark color still
+// shows against the panel.
 export const colorWell =
-  'h-8 w-full cursor-pointer rounded-lg border-0 bg-transparent p-0 [&::-moz-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0'
+  'h-8 w-full cursor-pointer rounded-lg border-0 bg-transparent p-0 outline-1 outline-solid -outline-offset-1 outline-(--divider-color) [&::-moz-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0'
 
 // A block of related settings in the sidebar, set off by a fill.
 export const group = 'flex flex-col gap-2.5 rounded-xl bg-fill p-3'

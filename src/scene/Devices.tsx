@@ -55,9 +55,45 @@ const scratch = new Color()
 // account can be a second or two.
 const GUESS_MS = 2000
 
+// The presses each button has had since the card opened, and the last time
+// Home Assistant gave for one. A click counts its press at once. The new
+// time Home Assistant then reports for it, if it comes within the guess's
+// wait, is that same press and not another one.
+type Presses = { count: number; seen?: string; until: number }
+const NO_PRESSES = new Map<string, Presses>()
+
+function countPresses(presses: Map<string, Presses>, entityId: string, pressed: string | undefined) {
+  const p = presses.get(entityId)
+  // The time the card first sees is a press from before it opened.
+  if (!p) {
+    presses.set(entityId, { count: 0, seen: pressed, until: 0 })
+    return 0
+  }
+  if (pressed !== p.seen) {
+    p.seen = pressed
+    if (pressed !== undefined && Date.now() > p.until) p.count++
+  }
+  return p.count
+}
+
 // What a bound device tells its decoration items. Null when the device says
 // nothing a model can draw, so the item stays neutral.
-function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<string, boolean>): ItemState | null {
+// A click's press, counted before Home Assistant has said anything. False
+// when the piece has not been drawn yet, so there is nothing to play it on.
+function clickPress(presses: Map<string, Presses>, entityId: string) {
+  const p = presses.get(entityId)
+  if (!p) return false
+  p.count++
+  p.until = Date.now() + GUESS_MS
+  return true
+}
+
+function itemState(
+  hass: HomeAssistant,
+  device: DeviceConfig,
+  guesses: Map<string, boolean>,
+  presses: Map<string, Presses> = NO_PRESSES,
+): ItemState | null {
   const entityId = device.entity_id
   const signals = deviceSignals(hass, entityId)
   if (signals.length === 0) return null
@@ -106,6 +142,7 @@ function itemState(hass: HomeAssistant, device: DeviceConfig, guesses: Map<strin
     glow,
     value: v.value,
     text: v.state,
+    presses: signals.includes('press') ? countPresses(presses, entityId, v.pressed) : undefined,
   }
 }
 
@@ -140,6 +177,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
   // A guess that runs out has to be drawn again to fall back, and nothing
   // else prompts a render just then.
   const [guesses] = useState(() => new Map<string, boolean>())
+  const [presses] = useState(() => new Map<string, Presses>())
   const [timers] = useState(() => new Map<string, ReturnType<typeof setTimeout>>())
   const [, redraw] = useState(0)
   useEffect(
@@ -167,6 +205,8 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
     if (!hass) return
     const action = clickAction(entityId, hass.states[entityId]?.state)
     if (!action) return openMoreInfo(entityId)
+    // A press plays on the piece at once.
+    if (deviceSignals(hass, entityId).includes('press') && clickPress(presses, entityId)) redraw(n => n + 1)
     // A second click before the first is answered flips the guess, not the
     // device, so two quick clicks show what two toggles leave.
     const outcome = clickOutcome(hass, entityId, guesses.get(entityId))
@@ -212,7 +252,7 @@ export default function Devices({ hass, config, onPick, tries, onTry, roomFirst,
     // device, and one without shows its first look.
     const tried = onTry && kind && canTry(kind)
     const tryState = tried ? tries?.[item.id] : undefined
-    const real = device && hass ? itemState(hass, device, guesses) : null
+    const real = device && hass ? itemState(hass, device, guesses, presses) : null
     // What the device says that trying has no control for, like a reading,
     // is kept.
     const state = kind && tryState ? { ...real, ...tryItemState(kind, tryState) } : real
