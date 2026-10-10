@@ -29,13 +29,16 @@ export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-[3px]"
       onPointerDown={() => onOpenChange(false)}
     >
       <div
         role="alertdialog"
         aria-modal="true"
-        className={cn(floating, 'text-foreground w-full max-w-[340px] rounded-2xl p-5')}
+        className={cn(
+          floating,
+          'w-full max-w-[300px] rounded-[20px] bg-(--card-background-color)/90 px-5 pt-5 pb-4 text-center text-(--primary-text-color)',
+        )}
         onPointerDown={e => e.stopPropagation()}
       >
         {children}
@@ -45,11 +48,11 @@ export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) 
 }
 
 export function AlertDialogHeader({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-2">{children}</div>
+  return <div className="flex flex-col gap-1.5">{children}</div>
 }
 
 export function AlertDialogTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-[15px] font-semibold tracking-tight">{children}</h2>
+  return <h2 className="text-[17px] font-semibold tracking-tight">{children}</h2>
 }
 
 export function AlertDialogDescription({ children }: { children: ReactNode }) {
@@ -57,11 +60,11 @@ export function AlertDialogDescription({ children }: { children: ReactNode }) {
 }
 
 export function AlertDialogFooter({ children }: { children: ReactNode }) {
-  return <div className="mt-5 grid grid-cols-2 gap-2">{children}</div>
+  return <div className="mt-5 grid grid-cols-2 gap-2.5">{children}</div>
 }
 
 const button =
-  'inline-flex h-8 items-center justify-center rounded-lg px-4 text-[13px] font-semibold transition-[background-color,filter,transform] outline-none active:scale-[0.98]'
+  'inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-4 text-[15px] font-semibold transition-[background-color,filter,transform] outline-none active:scale-[0.98]'
 
 export function AlertDialogCancel({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (

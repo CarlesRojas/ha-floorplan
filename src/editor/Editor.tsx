@@ -1070,21 +1070,22 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
               {roomInfo ?? panels}
             </div>
           </div>
+          {/* Inside the editor, so it wears the editor's colors. */}
+          <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The rooms go back to how they were when you opened the editor. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmDiscard(false)}>Keep editing</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={discard}>
+                Discard
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialog>
         </div>
-        <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The rooms go back to how they were when you opened the editor. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmDiscard(false)}>Keep editing</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={discard}>
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialog>
       </Overlay>
     )
   }

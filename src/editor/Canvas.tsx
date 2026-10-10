@@ -31,7 +31,7 @@ import {
 } from '#/geometry/overlap.ts'
 import { shortcut } from '#/lib/shortcuts.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_ACCENT_COLOR, EDITOR_BOUND_COLOR, EDITOR_SELECTED_COLOR, ROOM_COLORS } from '#/theme.ts'
+import { EDITOR_BOUND_COLOR, EDITOR_SELECTED_COLOR } from '#/theme.ts'
 import type { DecorationConfig, DeviceConfig, Point, RoomConfig } from '#/types.ts'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useRef, useState } from 'react'
@@ -1070,7 +1070,7 @@ export default function Canvas({
         <Grid view={view} width={width} height={height} />
         {trace && <TraceImage trace={trace} view={view} />}
 
-        {rooms.map((room, i) => {
+        {rooms.map(room => {
           // While an item is dragged, the room under the pointer lifts a
           // little. Enough to see which one it would land in, no more.
           const dropTarget =
@@ -1086,19 +1086,21 @@ export default function Canvas({
             <polygon
               key={room.id}
               points={polygon(room.points)}
-              fill={invalid ? 'var(--error-color)' : (room.color ?? ROOM_COLORS[i % ROOM_COLORS.length])}
-              fillOpacity={dropTarget ? 0.5 : picked ? 0.55 : 0.36}
+              // Every room the same light gray, told apart by its outline,
+              // so the pieces on it are what carries the color.
+              fill={invalid ? 'var(--error-color)' : picked ? EDITOR_SELECTED_COLOR : 'var(--primary-text-color)'}
+              fillOpacity={invalid ? 0.3 : picked ? 0.08 : dropTarget ? 0.12 : 0.06}
               stroke={
                 invalid
                   ? 'var(--error-color)'
                   : dropTarget
                     ? EDITOR_BOUND_COLOR
                     : picked
-                      ? EDITOR_ACCENT_COLOR
+                      ? EDITOR_SELECTED_COLOR
                       : 'var(--primary-text-color)'
               }
-              strokeOpacity={dropTarget || picked || invalid ? 1 : 0.14}
-              strokeWidth={dropTarget || picked ? 2 : 1}
+              strokeOpacity={dropTarget || picked || invalid ? 1 : 0.4}
+              strokeWidth={dropTarget || picked ? 2 : 1.5}
               strokeLinejoin="round"
               className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
               onPointerDown={e => onRoomDown(e, room)}
@@ -1126,17 +1128,17 @@ export default function Canvas({
               !(pointStrictlyInside(item.position, room.points) || pointOnBoundary(item.position, room.points))
             const isSelected = selectedDecoration === item.id
             const target = hoverSupport === item.id
-            const raised = item.on !== undefined
             // What is selected turns blue, so it reads apart from the rest.
             // An item a device stands behind wears amber, so what is wired up
-            // reads at a glance.
+            // reads at a glance. The rest are in the text's own color.
             const color = invalid
               ? 'var(--error-color)'
               : isSelected
                 ? EDITOR_SELECTED_COLOR
                 : bound
                   ? EDITOR_BOUND_COLOR
-                  : EDITOR_ACCENT_COLOR
+                  : 'var(--primary-text-color)'
+            const plain = !invalid && !isSelected && !bound
             const angle = -(item.rotation ?? 0)
             const [fw, fd] = footprint(kind, item.params, item.variant)
             const r = EDITOR_DEVICE_RADIUS_PX
@@ -1170,9 +1172,9 @@ export default function Canvas({
                   rx={kind.mount === 'wall' ? 3 : Math.min(5, Math.min(halfW, halfD) * 0.3)}
                   transform={`rotate(${angle} ${sx} ${sy})`}
                   fill={color}
-                  fillOpacity={kind.mount === 'wall' ? 0.85 : isSelected ? 0.2 : 0.12}
+                  fillOpacity={kind.mount === 'wall' ? (plain ? 0.55 : 0.85) : isSelected ? 0.2 : plain ? 0.06 : 0.12}
                   stroke={color}
-                  strokeOpacity={kind.mount === 'wall' ? 0 : isSelected ? 0.9 : 0.55}
+                  strokeOpacity={kind.mount === 'wall' ? 0 : isSelected ? 0.9 : plain ? 0.35 : 0.55}
                   strokeWidth={1}
                   strokeDasharray={kind.mount === 'ceiling' ? '3 3' : undefined}
                 />
@@ -1217,28 +1219,15 @@ export default function Canvas({
                     />
                   </>
                 )}
-                {/* Standing on something, it wears a thin halo. */}
-                {raised && (
-                  <circle cx={sx} cy={sy} r={r + 2.5} fill="none" stroke={color} strokeWidth={1} opacity={0.6} />
-                )}
                 {/* A disc in the item's color: solid once selected, a soft
                   tint of it over the card otherwise, with the icon in it. */}
                 <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" filter="url(#fp-lift)" />
-                <circle
-                  cx={sx}
-                  cy={sy}
-                  r={r}
-                  fill={color}
-                  fillOpacity={isSelected ? 1 : 0.22}
-                  stroke={color}
-                  strokeOpacity={isSelected ? 1 : 0.6}
-                  strokeWidth={1}
-                />
+                <circle cx={sx} cy={sy} r={r} fill={color} fillOpacity={isSelected ? 1 : plain ? 0.14 : 0.2} />
                 <IconGlyph
                   icon={decorationIcon(item.kind, kind.family)}
                   x={sx}
                   y={sy}
-                  size={r * 1.05}
+                  size={r * 0.85}
                   fill={isSelected ? '#fff' : color}
                 />
               </g>
@@ -1425,14 +1414,15 @@ function ScaleBar({ view, height }: { view: View; height: number }) {
         fillOpacity={0.85}
         filter="url(#fp-lift)"
       />
-      <path
-        d={`M${x + pad} ${mid - 3}V${mid}H${x + pad + px}V${mid - 3}`}
-        fill="none"
+      <line
+        x1={x + pad}
+        y1={mid}
+        x2={x + pad + px}
+        y2={mid}
         stroke="currentColor"
         strokeOpacity={0.7}
-        strokeWidth={1.5}
+        strokeWidth={3}
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
       <text
         x={x + pad + px + 8}

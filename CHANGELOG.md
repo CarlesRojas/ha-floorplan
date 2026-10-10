@@ -32,11 +32,13 @@ moves that section under the new version and uses it as the release notes.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
 - A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
 - Every setting of a piece or a room, its sizes, rotation, colors, style and floor included, has a button beside it that puts it back to its default, and the button only shows once the setting has changed.
+- The 3D preview of a selected piece in the editor can be zoomed and panned as well as turned, and a button in its corner brings the view back.
 
 ### Changed
 
 - The sizes of every piece go in steps of 5 cm, the same steps it moves by on the plan, and its rotation goes in steps of 5°.
-- The 2D plan in the editor looks cleaner, with a fainter grid, no lines through the origin, softer rooms and pieces and a new scale in the bottom left corner.
+- The 2D plan in the editor looks cleaner: a fainter grid, no lines through the origin, every room in the same light gray with an outline, pieces without a device in a neutral gray, plain round icons with no ring, and a scale drawn as one rounded line.
+- The editor's sidebar starts wider.
 - Rooms first and the direction of the sun moved out of the editor into the card's settings, right under the button that opens the editor.
 - In the card's settings, each list of entities ends in an Add entity button that opens a search right under it, listing each entity with its icon, name and id, and picking one with a click or Enter adds it.
 - In the editor, clicking a piece with a device, or changing it under Try its states, only tries it out there and never switches the real device. The editor starts from how the home is when it opens and shows it that way again once it closes.
@@ -61,6 +63,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Fixed
 
+- The editor's Discard changes dialog shows its buttons in their proper colors.
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
 - A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.
 - A piece can be set on top of a basin, where it used to sink into it.
