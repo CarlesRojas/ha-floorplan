@@ -23,6 +23,8 @@ type Props = {
   // A color that washes over an active tile from its top left corner, like
   // the color a light shines in.
   glow?: string
+  // Whether the glow comes from the top left corner or down from the top.
+  glowFrom?: 'corner' | 'top'
   state: ReactNode
   // What a tap does when the config sets no tap_action.
   onTap?: () => void
@@ -61,6 +63,7 @@ export function Tile({
   fading = false,
   accent,
   glow,
+  glowFrom = 'corner',
   state,
   onTap,
   role = 'button',
@@ -111,6 +114,7 @@ export function Tile({
       data-fading={fading || undefined}
       data-unavailable={unavailable || undefined}
       data-wide={wide || undefined}
+      data-glow={glowFrom}
       className="fp-tile"
       style={
         {

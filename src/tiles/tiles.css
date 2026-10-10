@@ -23,8 +23,12 @@
   --_accent-cover: var(--fp-accent-cover, #32ade6);
   --_accent-climate: var(--fp-accent-climate, #ff9f0a);
   --_accent-cool: var(--fp-accent-cool, #64d2ff);
-  --_mode-cool: var(--fp-mode-cool, #64d2ff);
-  --_mode-dry: var(--fp-mode-dry, #5ac8e0);
+  --_mode-auto: var(--fp-mode-auto, #30d158);
+  --_mode-heat-cool: var(--fp-mode-heat-cool, #bf5af2);
+  --_mode-heat: var(--fp-mode-heat, var(--_accent-climate));
+  --_mode-cool: var(--fp-mode-cool, var(--_accent-cool));
+  --_mode-dry: var(--fp-mode-dry, #ffd60a);
+  --_mode-fan: var(--fp-mode-fan, #7d7aff);
   --_alarm-armed: var(--fp-alarm-armed, #ff453a);
   --_alarm-disarmed: var(--fp-alarm-disarmed, #30d158);
   --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);
@@ -136,6 +140,17 @@
     color-mix(in srgb, var(--_tile-glow) 42%, transparent) 0%,
     color-mix(in srgb, var(--_tile-glow) 14%, transparent) 45%,
     transparent 80%
+  );
+}
+
+/* The color of a thermostat's mode, coming down from the top like the air
+   out of it. */
+.fp-tile[data-active][data-glow='top'][style*='--_tile-glow'] {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--_tile-glow) 38%, transparent) 0%,
+    color-mix(in srgb, var(--_tile-glow) 12%, transparent) 50%,
+    transparent 90%
   );
 }
 
