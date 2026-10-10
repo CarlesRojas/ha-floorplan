@@ -19,6 +19,12 @@ export type TileConfig = {
   // Replaces the line under the name.
   state_text?: string
   size?: 'small' | 'wide'
+  // A row of controls along the bottom, like a brightness slider or the
+  // modes of an alarm, by the names Home Assistant gives its own tile
+  // features. It makes the tile a row taller.
+  feature?: string
+  // The positions in percent a favorite positions feature offers.
+  favorites?: number[]
   // The area the tile belongs to for the room filter, when its entity's
   // own is not the right one.
   area?: string
@@ -129,12 +135,13 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
     this.render()
   }
 
-  getCardSize() {
-    return 2
+  getCardSize(): number {
+    return this._config?.feature ? 3 : 2
   }
 
   getGridOptions(): GridOptions {
-    return this._config?.size === 'wide' ? { columns: 12, rows: 2 } : { columns: 6, rows: 2 }
+    const rows = this._config?.feature ? 3 : 2
+    return { columns: this._config?.size === 'wide' ? 12 : 6, rows }
   }
 
   // Set by Home Assistant while the dashboard is edited, when every card

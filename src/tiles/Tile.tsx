@@ -1,6 +1,6 @@
-import { cn } from '#/lib/utils.ts'
 import { entityName, moreInfo, runAction, type TileEnv } from '#/tiles/actions.ts'
-import { insideTile, useTileGestures } from '#/tiles/gestures.ts'
+import { Feature } from '#/tiles/features/index.tsx'
+import { useTileGestures } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
 import { defaultIcon } from '#/tiles/icons.ts'
@@ -26,7 +26,8 @@ type Props = {
   toggles?: boolean
   // Buttons shown in the top right corner of a wide tile.
   controls?: ReactNode
-  // A row of buttons along the bottom of a wide tile, under the name.
+  // A row of buttons along the bottom of a wide tile, under the name. The
+  // feature the config names takes its place, at any size.
   footer?: ReactNode
   // Whether an unknown state counts as unavailable. A button that was
   // never pressed has no time to show and says unknown, yet still works.
@@ -96,40 +97,13 @@ export function Tile({
         <div className="fp-name">{name}</div>
         <div className="fp-state">{shown}</div>
       </div>
-      {config.size === 'wide' && footer && !unavailable && <div className="fp-footer">{footer}</div>}
+      {config.feature
+        ? !unavailable && (
+            <div className="fp-footer">
+              <Feature env={env} config={config} entity={entity!} />
+            </div>
+          )
+        : config.size === 'wide' && footer && !unavailable && <div className="fp-footer">{footer}</div>}
     </div>
-  )
-}
-
-type ControlProps = {
-  icon: string
-  label: string
-  onPress: () => void
-  className?: string
-  // One of a set where only one is chosen, like the mode of a thermostat.
-  role?: 'radio'
-  checked?: boolean
-  style?: CSSProperties
-}
-
-// One round button inside a wide tile. Pressing it never presses the tile.
-export function Control({ icon, label, onPress, className, role, checked, style }: ControlProps) {
-  return (
-    <button
-      {...insideTile}
-      type="button"
-      role={role}
-      aria-checked={role === 'radio' ? !!checked : undefined}
-      aria-label={label}
-      title={label}
-      className={cn('fp-control', className)}
-      style={style}
-      onClick={e => {
-        e.stopPropagation()
-        onPress()
-      }}
-    >
-      <Icon icon={icon} on />
-    </button>
   )
 }

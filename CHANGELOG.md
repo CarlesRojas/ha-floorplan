@@ -35,9 +35,14 @@ moves that section under the new version and uses it as the release notes.
 - A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
 - Every setting of a piece or a room, its sizes, rotation, colors, style and floor included, has a button beside it that puts it back to its default, and the button only shows once the setting has changed.
 - The 3D preview of a selected piece in the editor can be zoomed and panned as well as turned, and a button in its corner brings the view back.
+- When a card is added by entity, every tile is also offered with each control it can show under its name, like a brightness slider, a fan's speed, a thermostat's modes, an alarm's modes or a media player's volume, the same way Home Assistant offers its own tile.
+- Eight larger cards come with the tiles and are offered beside them when a card is added by entity: an alarm panel with a keypad, a dial for a thermostat, a water heater, a humidifier or a light's brightness, a media control with the cover art, a calendar agenda, a to-do list, a history graph, a gauge and a map.
 
 ### Changed
 
+- A cover that cannot stop shows only up and down on its wide tile.
+- The weather tile can show the next hours or the next days, and the card picker offers both.
+- The camera tile also shows an image entity.
 - The shower's glass door stays shut, so a click on the shower always goes to the device behind it, like any other piece.
 
 - The editor's Discard button is now Close: it closes straight away when there is nothing to save, and asks before throwing changes away when there is.

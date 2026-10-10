@@ -1,6 +1,7 @@
 import { callService, formatState, type TileEnv } from '#/tiles/actions.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
-import { Control, Tile } from '#/tiles/Tile.tsx'
+import { Control } from '#/tiles/Control.tsx'
+import { Tile } from '#/tiles/Tile.tsx'
 
 // The media player features the buttons need, as Home Assistant numbers them.
 const PAUSE = 1

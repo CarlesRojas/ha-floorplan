@@ -1,10 +1,12 @@
+import { featuresOf } from '#/tiles/features/index.tsx'
 import { PHOSPHOR_ICONS, phosphor } from '#/tiles/icons.ts'
 
 // The visual editors of the tiles, as forms Home Assistant draws itself
 // from a schema.
 
 type Field = { name: string; required?: boolean; selector?: Record<string, unknown>; [key: string]: unknown }
-export type Extra = 'invert' | 'battery_entity' | 'tap_behavior' | 'camera'
+export type Extra =
+  'invert' | 'battery_entity' | 'tap_behavior' | 'camera' | 'calendar' | 'graph' | 'gauge' | 'map' | 'forecast'
 
 const LABELS: Record<string, string> = {
   entity: 'Entity',
@@ -25,6 +27,15 @@ const LABELS: Record<string, string> = {
   aspect_ratio: 'Aspect ratio',
   title: 'Title',
   appearance: 'Appearance',
+  feature: 'Along the bottom',
+  entities: 'More calendars',
+  days: 'Days',
+  chart: 'Chart',
+  hours: 'Hours',
+  min: 'Minimum',
+  max: 'Maximum',
+  hours_to_show: 'Path of the last hours',
+  forecast_type: 'Forecast',
   interactions: 'Interactions',
 }
 
@@ -36,6 +47,7 @@ const HELPERS: Record<string, string> = {
   battery_entity: 'Found on the same device when empty',
   aspect_ratio: 'Width to height, like 16:9',
   title: 'The area name when empty',
+  feature: 'A control under the name, at any size, which makes the tile a row taller',
 }
 
 const ROOM_FILTER: Field = {
@@ -72,6 +84,45 @@ const EXTRAS: Record<Extra, Field[]> = {
       },
     },
   ],
+  calendar: [
+    { name: 'entities', selector: { entity: { multiple: true, filter: { domain: 'calendar' } } } },
+    { name: 'days', selector: { number: { min: 1, max: 31, mode: 'box' } } },
+  ],
+  graph: [
+    {
+      name: 'chart',
+      selector: {
+        select: {
+          mode: 'dropdown',
+          options: [
+            { value: 'line', label: 'A line over the last hours' },
+            { value: 'bar', label: 'A bar for each of the last days' },
+          ],
+        },
+      },
+    },
+    { name: 'hours', selector: { number: { min: 1, max: 168, mode: 'box' } } },
+    { name: 'days', selector: { number: { min: 2, max: 31, mode: 'box' } } },
+  ],
+  gauge: [
+    { name: 'min', selector: { number: { mode: 'box' } } },
+    { name: 'max', selector: { number: { mode: 'box' } } },
+  ],
+  map: [{ name: 'hours_to_show', selector: { number: { min: 0, max: 168, mode: 'box' } } }],
+  forecast: [
+    {
+      name: 'forecast_type',
+      selector: {
+        select: {
+          mode: 'dropdown',
+          options: [
+            { value: 'hourly', label: 'The next hours' },
+            { value: 'daily', label: 'The next days' },
+          ],
+        },
+      },
+    },
+  ],
   camera: [
     {
       name: 'camera_view',
@@ -97,8 +148,10 @@ function form(schema: Field[]) {
   }
 }
 
-export function tileForm(domains: string[] | 'any', extras: Extra[] = []) {
-  const sized = !extras.includes('camera')
+// A panel, like the calendar, has a size of its own and no control along
+// its bottom.
+export function tileForm(domains: string[] | 'any', extras: Extra[] = [], panel = false) {
+  const sized = !panel && !extras.includes('camera')
   const filter = domains === 'any' ? {} : { filter: { domain: domains } }
   return form([
     { name: 'entity', required: true, selector: { entity: filter } },
@@ -134,6 +187,7 @@ export function tileForm(domains: string[] | 'any', extras: Extra[] = []) {
           ],
         },
         { name: 'state_text', selector: { text: {} } },
+        ...(panel ? [] : featureField(domains)),
         ...extras.flatMap(extra => EXTRAS[extra]),
         { name: 'area', selector: { area: {} } },
         ROOM_FILTER,
@@ -150,6 +204,13 @@ export function tileForm(domains: string[] | 'any', extras: Extra[] = []) {
       ],
     },
   ])
+}
+
+// The controls a tile can show along its bottom, for the domains it shows.
+function featureField(domains: string[] | 'any'): Field[] {
+  const options = featuresOf(domains)
+  if (options.length === 0) return []
+  return [{ name: 'feature', selector: { select: { mode: 'dropdown', options } } }]
 }
 
 export function titleForm() {

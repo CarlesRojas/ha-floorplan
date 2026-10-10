@@ -13,7 +13,7 @@ type Forecast = {
   templow?: number
   is_daytime?: boolean
 }
-type Kind = 'hourly' | 'daily'
+export type Kind = 'hourly' | 'daily'
 
 // The forecasts a weather entity offers, as Home Assistant numbers them.
 const DAILY = 1
@@ -82,7 +82,13 @@ const degrees = (value: number | undefined) => (typeof value === 'number' ? `${M
 // White icons, but for the sun, which is yellow.
 const iconColor = (condition: string | undefined) => (condition === 'sunny' ? '#ffd60a' : undefined)
 
-type Props = { env: TileEnv; config: TileConfig }
+export type WeatherConfig = TileConfig & {
+  // Which forecast runs along the bottom. The hours when the entity has
+  // them, and the days when it does not.
+  forecast_type?: Kind
+}
+
+type Props = { env: TileEnv; config: WeatherConfig }
 
 // The weather outside, the whole width and three rows tall. The temperature
 // in large type, what the sky is doing and the day's high and low on the
@@ -93,7 +99,12 @@ export default function Weather({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const attributes = entity?.attributes ?? {}
   const features = typeof attributes.supported_features === 'number' ? attributes.supported_features : 0
-  const strip: Kind | null = features & HOURLY ? 'hourly' : features & DAILY ? 'daily' : null
+  const offered: Kind[] = [
+    ...(features & HOURLY ? ['hourly' as const] : []),
+    ...(features & DAILY ? ['daily' as const] : []),
+  ]
+  const strip: Kind | null =
+    config.forecast_type && offered.includes(config.forecast_type) ? config.forecast_type : (offered[0] ?? null)
   const steps = useForecast(env.hass, config.entity, strip)
   const days = useForecast(env.hass, config.entity, features & DAILY ? 'daily' : null)
   const open = () => moreInfo(env.host, config.entity)

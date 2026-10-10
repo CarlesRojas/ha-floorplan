@@ -1,5 +1,7 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import CoverControls from '#/tiles/cards/CoverControls.tsx'
+import { STOP } from '#/tiles/features/cover.tsx'
+import { supports } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 
@@ -10,7 +12,8 @@ const STATES: Record<string, string> = { open: 'Open', closed: 'Closed', opening
 type Props = { env: TileEnv; config: CoverConfig }
 
 // A blind, a shutter or a screen. A tap opens it or closes it, or stops it
-// while it moves. A wide tile adds up, stop and down buttons. The tile is
+// while it moves. A wide tile adds up, stop and down buttons, stop only
+// for a cover that can stop. The tile is
 // lit while the cover is open or opening, so it shows where it is heading.
 export default function Cover({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
@@ -33,6 +36,7 @@ export default function Cover({ env, config }: Props) {
       controls={
         <CoverControls
           invert={config.invert === true}
+          stops={supports(entity, STOP)}
           onOpen={run('open_cover')}
           onStop={run('stop_cover')}
           onClose={run('close_cover')}

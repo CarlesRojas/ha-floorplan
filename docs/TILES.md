@@ -1,6 +1,6 @@
 # Floorplan tiles
 
-Floorplan 3D comes with eleven small tiles, to sit around the 3D model on the same dashboard. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, and the floorplan card can also lay them out beside itself in its [side panel](#side-panel).
+Floorplan 3D comes with twelve small tiles and eight larger cards, to sit around the 3D model on the same dashboard. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, and the floorplan card can also lay them out beside itself in its [side panel](#side-panel).
 
 | Card         | Takes                                                                                                               | A tap                                                                                                                                                                                             |
 | ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -10,12 +10,27 @@ Floorplan 3D comes with eleven small tiles, to sit around the 3D model on the sa
 | `fp-cover`   | `cover.*`                                                                                                           | opens or closes it. A wide tile adds up, stop and down                                                                                                                                            |
 | `fp-vacuum`  | `vacuum.*`                                                                                                          | starts or pauses it. A wide tile adds the vacuum's buttons                                                                                                                                        |
 | `fp-select`  | `select.*`, `input_select.*`                                                                                        | opens a menu of the options, or moves to the next one                                                                                                                                             |
-| `fp-camera`  | `camera.*`                                                                                                          | opens the camera's dialog                                                                                                                                                                         |
+| `fp-camera`  | `camera.*`, `image.*`                                                                                               | opens the camera's dialog                                                                                                                                                                         |
 | `fp-climate` | `climate.*`, `water_heater.*`                                                                                       | opens its dialog. A wide tile has minus and plus for the temperature it aims for, or for either end of its range, and a wide thermostat is three rows tall with a button for each mode it runs in |
 | `fp-media`   | `media_player.*`                                                                                                    | plays or pauses it, or turns it on. A wide tile adds previous, play or pause, next, and a button to turn it off                                                                                   |
 | `fp-lock`    | `lock.*`                                                                                                            | locks it, or unlocks it while it is locked                                                                                                                                                        |
 | `fp-weather` | `weather.*`                                                                                                         | opens its dialog. It takes the whole width and three rows, and shows the next hours or days                                                                                                       |
 | `fp-entity`  | any entity                                                                                                          | opens its dialog. The line under the name is its state, with its unit                                                                                                                             |
+
+The larger cards are offered beside the tiles when a card is added by entity:
+
+| Card               | Takes                                                                                                    | What it shows                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `fp-alarm-panel`   | `alarm_control_panel.*`                                                                                  | a button for each mode it arms in and a keypad for its code                                |
+| `fp-dial`          | `climate.*`, `water_heater.*`, `humidifier.*`, and `light.*` that dims                                   | a ring to drag to the temperature, humidity or brightness it aims for, with minus and plus |
+| `fp-media-control` | `media_player.*`                                                                                         | the cover art, what is playing, how far into it, its buttons and its volume                |
+| `fp-calendar`      | `calendar.*`                                                                                             | the events of the next days, as a list by day                                              |
+| `fp-todo`          | `todo.*`                                                                                                 | the items to do with a box to tick each, a field to add one, and the done items            |
+| `fp-graph`         | `sensor.*`, `binary_sensor.*`, `counter.*`, `input_number.*`, `number.*`, `person.*`, `device_tracker.*` | a line over the last day, bars for the last days, or a strip lit for the times it was on   |
+| `fp-gauge`         | any entity with a number for a state                                                                     | the reading on a ring, from its own minimum and maximum when it has them                   |
+| `fp-map`           | `person.*`, `device_tracker.*`, `zone.*`                                                                 | where it is, on Home Assistant's own map                                                   |
+
+Most tiles can also show a control under the name, set with `feature`, which makes the tile a row taller: a brightness, color temperature or color slider, favorite colors or an effect for a light, a switch, a fan's speed, direction, oscillation or preset, a cover's position, tilt or buttons, a thermostat's modes, presets, fan or swing, a target temperature or humidity, a media player's playback, volume, source or sound mode, a lock's buttons, an alarm's modes, a vacuum's or a lawn mower's commands, a counter's or a timer's buttons, a number, a date or an option list. The card editor lists the ones the entity can do, and the card picker offers a tile with each of them.
 
 On every tile but the title, a long press or a right click opens Home Assistant's more info dialog for the entity. With a keyboard, Enter or Space taps and the context menu key or Shift+F10 holds.
 
@@ -88,6 +103,18 @@ The buttons are never greyed out, since many covers do not know where they are. 
 | `battery_entity` | A sensor with the battery level, for a vacuum that does not report it. Without one, a battery sensor on the vacuum's own device is used |
 
 A wide tile shows pause or start, stop, and back to the dock, each only when the vacuum supports it.
+
+`feature`, on any tile, is the id of the control under its name, as the card editor and the card picker set it.
+
+`fp-graph`
+
+| Key     | Default | Description                                                     |
+| ------- | ------- | --------------------------------------------------------------- |
+| `chart` | `line`  | `line` for the last hours of a reading, `bar` for one bar a day |
+| `hours` | `24`    | How far back a line or a strip reaches                          |
+| `days`  | `7`     | How many days of bars                                           |
+
+`fp-gauge` takes `min` and `max`, and `fp-calendar` takes `entities`, more calendars to list along with its own, and `days`, how many days ahead it lists. `fp-map` takes `hours_to_show`, how many hours of a person's path it draws behind them, and `fp-weather` takes `forecast_type`, `hourly` or `daily`.
 
 `fp-select`
 
