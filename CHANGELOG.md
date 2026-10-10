@@ -24,11 +24,13 @@ moves that section under the new version and uses it as the release notes.
 - A tile's `room_filter` can be `room`, to show only while its room is in view, or `home`, to show only while the whole home is.
 - A leak sensor to put on the floor: it glows blue and a puddle spreads round it when it gets wet.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
+- A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
 
 ### Changed
 
 - Up to eight lamps cast shadows at once on a computer and four on a phone or tablet, up from four and two.
 - When a lamp hands its shadow to a brighter light that comes on, the shadow fades out and the new one fades in instead of switching at once.
+- A projector's beam goes through the same colors as a TV that is on, where it used to be white.
 - The demo flat in demoflat.yaml is refurnished, with a camera, an alarm panel, a humidifier and a water heater, its side panel on with the tiles of each room in order, and a click on another room flying to it first.
 - A TV or laptop that is on shows deep, muted colors glowing out of black, swaying between greens and blues and now and then going round every other color, and moves faster than before.
 - A smart lock glows red while it is locked and green while it is unlocked.

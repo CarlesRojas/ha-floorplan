@@ -9,7 +9,8 @@ import {
 import { useEased } from '#/scene/decor/ease.ts'
 import { Glass, Halo, Led, Material, SEG, Slab, Spinner, Tube } from '#/scene/decor/parts.tsx'
 import { useBeamScene } from '#/scene/decor/beam.ts'
-import ScreenMaterial from '#/scene/decor/Screen.tsx'
+import ScreenMaterial, { ScreenGlow } from '#/scene/decor/Screen.tsx'
+import { useThrow } from '#/scene/decor/throw.ts'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
@@ -877,6 +878,8 @@ function ShortThrow({ p, c, M, on }: Look) {
   const y0 = top + 0.25
   const lensZ = -D / 2 + 0.06
   const lens: Vec3 = useMemo(() => [0, top + 0.001, lensZ], [top, lensZ])
+  const aim = useRef<Group>(null)
+  useThrow(aim, 1.2, lit)
   return (
     <group>
       {[-1, 1].flatMap(sx =>
@@ -915,7 +918,10 @@ function ShortThrow({ p, c, M, on }: Look) {
       <Led on={on} position={[W * 0.38, top, D / 2 - 0.04]} color="#e8f2f6" radius={0.003} />
       {/* The light on its way up the wall. */}
       <WallThrow lens={lens} from={W * 0.28} pw={pw} ph={ph} y0={y0} z={wallZ + 0.002} strength={lit} />
-      <Halo on={on} position={[0, y0 + ph * 0.35, wallZ + 0.35]} color="#dfe8ff" intensity={0.3} distance={3} />
+      {/* Where the picture lands, as seen from a meter out in front of it,
+          for a projection screen hung across it to find. */}
+      <group ref={aim} position={[0, y0 + ph / 2, wallZ + 1]} rotation={[0, Math.PI, 0]} />
+      <ScreenGlow on={on} position={[0, y0 + ph * 0.35, wallZ + 0.35]} intensity={0.6} distance={3} />
     </group>
   )
 }

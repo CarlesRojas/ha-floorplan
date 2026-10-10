@@ -1,19 +1,17 @@
 import { useFrame } from '@react-three/fiber'
+import { screenTint } from '#/scene/decor/tint.ts'
 import { useLive } from '#/scene/live.ts'
-import { useRef } from 'react'
-import { Color, type MeshBasicMaterial } from 'three'
+import { useMemo, useRef } from 'react'
+import type { MeshBasicMaterial } from 'three'
 
-// The tints a picture cuts between, whites from cool to warm and a few
-// scenes with a color of their own.
-const BEAM_WHITES = ['#c9d6f2', '#eef3ff', '#fff4e6', '#ffffff', '#9fc0ff', '#ffc98a', '#b8f0c8', '#e6b8ff']
-
-// The picture playing in a beam: its brightness and tint cut from scene to
-// scene and it shimmers a little in between. `base` is the beam's full
-// opacity, which the scene now on screen scales. Returns the ref for the
-// beam's material.
+// The picture playing in a beam: its brightness cuts from scene to scene
+// and it shimmers a little in between, in the colors a TV that is on goes
+// through, at the same moment. `base` is the beam's full opacity, which the
+// scene now on screen scales. Returns the ref for the beam's material.
 export function useBeamScene(base: number) {
   const material = useRef<MeshBasicMaterial>(null)
-  const scene = useRef({ level: 1, target: 1, color: new Color('#eef3ff'), next: 0 })
+  const scene = useRef({ level: 1, target: 1, next: 0 })
+  const rgb = useMemo<[number, number, number]>(() => [0, 0, 0], [])
   useLive(base > 0.001)
   useFrame(({ clock }, delta) => {
     const mat = material.current
@@ -22,14 +20,14 @@ export function useBeamScene(base: number) {
     const at = scene.current
     if (now >= at.next) {
       at.target = 0.55 + Math.random() * 0.45
-      at.color.set(BEAM_WHITES[Math.floor(Math.random() * BEAM_WHITES.length)])
       at.next = now + 0.25 + Math.random() * 0.9
     }
     // A cut lands fast, and the picture shimmers a little while it plays.
     at.level += (at.target - at.level) * Math.min(1, delta * 14)
     const shimmer = 1 + Math.sin(now * 23) * 0.03 + Math.sin(now * 37.3) * 0.02
     mat.opacity = base * at.level * shimmer
-    mat.color.lerp(at.color, Math.min(1, delta * 14))
+    screenTint(now, rgb)
+    mat.color.setRGB(rgb[0], rgb[1], rgb[2])
   })
   return material
 }
