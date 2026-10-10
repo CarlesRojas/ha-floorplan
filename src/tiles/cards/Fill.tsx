@@ -3,7 +3,14 @@ import { numberOf, useHeld } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 import type { EntityState } from '#/types.ts'
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 
 type Props = {
   env: TileEnv
@@ -30,9 +37,10 @@ type Props = {
 
 // How far a finger goes along the fill before the press is a drag.
 const SLOP_PX = 8
-// The value the handle starts to fade in at, and how strong it ends up at
-// the end.
+// The value the handle at the end starts to fade in at, the one the handle
+// at the start is gone by, and how strong both are at their end.
 const GRIP_FROM = 95
+const GRIP_TO = 5
 const GRIP_OPACITY = 0.35
 // How long the arrow keys wait for another press before they send.
 const SEND_MS = 700
@@ -169,6 +177,11 @@ export function FillTile({
         state={state}
         onTap={onTap}
       />
+      <span
+        className="fp-fill-grip"
+        data-start
+        style={{ opacity: GRIP_OPACITY * Math.max(0, (GRIP_TO - shown) / GRIP_TO) }}
+      />
       <div
         className="fp-fill-lit"
         inert
@@ -183,11 +196,12 @@ export function FillTile({
         <Tile env={env} config={config} entity={entity} active accent={accent} glow={glow} state={state} />
         <span
           className="fp-fill-grip"
-          style={{
-            [from === 'left' ? 'left' : 'top']:
-              from === 'bottom' ? `calc(${100 - shown}% + 8px)` : `calc(${shown}% - 12px)`,
-            opacity: GRIP_OPACITY * Math.max(0, (shown - GRIP_FROM) / (100 - GRIP_FROM)),
-          }}
+          style={
+            {
+              '--_edge': `${shown}%`,
+              opacity: GRIP_OPACITY * Math.max(0, (shown - GRIP_FROM) / (100 - GRIP_FROM)),
+            } as CSSProperties
+          }
         />
       </div>
     </div>

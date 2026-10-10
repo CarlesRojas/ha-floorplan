@@ -218,11 +218,14 @@
 
 /* A short bar that rides just inside the edge of the fill, centered on
    the tile, the handle to drag it with. It fades in over the last stretch
-   to full brightness, where there is no edge left to see, and ends up in
-   the margin past the words. */
+   to full brightness, where there is no edge left to see, and ends up
+   halfway across the padding past the words. Another one waits at the
+   start while it is empty, to show where to pull it from. */
 .fp-fill-grip {
+  --_inset: calc(var(--_padding) / 2 - 2px);
   position: absolute;
   top: 50%;
+  left: calc(var(--_edge) - var(--_inset) - 4px);
   width: 4px;
   height: 28px;
   border-radius: 2px;
@@ -235,7 +238,6 @@
 }
 
 .fp-fill[data-vertical] .fp-fill-grip {
-  top: auto;
   left: 50%;
   width: 28px;
   height: 4px;
@@ -243,6 +245,30 @@
   transition:
     top 250ms cubic-bezier(0.2, 0.8, 0.2, 1),
     opacity 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-fill[data-from='top'] .fp-fill-grip {
+  top: calc(var(--_edge) - var(--_inset) - 4px);
+}
+
+.fp-fill[data-from='bottom'] .fp-fill-grip {
+  top: calc(100% - var(--_edge) + var(--_inset));
+}
+
+.fp-fill .fp-fill-grip[data-start] {
+  background: var(--_text-inactive);
+}
+
+.fp-fill[data-from='left'] .fp-fill-grip[data-start] {
+  left: var(--_inset);
+}
+
+.fp-fill[data-from='top'] .fp-fill-grip[data-start] {
+  top: var(--_inset);
+}
+
+.fp-fill[data-from='bottom'] .fp-fill-grip[data-start] {
+  top: calc(100% - var(--_inset) - 4px);
 }
 
 .fp-top {
