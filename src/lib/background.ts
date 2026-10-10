@@ -3,14 +3,31 @@ import type { BackgroundConfig, HomeAssistant } from '#/types.ts'
 
 // The backgrounds the card can lay behind the view it is in, each in a dark
 // version for a dark dashboard and a pale one of the same hues for a light
-// one. Most are soft blobs of color over a plain gradient, as if seen out of
-// focus.
+// one. Most are large soft blobs of color over a plain gradient, as if seen
+// out of focus.
 export type Background = { id: string; name: string; dark: string; light: string }
 
-// A soft blob of `color` centered at `at`, fading out to nothing.
+// A soft blob of `color` centered at `at`, as wide and tall as `size`. It
+// thins out slowly all the way to its edge, the way light falls off, so it
+// melts into the blobs around it with no rim to show where it ends.
+const FALLOFF = [
+  [100, 0],
+  [82, 14],
+  [58, 30],
+  [34, 48],
+  [16, 66],
+  [5, 84],
+  [0, 100],
+]
 const blob = (size: string, at: string, color: string) =>
-  `radial-gradient(ellipse ${size} at ${at}, ${color} 0%, transparent 70%)`
+  `radial-gradient(ellipse ${size} at ${at}, ${FALLOFF.map(
+    ([amount, stop]) => `color-mix(in oklab, ${color} ${amount}%, transparent) ${stop}%`,
+  ).join(', ')})`
 
+// Each one is a plain gradient with a few large blobs over it, laid out
+// differently for every one. The dark versions are muted, close to the
+// grey of graphite with only a hint of their color, and the light ones the
+// same hues washed out almost to white.
 export const BACKGROUNDS: Background[] = [
   {
     id: 'graphite',
@@ -22,74 +39,74 @@ export const BACKGROUNDS: Background[] = [
     id: 'dusk',
     name: 'Dusk',
     dark: [
-      blob('90% 50%', '15% 0%', '#6a2c7d'),
-      blob('70% 45%', '90% 8%', '#8c3a83'),
-      blob('60% 32%', '68% 62%', 'rgba(222, 176, 112, 0.5)'),
-      blob('100% 55%', '25% 100%', '#1f5d80'),
-      blob('80% 50%', '95% 85%', '#1a2f6b'),
-      'linear-gradient(180deg, #2b1839 0%, #1f2142 50%, #0d1830 100%)',
+      blob('150% 90%', '10% 0%', '#3d2a47'),
+      blob('120% 80%', '95% 5%', '#452c43'),
+      blob('110% 70%', '70% 62%', 'rgba(150, 122, 92, 0.28)'),
+      blob('150% 90%', '20% 100%', '#22394a'),
+      blob('120% 80%', '100% 90%', '#1f2945'),
+      'linear-gradient(180deg, #1d1823 0%, #181a24 50%, #11141c 100%)',
     ].join(', '),
     light: [
-      blob('90% 50%', '15% 0%', '#ead3f2'),
-      blob('70% 45%', '90% 8%', '#f4d5ec'),
-      blob('60% 32%', '68% 62%', 'rgba(255, 228, 184, 0.8)'),
-      blob('100% 55%', '25% 100%', '#cfe5f1'),
-      blob('80% 50%', '95% 85%', '#d6def4'),
-      'linear-gradient(180deg, #f7eff9 0%, #f2f1f9 50%, #eaf0f8 100%)',
+      blob('150% 90%', '10% 0%', '#ecdcf2'),
+      blob('120% 80%', '95% 5%', '#f3dcec'),
+      blob('110% 70%', '70% 62%', 'rgba(255, 232, 196, 0.85)'),
+      blob('150% 90%', '20% 100%', '#d8e8f1'),
+      blob('120% 80%', '100% 90%', '#dce2f3'),
+      'linear-gradient(180deg, #f6f0f8 0%, #f2f2f8 50%, #ecf1f7 100%)',
     ].join(', '),
   },
   {
     id: 'ocean',
     name: 'Ocean',
     dark: [
-      blob('80% 50%', '85% 0%', '#1c6f7a'),
-      blob('60% 55%', '0% 40%', '#245c96'),
-      blob('55% 30%', '30% 72%', 'rgba(120, 214, 200, 0.38)'),
-      blob('90% 50%', '100% 100%', '#122e6b'),
-      'linear-gradient(200deg, #0f2b36 0%, #0c1f38 50%, #081329 100%)',
+      blob('130% 90%', '85% 0%', '#1f4048'),
+      blob('110% 90%', '0% 40%', '#243850'),
+      blob('110% 65%', '30% 75%', 'rgba(96, 146, 140, 0.22)'),
+      blob('140% 90%', '100% 100%', '#1a2440'),
+      'linear-gradient(200deg, #152126 0%, #131a24 50%, #0e121b 100%)',
     ].join(', '),
     light: [
-      blob('80% 50%', '85% 0%', '#cdeeee'),
-      blob('60% 55%', '0% 40%', '#d3e3f6'),
-      blob('55% 30%', '30% 72%', 'rgba(204, 244, 232, 0.85)'),
-      blob('90% 50%', '100% 100%', '#d5dcf3'),
-      'linear-gradient(200deg, #eef8f8 0%, #edf3fa 50%, #e9eef8 100%)',
+      blob('130% 90%', '85% 0%', '#d4eeee'),
+      blob('110% 90%', '0% 40%', '#d8e5f5'),
+      blob('110% 65%', '30% 75%', 'rgba(208, 242, 232, 0.9)'),
+      blob('140% 90%', '100% 100%', '#dadff2'),
+      'linear-gradient(200deg, #eef7f7 0%, #eef3f9 50%, #eaeef7 100%)',
     ].join(', '),
   },
   {
     id: 'forest',
     name: 'Forest',
     dark: [
-      blob('100% 60%', '0% 0%', '#2a6648'),
-      blob('50% 35%', '78% 24%', 'rgba(232, 204, 122, 0.4)'),
-      blob('70% 50%', '10% 92%', '#56682c'),
-      blob('70% 55%', '95% 85%', '#164a4a'),
-      'linear-gradient(150deg, #172c22 0%, #10211c 50%, #0a1513 100%)',
+      blob('150% 100%', '0% 0%', '#283f34'),
+      blob('100% 65%', '80% 22%', 'rgba(160, 146, 100, 0.22)'),
+      blob('120% 80%', '10% 95%', '#333b28'),
+      blob('120% 85%', '100% 85%', '#1e3434'),
+      'linear-gradient(150deg, #161e1a 0%, #121916 50%, #0d1210 100%)',
     ].join(', '),
     light: [
-      blob('100% 60%', '0% 0%', '#d5eedd'),
-      blob('50% 35%', '78% 24%', 'rgba(255, 238, 190, 0.85)'),
-      blob('70% 50%', '10% 92%', '#e5ecc9'),
-      blob('70% 55%', '95% 85%', '#cfe8e6'),
-      'linear-gradient(150deg, #f0f8f2 0%, #eef5f0 50%, #e9f3f1 100%)',
+      blob('150% 100%', '0% 0%', '#d9eedf'),
+      blob('100% 65%', '80% 22%', 'rgba(255, 240, 200, 0.9)'),
+      blob('120% 80%', '10% 95%', '#e6ecd0'),
+      blob('120% 85%', '100% 85%', '#d4e9e7'),
+      'linear-gradient(150deg, #f0f7f2 0%, #eef4f0 50%, #eaf2f0 100%)',
     ].join(', '),
   },
   {
     id: 'ember',
     name: 'Ember',
     dark: [
-      blob('70% 45%', '100% 0%', '#7d2a45'),
-      blob('60% 50%', '0% 30%', '#3d1c4f'),
-      blob('80% 35%', '45% 92%', 'rgba(255, 168, 92, 0.45)'),
-      blob('50% 40%', '90% 65%', '#9a4630'),
-      'linear-gradient(170deg, #2c1320 0%, #221425 50%, #150c1c 100%)',
+      blob('130% 85%', '100% 0%', '#45282f'),
+      blob('120% 95%', '0% 30%', '#2e2337'),
+      blob('130% 65%', '45% 95%', 'rgba(168, 118, 82, 0.26)'),
+      blob('100% 70%', '90% 65%', '#422c26'),
+      'linear-gradient(170deg, #1e1619 0%, #1a151c 50%, #120e15 100%)',
     ].join(', '),
     light: [
-      blob('70% 45%', '100% 0%', '#f6d6e0'),
-      blob('60% 50%', '0% 30%', '#e6d7f0'),
-      blob('80% 35%', '45% 92%', 'rgba(255, 224, 188, 0.9)'),
-      blob('50% 40%', '90% 65%', '#f8dccf'),
-      'linear-gradient(170deg, #fbf0f3 0%, #f9f1f3 50%, #f2edf7 100%)',
+      blob('130% 85%', '100% 0%', '#f5dce3'),
+      blob('120% 95%', '0% 30%', '#e9dcf1'),
+      blob('130% 65%', '45% 95%', 'rgba(255, 228, 196, 0.9)'),
+      blob('100% 70%', '90% 65%', '#f7e0d4'),
+      'linear-gradient(170deg, #faf1f3 0%, #f8f2f3 50%, #f2eef6 100%)',
     ].join(', '),
   },
 ]
