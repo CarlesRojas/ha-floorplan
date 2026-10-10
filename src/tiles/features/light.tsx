@@ -100,10 +100,12 @@ function perceivedHue(hue: number) {
   return (Math.atan2(bb, a) * 180) / Math.PI
 }
 
-// Every hue at the same lightness and a moderate strength, so no band of
-// the rainbow, like its greens and yellows, glares brighter than the rest.
+// A hue drawn at the same lightness and a moderate strength as every
+// other, so none, like the greens and yellows, glares brighter than the rest.
+const soft = (hue: number) => `oklch(0.71 0.175 ${perceivedHue(hue).toFixed(1)})`
+
 const HUES = Array.from({ length: 13 }, (_, i) => i * 30)
-  .map(h => `oklch(0.72 0.155 ${perceivedHue(h).toFixed(1)}) ${(h / 360) * 100}%`)
+  .map(h => `${soft(h)} ${(h / 360) * 100}%`)
   .join(', ')
 
 // The hue it shines in, along a slim rainbow beside the icon.
@@ -146,7 +148,7 @@ export function ColorFavorites({ env, entity }: FeatureProps) {
         ['Purple', 280],
       ].map(([label, h]) => ({
         label: label as string,
-        color: `hsl(${h} 100% 58%)`,
+        color: soft(h as number),
         data: { hs_color: [h, 100] },
       }))
     : []
