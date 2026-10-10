@@ -297,6 +297,18 @@ export const isWide = (config: { size?: string; entity?: string; feature?: strin
         (typeof f.wide === 'function' ? !!entity && f.wide(entity) : !!f.wide),
     ))
 
+// How many rows a tile takes: three for a feature along its bottom, or for
+// a wide thermostat with its temperature in the top right corner and its
+// modes along the bottom, and two for the rest.
+export const tileRows = (config: { size?: string; entity?: string; feature?: string }, entity?: EntityState) =>
+  addsRow(config.feature) ||
+  (config.size === 'wide' &&
+    !config.feature &&
+    !!config.entity?.startsWith('climate.') &&
+    (!entity || listOf(entity, 'hvac_modes').length > 0))
+    ? 3
+    : 2
+
 // Whether the feature is drawn across from the icon.
 export const besideIcon = (feature: string | undefined) =>
   !!feature && !!FEATURES.find(f => f.id === feature && f.View && !f.row)

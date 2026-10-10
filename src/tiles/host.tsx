@@ -2,7 +2,7 @@ import { entityArea } from '#/devices/catalog.ts'
 import { ReactHost } from '#/host.tsx'
 import { onRoomFilter, roomFilter } from '#/lib/roomFilter.ts'
 import type { ActionConfig } from '#/tiles/actions.ts'
-import { addsRow, isWide } from '#/tiles/features/index.tsx'
+import { isWide, tileRows } from '#/tiles/features/index.tsx'
 import tilesCss from '#/tiles/tiles.css?inline'
 import type { HomeAssistant } from '#/types.ts'
 
@@ -137,11 +137,11 @@ export abstract class TileHost<C extends TileConfig> extends ReactHost<C> {
   }
 
   getCardSize(): number {
-    return addsRow(this._config?.feature) ? 3 : 2
+    return this._config ? tileRows(this._config, this._hass?.states[this._config.entity ?? '']) : 2
   }
 
   getGridOptions(): GridOptions {
-    const rows = addsRow(this._config?.feature) ? 3 : 2
+    const rows = this._config ? tileRows(this._config, this._hass?.states[this._config.entity ?? '']) : 2
     return {
       columns: this._config && isWide(this._config, this._hass?.states[this._config.entity ?? '']) ? 12 : 6,
       rows,

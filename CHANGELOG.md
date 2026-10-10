@@ -83,7 +83,7 @@ moves that section under the new version and uses it as the release notes.
 - The position tile of a blind, a shutter, a garage door or another cover that goes up and down fills from the bottom as it rises and is dragged up and down, an inverted one like a projector screen fills from the top as it comes down, and curtains, gates, doors and valves still fill from the left.
 - A slider tile that is empty shows a faint handle at the side to pull it from, and the handles at both ends sit exactly halfway across the tile's padding.
 - A thermostat's target temperature tile is always wide when it holds a range of two temperatures, since a small one had no room for them.
-- A wide thermostat is two rows tall, with its mode buttons across from its name so the name and the state stay in the bottom left corner like on every other tile.
+- A wide thermostat is three rows tall, with its mode buttons across from its name so the name and the state stay in the bottom left corner like on every other tile.
 - A thermostat's modes tile is always wide, since a small one had no room for every mode.
 - Temperatures on thermostats and dials show a degree sign, like 22°, and a thermostat's state reads as one phrase, like 20.5° to 22°.
 - A thermostat's icon takes the color of the mode it runs in on every one of its tiles, and that color washes down from the top of the tile while it is on. In auto, or keeping a range, it takes the color of what it is doing, like orange while it heats, and no color while it waits.

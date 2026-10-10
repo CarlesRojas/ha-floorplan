@@ -1,7 +1,7 @@
 import { closest, inPanelView } from '#/lib/panelView.ts'
 import { onRoomFilter, roomFilter } from '#/lib/roomFilter.ts'
 import { autoGroups } from '#/tiles/auto.ts'
-import { addsRow, isWide } from '#/tiles/features/index.tsx'
+import { isWide, tileRows } from '#/tiles/features/index.tsx'
 import type { CardConfig as PlanConfig, HomeAssistant } from '#/types.ts'
 
 type CardConfig = {
@@ -39,13 +39,10 @@ function span(config: CardConfig, hass: HomeAssistant | null) {
   else if (type === 'fp-camera') columns = 12
   else if (type === 'fp-weather') rows = 3
   else if (type.startsWith('fp-')) {
-    columns = isWide(
-      config as { size?: string; entity?: string; feature?: string },
-      hass?.states[String(config.entity)],
-    )
-      ? 12
-      : 6
-    rows = addsRow(config.feature as string | undefined) ? 3 : 2
+    const tile = config as { size?: string; entity?: string; feature?: string }
+    const entity = hass?.states[String(config.entity)]
+    columns = isWide(tile, entity) ? 12 : 6
+    rows = tileRows(tile, entity)
   }
   columns = own?.columns ?? columns
   rows = own?.rows ?? rows
