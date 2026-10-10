@@ -21,6 +21,8 @@ export type FeatureDef = {
   // What it draws along the bottom. A feature without one is the whole
   // tile instead, drawn by the tile itself, and adds no row.
   View?: ComponentType<FeatureProps>
+  // Drawn across from the icon instead, so it adds no row either.
+  beside?: boolean
 }
 
 const has = (attribute: string) => (entity: EntityState) => listOf(entity, attribute).length > 0
@@ -40,8 +42,9 @@ export const FEATURES: FeatureDef[] = [
     domains: ['light'],
     supports: light.warms,
     View: light.ColorTemp,
+    beside: true,
   },
-  { id: 'color', label: 'Color', domains: ['light'], supports: light.colors, View: light.Hue },
+  { id: 'color', label: 'Color', domains: ['light'], supports: light.colors, View: light.Hue, beside: true },
   {
     id: 'color-favorites',
     label: 'Favorite colors',
@@ -92,7 +95,7 @@ export const FEATURES: FeatureDef[] = [
     supports: bit(cover.SET_TILT),
     View: props => <cover.Favorites {...props} tilt />,
   },
-  { id: 'speed', label: 'Speed', domains: ['fan'], supports: bit(cover.FAN.speed), View: cover.FanSpeed },
+  { id: 'speed', label: 'Speed', domains: ['fan'], supports: bit(cover.FAN.speed) },
   {
     id: 'preset-modes',
     label: 'Preset',
@@ -249,7 +252,12 @@ export function featuresFor(entity: EntityState | undefined) {
 }
 
 // Whether a tile's feature goes along its bottom, making it a row taller.
-export const addsRow = (feature: string | undefined) => !!feature && !!FEATURES.find(f => f.id === feature && f.View)
+export const addsRow = (feature: string | undefined) =>
+  !!feature && !!FEATURES.find(f => f.id === feature && f.View && !f.beside)
+
+// Whether the feature is drawn across from the icon.
+export const besideIcon = (feature: string | undefined) =>
+  !!feature && !!FEATURES.find(f => f.id === feature && f.beside)
 
 // The features of a domain, for the editor, whatever the entity has.
 export function featuresOf(domains: string[] | 'any') {
@@ -265,6 +273,7 @@ export function Feature(props: FeatureProps) {
   const def = FEATURES.find(f => f.id === props.config.feature && f.domains.includes(domain))
   if (!def?.View) return null
   const View = def.View
+  if (def.beside) return <View {...props} />
   return (
     <div className="fp-feature">
       <View {...props} />

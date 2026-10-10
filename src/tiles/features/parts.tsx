@@ -189,6 +189,97 @@ export function Slider({
   )
 }
 
+type SlimProps = {
+  label: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  // The scale the bar is drawn in, like the hues of a color.
+  track: string
+  format: (value: number) => string
+  // Every value the finger passes over, then null when it lifts, so the
+  // tile can show it.
+  onMove?: (value: number | null) => void
+  onChange: (value: number) => void
+}
+
+// A slim bar of a scale with round ends and a handle where the value is,
+// for the top of a tile beside its icon. A press on it jumps there and a
+// drag follows the finger. The value is sent when the finger lifts, or a
+// moment after the last arrow key.
+export function SlimSlider({ label, value, min, max, step = 1, track, format, onMove, onChange }: SlimProps) {
+  const [dragging, setDragging] = useState<number | null>(null)
+  const [held, hold] = useHeld(value)
+  const bar = useRef<HTMLDivElement>(null)
+  const keyTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(keyTimer.current), [])
+  const shown = dragging ?? held
+  const clamp = (v: number) => Math.min(max, Math.max(min, Math.round((v - min) / step) * step + min))
+  const at = (e: PointerEvent) => {
+    const box = bar.current!.getBoundingClientRect()
+    return clamp(min + ((e.clientX - box.left) / box.width) * (max - min))
+  }
+  const move = (next: number | null) => {
+    setDragging(next)
+    onMove?.(next)
+  }
+  const send = (next: number) => {
+    move(null)
+    hold(next)
+    onChange(next)
+  }
+  const share = max > min ? (Math.min(max, Math.max(min, shown)) - min) / (max - min) : 0
+  return (
+    <div
+      ref={bar}
+      role="slider"
+      tabIndex={0}
+      aria-label={label}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={shown}
+      aria-valuetext={format(shown)}
+      className={cn('fp-slim', dragging !== null && 'fp-slim-dragging')}
+      style={{ '--_track': track, '--_share': share } as CSSProperties}
+      onPointerDown={e => {
+        e.stopPropagation()
+        if (e.button !== 0) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        move(at(e))
+      }}
+      onPointerMove={e => {
+        if (dragging === null) return
+        const next = at(e)
+        if (next !== dragging) move(next)
+      }}
+      onPointerUp={e => {
+        if (dragging === null) return
+        haptic('selection')
+        send(at(e))
+      }}
+      onPointerCancel={() => move(null)}
+      onClick={e => e.stopPropagation()}
+      onKeyDown={e => {
+        e.stopPropagation()
+        const big = Math.max(step, (max - min) / 20)
+        const moves: Record<string, number> = { ArrowRight: big, ArrowUp: big, ArrowLeft: -big, ArrowDown: -big }
+        let next: number
+        if (e.key in moves) next = clamp(shown + moves[e.key])
+        else if (e.key === 'Home') next = min
+        else if (e.key === 'End') next = max
+        else return
+        e.preventDefault()
+        move(next)
+        clearTimeout(keyTimer.current)
+        keyTimer.current = setTimeout(() => send(next), SEND_MS)
+      }}
+    >
+      <span className="fp-slim-handle" />
+    </div>
+  )
+}
+
 // A round button or a pill with words, pressed apart from the tile.
 export function press(onPress: () => void) {
   return {
@@ -347,9 +438,18 @@ export function Stepper({ label, value, step, min = -Infinity, max = Infinity, f
   )
 }
 
+// What a feature beside the icon shows on the tile while a finger moves
+// it: what the state line says, and the color the tile takes.
+export type Preview = { state: string; color?: string }
+
 // What every feature is handed: the tile's entity, its config and Home
-// Assistant.
-export type FeatureProps = { env: TileEnv; config: TileConfig; entity: EntityState }
+// Assistant, and for one beside the icon, a way to show where it is going.
+export type FeatureProps = {
+  env: TileEnv
+  config: TileConfig
+  entity: EntityState
+  onPreview?: (preview: Preview | null) => void
+}
 
 export const domainOf = (entity: EntityState) => entity.entity_id.split('.')[0]
 

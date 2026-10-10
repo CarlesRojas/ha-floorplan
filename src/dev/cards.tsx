@@ -662,15 +662,38 @@ const shapeOf = (node: Element): string => {
   return `${own}(${parts.map(shapeOf).join(',')})`
 }
 
-// Keeps the first entity of a style for each card that looks different,
-// once React has drawn them, so a style shows each of its shapes once.
-const dedupe = (shown: { group: HTMLElement[]; made: Card[] }[]) =>
+// Keeps the first card of each shape on the whole page, once React has
+// drawn them, so every card that looks different shows once. A style whose
+// cards all look like an earlier one is left out, and the earlier one
+// names it, like a fan's speed that is a light's brightness.
+type Shown = { style: string; section: HTMLElement; group: HTMLElement[]; made: Card[] }
+const shown: Shown[] = []
+const dedupe = () =>
   setTimeout(() => {
-    const seen = new Set<string>()
-    for (const { group, made } of shown) {
-      const shape = made.map(card => [...(card.shadowRoot?.children ?? [])].map(shapeOf).join()).join('|')
-      if (seen.has(shape)) for (const cell of group) cell.remove()
-      seen.add(shape)
+    const first = new Map<string, Shown>()
+    const also = new Map<HTMLElement, string[]>()
+    for (const one of shown) {
+      const shape = one.made.map(card => [...(card.shadowRoot?.children ?? [])].map(shapeOf).join()).join('|')
+      const earlier = first.get(shape)
+      if (!earlier) {
+        first.set(shape, one)
+        continue
+      }
+      for (const cell of one.group) cell.remove()
+      if (earlier.style !== one.style) {
+        const names = also.get(earlier.section) ?? []
+        if (!names.includes(one.style)) names.push(one.style)
+        also.set(earlier.section, names)
+      }
+    }
+    for (const { section } of shown) {
+      if (!section.querySelector('[data-cell]')) section.remove()
+    }
+    for (const [section, names] of also) {
+      const note = document.createElement('div')
+      note.textContent = `Also ${names.join(', ')}, which look the same.`
+      note.style.cssText = 'font:500 12px system-ui;opacity:.55'
+      section.querySelector('h2')!.after(note)
     }
   }, 400)
 
@@ -680,38 +703,44 @@ for (const [style, uses] of styles) {
   section.innerHTML = `<h2 style="margin:0 0 4px;font:600 17px system-ui">${style}</h2>`
   const row = document.createElement('div')
   row.style.cssText = 'display:flex;flex-wrap:wrap;gap:24px 32px;align-items:flex-start'
-  const shown: { group: HTMLElement[]; made: Card[] }[] = []
+  // One card of the style, at one size, with what it shows under it.
+  const place = (into: HTMLElement, entity: EntityState, size: { name: string; config: Record<string, unknown> }) => {
+    const card = make(size.config)
+    cards.push(card)
+    const { columns = 6, rows = 2 } = gridOf(card, size.config)
+    const cell = document.createElement('div')
+    cell.dataset.cell = ''
+    cell.style.cssText = `width:${span(columns === 'full' ? 12 : Number(columns))}px`
+    const caption = document.createElement('div')
+    caption.textContent = [
+      entity.attributes.friendly_name ?? entity.entity_id,
+      size.name,
+      `${columns === 'full' ? 12 : columns} × ${rows}`,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+    caption.style.cssText = 'margin:14px 4px 6px;font:500 11px system-ui;opacity:.55;white-space:nowrap'
+    const box = document.createElement('div')
+    box.style.cssText = rows === 'auto' ? '' : `height:${Number(rows) * ROW + (Number(rows) - 1) * GAP}px`
+    box.appendChild(card)
+    cell.append(caption, box)
+    into.appendChild(cell)
+    return { cell, card }
+  }
   for (const { entity, config } of uses) {
     const group: HTMLElement[] = []
     const made: Card[] = []
     for (const size of sizesOf(config)) {
-      const card = make(size.config)
-      cards.push(card)
-      const { columns = 6, rows = 2 } = gridOf(card, size.config)
-      const cell = document.createElement('div')
-      cell.style.cssText = `width:${span(columns === 'full' ? 12 : Number(columns))}px`
-      const caption = document.createElement('div')
-      caption.textContent = [
-        entity.attributes.friendly_name ?? entity.entity_id,
-        size.name,
-        `${columns === 'full' ? 12 : columns} × ${rows}`,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-      caption.style.cssText = 'margin:14px 4px 6px;font:500 11px system-ui;opacity:.55;white-space:nowrap'
-      const box = document.createElement('div')
-      box.style.cssText = rows === 'auto' ? '' : `height:${Number(rows) * ROW + (Number(rows) - 1) * GAP}px`
-      box.appendChild(card)
-      cell.append(caption, box)
-      row.appendChild(cell)
+      const { cell, card } = place(row, entity, size)
       group.push(cell)
       made.push(card)
     }
-    shown.push({ group, made })
+    shown.push({ style, section, group, made })
   }
-  dedupe(shown)
   section.appendChild(row)
   main.appendChild(section)
 }
+
+dedupe()
 
 window.addEventListener('hass-more-info', e => console.info('more-info', (e as CustomEvent).detail))

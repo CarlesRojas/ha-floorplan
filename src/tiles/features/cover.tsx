@@ -131,23 +131,6 @@ export function Favorites({ env, config, entity, tilt }: FeatureProps & { tilt?:
   )
 }
 
-// How fast the fan turns, in its own steps. Down to nothing turns it off.
-export function FanSpeed({ env, entity }: FeatureProps) {
-  const step = numberOf(entity, 'percentage_step') ?? 1
-  const percentage = entity.state === 'on' ? (numberOf(entity, 'percentage') ?? 100) : 0
-  return (
-    <Slider
-      label="Speed"
-      icon="ph:fan"
-      value={percentage}
-      step={step}
-      fill="var(--_accent)"
-      format={v => (v === 0 ? 'Off' : `${Math.round(v)}%`)}
-      onChange={v => callService(env.hass, 'fan.set_percentage', { entity_id: entity.entity_id, percentage: v })}
-    />
-  )
-}
-
 export function FanPreset({ env, entity }: FeatureProps) {
   const preset = typeof entity.attributes.preset_mode === 'string' ? entity.attributes.preset_mode : null
   return (

@@ -1,11 +1,12 @@
 import { entityName, moreInfo, runAction, type TileEnv } from '#/tiles/actions.ts'
-import { addsRow, Feature } from '#/tiles/features/index.tsx'
+import { addsRow, besideIcon, Feature } from '#/tiles/features/index.tsx'
+import type { Preview } from '#/tiles/features/parts.tsx'
 import { useTileGestures } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
 import { defaultIcon } from '#/tiles/icons.ts'
 import type { EntityState } from '#/types.ts'
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 
 type Props = {
   env: TileEnv
@@ -67,7 +68,11 @@ export function Tile({
     onTap: unavailable ? undefined : () => runAction(env, config.tap_action, () => onTap?.()),
     onHold: () => runAction(env, config.hold_action, () => moreInfo(env.host, config.entity)),
   })
-  const shown = unavailable ? 'Unavailable' : (config.state_text ?? state)
+  // Where a feature beside the icon is being moved to, shown on the tile
+  // until the finger lifts.
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const beside = besideIcon(config.feature) && !unavailable
+  const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? state)
   const name = entityName(config, entity)
   const on = active && !unavailable
   return (
@@ -83,7 +88,14 @@ export function Tile({
       data-pressed={(pressed && !unavailable) || undefined}
       data-unavailable={unavailable || undefined}
       className="fp-tile"
-      style={{ '--_tile-accent': config.color ?? accent, '--_tile-glow': glow } as CSSProperties}
+      style={
+        {
+          '--_tile-accent': preview?.color
+            ? `color-mix(in oklab, ${preview.color}, black 15%)`
+            : (config.color ?? accent),
+          '--_tile-glow': preview?.color ?? glow,
+        } as CSSProperties
+      }
     >
       <div className="fp-top">
         <Icon
@@ -95,7 +107,13 @@ export function Tile({
           }
           on={on && !looksOff}
         />
-        {config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>}
+        {beside ? (
+          <div className="fp-beside">
+            <Feature env={env} config={config} entity={entity!} onPreview={setPreview} />
+          </div>
+        ) : (
+          config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>
+        )}
       </div>
       <div className="fp-text">
         <div className="fp-name">{name}</div>

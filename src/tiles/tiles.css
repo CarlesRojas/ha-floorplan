@@ -35,6 +35,7 @@
   --_icon-size: var(--fp-tile-icon-size, 28px);
   --_name-size: var(--fp-tile-name-size, 15px);
   --_state-size: var(--fp-tile-state-size, 13px);
+  --_handle: var(--fp-slider-handle, #1c1c1e);
   --_duration: var(--fp-tile-duration, 200ms);
   --_press: var(--fp-tile-press-scale, 0.96);
   --_focus: var(--fp-tile-focus-scale, 1.03);
@@ -54,6 +55,7 @@
   --_text-inactive: var(--fp-text-inactive, #1c1c1e);
   --_bg-active: var(--fp-tile-bg-active, rgba(28, 28, 30, 0.94));
   --_text-active: var(--fp-text-active, #ffffff);
+  --_handle: var(--fp-slider-handle, #f5f5f7);
 }
 
 /* The paler blues read on the dark tile where the deeper ones would not. */
@@ -246,6 +248,54 @@
   text-overflow: ellipsis;
   opacity: var(--_secondary);
   font-variant-numeric: tabular-nums;
+}
+
+/* A feature across from the icon, like a light's color, filling the space
+   the icon leaves. */
+.fp-beside {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: -2px 0 0 12px;
+}
+
+/* A slim bar of a scale with round ends, and a round handle where the
+   value is. */
+.fp-slim {
+  position: relative;
+  flex: 1 1 auto;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--_track);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  cursor: ew-resize;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.fp-slim:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.fp-slim-handle {
+  position: absolute;
+  top: 3px;
+  left: calc(3px + var(--_share) * (100% - 32px));
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--_handle);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  transition: left 120ms ease-out;
+}
+
+.fp-slim-dragging .fp-slim-handle {
+  transition: none;
 }
 
 /* Round buttons inside a tile, for the wide cover and vacuum tiles. */

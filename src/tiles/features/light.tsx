@@ -6,7 +6,7 @@ import {
   numberOf,
   optionWord,
   press,
-  Slider,
+  SlimSlider,
   SwitchPill,
   type FeatureProps,
 } from '#/tiles/features/parts.tsx'
@@ -25,22 +25,24 @@ export const colors = (entity: EntityState) => colorModes(entity).some(mode => C
 
 const rgb = (kelvin: number) => `rgb(${kelvinToRgb(kelvin).map(c => Math.round(c * 255))})`
 
-// How warm or cool its white is, along a bar that runs from candle light
-// to daylight.
-export function ColorTemp({ env, entity }: FeatureProps) {
+// How warm or cool its white is, along a slim bar beside the icon that
+// runs from candle light to daylight.
+export function ColorTemp({ env, entity, onPreview }: FeatureProps) {
   const min = numberOf(entity, 'min_color_temp_kelvin') ?? 2000
   const max = numberOf(entity, 'max_color_temp_kelvin') ?? 6500
   const kelvin = numberOf(entity, 'color_temp_kelvin') ?? Math.round((min + max) / 2)
   const stops = [0, 0.25, 0.5, 0.75, 1].map(t => `${rgb(min + (max - min) * t)} ${t * 100}%`)
+  const format = (v: number) => `${Math.round(v / 50) * 50} K`
   return (
-    <Slider
+    <SlimSlider
       label="Color temperature"
       value={kelvin}
       min={min}
       max={max}
       step={50}
       track={`linear-gradient(90deg, ${stops.join(', ')})`}
-      format={v => `${Math.round(v / 50) * 50} K`}
+      format={format}
+      onMove={v => onPreview?.(v === null ? null : { state: format(v), color: rgb(v) })}
       onChange={v => callService(env.hass, 'light.turn_on', { entity_id: entity.entity_id, color_temp_kelvin: v })}
     />
   )
@@ -48,18 +50,23 @@ export function ColorTemp({ env, entity }: FeatureProps) {
 
 const HUES = [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h} 100% 55%) ${(h / 360) * 100}%`).join(', ')
 
-// The hue it shines in, along a rainbow.
-export function Hue({ env, entity }: FeatureProps) {
+// The hue it shines in, along a slim rainbow beside the icon.
+export function Hue({ env, entity, onPreview }: FeatureProps) {
   const hs = entity.attributes.hs_color
   const hue = Array.isArray(hs) ? Math.round(hs[0]) : 0
   const saturation = Array.isArray(hs) && hs[1] > 20 ? hs[1] : 100
+  const format = (v: number) => `${v}°`
   return (
-    <Slider
+    <SlimSlider
       label="Color"
       value={hue}
+      min={0}
       max={360}
       track={`linear-gradient(90deg, ${HUES})`}
-      format={v => `${v}°`}
+      format={format}
+      onMove={v =>
+        onPreview?.(v === null ? null : { state: format(v), color: `hsl(${v} 100% ${100 - saturation / 2}%)` })
+      }
       onChange={v => callService(env.hass, 'light.turn_on', { entity_id: entity.entity_id, hs_color: [v, saturation] })}
     />
   )
