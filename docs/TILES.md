@@ -260,10 +260,10 @@ The tiles look finished without it, and change with any theme that sets these:
 | `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                       |
 | `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                        |
 | `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                         |
-| `fp-accent-climate`           | `#ff9f0a`                  | A water heater that is on                                                         |
-| `fp-accent-cool`              | `#64d2ff`                  | A humidifier                                                                      |
-| `fp-mode-heat`                | `#ff7f16`                  | A thermostat that heats                                                           |
-| `fp-mode-cool`                | `#5ab0ff`                  | A thermostat that cools                                                           |
+| `fp-accent-climate`           | `#ff7f16`                  | A water heater that is on, and the heating mode unless it is set                  |
+| `fp-accent-cool`              | `#5ab0ff`                  | A humidifier, and the cooling mode unless it is set                               |
+| `fp-mode-heat`                | `fp-accent-climate`        | A thermostat that heats                                                           |
+| `fp-mode-cool`                | `fp-accent-cool`           | A thermostat that cools                                                           |
 | `fp-mode-dry`                 | `#ffc60a`                  | A thermostat that dries the air                                                   |
 | `fp-mode-fan`                 | `#30c9a4`                  | A thermostat that only runs its fan                                               |
 | `fp-font-tile`                | Inter                      | The tiles' font                                                                   |
