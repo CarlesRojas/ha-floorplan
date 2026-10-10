@@ -32,8 +32,20 @@ export const BACKGROUNDS: Background[] = [
   {
     id: 'graphite',
     name: 'Graphite',
-    dark: 'linear-gradient(160deg, #3a3f4f 0%, #1d2029 45%, #0d0e13 100%)',
-    light: 'linear-gradient(160deg, #fcfcfd 0%, #eaecf0 45%, #d9dde4 100%)',
+    dark: [
+      blob('140% 90%', '15% 0%', '#343a4b'),
+      blob('110% 70%', '95% 35%', '#252b3a'),
+      blob('120% 70%', '35% 85%', 'rgba(110, 128, 168, 0.12)'),
+      blob('130% 80%', '100% 100%', '#161a26'),
+      'linear-gradient(160deg, #2a2e3a 0%, #1b1e27 45%, #0d0e13 100%)',
+    ].join(', '),
+    light: [
+      blob('140% 90%', '15% 0%', '#fdfdfe'),
+      blob('110% 70%', '95% 35%', '#e6eaf2'),
+      blob('120% 70%', '35% 85%', 'rgba(214, 223, 240, 0.85)'),
+      blob('130% 80%', '100% 100%', '#d6dbe5'),
+      'linear-gradient(160deg, #f8f9fb 0%, #eceef2 45%, #dfe2e8 100%)',
+    ].join(', '),
   },
   {
     id: 'dusk',
