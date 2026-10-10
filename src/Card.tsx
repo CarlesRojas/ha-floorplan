@@ -33,7 +33,9 @@ export default function Card({ hass, config, panel = false }: Props) {
   const [away, setAway] = useState(false)
   // A click on a room's floor takes the camera to the view saved for it. A
   // second click on that floor takes it back to the opening one, however
-  // the camera has been turned, panned or zoomed since. A room with no view saved has the one
+  // the camera has been turned, panned or zoomed since. The saved view is
+  // fitted to the card the way the opening one is, backed off along its
+  // angle until the whole room shows. A room with no view saved has the one
   // the camera works out for it, the room alone filling the picture.
   //
   // The room flown to stands alone: the rest of the home fades away and
@@ -42,7 +44,7 @@ export default function Card({ hass, config, panel = false }: Props) {
   const roomOf = (id: string) => config.rooms?.find(r => r.id === id)
   const viewOf = (id: string) => {
     const room = roomOf(id)
-    return room && (room.camera ?? camera.current?.frame(room))
+    return room && camera.current?.show(room)
   }
   // A room that has left the plan holds no focus.
   const focused = focus !== null && roomOf(focus) ? focus : null

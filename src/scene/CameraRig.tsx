@@ -17,10 +17,12 @@ import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/cont
 // What the outside can ask of the camera: where it is now, as a view that
 // can be saved, to travel to a saved view, and to go back to the view it
 // opened with. It also says where it would stand to look at one room alone,
-// which is the view of a room that has none saved.
+// which is the view of a room that has none saved, and where it stands to
+// show a room in this card, its saved view fitted to the card's shape.
 export type CameraHandle = {
   view: () => CameraView
   frame: (room?: RoomConfig) => CameraView
+  show: (room: RoomConfig) => CameraView
   flyTo: (view: CameraView) => void
   reset: () => void
 }
@@ -155,18 +157,23 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
     return { position: triple(camera.position), target: triple(target) }
   }
 
-  // The view the camera opened with: the saved one, backed off if the
-  // whole plan would not show in it at this shape, or the plan framed. On
-  // a card as narrow as a phone the saved angle frames the plan closely.
-  const home = (): CameraView => {
+  // A saved view, or none, fitted to the card's shape around these rooms:
+  // kept when they all show in it, and otherwise backed off along its angle
+  // until they do. On a card as narrow as a phone the angle frames them
+  // closely. With no view they are framed from the standard side.
+  const fit = (saved: CameraView | undefined, shown: RoomConfig[], items: DecorationConfig[]): CameraView => {
     const aspect = size.width / size.height
-    const height = sceneHeight(decorations)
+    const height = sceneHeight(items)
     const margin = fitMargin(size.width)
-    const { position, target } = view
-      ? fitView(view, rooms, aspect, height, margin, size.width < NARROW_CARD_PX)
-      : frameRooms(rooms, aspect, height, undefined, margin, size.width < NARROW_CARD_PX)
+    const narrow = size.width < NARROW_CARD_PX
+    const { position, target } = saved
+      ? fitView(saved, shown, aspect, height, margin, narrow)
+      : frameRooms(shown, aspect, height, undefined, margin, narrow)
     return { position: triple(position), target: triple(target) }
   }
+
+  // The view the camera opened with.
+  const home = () => fit(view, rooms, decorations)
 
   // One room alone, filling the picture, looked at from the same side and
   // height as the opening view, so flying there only closes in.
@@ -192,9 +199,23 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
       height,
       [from.x, from.y, from.z],
       fitMargin(size.width),
+      true,
     )
     return { position: triple(position), target: triple(target) }
   }
+
+  // A room as the card shows it, worked out in full before the camera sets
+  // off so the flight goes straight there: its saved view fitted to this
+  // card the way the opening view is, or without one, the room framed from
+  // the opening view's side.
+  const show = (room: RoomConfig): CameraView =>
+    room.camera
+      ? fit(
+          room.camera,
+          [room],
+          decorations.filter(d => d.room === room.id),
+        )
+      : frame(room)
 
   // A flight that turns further round the home takes longer, so it moves
   // no faster than a short one.
@@ -219,6 +240,7 @@ export default function CameraRig({ rooms, decorations, view, handle, onAway, wh
   useImperativeHandle(handle, () => ({
     view: current,
     frame,
+    show,
     flyTo: to => {
       moved.current = true
       setAway(true)
