@@ -23,10 +23,10 @@
   --_accent-cover: var(--fp-accent-cover, #32ade6);
   --_accent-climate: var(--fp-accent-climate, #ff9f0a);
   --_accent-cool: var(--fp-accent-cool, #64d2ff);
-  --_mode-heat: var(--fp-mode-heat, var(--_accent-climate));
-  --_mode-cool: var(--fp-mode-cool, #409cff);
-  --_mode-dry: var(--fp-mode-dry, #ffd60a);
-  --_mode-fan: var(--fp-mode-fan, #30c7be);
+  --_mode-heat: var(--fp-mode-heat, #ff7f16);
+  --_mode-cool: var(--fp-mode-cool, #5ab0ff);
+  --_mode-dry: var(--fp-mode-dry, #ffc60a);
+  --_mode-fan: var(--fp-mode-fan, #30c9a4);
   --_alarm-armed: var(--fp-alarm-armed, #ff453a);
   --_alarm-disarmed: var(--fp-alarm-disarmed, #30d158);
   --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);

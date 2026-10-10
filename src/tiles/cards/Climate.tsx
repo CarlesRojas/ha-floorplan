@@ -22,7 +22,7 @@ export default function Climate({ env, config }: Props) {
   const attributes = entity?.attributes ?? {}
   const on = !!entity && entity.state !== 'off'
   const action = typeof attributes.hvac_action === 'string' ? attributes.hvac_action : null
-  const color = (entity && climateColor(entity.state, action)) ?? 'var(--_mode-heat)'
+  const color = (entity && climateColor(entity.state, action)) ?? 'var(--_accent-climate)'
   const wide = config.size === 'wide'
 
   // A tile with minus and plus shows what it aims for between them.
