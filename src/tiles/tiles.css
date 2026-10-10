@@ -44,10 +44,20 @@
   display: none;
 }
 
-/* On a light dashboard the translucent tile is light too, with dark text. */
+/* On a light dashboard the translucent tile is light too, with dark text,
+   and a tile that is on turns dark with white text, since a white one would
+   not stand out from the page. */
 :host([data-light]) {
   --_bg-inactive: var(--fp-tile-bg-inactive, rgba(120, 120, 128, 0.16));
   --_text-inactive: var(--fp-text-inactive, #1c1c1e);
+  --_bg-active: var(--fp-tile-bg-active, rgba(28, 28, 30, 0.94));
+  --_text-active: var(--fp-text-active, #ffffff);
+}
+
+/* The paler blues read on the dark tile where the deeper ones would not. */
+:host([data-light]) .fp-tile[data-active] {
+  --_mode-cool: var(--fp-mode-cool, #64d2ff);
+  --_mode-dry: var(--fp-mode-dry, #5ac8e0);
 }
 
 .fp-tile {
