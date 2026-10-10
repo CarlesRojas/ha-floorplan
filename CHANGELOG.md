@@ -11,6 +11,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Added
 
+- The floorplan card lays a soft gradient behind its view, with five to choose from in the card's editor and a separate choice for a light and a dark dashboard.
 - The side panel's tiles fade out and the next room's fade in when the floorplan card flies to a room or back to the whole home.
 - On a light dashboard a tile that is on is dark with white text, so it stands out from the page.
 - A room flown to shows a small rounded triangle, made of the next room's floor, just past each stretch it shares with a room beside it that has no door in between, and a click on it flies to that room, the way a click on a door does.

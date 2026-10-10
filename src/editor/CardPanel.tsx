@@ -1,8 +1,9 @@
+import { BACKGROUNDS, DEFAULT_BACKGROUND, THEME_BACKGROUND } from '#/lib/background.ts'
 import { cn } from '#/lib/utils.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
 import { Switch } from '#/editor/panel.tsx'
 import { entityName } from '#/devices/catalog.ts'
-import type { CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
+import type { BackgroundConfig, CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
 import { roomEntities } from '#/tiles/auto.ts'
 import { faGripVertical, faPen, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -25,8 +26,8 @@ type Props = {
 }
 
 // What the card's tab in Home Assistant's dialog shows: the way into the
-// editor first, then the side panel and what goes in it, and how to move
-// the view last.
+// editor first, then the side panel, the background, what goes in the
+// panel, and how to move the view last.
 export default function CardPanel({ hass, config, onChange, opening, onOpen }: Props) {
   const rooms = config.rooms ?? []
   const sidePanel = config.side_panel === true
@@ -59,6 +60,15 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
     if (!next.entities?.length) delete next.entities
     const { home: _, ...rest } = config
     onChange(Object.keys(next).length ? { ...rest, home: next } : rest)
+  }
+
+  // Writes the background for one mode, leaving out the default so the YAML
+  // stays as short as it was.
+  const setBackground = (mode: 'light' | 'dark', id: string) => {
+    const next: BackgroundConfig = { ...config.background, [mode]: id }
+    if (next[mode] === DEFAULT_BACKGROUND) delete next[mode]
+    const { background: _, ...rest } = config
+    onChange(Object.keys(next).length ? { ...rest, background: next } : rest)
   }
 
   // An entity has one place: a piece on the plan, or one room's list.
@@ -98,6 +108,24 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
             onChange={setSidePanel}
           />
         </label>
+      </Section>
+
+      <Section
+        title="Background"
+        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Theme leaves the dashboard's own background."
+      >
+        <BackgroundPicker
+          title="Light"
+          mode="light"
+          value={config.background?.light ?? DEFAULT_BACKGROUND}
+          onChange={id => setBackground('light', id)}
+        />
+        <BackgroundPicker
+          title="Dark"
+          mode="dark"
+          value={config.background?.dark ?? DEFAULT_BACKGROUND}
+          onChange={id => setBackground('dark', id)}
+        />
       </Section>
 
       {sidePanel && (
@@ -179,6 +207,57 @@ function Section({ title, description, children }: { title: string; description?
       </div>
       {children}
     </section>
+  )
+}
+
+// A row of swatches, one for each background in the given mode and one for
+// the theme's own, with the chosen one ringed.
+function BackgroundPicker({
+  title,
+  mode,
+  value,
+  onChange,
+}: {
+  title: string
+  mode: 'light' | 'dark'
+  value: string
+  onChange: (id: string) => void
+}) {
+  const options = [
+    ...BACKGROUNDS.map(b => ({ id: b.id, name: b.name, swatch: b[mode] })),
+    { id: THEME_BACKGROUND, name: 'Theme', swatch: null },
+  ]
+  return (
+    <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
+      <p className="px-1 text-sm font-semibold">{title}</p>
+      <div role="radiogroup" aria-label={`${title} background`} className="grid grid-cols-3 gap-2">
+        {options.map(option => {
+          const chosen = option.id === value
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={chosen}
+              onClick={() => onChange(option.id)}
+              className="group flex cursor-pointer flex-col items-center gap-1.5"
+            >
+              <span
+                className={cn(
+                  'block aspect-4/3 w-full rounded-lg ring-offset-2 ring-offset-(--card-background-color) transition-shadow',
+                  chosen ? 'ring-2 ring-(--primary-color)' : 'ring-1 ring-(--divider-color) group-hover:ring-2',
+                  !option.swatch && 'border border-dashed border-(--secondary-text-color) ring-0',
+                )}
+                style={option.swatch ? { background: option.swatch } : undefined}
+              />
+              <span className={cn('text-xs', chosen ? 'font-semibold' : 'text-(--secondary-text-color)')}>
+                {option.name}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 

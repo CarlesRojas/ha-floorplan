@@ -4,6 +4,7 @@ import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
 import { registerTiles } from '#/tiles/index.tsx'
+import { ViewBackground } from '#/lib/background.ts'
 import { inPanelView } from '#/lib/panelView.ts'
 import WithSidePanel from '#/tiles/WithSidePanel.tsx'
 import type { CardConfig } from '#/types.ts'
@@ -150,6 +151,8 @@ function validate(config: CardConfig) {
 }
 
 class Floorplan3DCard extends ReactHost<CardConfig> {
+  private background = new ViewBackground(this)
+
   static getConfigElement() {
     return document.createElement(EDITOR_TYPE)
   }
@@ -177,6 +180,21 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
   // section's width without it.
   getGridOptions() {
     return { columns: this._config?.side_panel ? 'full' : 12, rows: 'auto' }
+  }
+
+  // The view's background follows the config and the dashboard's dark mode,
+  // so it is laid again on every render.
+  protected render() {
+    super.render()
+    if (this._config) this.background.apply(this._config.background, this._hass)
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    // A card only moved is back by the next tick and keeps its background.
+    setTimeout(() => {
+      if (!this.isConnected) this.background.release()
+    }, 0)
   }
 
   protected view() {
