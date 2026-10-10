@@ -2,7 +2,7 @@ import { formatAttribute, formatState, moreInfo, type TileEnv } from '#/tiles/ac
 import TemperatureStepper from '#/tiles/cards/TemperatureStepper.tsx'
 import { HvacModes } from '#/tiles/features/climate.tsx'
 import { HVAC_MODES } from '#/tiles/modes.ts'
-import { listOf } from '#/tiles/features/parts.tsx'
+import { formatDegrees, listOf } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 
@@ -28,11 +28,11 @@ export default function Climate({ env, config }: Props) {
   const stepped = (wide && !config.feature) || config.feature === 'target-temperature'
   const now =
     entity && typeof attributes.current_temperature === 'number'
-      ? formatAttribute(env.hass, entity, 'current_temperature')
+      ? formatDegrees(env.hass, attributes.current_temperature)
       : null
   const aim =
     !stepped && on && entity && typeof attributes.temperature === 'number'
-      ? `to ${formatAttribute(env.hass, entity, 'temperature')}`
+      ? `to ${formatDegrees(env.hass, attributes.temperature)}`
       : null
   const parts = [
     entity &&

@@ -495,9 +495,8 @@ export const domainOf = (entity: EntityState) => entity.entity_id.split('.')[0]
 export const formatNumber = (hass: HomeAssistant, value: number, digits = 1) =>
   new Intl.NumberFormat(hass.locale?.language, { maximumFractionDigits: digits }).format(value)
 
-// A temperature in the unit the home measures in, like 21.5 °C.
-export const formatDegrees = (hass: HomeAssistant, value: number) =>
-  `${formatNumber(hass, value)} ${hass.config?.unit_system?.temperature ?? '°C'}`
+// A temperature with a degree sign and no unit, like 21.5°.
+export const formatDegrees = (hass: HomeAssistant, value: number) => `${formatNumber(hass, value)}°`
 
 // Round buttons side by side in one frosted pill, like the modes of a
 // thermostat or the buttons of a player.

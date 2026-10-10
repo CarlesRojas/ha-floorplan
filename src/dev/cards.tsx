@@ -487,7 +487,6 @@ hass = {
   devices: {},
   themes: { darkMode: !light },
   locale: { language: 'en' },
-  config: { unit_system: { temperature: '°C' } },
   // Home Assistant's words for an attribute, near enough: 20.5 °C for a
   // temperature and Heating for heating.
   formatEntityAttributeValue: (entity, attribute, value = entity.attributes[attribute]) => {

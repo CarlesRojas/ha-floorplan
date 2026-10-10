@@ -542,11 +542,11 @@
 }
 
 /* The minus and plus of a thermostat, with what it aims for between them. */
-/* As wide as the widest temperature it shows, like 99.5 °F, so it
+/* As wide as the widest temperature it shows, like 99.5°, so it
    keeps its width as the number changes. */
 .fp-stepper-value,
 .fp-stepper-end {
-  --_digits: 4.2em;
+  --_digits: 3.4em;
   flex: none;
   align-self: center;
   width: var(--_digits);
