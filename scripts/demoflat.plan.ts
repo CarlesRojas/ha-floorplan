@@ -87,7 +87,7 @@ const decorations: DecorationConfig[] = [
   },
   { id: 'front_door', kind: 'door', room: 'living', position: [3.7, 0], rotation: 180, variant: 'panel' },
   { id: 'front_lock', kind: 'smart_lock', room: 'living', position: [3.05, 0], rotation: 180 },
-  { id: 'thermostat', kind: 'thermostat', room: 'kitchen', position: [4.2, 3.7], rotation: 270 },
+  { id: 'thermostat', kind: 'thermostat', room: 'kitchen', position: [4.2, 4.15], rotation: 270 },
   { id: 'living_light', kind: 'light_ceiling', room: 'living', position: [2.3, 1.8] },
   { id: 'vacuum', kind: 'vacuum_robot', room: 'bathroom', position: [7.55, 0.35], rotation: 270 },
   { id: 'counter_a', kind: 'kitchen_counter', room: 'kitchen', position: [0.9, 5.3], variant: 'run' },
@@ -192,7 +192,7 @@ const decorations: DecorationConfig[] = [
     on: 'dresser',
     params: { size: 0.39 },
   },
-  { id: 'bedroom_door', kind: 'door', room: 'bedroom', position: [4.2, 3.05], rotation: 90, variant: 'flush' },
+  { id: 'bedroom_door', kind: 'door', room: 'bedroom', position: [4.2, 3.5], rotation: 90, variant: 'flush' },
   {
     id: 'shower',
     kind: 'shower',
@@ -224,6 +224,7 @@ const decorations: DecorationConfig[] = [
     room: 'bathroom',
     position: [5.85, 2.05],
     variant: 'snake',
+    on: 'basin',
     params: { size: 0.23 },
   },
   {
@@ -343,6 +344,7 @@ export const DEMO_FLAT: CardConfig = {
       points: LIVING,
       floor: { material: 'wood' },
       camera: { position: [-0.4, 4.3, -4.68], target: [2.24, 0.3, -1.11] },
+      entities: ['climate.living_room'],
       order: [
         'light.living_room',
         'light.floor_lamp',
@@ -350,6 +352,7 @@ export const DEMO_FLAT: CardConfig = {
         'lock.front_door',
         'alarm_control_panel.home',
         'camera.backyard',
+        'climate.living_room',
       ],
     },
     {
@@ -421,6 +424,7 @@ const NAMES: Record<string, string> = {
   'cover.kitchen_blind': 'Kitchen blind',
   'weather.home': 'Home',
   'climate.thermostat': 'Thermostat',
+  'climate.living_room': 'Living room thermostat',
   'light.bedside_lamps': 'Bedside lamps',
   'light.bedroom': 'Bedroom light',
   'fan.ceiling_fan': 'Ceiling fan',

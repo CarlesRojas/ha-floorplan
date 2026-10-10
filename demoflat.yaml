@@ -17,6 +17,26 @@ rooms:
     camera:
       position: [-0.4, 4.3, -4.68]
       target: [2.24, 0.3, -1.11]
+    entities:
+      - 0: c
+        1: l
+        2: i
+        3: m
+        4: a
+        5: t
+        6: e
+        7: "."
+        8: l
+        9: i
+        10: v
+        11: i
+        12: n
+        13: g
+        14: "_"
+        15: r
+        16: o
+        17: o
+        18: m
     order:
       - 0: l
         1: i
@@ -127,6 +147,25 @@ rooms:
         12: a
         13: r
         14: d
+      - 0: c
+        1: l
+        2: i
+        3: m
+        4: a
+        5: t
+        6: e
+        7: "."
+        8: l
+        9: i
+        10: v
+        11: i
+        12: n
+        13: g
+        14: "_"
+        15: r
+        16: o
+        17: o
+        18: m
   - id: kitchen
     name: Kitchen
     area_id: kitchen
@@ -656,7 +695,7 @@ devices:
         11: d
   - entity_id: climate.thermostat
     room: kitchen
-    position: [4.2, 3.7]
+    position: [4.2, 4.15]
     decorations:
       - 0: t
         1: h
@@ -987,7 +1026,7 @@ decorations:
   - id: thermostat
     kind: thermostat
     room: kitchen
-    position: [4.2, 3.7]
+    position: [4.2, 4.15]
     rotation: 270
   - id: living_light
     kind: light_ceiling
@@ -1166,7 +1205,7 @@ decorations:
   - id: bedroom_door
     kind: door
     room: bedroom
-    position: [4.2, 3.05]
+    position: [4.2, 3.5]
     rotation: 90
     variant: flush
   - id: shower
@@ -1200,6 +1239,7 @@ decorations:
     room: bathroom
     position: [5.85, 2.05]
     variant: snake
+    on: basin
     params:
       size: 0.23
   - id: bathroom_mirror
