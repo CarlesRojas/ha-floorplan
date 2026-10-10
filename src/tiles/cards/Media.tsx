@@ -1,6 +1,9 @@
 import { callService, formatState, type TileEnv } from '#/tiles/actions.ts'
-import type { TileConfig } from '#/tiles/host.tsx'
+import { FillTile } from '#/tiles/cards/Fill.tsx'
 import { Control } from '#/tiles/Control.tsx'
+import { MEDIA } from '#/tiles/features/media.tsx'
+import { numberOf, supports } from '#/tiles/features/parts.tsx'
+import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 
 // The media player features the buttons need, as Home Assistant numbers them.
@@ -15,7 +18,9 @@ type Props = { env: TileEnv; config: TileConfig }
 // A speaker or a TV. A tap plays or pauses it, or turns it on while it is
 // off. The line under the name says what is playing. A wide tile adds
 // previous, play or pause, and next buttons, and a power button for one
-// that is on and can be turned off. Lit while it plays.
+// that is on and can be turned off. Lit while it plays. With the volume
+// feature the whole tile is its volume, filled from the left, and a tap
+// still plays or pauses it.
 export default function Media({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const attributes = entity?.attributes ?? {}
@@ -26,6 +31,26 @@ export default function Media({ env, config }: Props) {
   const state = loaded && title.length ? title.join(' · ') : formatState(env.hass, entity)
   const on = !!entity && !['off', 'standby', 'unavailable', 'unknown'].includes(entity.state)
   const run = (service: string) => () => callService(env.hass, `media_player.${service}`, { entity_id: config.entity })
+  const onTap = loaded ? run('media_play_pause') : run('toggle')
+  if (config.feature === 'volume-slider' && on && supports(entity, MEDIA.volumeSet)) {
+    const { feature: _, ...plain } = config
+    const muted = attributes.is_volume_muted === true
+    return (
+      <FillTile
+        env={env}
+        config={plain}
+        entity={entity}
+        value={Math.round((numberOf(entity, 'volume_level') ?? 0) * 100)}
+        on={playing}
+        accent="var(--_accent)"
+        format={v => [muted ? 'Muted' : `${v}%`, ...(loaded ? title : [])].join(' · ')}
+        onTap={onTap}
+        onSend={v =>
+          callService(env.hass, 'media_player.volume_set', { entity_id: entity.entity_id, volume_level: v / 100 })
+        }
+      />
+    )
+  }
   return (
     <Tile
       env={env}
@@ -34,7 +59,7 @@ export default function Media({ env, config }: Props) {
       active={playing}
       toggles
       state={state}
-      onTap={loaded ? run('media_play_pause') : run('toggle')}
+      onTap={onTap}
       controls={
         (loaded || on) && (
           <>

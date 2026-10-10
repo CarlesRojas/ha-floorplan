@@ -45,6 +45,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- A media player tile with the volume is its volume across the whole tile, dragged sideways like a light's brightness, while a tap still plays or pauses it.
 - The rainbow of a light's color bar and its favorite colors are softer and even in lightness, so no color glares on the tile.
 - The on and off switch under a light's or a humidifier's dial and a fan's oscillate control are now pills that fill in while on, in place of switches.
 - A cover that cannot stop shows only up and down on its wide tile.

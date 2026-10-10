@@ -188,7 +188,6 @@ export const FEATURES: FeatureDef[] = [
     label: 'Volume',
     domains: ['media_player'],
     supports: bit(media.MEDIA.volumeSet),
-    View: media.VolumeSlider,
   },
   {
     id: 'volume-buttons',
