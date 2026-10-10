@@ -11,7 +11,6 @@ import {
   faExpand,
   faImage,
   faCube,
-  faLocationArrow,
   faMoon,
   faRuler,
   faSun,
@@ -54,10 +53,6 @@ type Props = {
   onShowPreview: () => void
   hour: number
   onHour: (hour: number) => void
-  sunDirection: number
-  onSunDirection: (degrees: number) => void
-  // Called when the slider is let go, to save the new direction.
-  onSunDirectionDone: () => void
   trace: Trace | null
   onTrace: (trace: Trace | null) => void
   onPickTrace: (file: File) => Promise<void>
@@ -73,9 +68,6 @@ export default function Toolbar({
   onShowPreview,
   hour,
   onHour,
-  sunDirection,
-  onSunDirection,
-  onSunDirectionDone,
   trace,
   onTrace,
   onPickTrace,
@@ -122,22 +114,6 @@ export default function Toolbar({
         step={0.5}
         onChange={onHour}
       />
-      {/* Which way the sun comes from. It is saved with the card, so the
-          room outside the editor is lit the same way. */}
-      <Dial
-        icon={faLocationArrow}
-        label={`Sun from the ${compass(sunDirection)}`}
-        shortcut="S"
-        note={`${sunDirection}°, saved with the card.`}
-        color={color}
-        value={sunDirection}
-        min={0}
-        max={345}
-        step={15}
-        spin={sunDirection + 135}
-        onChange={onSunDirection}
-        onDone={onSunDirectionDone}
-      />
       <ToolButton
         action={{
           id: 'lengths',
@@ -154,14 +130,6 @@ export default function Toolbar({
       <TracePanel color={color} trace={trace} onTrace={onTrace} onPick={onPickTrace} />
     </div>
   )
-}
-
-const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
-
-// The nearest compass point to a bearing, for naming where the sun is.
-function compass(degrees: number) {
-  const turns = ((degrees % 360) + 360) % 360
-  return POINTS[Math.round(turns / 45) % POINTS.length]
 }
 
 // The hour of a day, as a clock.
@@ -303,8 +271,7 @@ function TracePanel({
   )
 }
 
-// A button that opens a slider under itself. The sun's bearing turns its
-// arrow to point the way the light falls, so it faces away from the sun.
+// A button that opens a slider under itself.
 function Dial({
   icon,
   label,
@@ -315,9 +282,7 @@ function Dial({
   min,
   max,
   step,
-  spin,
   onChange,
-  onDone,
 }: {
   icon: IconDefinition
   label: string
@@ -328,9 +293,7 @@ function Dial({
   min: number
   max: number
   step: number
-  spin?: number
   onChange: (value: number) => void
-  onDone?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const box = useAway(open, () => setOpen(false))
@@ -343,11 +306,7 @@ function Dial({
         style={open ? { color } : undefined}
         className={cn(iconButton, 'size-8', open && 'bg-tint/12 hover:bg-tint/18')}
       >
-        <FontAwesomeIcon
-          icon={icon}
-          className="size-[15px]"
-          style={spin === undefined ? undefined : { transform: `rotate(${spin}deg)` }}
-        />
+        <FontAwesomeIcon icon={icon} className="size-[15px]" />
       </button>
       {open && (
         <div className={cn(floating, 'absolute top-full left-0 z-20 mt-2 w-64 p-4')}>
@@ -363,8 +322,6 @@ function Dial({
             step={step}
             value={value}
             onChange={e => onChange(Number(e.target.value))}
-            onPointerUp={onDone}
-            onKeyUp={onDone}
           />
         </div>
       )}

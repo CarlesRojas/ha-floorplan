@@ -3,7 +3,8 @@ import { setPreviewRoom } from '#/lib/previewRoom.ts'
 import { cn } from '#/lib/utils.ts'
 import { field, group, iconButton } from '#/editor/look.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
-import { Switch } from '#/editor/panel.tsx'
+import { ResetButton, Slider, Switch } from '#/editor/panel.tsx'
+import { SUN_DIRECTION_DEG } from '#/constants.ts'
 import { EDITOR_TINT_COLOR } from '#/theme.ts'
 import { entityName } from '#/devices/catalog.ts'
 import type { BackgroundConfig, CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
@@ -13,6 +14,7 @@ import { defaultIcon } from '#/tiles/icons.ts'
 import {
   faCirclePlus,
   faGripVertical,
+  faLocationArrow,
   faMagnifyingGlass,
   faPenRuler,
   faSpinner,
@@ -38,13 +40,29 @@ type Props = {
 }
 
 // What the card's tab in Home Assistant's dialog shows: the way into the
-// editor first, then the side panel, the background, what goes in the
+// editor first, then how the card answers a click and where its light
+// comes from, then the side panel, the background, what goes in the
 // panel, and how to move the view last.
 export default function CardPanel({ hass, config, onChange, opening, onOpen }: Props) {
   const rooms = config.rooms ?? []
   const sidePanel = config.side_panel === true
   // The preview starts on the whole home each time the settings open.
   useEffect(() => () => setPreviewRoom(null), [])
+
+  // What a click on a device goes to first in the card. Devices first is
+  // what the card does when nothing is said, so it is not written down.
+  const roomsFirst = config.first_click === 'room'
+  const setRoomsFirst = (on: boolean) => {
+    const { first_click: _, ...rest } = config
+    onChange(on ? { ...rest, first_click: 'room' } : rest)
+  }
+
+  // Which way the sun comes from, left out of the YAML at its default.
+  const sun = config.sun_direction ?? SUN_DIRECTION_DEG
+  const setSun = (degrees: number) => {
+    const { sun_direction: _, ...rest } = config
+    onChange(degrees === SUN_DIRECTION_DEG ? rest : { ...rest, sun_direction: degrees })
+  }
 
   const setSidePanel = (on: boolean) => {
     const { side_panel: _, ...rest } = config
@@ -118,6 +136,48 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
             {opening && <FontAwesomeIcon icon={faSpinner} spin className="size-3" />}
             {opening ? 'Opening…' : 'Open editor'}
           </button>
+        </div>
+      </Section>
+
+      <Section
+        title="In the card"
+        description={
+          roomsFirst
+            ? 'The first click on a device goes to its room, and the device answers once the camera is there. The sun lights the rooms from the side you pick.'
+            : 'A click on a device acts on it from anywhere. The sun lights the rooms from the side you pick.'
+        }
+      >
+        <div className={cn(group, 'gap-0 py-0')}>
+          <label className="flex cursor-pointer items-center justify-between gap-4 py-2.5">
+            <span className="text-[13px]">Rooms first</span>
+            <Switch checked={roomsFirst} accent={EDITOR_TINT_COLOR} label="Rooms first" onChange={setRoomsFirst} />
+          </label>
+          <div className="border-separator flex flex-col gap-2 border-t py-3">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon
+                icon={faLocationArrow}
+                className="text-label-2 size-3"
+                // The arrow points the way the light falls, away from the sun.
+                style={{ transform: `rotate(${sun + 135}deg)` }}
+              />
+              <span className="flex-1 text-[13px]">Sun from the {compass(sun)}</span>
+              <span className="text-label-2 text-xs tabular-nums">{sun}°</span>
+              <ResetButton
+                label="Sun direction"
+                changed={sun !== SUN_DIRECTION_DEG}
+                onReset={() => setSun(SUN_DIRECTION_DEG)}
+              />
+            </div>
+            <Slider
+              aria-label="Sun direction"
+              className="w-full"
+              min={0}
+              max={355}
+              step={5}
+              value={sun}
+              onChange={e => setSun(Number(e.target.value))}
+            />
+          </div>
         </div>
       </Section>
 
@@ -217,6 +277,14 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
       </Section>
     </div>
   )
+}
+
+const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
+
+// The nearest compass point to a bearing, for naming where the sun is.
+function compass(degrees: number) {
+  const turns = ((degrees % 360) + 360) % 360
+  return POINTS[Math.round(turns / 45) % POINTS.length]
 }
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {

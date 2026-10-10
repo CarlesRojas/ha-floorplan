@@ -17,7 +17,8 @@ import { placeableEntities } from '#/devices/catalog.ts'
 import ModelPreview from '#/editor/ModelPreview.tsx'
 import TrySection from '#/editor/TrySection.tsx'
 import { canTry, type TryState, type TryStates } from '#/editor/tryState.ts'
-import { PreviewHandle, SelectedHeader, Signals, Slider, Sticky, Switch } from '#/editor/panel.tsx'
+import { PreviewHandle, ResetButton, SelectedHeader, Signals, Slider, Sticky, Switch } from '#/editor/panel.tsx'
+import { snapToWall } from '#/editor/walls.ts'
 import { Select } from '#/components/ui/select.tsx'
 import {
   AlertDialog,
@@ -41,7 +42,6 @@ import {
   faMagnifyingGlass,
   faMinus,
   faPlus,
-  faRotateLeft,
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -69,6 +69,15 @@ type Props = {
 }
 
 const accent = EDITOR_TINT_COLOR
+
+// A saved map without one of its keys, or nothing once it is empty, so a
+// setting put back to its default leaves no trace in the card's config.
+function without(values: Record<string, string>, key: string): Record<string, string> | undefined
+function without(values: Record<string, number>, key: string): Record<string, number> | undefined
+function without(values: Record<string, string | number>, key: string) {
+  const { [key]: _, ...rest } = values
+  return Object.keys(rest).length > 0 ? rest : undefined
+}
 
 export default function DecorationPanel({
   hass,
@@ -153,6 +162,9 @@ export default function DecorationPanel({
       return l.floor ? 'The floor' : 'On its own'
     }
     const itemRoom = rooms.find(r => r.id === item.room)
+    // A piece on a wall turns to face into the room, as it does when it is
+    // put there. Any other piece faces straight ahead.
+    const defaultRotation = kind.mount === 'wall' && itemRoom ? snapToWall(item.position, itemRoom.points).rotation : 0
     const roomIndex = rooms.findIndex(r => r.id === item.room)
     const roomTag = itemRoom ? (
       <span
@@ -175,13 +187,23 @@ export default function DecorationPanel({
           {/* Which style of the kind this one is. A pendant is listed once in
             the catalog and says here which of them it is. */}
           {kind.variants && kind.variants.length > 1 && (
-            <label className={cn(row, 'grid-cols-[96px_1fr]')}>
+            <label className={cn(row, 'grid-cols-[96px_1fr_24px]')}>
               Style
               <Select
                 aria-label="Style"
                 value={decorationVariant(kind, item.variant)?.id ?? ''}
                 options={kind.variants.map(v => ({ value: v.id, label: v.label }))}
                 onChange={v => onUpdate(item.id, { variant: v, params: withoutStyleDefaults(kind, item.params, v) })}
+              />
+              <ResetButton
+                label="Style"
+                changed={decorationVariant(kind, item.variant)?.id !== kind.variants[0].id}
+                onReset={() =>
+                  onUpdate(item.id, {
+                    variant: undefined,
+                    params: withoutStyleDefaults(kind, item.params, kind.variants![0].id),
+                  })
+                }
               />
             </label>
           )}
@@ -190,10 +212,21 @@ export default function DecorationPanel({
             // Read through the catalog, so a size saved before this slider's
             // steps changed shows on a stop rather than between two of them.
             const value = paramValue(kind, item.params, p.id, item.variant)
+            // What it starts at for this style: a pendant's real size. Going
+            // back to it forgets the saved value, so the item follows its
+            // style again.
+            const initial = paramValue(kind, undefined, p.id, item.variant)
+            const reset = (
+              <ResetButton
+                label={p.label}
+                changed={value !== initial}
+                onReset={() => onUpdate(item.id, { params: without(item.params ?? {}, p.id) })}
+              />
+            )
             // A two state parameter is a switch, not a slider with two stops.
             if (p.toggle)
               return (
-                <label key={p.id} className={cn(row, 'grid-cols-[96px_1fr]')}>
+                <label key={p.id} className={cn(row, 'grid-cols-[96px_1fr_24px]')}>
                   {p.label}
                   <Switch
                     checked={value > 0.5}
@@ -201,6 +234,7 @@ export default function DecorationPanel({
                     label={p.label}
                     onChange={on => onUpdate(item.id, { params: { ...item.params, [p.id]: on ? 1 : 0 } })}
                   />
+                  {reset}
                 </label>
               )
             // A place in a row is stepped through with a button, and wraps
@@ -209,7 +243,7 @@ export default function DecorationPanel({
               const count = cycleLength(kind, item.params, item.variant)
               const at = ((Math.round(value) % count) + count) % count
               return (
-                <div key={p.id} className={cn(row, 'grid-cols-[96px_1fr]')}>
+                <div key={p.id} className={cn(row, 'grid-cols-[96px_1fr_24px]')}>
                   {p.label}
                   <button
                     type="button"
@@ -220,32 +254,10 @@ export default function DecorationPanel({
                     <FontAwesomeIcon icon={faArrowsRotate} className="size-3" />
                     {at + 1} of {count}
                   </button>
+                  {reset}
                 </div>
               )
             }
-            // What the slider starts at for this style: a pendant's real size.
-            const initial = paramValue(kind, undefined, p.id, item.variant)
-            const { [p.id]: _, ...rest } = item.params ?? {}
-            // Back to the default, by forgetting the saved value, so the item
-            // follows its style again.
-            const reset = (
-              <button
-                type="button"
-                aria-label={`Reset ${p.label.toLowerCase()} to default`}
-                title="Reset to default"
-                disabled={value === initial}
-                onClick={e => {
-                  e.preventDefault()
-                  onUpdate(item.id, { params: Object.keys(rest).length > 0 ? rest : undefined })
-                }}
-                className={cn(
-                  iconButton,
-                  'text-label-2 size-6 rounded-full hover:text-(--primary-text-color) disabled:invisible',
-                )}
-              >
-                <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
-              </button>
-            )
             // A count the size gives, with parts added or taken away. The
             // buttons show and step the count that results, and the value
             // saved is how far it is from what the size gives.
@@ -305,16 +317,20 @@ export default function DecorationPanel({
           })}
           <label className={cn(row, 'grid-cols-[96px_1fr_56px_24px]')}>
             Rotation
+            {/* On the same five degree steps the handle on the plan turns it by. */}
             <Slider
               min={0}
-              max={345}
-              step={15}
+              max={355}
+              step={5}
               value={item.rotation ?? 0}
               onChange={e => onUpdate(item.id, { rotation: Number(e.target.value) })}
             />
             <span className="text-label-2 text-right text-xs tabular-nums">{item.rotation ?? 0}°</span>
-            {/* Keeps the slider as wide as the ones above it. */}
-            <span />
+            <ResetButton
+              label="Rotation"
+              changed={(item.rotation ?? 0) !== defaultRotation}
+              onReset={() => onUpdate(item.id, { rotation: defaultRotation })}
+            />
           </label>
         </div>
 
@@ -357,13 +373,20 @@ export default function DecorationPanel({
         <div className={group}>
           <p className={groupTitle}>Colors</p>
           {Object.entries(kindColors(kind, item.variant)).map(([slot, fallback]) => (
-            <label key={slot} className={cn(row, 'grid-cols-[96px_1fr] capitalize')}>
+            <label key={slot} className={cn(row, 'grid-cols-[96px_1fr_24px] capitalize')}>
               {slot}
               <input
                 type="color"
                 className={colorWell}
                 value={item.colors?.[slot] ?? fallback}
                 onChange={e => onUpdate(item.id, { colors: { ...item.colors, [slot]: e.target.value } })}
+              />
+              <ResetButton
+                label={slot}
+                changed={
+                  item.colors?.[slot] !== undefined && item.colors[slot].toLowerCase() !== fallback.toLowerCase()
+                }
+                onReset={() => onUpdate(item.id, { colors: without(item.colors ?? {}, slot) })}
               />
             </label>
           ))}

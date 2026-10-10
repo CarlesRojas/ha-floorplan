@@ -424,12 +424,13 @@ export default function Canvas({
             if (within(q, home.points)) lo = mid
             else hi = mid
           }
+          // Held at the wall, on the grid when that is still inside.
+          const edge: Point = [from[0] + (target[0] - from[0]) * lo, from[1] + (target[1] - from[1]) * lo]
+          const onGrid: Point = [Math.round(edge[0] / g) * g, Math.round(edge[1] / g) * g]
+          const held = within(onGrid, home.points) ? onGrid : edge
           landing = {
             ...item,
-            position: [
-              Math.round((from[0] + (target[0] - from[0]) * lo) * 100) / 100,
-              Math.round((from[1] + (target[1] - from[1]) * lo) * 100) / 100,
-            ],
+            position: [Math.round(held[0] * 100) / 100, Math.round(held[1] * 100) / 100],
           }
         }
         // What it comes to rest on: the highest top under it, or the floor.
@@ -1060,6 +1061,12 @@ export default function Canvas({
         onDoubleClick={() => tool === 'draw' && draftClosable && onCloseDraft()}
         onContextMenu={e => openMenu(e, { kind: 'canvas' })}
       >
+        <defs>
+          {/* The soft shadow the markers and handles float on. */}
+          <filter id="fp-lift" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.35" />
+          </filter>
+        </defs>
         <Grid view={view} width={width} height={height} />
         {trace && <TraceImage trace={trace} view={view} />}
 
@@ -1080,7 +1087,7 @@ export default function Canvas({
               key={room.id}
               points={polygon(room.points)}
               fill={invalid ? 'var(--error-color)' : (room.color ?? ROOM_COLORS[i % ROOM_COLORS.length])}
-              fillOpacity={dropTarget ? 0.62 : picked ? 0.7 : 0.5}
+              fillOpacity={dropTarget ? 0.5 : picked ? 0.55 : 0.36}
               stroke={
                 invalid
                   ? 'var(--error-color)'
@@ -1088,8 +1095,9 @@ export default function Canvas({
                     ? EDITOR_BOUND_COLOR
                     : picked
                       ? EDITOR_ACCENT_COLOR
-                      : 'rgba(0,0,0,0.35)'
+                      : 'var(--primary-text-color)'
               }
+              strokeOpacity={dropTarget || picked || invalid ? 1 : 0.14}
               strokeWidth={dropTarget || picked ? 2 : 1}
               strokeLinejoin="round"
               className={tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'}
@@ -1120,7 +1128,15 @@ export default function Canvas({
             const target = hoverSupport === item.id
             const raised = item.on !== undefined
             // What is selected turns blue, so it reads apart from the rest.
-            const color = invalid ? 'var(--error-color)' : isSelected ? EDITOR_SELECTED_COLOR : EDITOR_ACCENT_COLOR
+            // An item a device stands behind wears amber, so what is wired up
+            // reads at a glance.
+            const color = invalid
+              ? 'var(--error-color)'
+              : isSelected
+                ? EDITOR_SELECTED_COLOR
+                : bound
+                  ? EDITOR_BOUND_COLOR
+                  : EDITOR_ACCENT_COLOR
             const angle = -(item.rotation ?? 0)
             const [fw, fd] = footprint(kind, item.params, item.variant)
             const r = EDITOR_DEVICE_RADIUS_PX
@@ -1148,16 +1164,17 @@ export default function Canvas({
                   a bar on the wall, ceiling items as a dashed outline. */}
                 <rect
                   x={sx - halfW}
-                  y={sy - (kind.mount === 'wall' ? 5 : halfD)}
+                  y={sy - (kind.mount === 'wall' ? 3 : halfD)}
                   width={halfW * 2}
-                  height={kind.mount === 'wall' ? 10 : halfD * 2}
-                  rx={kind.mount === 'wall' ? 2 : Math.min(4, Math.min(halfW, halfD) * 0.25)}
+                  height={kind.mount === 'wall' ? 6 : halfD * 2}
+                  rx={kind.mount === 'wall' ? 3 : Math.min(5, Math.min(halfW, halfD) * 0.3)}
                   transform={`rotate(${angle} ${sx} ${sy})`}
                   fill={color}
-                  fillOpacity={kind.mount === 'wall' ? 0.7 : 0.18}
+                  fillOpacity={kind.mount === 'wall' ? 0.85 : isSelected ? 0.2 : 0.12}
                   stroke={color}
-                  strokeWidth={1.5}
-                  strokeDasharray={kind.mount === 'ceiling' ? '4 3' : undefined}
+                  strokeOpacity={kind.mount === 'wall' ? 0 : isSelected ? 0.9 : 0.55}
+                  strokeWidth={1}
+                  strokeDasharray={kind.mount === 'ceiling' ? '3 3' : undefined}
                 />
                 {/* The usable part of a top, lit up while something is over it. */}
                 {target && isSupport(kind) && (
@@ -1169,9 +1186,9 @@ export default function Canvas({
                     rx={6}
                     transform={`rotate(${angle} ${sx} ${sy})`}
                     fill={color}
-                    fillOpacity={0.3}
+                    fillOpacity={0.25}
                     stroke={color}
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                   />
                 )}
                 {isSelected && (
@@ -1183,40 +1200,46 @@ export default function Canvas({
                       x2={sx + Math.cos(handleAngle) * handleDist}
                       y2={sy - Math.sin(handleAngle) * handleDist}
                       stroke={color}
-                      strokeWidth={1.5}
+                      strokeWidth={1}
+                      strokeOpacity={0.7}
                       className="pointer-events-none"
                     />
                     <circle
                       cx={sx + Math.cos(handleAngle) * handleDist}
                       cy={sy - Math.sin(handleAngle) * handleDist}
                       r={7}
-                      fill="var(--card-background-color)"
+                      fill="#fff"
                       stroke={color}
                       strokeWidth={2}
+                      filter="url(#fp-lift)"
                       className="cursor-grab"
                       onPointerDown={e => onRotateDown(e, item)}
                     />
                   </>
                 )}
+                {/* Standing on something, it wears a thin halo. */}
                 {raised && (
-                  <circle cx={sx} cy={sy} r={r + 3} fill="none" stroke={color} strokeWidth={1.5} opacity={0.7} />
+                  <circle cx={sx} cy={sy} r={r + 2.5} fill="none" stroke={color} strokeWidth={1} opacity={0.6} />
                 )}
+                {/* A disc in the item's color: solid once selected, a soft
+                  tint of it over the card otherwise, with the icon in it. */}
+                <circle cx={sx} cy={sy} r={r} fill="var(--card-background-color)" filter="url(#fp-lift)" />
                 <circle
                   cx={sx}
                   cy={sy}
                   r={r}
-                  fill="var(--card-background-color)"
-                  // An item a device stands behind wears amber, so what is
-                  // wired up reads at a glance.
-                  stroke={invalid ? color : bound ? EDITOR_BOUND_COLOR : color}
-                  strokeWidth={isSelected ? 3 : bound ? 2.5 : 2}
+                  fill={color}
+                  fillOpacity={isSelected ? 1 : 0.22}
+                  stroke={color}
+                  strokeOpacity={isSelected ? 1 : 0.6}
+                  strokeWidth={1}
                 />
                 <IconGlyph
                   icon={decorationIcon(item.kind, kind.family)}
                   x={sx}
                   y={sy}
-                  size={r * 1.1}
-                  fill="var(--primary-text-color)"
+                  size={r * 1.05}
+                  fill={isSelected ? '#fff' : color}
                 />
               </g>
             )
@@ -1294,7 +1317,7 @@ export default function Canvas({
                       height={20}
                       rx={10}
                       fill="var(--card-background-color)"
-                      stroke={EDITOR_SELECTED_COLOR}
+                      filter="url(#fp-lift)"
                     />
                     <text
                       x={mx}
@@ -1315,9 +1338,10 @@ export default function Canvas({
                   cx={sx}
                   cy={sy}
                   r={HANDLE}
-                  fill={selection.vertex === i ? EDITOR_SELECTED_COLOR : 'var(--card-background-color)'}
+                  fill={selection.vertex === i ? EDITOR_SELECTED_COLOR : '#fff'}
                   stroke={EDITOR_SELECTED_COLOR}
                   strokeWidth={2}
+                  filter="url(#fp-lift)"
                   className="cursor-move"
                   onPointerDown={e => onVertexDown(e, selectedRoom, i)}
                   onContextMenu={e => openMenu(e, { kind: 'vertex', roomId: selectedRoom.id, index: i })}
@@ -1354,7 +1378,7 @@ function Grid({ view, width, height }: { view: View; width: number; height: numb
         x2={sx}
         y2={height}
         stroke="currentColor"
-        strokeOpacity={major ? 0.18 : 0.06}
+        strokeOpacity={major ? 0.07 : 0.03}
       />,
     )
   }
@@ -1369,33 +1393,54 @@ function Grid({ view, width, height }: { view: View; width: number; height: numb
         x2={width}
         y2={sy}
         stroke="currentColor"
-        strokeOpacity={major ? 0.18 : 0.06}
+        strokeOpacity={major ? 0.07 : 0.03}
       />,
     )
   }
-  const [ox, oy] = toScreen(view, [0, 0])
-  return (
-    <g className="pointer-events-none text-(--primary-text-color)">
-      {lines}
-      <line x1={ox} y1={0} x2={ox} y2={height} stroke="currentColor" strokeOpacity={0.4} />
-      <line x1={0} y1={oy} x2={width} y2={oy} stroke="currentColor" strokeOpacity={0.4} />
-    </g>
-  )
+  // Faint, so the rooms on it are what the eye goes to.
+  return <g className="pointer-events-none text-(--primary-text-color)">{lines}</g>
 }
 
 function ScaleBar({ view, height }: { view: View; height: number }) {
   // Pick a round length that stays between about 60 and 300 pixels.
   const meters = [0.5, 1, 2, 5, 10, 20, 50].find(m => m * view.scale >= 60) ?? 100
   const px = meters * view.scale
-  const x = 16
-  const y = height - 16
+  // A pill in the corner, with the ruler and its length side by side.
+  const label = `${meters} m`
+  const pad = 10
+  const w = pad + px + 8 + label.length * 6.5 + pad
+  const h = 24
+  const x = 12
+  const y = height - 12 - h
+  const mid = y + h / 2
   return (
     <g className="pointer-events-none text-(--primary-text-color)">
-      <line x1={x} y1={y} x2={x + px} y2={y} stroke="currentColor" strokeWidth={2} />
-      <line x1={x} y1={y - 6} x2={x} y2={y + 6} stroke="currentColor" strokeWidth={2} />
-      <line x1={x + px} y1={y - 6} x2={x + px} y2={y + 6} stroke="currentColor" strokeWidth={2} />
-      <text x={x + px / 2} y={y - 10} textAnchor="middle" className="fill-current text-xs font-semibold">
-        {meters} m
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={h / 2}
+        fill="var(--card-background-color)"
+        fillOpacity={0.85}
+        filter="url(#fp-lift)"
+      />
+      <path
+        d={`M${x + pad} ${mid - 3}V${mid}H${x + pad + px}V${mid - 3}`}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity={0.7}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <text
+        x={x + pad + px + 8}
+        y={mid + 4}
+        className="font-system fill-current text-[11px] font-semibold tabular-nums"
+        fillOpacity={0.85}
+      >
+        {label}
       </text>
     </g>
   )

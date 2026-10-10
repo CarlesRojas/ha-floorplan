@@ -30,10 +30,8 @@ import {
 import {
   faCamera,
   faCheck,
-  faDoorOpen,
   faEye,
   faFloppyDisk,
-  faHandPointer,
   faTrash,
   faXmark,
   type IconDefinition,
@@ -48,8 +46,6 @@ import {
   EDITOR_HOUR,
   EDITOR_NIGHT_HOUR,
   EDITOR_SIDEBAR_WIDTH_PX,
-  SUN_DIRECTION_DEG,
-  SUN_DIRECTION_STEP_DEG,
 } from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -110,14 +106,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // toolbar's slider moves it through the day.
   const [hour, setHour] = useState(EDITOR_HOUR)
   const flipHour = () => setHour(current => (current > 6.5 && current < 21.5 ? EDITOR_NIGHT_HOUR : EDITOR_HOUR))
-  // Which way the sun comes from. Unlike day and night, this one is part of
-  // the card: the room is lit the same way outside the editor. The preview
-  // follows the slider as it is dragged, and the card takes it on release.
-  const [sunDirection, setSunDirection] = useState(config.sun_direction ?? SUN_DIRECTION_DEG)
-  const saveSun = () => {
-    if ((config.sun_direction ?? SUN_DIRECTION_DEG) === sunDirection) return
-    onChange({ ...config, sun_direction: sunDirection })
-  }
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
@@ -223,13 +211,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   const saveRoomCamera = (roomId: string) => {
     const view = camera.current?.view()
     if (view) setRoomCamera(roomId, view)
-  }
-  // What a click on a device goes to first in the card. Devices first is
-  // what the card does when nothing is said, so it is not written down.
-  const roomsFirst = config.first_click === 'room'
-  const toggleFirstClick = () => {
-    const { first_click: _dropped, ...rest } = config
-    onChange(roomsFirst ? rest : { ...rest, first_click: 'room' })
   }
   // With no view saved the card opens on the whole plan, framed.
   const showMainView = () => {
@@ -789,13 +770,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       case 'N':
         flipHour()
         break
-      case 's':
-      case 'S': {
-        const turned = (sunDirection + SUN_DIRECTION_STEP_DEG) % 360
-        setSunDirection(turned)
-        onChange({ ...config, sun_direction: turned })
-        break
-      }
       case 'Enter':
         closeDraft()
         break
@@ -888,9 +862,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         onShowPreview={togglePreview}
         hour={hour}
         onHour={setHour}
-        sunDirection={sunDirection}
-        onSunDirection={setSunDirection}
-        onSunDirectionDone={saveSun}
         trace={trace}
         onTrace={next => {
           setTrace(next)
@@ -1020,20 +991,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                     {/* The view the card opens with: saved from where the
                         camera stands, flown back to, or forgotten. Named
                         buttons in the corner, over the view. */}
-                    {/* What a click in the card goes to first, a device or
-                        the room it stands in. */}
-                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                      <PreviewButton
-                        icon={roomsFirst ? faDoorOpen : faHandPointer}
-                        label={roomsFirst ? 'Click: rooms first' : 'Click: devices first'}
-                        title={
-                          roomsFirst
-                            ? 'In the card, the first click on a device goes to its room, and the device answers once the camera is there. Click to have devices answer from anywhere.'
-                            : 'In the card, a click on a device acts on it from anywhere. Click to have the first click go to its room instead.'
-                        }
-                        onClick={toggleFirstClick}
-                      />
-                    </div>
                     <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
                       <PreviewButton
                         icon={faXmark}
@@ -1064,7 +1021,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                     </div>
                     <Scene
                       hass={home ?? hass}
-                      config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
+                      config={{ ...config, rooms, devices, decorations }}
                       sky={hour}
                       wheelZoom
                       onPickDecoration={pickDecoration}
@@ -1172,14 +1129,20 @@ function PreviewButton({
 
 // A point inside the polygon to drop a new device on. The centroid works for
 // convex rooms. For an L shape it can fall outside, so walk toward a corner.
+// The point found is put on the grid pieces move on, when that keeps it in.
 function pointInside(points: Point[]): Point {
   const c = roomCenter(points)
   const inside = (p: Point) => pointStrictlyInside(p, points) || pointOnBoundary(p, points)
-  if (inside(c)) return c
+  const g = EDITOR_DEVICE_GRID_M
+  const onGrid = (p: Point): Point => {
+    const q: Point = [round(Math.round(p[0] / g) * g), round(Math.round(p[1] / g) * g)]
+    return inside(q) ? q : [round(p[0]), round(p[1])]
+  }
+  if (inside(c)) return onGrid(c)
   for (const v of points) {
     for (const t of [0.5, 0.25, 0.75]) {
       const p: Point = [c[0] + (v[0] - c[0]) * t, c[1] + (v[1] - c[1]) * t]
-      if (pointStrictlyInside(p, points)) return [round(p[0]), round(p[1])]
+      if (pointStrictlyInside(p, points)) return onGrid(p)
     }
   }
   return points[0]

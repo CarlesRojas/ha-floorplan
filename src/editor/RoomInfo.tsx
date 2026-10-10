@@ -1,5 +1,5 @@
 import { decorationKind } from '#/decoration/catalog.ts'
-import { SelectedHeader, Slider, Switch } from '#/editor/panel.tsx'
+import { ResetButton, SelectedHeader, Slider, Switch } from '#/editor/panel.tsx'
 import { neighboursOf } from '#/geometry/passages.ts'
 import { EDITOR_TINT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
 import type { Area, DecorationConfig, RoomConfig } from '#/types.ts'
@@ -68,10 +68,17 @@ export default function RoomInfo({
     />
   )
   const neighbours = neighboursOf(room, rooms, decorations)
+  // A setting of the floor put back to what the material comes with.
+  const resetFloor = (key: 'color' | 'scale' | 'intensity' | 'rotation') => {
+    if (!room.floor) return
+    const { [key]: _, ...rest } = room.floor
+    onFloor(room.id, rest)
+  }
   const slider = (label: string, key: 'scale' | 'intensity' | 'rotation', min: number, max: number, step: number) => {
-    const value = room.floor?.[key] ?? (key === 'rotation' ? 0 : 1)
+    const initial = key === 'rotation' ? 0 : 1
+    const value = room.floor?.[key] ?? initial
     return (
-      <label className={cn(row, 'grid-cols-[96px_1fr_56px]')}>
+      <label className={cn(row, 'grid-cols-[96px_1fr_56px_24px]')}>
         {label}
         <Slider
           min={min}
@@ -83,6 +90,7 @@ export default function RoomInfo({
         <span className="text-label-2 text-right text-xs tabular-nums">
           {key === 'rotation' ? `${value}°` : `${value.toFixed(2)}x`}
         </span>
+        <ResetButton label={label} changed={value !== initial} onReset={() => resetFloor(key)} />
       </label>
     )
   }
@@ -123,7 +131,7 @@ export default function RoomInfo({
         </label>
       </div>
       <div className={group}>
-        <label className={cn(row, 'grid-cols-[96px_1fr]')}>
+        <label className={cn(row, 'grid-cols-[96px_1fr_24px]')}>
           Floor
           <select
             className={input}
@@ -137,10 +145,11 @@ export default function RoomInfo({
               </option>
             ))}
           </select>
+          <ResetButton label="Floor" changed={!!room.floor} onReset={() => onFloor(room.id, undefined)} />
         </label>
         {room.floor && (
           <>
-            <label className={cn(row, 'grid-cols-[96px_1fr]')}>
+            <label className={cn(row, 'grid-cols-[96px_1fr_24px]')}>
               Tint
               <input
                 type="color"
@@ -148,6 +157,7 @@ export default function RoomInfo({
                 value={room.floor.color ?? FLOOR_MATERIALS[room.floor.material]?.color ?? '#ffffff'}
                 onChange={e => onFloor(room.id, { ...room.floor!, color: e.target.value })}
               />
+              <ResetButton label="Tint" changed={room.floor.color !== undefined} onReset={() => resetFloor('color')} />
             </label>
             {slider('Pattern size', 'scale', 0.25, 4, 0.05)}
             {slider('Pattern depth', 'intensity', 0, 2, 0.05)}

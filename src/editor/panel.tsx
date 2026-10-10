@@ -2,7 +2,7 @@ import { iconButton } from '#/editor/look.ts'
 import { SIGNAL_HINTS, SIGNAL_ICONS, SIGNAL_LABELS } from '#/editor/signalIcons.ts'
 import { cn } from '#/lib/utils.ts'
 import type { Signal } from '#/signals.ts'
-import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faRotateLeft, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useRef, type CSSProperties, type InputHTMLAttributes, type ReactNode } from 'react'
 
@@ -163,5 +163,33 @@ export function Slider({
       style={{ '--fp-share': share, ...style } as CSSProperties}
       {...rest}
     />
+  )
+}
+
+// Back to the value a setting comes with. It is there beside every setting a
+// piece or a room has, and only shows once the value has left its default.
+// At the default it still holds its place, so each row lines up with the
+// next.
+export function ResetButton({ label, changed, onReset }: { label: string; changed: boolean; onReset: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`Reset ${label.toLowerCase()} to default`}
+      title="Reset to default"
+      disabled={!changed}
+      aria-hidden={!changed}
+      onClick={e => {
+        // Inside a label, a click would also land on the control it names.
+        e.preventDefault()
+        onReset()
+      }}
+      className={cn(
+        iconButton,
+        'text-label-2 size-6 rounded-full hover:text-(--primary-text-color)',
+        !changed && 'invisible',
+      )}
+    >
+      <FontAwesomeIcon icon={faRotateLeft} className="size-3" />
+    </button>
   )
 }

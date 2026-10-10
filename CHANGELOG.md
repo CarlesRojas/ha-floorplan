@@ -31,9 +31,13 @@ moves that section under the new version and uses it as the release notes.
 - A leak sensor to put on the floor: it glows blue and a puddle spreads round it when it gets wet.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
 - A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
+- Every setting of a piece or a room, its sizes, rotation, colors, style and floor included, has a button beside it that puts it back to its default, and the button only shows once the setting has changed.
 
 ### Changed
 
+- The sizes of every piece go in steps of 5 cm, the same steps it moves by on the plan, and its rotation goes in steps of 5°.
+- The 2D plan in the editor looks cleaner, with a fainter grid, no lines through the origin, softer rooms and pieces and a new scale in the bottom left corner.
+- Rooms first and the direction of the sun moved out of the editor into the card's settings, right under the button that opens the editor.
 - In the card's settings, each list of entities ends in an Add entity button that opens a search right under it, listing each entity with its icon, name and id, and picking one with a click or Enter adds it.
 - In the editor, clicking a piece with a device, or changing it under Try its states, only tries it out there and never switches the real device. The editor starts from how the home is when it opens and shows it that way again once it closes.
 - The full screen editor has a cleaner look, with softer colors, settings gathered in rounded groups, frosted menus and tooltips, switches, slim sliders with a pill shaped handle and lighter buttons.
