@@ -67,11 +67,11 @@ function Glow({
   // on until it was nearly full, and its shadows arrived only then.
   const level = state?.on ? (state.level ?? 1) : 0
   const rank = LIGHT_POINT_INTENSITY * output * (0.25 + 0.75 * level) * level * LAMP_KEY_SHARE
-  // The bulb casts from the first frame it is lit. The shadow sweep hands
-  // out the casters only now and then, and within its budget, so it has
-  // the last word, but it should not be waited for. It is only ever
-  // switched on here: switching it off while the lamp is lit would change
-  // the count of shadows behind the sweep's back.
+  // The bulb asks for its shadow from the first frame it is lit. Which
+  // lamps cast is settled on every draw, within the budget, so that has the
+  // last word, see `balance`. It is only ever switched on here: switching
+  // it off while the lamp is lit would change the count of shadows behind
+  // the back of what hands them out.
   const strip = useRef<RectAreaLight>(null)
   const bulb = useRef<PointLight>(null)
   const through = useRef<PointLight>(null)

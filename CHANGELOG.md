@@ -27,6 +27,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- When a lamp hands its shadow to a brighter light that comes on, the shadow fades out and the new one fades in instead of switching at once.
 - The demo flat in demoflat.yaml is refurnished, with a camera, an alarm panel, a humidifier and a water heater, its side panel on with the tiles of each room in order, and a click on another room flying to it first.
 - A TV or laptop that is on shows deep, muted colors glowing out of black, swaying between greens and blues and now and then going round every other color, and moves faster than before.
 - A smart lock glows red while it is locked and green while it is unlocked.

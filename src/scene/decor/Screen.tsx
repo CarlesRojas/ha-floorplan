@@ -100,7 +100,7 @@ export function ScreenGlow({
 }) {
   const lit = useEased(on ? 1 : 0, 4)
   const light = useRef<PointLight>(null)
-  // Ranked for the shadow sweep by where it is heading, the way a lamp is,
+  // Ranked for the shadows by where it is heading, the way a lamp is,
   // and casting from the first frame it is lit. Ranked by its fade, it took
   // a shadow from a lamp already on while it came up, and the shadows of
   // both jumped about.
