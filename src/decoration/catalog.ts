@@ -227,13 +227,27 @@ export function styleParams(kind: DecorationKind, variant?: string) {
 // Signal sets.
 const NONE: Signal[] = []
 const TOGGLE: Signal[] = ['toggle']
-// Pieces that also do one thing for a press: a litter box scoops, a feeder
-// drops a portion, a doorbell lights the ring round its button, a door buzzes
-// open, a coffee machine makes one cup.
-const TOGGLE_PRESS: Signal[] = ['toggle', 'press']
 const TOGGLE_LEVEL: Signal[] = ['toggle', 'level']
 const LIGHT_SIGNALS: Signal[] = ['toggle', 'level', 'color', 'warmth']
 const READOUT: Signal[] = ['value', 'enum', 'toggle']
+
+// Pieces that switch but have nothing to do for a press: a sensor only says
+// what it sees, a lock is locked or not, and a readout shows a number.
+const NO_PRESS = new Set([
+  'motion_sensor',
+  'smoke_detector',
+  'leak_sensor',
+  'alarm_panel',
+  'smart_lock',
+  'air_quality',
+  'thermostat',
+])
+
+// Everything else that switches also does one thing for a press: it runs for
+// a moment and goes back, a light blinks, a fridge opens and shuts, a litter
+// box scoops once.
+const withPress = (id: string, expresses: Signal[]): Signal[] =>
+  expresses.includes('toggle') && !NO_PRESS.has(id) ? [...expresses, 'press'] : expresses
 
 const kind = (
   id: string,
@@ -245,7 +259,17 @@ const kind = (
   materials: Record<string, string>,
   expresses: Signal[] = NONE,
   variants?: DecorationVariant[],
-): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses, variants })
+): DecorationKind => ({
+  id,
+  family,
+  label,
+  mount,
+  params,
+  colors,
+  materials,
+  expresses: withPress(id, expresses),
+  variants,
+})
 
 // The pendant's styles are real lamps, so they wear their real finishes:
 // natural wood, opal glass, white ceramic, and black canopies and cords.
@@ -1328,7 +1352,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.36, 0.08, 0.5), depth(0.45, 0.25, 0.55), height(0.38, 0.18, 0.5), lift(0.92)],
     { body: SCANDI.offWhite, steel: '#c4c7c8', wood: SCANDI.walnut },
     { body: 'ceramic', steel: 'metal', wood: 'wood' },
-    TOGGLE_PRESS,
+    TOGGLE,
     [
       {
         id: 'bambino',
@@ -2276,7 +2300,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.85, 0.6, 1.4), height(2.05, 1.8, 2.4), flag('flip', 'Hinge right')],
     { frame: SCANDI.offWhite, panel: SCANDI.offWhite, handle: SCANDI.charcoal },
     { frame: 'matte', panel: 'matte', handle: 'metal' },
-    TOGGLE_PRESS,
+    TOGGLE,
     [
       { id: 'flush', label: 'Plain Leaf' },
       {
@@ -2393,7 +2417,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [size(0.07, 0.04, 0.14), height(1.4, 0.9, 1.8)],
     { body: SCANDI.slate, lens: SCANDI.charcoal, button: SCANDI.charcoal },
     { body: 'metal', lens: 'ceramic', button: 'ceramic' },
-    TOGGLE_PRESS,
+    TOGGLE,
   ),
   kind(
     'motion_sensor',
@@ -2478,7 +2502,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [size(0.22, 0.12, 0.4), height(0.38, 0.1, 0.6), lift(0)],
     { body: '#3c3f42', food: '#9a6a3c', bowl: '#c9ced2' },
     { body: 'matte', food: 'matte', bowl: 'metal' },
-    TOGGLE_PRESS,
+    TOGGLE,
     [
       { id: 'food', label: 'Kibble Tower' },
       {
@@ -2498,7 +2522,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     [width(0.56, 0.3, 1.2), depth(0.69, 0.3, 1.4), height(0.75, 0.35, 1.5)],
     { body: '#f0f0ef', drum: '#2a2c2f', trim: '#9a9da0' },
     { body: 'matte', drum: 'matte', trim: 'matte' },
-    TOGGLE_PRESS,
+    TOGGLE,
     [
       // A self cleaning globe: a white sphere with a wide opening framed in
       // dark in its front, turning on a base that holds the waste drawer.

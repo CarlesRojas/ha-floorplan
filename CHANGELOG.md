@@ -12,7 +12,7 @@ moves that section under the new version and uses it as the release notes.
 ### Added
 
 - The floorplan card lays a soft gradient behind its view, with five to choose from in the card's editor and a separate choice for a light and a dark dashboard.
-- Buttons, scripts and scenes can drive a litter box, a pet feeder, a doorbell, a door or a coffee machine: each press plays it once, so a scoop turns the litter box over and back a single time.
+- Buttons, scripts and scenes can drive nearly every piece that switches on: each press plays it once and it goes back, so a light blinks, a fan goes one turn round, a fridge or a window opens and shuts, and a litter box turns over and back a single time.
 
 - The preview in the card's editor shows the chosen background, and picking another one there changes only the background without loading the flat again.
 - The side panel's tiles fade out and the next room's fade in when the floorplan card flies to a room or back to the whole home.
@@ -37,6 +37,8 @@ moves that section under the new version and uses it as the release notes.
 - The 3D preview of a selected piece in the editor can be zoomed and panned as well as turned, and a button in its corner brings the view back.
 
 ### Changed
+
+- The shower's glass door stays shut, so a click on the shower always goes to the device behind it, like any other piece.
 
 - The editor's Discard button is now Close: it closes straight away when there is nothing to save, and asks before throwing changes away when there is.
 - Color settings in the editor show just the rounded color, with no gray box behind it.

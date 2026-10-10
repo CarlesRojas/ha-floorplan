@@ -17,6 +17,7 @@ import { useWarmed } from '#/scene/warm.ts'
 import Vacuum from '#/scene/decor/Vacuum.tsx'
 import PergolaAwning from '#/scene/decor/Pergola.tsx'
 import { CeilingFan, FloorFan, Radiator } from '#/scene/decor/Climate.tsx'
+import { FAN_SPEED } from '#/scene/decor/pressed.ts'
 import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene/decor/Media.tsx'
 import type { RoomConfig } from '#/types.ts'
 import { useMemo, useRef, type ReactNode } from 'react'
@@ -516,7 +517,13 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
     }
     case 'fan_ceiling':
       return (
-        <CeilingFan style={style} r={p('size') / 2} drop={p('drop')} speed={(2 + runLevel * 10) * lit} look={look} />
+        <CeilingFan
+          style={style}
+          r={p('size') / 2}
+          drop={p('drop')}
+          speed={(FAN_SPEED.fan_ceiling + runLevel * 10) * lit}
+          look={look}
+        />
       )
     case 'fan_floor':
       return (
@@ -525,7 +532,7 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           r={p('size') / 2}
           h={p('height')}
           on={on}
-          speed={(3 + runLevel * 12) * lit}
+          speed={(FAN_SPEED.fan_floor + runLevel * 12) * lit}
           look={look}
         />
       )

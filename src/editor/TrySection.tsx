@@ -40,7 +40,14 @@ const PRESS_LABELS: Record<string, string> = {
   doorbell: 'Ring',
   door: 'Buzz open',
   coffee_machine: 'Brew a cup',
+  fan_ceiling: 'One turn',
+  fan_floor: 'One turn',
+  fridge: 'Open and shut',
+  kitchen_counter: 'Open and shut',
+  upper_cabinets: 'Open and shut',
+  vacuum_robot: 'Run a moment',
 }
+const FAMILY_PRESS_LABELS: Record<string, string> = { light: 'Blink', cover: 'Open and shut' }
 
 const TINTS: { mode: Tint['mode'] | 'default'; label: string }[] = [
   { mode: 'default', label: 'Default' },
@@ -90,7 +97,7 @@ export default function TrySection({ kind, state, start, accent, onChange }: Pro
             className={cn(plainButton, 'justify-self-start')}
           >
             <FontAwesomeIcon icon={faHandPointer} className="size-3" />
-            {PRESS_LABELS[kind.id] ?? 'Press'}
+            {PRESS_LABELS[kind.id] ?? FAMILY_PRESS_LABELS[kind.family] ?? 'Press'}
           </button>
         </div>
       )}
