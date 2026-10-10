@@ -10,13 +10,13 @@ import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
 import {
   FLOOR_MATERIALS,
   FLOOR_PATTERN_SHIFT_M,
-  PASSAGE_HOVER_GLOW,
+  PASSAGE_HOVER_SHADE,
   ROOM_SLAB_EDGE_RADIUS_M,
   ROOM_SLAB_THICKNESS_M,
 } from '#/theme.ts'
 import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { useEffect, useMemo, useState } from 'react'
-import { Color, type Mesh } from 'three'
+import { Color, SRGBColorSpace, type Mesh } from 'three'
 
 // The signs on the floor that lead from a focused room into the room open
 // beside it. Each is a triangle as thick as a floor, rounded all over and
@@ -38,6 +38,15 @@ export default function Passages({ rooms, decorations, onRoom }: Props) {
       <Sign key={`${passage.from}>${passage.to}`} passage={passage} room={rooms[index]} index={index} onRoom={onRoom} />
     )
   })
+}
+
+// `color` with black laid over it at `amount` to multiply, as a screen
+// would blend it: each channel scaled down by the same share.
+function shade(color: string, amount: number) {
+  if (amount <= 0) return color
+  const rgb = new Color(color).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace)
+  const k = 1 - amount
+  return `#${new Color().setRGB(rgb.r * k, rgb.g * k, rgb.b * k, SRGBColorSpace).getHexString()}`
 }
 
 // Hidden from the start: the focus brings a sign out around its own room.
@@ -64,13 +73,13 @@ function Sign({ passage, room, index, onRoom }: SignProps) {
   const go = () => onRoom(passage.to, [passage.from, passage.to])
   const press = usePressActions(go)
   // Under the pointer the sign leans a little further on its way, and
-  // lights up a little.
+  // darkens a little.
   const [over, setOver] = useState(false)
   const lean = useEased(over ? 1 : 0, 10)
   const [ox, oy] = passage.out
   const color = floorColor(room, index)
   const floor = room.floor ? FLOOR_MATERIALS[room.floor.material] : undefined
-  const glow = useMemo(() => new Color(color).toArray() as [number, number, number], [color])
+  const shaded = shade(color, lean * PASSAGE_HOVER_SHADE)
   return (
     <mesh
       ref={hide}
@@ -92,21 +101,14 @@ function Sign({ passage, room, index, onRoom }: SignProps) {
       {floor ? (
         <SurfaceMaterial
           kind={(floor.surface ?? 'matte') as SurfaceKind}
-          color={color}
+          color={shaded}
           scale={room.floor?.scale ?? 1}
           rotation={room.floor?.rotation ?? 0}
           intensity={room.floor?.intensity ?? 1}
-          emissive={glow}
-          emissiveIntensity={lean * PASSAGE_HOVER_GLOW}
           relief={false}
         />
       ) : (
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={lean * PASSAGE_HOVER_GLOW}
-          roughness={0.85}
-        />
+        <meshStandardMaterial color={shaded} roughness={0.85} />
       )}
     </mesh>
   )

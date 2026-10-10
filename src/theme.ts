@@ -15,9 +15,10 @@ export const ROOM_SLAB_EDGE_RADIUS_M = 0.07
 // like it only for the corners that touch no other room.
 export const ROOM_CORNER_RADIUS_M = ROOM_SLAB_EDGE_RADIUS_M
 // The sign on the floor that leads into a room open beside the focused one
-// is made of that room's floor, and under the pointer lights itself this
-// much, so it answers without standing out the rest of the time.
-export const PASSAGE_HOVER_GLOW = 0.25
+// is made of that room's floor, and under the pointer darkens by this much,
+// as if black laid over it to multiply, so it answers without standing out
+// the rest of the time.
+export const PASSAGE_HOVER_SHADE = 0.2
 // Fill colors, assigned to rooms in order. A room can override with `color`.
 export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a', '#8fb6b3']
 
