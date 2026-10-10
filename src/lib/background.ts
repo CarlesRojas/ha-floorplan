@@ -19,10 +19,16 @@ const FALLOFF = [
   [5, 84],
   [0, 100],
 ]
-const blob = (size: string, at: string, color: string) =>
+// `strength` scales how much of the color it shows at its middle.
+const blob = (size: string, at: string, color: string, strength = 1) =>
   `radial-gradient(ellipse ${size} at ${at}, ${FALLOFF.map(
-    ([amount, stop]) => `color-mix(in oklab, ${color} ${amount}%, transparent) ${stop}%`,
+    ([amount, stop]) => `color-mix(in oklab, ${color} ${Math.round(amount * strength)}%, transparent) ${stop}%`,
   ).join(', ')})`
+
+// The blobs of the colored backgrounds, held back a little so the color
+// stays a hint over the plain gradient under it.
+const TINT = 0.75
+const tint = (size: string, at: string, color: string) => blob(size, at, color, TINT)
 
 // Each one is a plain gradient with a few large blobs over it, laid out
 // differently for every one. The dark versions are muted, close to the
@@ -51,19 +57,19 @@ export const BACKGROUNDS: Background[] = [
     id: 'dusk',
     name: 'Dusk',
     dark: [
-      blob('150% 90%', '10% 0%', '#3d2a47'),
-      blob('120% 80%', '95% 5%', '#452c43'),
-      blob('110% 70%', '70% 62%', 'rgba(150, 122, 92, 0.28)'),
-      blob('150% 90%', '20% 100%', '#22394a'),
-      blob('120% 80%', '100% 90%', '#1f2945'),
+      tint('150% 90%', '10% 0%', '#3d2a47'),
+      tint('120% 80%', '95% 5%', '#452c43'),
+      tint('110% 70%', '70% 62%', 'rgba(150, 122, 92, 0.28)'),
+      tint('150% 90%', '20% 100%', '#22394a'),
+      tint('120% 80%', '100% 90%', '#1f2945'),
       'linear-gradient(180deg, #1d1823 0%, #181a24 50%, #11141c 100%)',
     ].join(', '),
     light: [
-      blob('150% 90%', '10% 0%', '#ecdcf2'),
-      blob('120% 80%', '95% 5%', '#f3dcec'),
-      blob('110% 70%', '70% 62%', 'rgba(255, 232, 196, 0.85)'),
-      blob('150% 90%', '20% 100%', '#d8e8f1'),
-      blob('120% 80%', '100% 90%', '#dce2f3'),
+      tint('150% 90%', '10% 0%', '#ecdcf2'),
+      tint('120% 80%', '95% 5%', '#f3dcec'),
+      tint('110% 70%', '70% 62%', 'rgba(255, 232, 196, 0.85)'),
+      tint('150% 90%', '20% 100%', '#d8e8f1'),
+      tint('120% 80%', '100% 90%', '#dce2f3'),
       'linear-gradient(180deg, #f6f0f8 0%, #f2f2f8 50%, #ecf1f7 100%)',
     ].join(', '),
   },
@@ -71,19 +77,19 @@ export const BACKGROUNDS: Background[] = [
     id: 'ocean',
     name: 'Ocean',
     dark: [
-      blob('130% 90%', '85% 0%', '#1c4a4c'),
-      blob('110% 90%', '0% 40%', '#243850'),
-      blob('110% 65%', '30% 75%', 'rgba(64, 168, 158, 0.24)'),
-      blob('90% 60%', '62% 42%', 'rgba(52, 140, 138, 0.2)'),
-      blob('140% 90%', '100% 100%', '#1a2440'),
+      tint('130% 90%', '85% 0%', '#1c4a4c'),
+      tint('110% 90%', '0% 40%', '#243850'),
+      tint('110% 65%', '30% 75%', 'rgba(64, 168, 158, 0.24)'),
+      tint('90% 60%', '62% 42%', 'rgba(52, 140, 138, 0.2)'),
+      tint('140% 90%', '100% 100%', '#1a2440'),
       'linear-gradient(200deg, #152126 0%, #131a24 50%, #0e121b 100%)',
     ].join(', '),
     light: [
-      blob('130% 90%', '85% 0%', '#c9f0ea'),
-      blob('110% 90%', '0% 40%', '#d8e5f5'),
-      blob('110% 65%', '30% 75%', 'rgba(190, 240, 230, 0.9)'),
-      blob('90% 60%', '62% 42%', 'rgba(196, 238, 234, 0.75)'),
-      blob('140% 90%', '100% 100%', '#dadff2'),
+      tint('130% 90%', '85% 0%', '#c9f0ea'),
+      tint('110% 90%', '0% 40%', '#d8e5f5'),
+      tint('110% 65%', '30% 75%', 'rgba(190, 240, 230, 0.9)'),
+      tint('90% 60%', '62% 42%', 'rgba(196, 238, 234, 0.75)'),
+      tint('140% 90%', '100% 100%', '#dadff2'),
       'linear-gradient(200deg, #eef7f7 0%, #eef3f9 50%, #eaeef7 100%)',
     ].join(', '),
   },
@@ -91,17 +97,17 @@ export const BACKGROUNDS: Background[] = [
     id: 'forest',
     name: 'Forest',
     dark: [
-      blob('150% 100%', '0% 0%', '#283f34'),
-      blob('100% 65%', '80% 22%', 'rgba(160, 146, 100, 0.22)'),
-      blob('120% 80%', '10% 95%', '#333b28'),
-      blob('120% 85%', '100% 85%', '#1e3434'),
+      tint('150% 100%', '0% 0%', '#283f34'),
+      tint('100% 65%', '80% 22%', 'rgba(160, 146, 100, 0.22)'),
+      tint('120% 80%', '10% 95%', '#333b28'),
+      tint('120% 85%', '100% 85%', '#1e3434'),
       'linear-gradient(150deg, #161e1a 0%, #121916 50%, #0d1210 100%)',
     ].join(', '),
     light: [
-      blob('150% 100%', '0% 0%', '#d9eedf'),
-      blob('100% 65%', '80% 22%', 'rgba(255, 240, 200, 0.9)'),
-      blob('120% 80%', '10% 95%', '#e6ecd0'),
-      blob('120% 85%', '100% 85%', '#d4e9e7'),
+      tint('150% 100%', '0% 0%', '#d9eedf'),
+      tint('100% 65%', '80% 22%', 'rgba(255, 240, 200, 0.9)'),
+      tint('120% 80%', '10% 95%', '#e6ecd0'),
+      tint('120% 85%', '100% 85%', '#d4e9e7'),
       'linear-gradient(150deg, #f0f7f2 0%, #eef4f0 50%, #eaf2f0 100%)',
     ].join(', '),
   },
@@ -109,17 +115,17 @@ export const BACKGROUNDS: Background[] = [
     id: 'ember',
     name: 'Ember',
     dark: [
-      blob('130% 85%', '100% 0%', '#45282f'),
-      blob('120% 95%', '0% 30%', '#2e2337'),
-      blob('130% 65%', '45% 95%', 'rgba(168, 118, 82, 0.26)'),
-      blob('100% 70%', '90% 65%', '#422c26'),
+      tint('130% 85%', '100% 0%', '#45282f'),
+      tint('120% 95%', '0% 30%', '#2e2337'),
+      tint('130% 65%', '45% 95%', 'rgba(168, 118, 82, 0.26)'),
+      tint('100% 70%', '90% 65%', '#422c26'),
       'linear-gradient(170deg, #1e1619 0%, #1a151c 50%, #120e15 100%)',
     ].join(', '),
     light: [
-      blob('130% 85%', '100% 0%', '#f5dce3'),
-      blob('120% 95%', '0% 30%', '#e9dcf1'),
-      blob('130% 65%', '45% 95%', 'rgba(255, 228, 196, 0.9)'),
-      blob('100% 70%', '90% 65%', '#f7e0d4'),
+      tint('130% 85%', '100% 0%', '#f5dce3'),
+      tint('120% 95%', '0% 30%', '#e9dcf1'),
+      tint('130% 65%', '45% 95%', 'rgba(255, 228, 196, 0.9)'),
+      tint('100% 70%', '90% 65%', '#f7e0d4'),
       'linear-gradient(170deg, #faf1f3 0%, #f8f2f3 50%, #f2eef6 100%)',
     ].join(', '),
   },
