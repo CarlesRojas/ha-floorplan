@@ -224,8 +224,8 @@ const decorations: DecorationConfig[] = [
     room: 'bathroom',
     position: [5.85, 2.05],
     variant: 'snake',
-    on: 'basin',
     params: { size: 0.23 },
+    on: 'basin',
   },
   {
     id: 'bathroom_mirror',
