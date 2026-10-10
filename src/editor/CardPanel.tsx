@@ -7,7 +7,16 @@ import { EDITOR_TINT_COLOR } from '#/theme.ts'
 import { entityName } from '#/devices/catalog.ts'
 import type { BackgroundConfig, CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
 import { roomEntities } from '#/tiles/auto.ts'
-import { faGripVertical, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { Icon } from '#/tiles/Icon.tsx'
+import { defaultIcon } from '#/tiles/icons.ts'
+import {
+  faCirclePlus,
+  faGripVertical,
+  faMagnifyingGlass,
+  faPenRuler,
+  faSpinner,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   useEffect,
@@ -434,25 +443,12 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
   )
 }
 
-type PickerElement = HTMLElement & {
-  hass: HomeAssistant
-  value: string
-  placeholder: string
-  excludeEntities: string[]
-}
+// How many matches the search lists at once. Typing narrows it further.
+const PICKER_LIMIT = 50
 
-// Home Assistant loads its entity picker with the editors that use it. One
-// of its own cards' editors is asked for, which brings it in.
-async function loadPicker() {
-  if (customElements.get('ha-entity-picker')) return
-  const helpers = await window.loadCardHelpers?.()
-  const card = helpers?.createCardElement({ type: 'entities', entities: [] })
-  await (card?.constructor as { getConfigElement?: () => Promise<unknown> } | undefined)?.getConfigElement?.()
-  await customElements.whenDefined('ha-entity-picker')
-}
-
-// Home Assistant's own entity picker. Picking an entity hands it on and
-// leaves the picker empty again, ready for the next one.
+// A button that opens a search over every entity in Home Assistant, right
+// under it. Picking one hands it on and closes the search, ready for the
+// next one. Arrows move through the matches, Enter picks and Escape closes.
 function EntityPicker({
   hass,
   exclude,
@@ -462,50 +458,152 @@ function EntityPicker({
   exclude: string[]
   onPick: (entityId: string) => void
 }) {
-  const holder = useRef<HTMLDivElement>(null)
-  const picker = useRef<PickerElement | null>(null)
-  const latest = useRef({ hass, exclude, onPick })
-  useEffect(() => {
-    latest.current = { hass, exclude, onPick }
-  })
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [active, setActive] = useState(0)
+  const root = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLUListElement>(null)
 
+  const close = () => {
+    setOpen(false)
+    setQuery('')
+    setActive(0)
+  }
+
+  // A press anywhere else closes it. The press is read from the event's
+  // path, since the card's shadow root hides where it really landed.
   useEffect(() => {
-    let gone = false
-    void loadPicker().then(() => {
-      if (gone || !holder.current) return
-      const element = document.createElement('ha-entity-picker') as PickerElement
-      element.hass = latest.current.hass
-      element.excludeEntities = latest.current.exclude
-      element.placeholder = 'Add an entity'
-      element.value = ''
-      element.addEventListener('value-changed', event => {
-        event.stopPropagation()
-        const id = (event as CustomEvent<{ value?: string }>).detail.value
-        if (!id) return
-        element.value = ''
-        latest.current.onPick(id)
-      })
-      picker.current = element
-      holder.current.replaceChildren(element)
-    })
-    return () => {
-      gone = true
-      picker.current = null
+    if (!open) return
+    const away = (event: globalThis.PointerEvent) => {
+      if (root.current && !event.composedPath().includes(root.current)) close()
     }
-  }, [])
+    window.addEventListener('pointerdown', away, true)
+    return () => window.removeEventListener('pointerdown', away, true)
+  }, [open])
+
+  // Every word typed has to be in the name or the id, in any order.
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  const matches = open
+    ? Object.keys(hass.states)
+        .filter(id => !exclude.includes(id))
+        .map(id => ({ id, name: entityName(hass, id) }))
+        .filter(({ id, name }) => {
+          const text = `${name} ${id}`.toLowerCase()
+          return words.every(word => text.includes(word))
+        })
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .slice(0, PICKER_LIMIT)
+    : []
+  const at = Math.min(active, Math.max(matches.length - 1, 0))
 
   useEffect(() => {
-    if (!picker.current) return
-    picker.current.hass = hass
-    picker.current.excludeEntities = exclude
-  })
+    list.current?.children[at]?.scrollIntoView({ block: 'nearest' })
+  }, [at])
 
-  // Its field takes the fill of the fields around it, with no line under it
-  // and the corners rounded the same.
+  const pick = (id: string) => {
+    onPick(id)
+    close()
+  }
+
+  const onKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      setActive((at + step + matches.length) % Math.max(matches.length, 1))
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      if (matches[at]) pick(matches[at].id)
+    } else if (event.key === 'Escape') {
+      // Only the search closes, not Home Assistant's dialog around it.
+      event.preventDefault()
+      event.stopPropagation()
+      close()
+    }
+  }
+
+  if (!open)
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-tint hover:bg-fill-strong active:bg-fill-stronger flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors"
+      >
+        <FontAwesomeIcon icon={faCirclePlus} className="size-4" />
+        Add entity
+      </button>
+    )
+
   return (
-    <div
-      ref={holder}
-      className="overflow-hidden rounded-lg [--ha-color-border-neutral-loud:transparent] [--ha-color-form-background:var(--fp-fill-strong)] [--mdc-theme-primary:var(--fp-tint)] [&>*]:block [&>*]:w-full"
-    />
+    <div ref={root} className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <label className="bg-fill-strong focus-within:ring-tint/30 flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg px-3 transition-shadow focus-within:ring-3">
+          <FontAwesomeIcon icon={faMagnifyingGlass} className="text-label-2 size-3.5" />
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            placeholder="Search entities"
+            aria-label="Search entities"
+            role="combobox"
+            aria-expanded
+            aria-controls="fp-entity-matches"
+            aria-activedescendant={matches[at] ? `fp-entity-${at}` : undefined}
+            onChange={event => {
+              setQuery(event.target.value)
+              setActive(0)
+            }}
+            onKeyDown={onKey}
+            className="placeholder:text-label-2 min-w-0 flex-1 bg-transparent text-[13px] text-(--primary-text-color) outline-none"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={close}
+          className="text-tint rounded-md px-1.5 py-1 text-[13px] font-medium transition-opacity hover:opacity-70"
+        >
+          Cancel
+        </button>
+      </div>
+      {matches.length === 0 ? (
+        <p className="text-label-2 px-3 py-2 text-[13px]">No entities match.</p>
+      ) : (
+        <ul
+          ref={list}
+          id="fp-entity-matches"
+          role="listbox"
+          className="bg-raised max-h-64 overflow-y-auto overscroll-contain rounded-lg py-1"
+        >
+          {matches.map(({ id, name }, index) => {
+            const state = hass.states[id]
+            const icon =
+              typeof state?.attributes.icon === 'string'
+                ? state.attributes.icon
+                : defaultIcon(id, state?.attributes.device_class, state?.state)
+            return (
+              <li
+                key={id}
+                id={`fp-entity-${index}`}
+                role="option"
+                aria-selected={index === at}
+                onPointerMove={() => index !== at && setActive(index)}
+                onClick={() => pick(id)}
+                className={cn(
+                  'mx-1 flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5',
+                  index === at && 'bg-fill-strong',
+                )}
+              >
+                <span className="bg-fill-strong text-label-2 flex size-7 flex-none items-center justify-center rounded-md">
+                  <Icon icon={icon} className="size-4 [--mdc-icon-size:16px] [&>svg]:size-full" />
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[13px]">{name}</span>
+                  <span className="text-label-2 truncate text-[11px]">{id}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }

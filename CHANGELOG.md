@@ -34,6 +34,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- In the card's settings, each list of entities ends in an Add entity button that opens a search right under it, listing each entity with its icon, name and id, and picking one with a click or Enter adds it.
 - In the editor, clicking a piece with a device, or changing it under Try its states, only tries it out there and never switches the real device. The editor starts from how the home is when it opens and shows it that way again once it closes.
 - The full screen editor has a cleaner look, with softer colors, settings gathered in rounded groups, frosted menus and tooltips, switches, slim sliders with a pill shaped handle and lighter buttons.
 - The card's settings in the dashboard dialog share the editor's look, with each setting in a rounded group and its explanation under it.
