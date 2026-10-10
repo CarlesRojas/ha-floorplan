@@ -198,17 +198,20 @@ type SlimProps = {
   // The scale the bar is drawn in, like the hues of a color.
   track: string
   format: (value: number) => string
-  // Every value the finger passes over, then null when it lifts, so the
-  // tile can show it.
-  onMove?: (value: number | null) => void
+  // Every value the finger passes over, so the tile can show it. The one
+  // it lifts at comes with `sent`, and null when the drag is called off.
+  onMove?: (value: number | null, sent?: boolean) => void
   onChange: (value: number) => void
+  // The light is in another mode than the one the bar sets, so its handle
+  // is faint.
+  idle?: boolean
 }
 
 // A slim bar of a scale with round ends and a handle where the value is,
 // for the top of a tile beside its icon. A press on it jumps there and a
 // drag follows the finger. The value is sent when the finger lifts, or a
 // moment after the last arrow key.
-export function SlimSlider({ label, value, min, max, step = 1, track, format, onMove, onChange }: SlimProps) {
+export function SlimSlider({ label, value, min, max, step = 1, track, format, onMove, onChange, idle }: SlimProps) {
   const [dragging, setDragging] = useState<number | null>(null)
   const [held, hold] = useHeld(value)
   const bar = useRef<HTMLDivElement>(null)
@@ -225,7 +228,8 @@ export function SlimSlider({ label, value, min, max, step = 1, track, format, on
     onMove?.(next)
   }
   const send = (next: number) => {
-    move(null)
+    setDragging(null)
+    onMove?.(next, true)
     hold(next)
     onChange(next)
   }
@@ -240,7 +244,7 @@ export function SlimSlider({ label, value, min, max, step = 1, track, format, on
       aria-valuemax={max}
       aria-valuenow={shown}
       aria-valuetext={format(shown)}
-      className={cn('fp-slim', dragging !== null && 'fp-slim-dragging')}
+      className={cn('fp-slim', dragging !== null && 'fp-slim-dragging', idle && dragging === null && 'fp-slim-idle')}
       style={{ '--_track': track, '--_share': share } as CSSProperties}
       onPointerDown={e => {
         e.stopPropagation()
@@ -342,25 +346,24 @@ export function MenuPill({ icon, label, options, current, word, onPick }: MenuPr
   )
 }
 
-type SwitchProps = { icon?: string; label: string; checked: boolean; onToggle: () => void }
+type TogglePillProps = { icon: string; label: string; on: boolean; onToggle: () => void }
 
-// A pill with words on the left and a switch on the right. A press
-// anywhere along it flips the switch.
-export function SwitchPill({ icon, label, checked, onToggle }: SwitchProps) {
+// A pill with words that stays pressed while what it says is on, like a
+// fan that oscillates, filled in the color of the words.
+export function TogglePill({ icon, label, on, onToggle }: TogglePillProps) {
   return (
     <button
       type="button"
-      role="switch"
-      aria-checked={checked}
-      className="fp-pill fp-pill-switch"
+      aria-pressed={on}
+      aria-label={label}
+      className="fp-pill fp-pill-toggle"
       {...press(() => {
         haptic('selection')
         onToggle()
       })}
     >
-      {icon && <Icon icon={icon} on />}
+      <Icon icon={icon} on />
       <span className="fp-pill-label">{label}</span>
-      <span className="fp-switch" aria-hidden />
     </button>
   )
 }
@@ -440,7 +443,9 @@ export function Stepper({ label, value, step, min = -Infinity, max = Infinity, f
 
 // What a feature beside the icon shows on the tile while a finger moves
 // it: what the state line says, and the color the tile takes.
-export type Preview = { state: string; color?: string }
+// What a tile shows while a feature beside its icon is moved. Once it is
+// `sent`, it stays until Home Assistant says the entity changed.
+export type Preview = { state: string; color?: string; sent?: boolean }
 
 // What every feature is handed: the tile's entity, its config and Home
 // Assistant, and for one beside the icon, a way to show where it is going.

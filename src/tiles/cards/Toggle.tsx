@@ -1,7 +1,7 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import { FillTile, PositionTile } from '#/tiles/cards/Fill.tsx'
 import { FAN, SET_POSITION } from '#/tiles/features/cover.tsx'
-import { dims } from '#/tiles/features/light.tsx'
+import { dims, inWhite, rgb } from '#/tiles/features/light.tsx'
 import { numberOf, supports } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
@@ -34,12 +34,16 @@ export default function Toggle({ env, config }: Props) {
         ? `${Math.max(1, Math.round((brightness / 255) * 100))}%`
         : 'On'
   const hs = entity?.attributes.hs_color
-  const colored = domain === 'light' && Array.isArray(hs)
+  // A light in a white shines in its kelvin, though it also gives a hue.
+  const kelvin = entity && inWhite(entity) ? numberOf(entity, 'color_temp_kelvin') : null
+  const colored = domain === 'light' && Array.isArray(hs) && kelvin == null
   const glow = colored
     ? `hsl(${hs[0]} 100% ${100 - hs[1] / 2}%)`
-    : domain === 'light'
-      ? 'var(--_accent-light)'
-      : undefined
+    : kelvin != null
+      ? rgb(kelvin)
+      : domain === 'light'
+        ? 'var(--_accent-light)'
+        : undefined
   // The icon a little deeper than the light, so a pale color still shows on
   // the light tile.
   const accent = colored

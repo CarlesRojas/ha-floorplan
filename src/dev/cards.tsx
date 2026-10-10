@@ -257,7 +257,14 @@ const SERVICES: Record<string, (id: string, service: string, data: Record<string
       : typeof brightness_pct === 'number'
         ? Math.round(brightness_pct * 2.55)
         : (last[id] ?? 255)
-    update(id, now ? 'on' : 'off', { ...rest, brightness })
+    // Like Home Assistant, a white or a color puts the light in its mode.
+    const mode =
+      'color_temp_kelvin' in rest
+        ? { color_mode: 'color_temp' }
+        : 'hs_color' in rest
+          ? { color_mode: 'hs', color_temp_kelvin: null }
+          : {}
+    update(id, now ? 'on' : 'off', { ...rest, ...mode, brightness })
   },
   switch: (id, service) => update(id, flip(id, service) ? 'on' : 'off'),
   input_boolean: (id, service) => update(id, flip(id, service) ? 'on' : 'off'),

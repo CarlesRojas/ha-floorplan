@@ -9,7 +9,7 @@ import {
   optionWord,
   Pill,
   supports,
-  SwitchPill,
+  TogglePill,
   type FeatureProps,
 } from '#/tiles/features/parts.tsx'
 
@@ -139,12 +139,13 @@ export function FanDirection({ env, entity }: FeatureProps) {
 }
 
 export function FanOscillate({ env, entity }: FeatureProps) {
+  // A fan that is off shows no oscillation, even when it will once it is on.
   const oscillating = entity.attributes.oscillating === true
   return (
-    <SwitchPill
+    <TogglePill
       icon="ph:arrows-left-right"
       label="Oscillate"
-      checked={oscillating}
+      on={entity.state === 'on' && oscillating}
       onToggle={() =>
         callService(env.hass, 'fan.oscillate', { entity_id: entity.entity_id, oscillating: !oscillating })
       }

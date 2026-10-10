@@ -7,7 +7,7 @@ import {
   optionWord,
   press,
   SlimSlider,
-  SwitchPill,
+  TogglePill,
   type FeatureProps,
 } from '#/tiles/features/parts.tsx'
 import { kelvinToRgb } from '#/signals.ts'
@@ -23,7 +23,15 @@ export const dims = (entity: EntityState) => colorModes(entity).some(mode => mod
 export const warms = (entity: EntityState) => colorModes(entity).includes('color_temp')
 export const colors = (entity: EntityState) => colorModes(entity).some(mode => COLOR_MODES.includes(mode))
 
-const rgb = (kelvin: number) => `rgb(${kelvinToRgb(kelvin).map(c => Math.round(c * 255))})`
+// Whether the light shines in a color or in a white right now. Home
+// Assistant still gives a hue for a white, and a white for some colors, so
+// only the mode says which one it is in.
+const mode = (entity: EntityState) => entity.attributes.color_mode
+export const inColor = (entity: EntityState) => COLOR_MODES.includes(mode(entity) as string)
+export const inWhite = (entity: EntityState) => mode(entity) === 'color_temp'
+
+// The color a white of so many kelvin looks like.
+export const rgb = (kelvin: number) => `rgb(${kelvinToRgb(kelvin).map(c => Math.round(c * 255))})`
 
 // How warm or cool its white is, along a slim bar beside the icon that
 // runs from candle light to daylight.
@@ -42,7 +50,8 @@ export function ColorTemp({ env, entity, onPreview }: FeatureProps) {
       step={50}
       track={`linear-gradient(90deg, ${stops.join(', ')})`}
       format={format}
-      onMove={v => onPreview?.(v === null ? null : { state: format(v), color: rgb(v) })}
+      idle={inColor(entity)}
+      onMove={(v, sent) => onPreview?.(v === null ? null : { state: format(v), color: rgb(v), sent })}
       onChange={v => callService(env.hass, 'light.turn_on', { entity_id: entity.entity_id, color_temp_kelvin: v })}
     />
   )
@@ -66,14 +75,14 @@ const NAMES: [number, string][] = [
 // The name of the hue a light shines in, for its tile.
 export const hueText = (hue: number) => NAMES.find(([upTo]) => hue <= upTo)?.[1] ?? 'Red'
 
-// What a light's white or color reads on its tile, when it has one.
+// What a light's white or color reads on its tile, while it shines in it.
 export const tempState = (entity: EntityState) => {
   const kelvin = numberOf(entity, 'color_temp_kelvin')
-  return kelvin == null ? undefined : kelvinText(kelvin)
+  return kelvin == null || inColor(entity) ? undefined : kelvinText(kelvin)
 }
 export const hueState = (entity: EntityState) => {
   const hs = entity.attributes.hs_color
-  return Array.isArray(hs) && typeof hs[0] === 'number' ? hueText(hs[0]) : undefined
+  return Array.isArray(hs) && typeof hs[0] === 'number' && !inWhite(entity) ? hueText(hs[0]) : undefined
 }
 
 const HUES = [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h} 100% 55%) ${(h / 360) * 100}%`).join(', ')
@@ -92,8 +101,9 @@ export function Hue({ env, entity, onPreview }: FeatureProps) {
       max={360}
       track={`linear-gradient(90deg, ${HUES})`}
       format={format}
-      onMove={v =>
-        onPreview?.(v === null ? null : { state: format(v), color: `hsl(${v} 100% ${100 - saturation / 2}%)` })
+      idle={inWhite(entity)}
+      onMove={(v, sent) =>
+        onPreview?.(v === null ? null : { state: format(v), color: `hsl(${v} 100% ${100 - saturation / 2}%)`, sent })
       }
       onChange={v => callService(env.hass, 'light.turn_on', { entity_id: entity.entity_id, hs_color: [v, saturation] })}
     />
@@ -156,15 +166,16 @@ export function Effect({ env, entity }: FeatureProps) {
 
 const ON_STATES = ['on', 'open', 'opening']
 
-// A switch to turn it on or off, under the dial.
+// A pill to turn it on or off, under the dial, pressed while it is on.
 export function Toggle({ env, entity }: FeatureProps) {
   const domain = domainOf(entity)
   const on = ON_STATES.includes(entity.state)
   const service = domain === 'valve' ? (on ? 'close_valve' : 'open_valve') : on ? 'turn_off' : 'turn_on'
   return (
-    <SwitchPill
+    <TogglePill
+      icon="ph:power"
       label={formatState(env.hass, entity)}
-      checked={on}
+      on={on}
       onToggle={() => callService(env.hass, `${domain}.${service}`, { entity_id: entity.entity_id })}
     />
   )

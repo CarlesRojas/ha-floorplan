@@ -6,7 +6,7 @@ import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
 import { defaultIcon } from '#/tiles/icons.ts'
 import type { EntityState } from '#/types.ts'
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 
 type Props = {
   env: TileEnv
@@ -37,6 +37,9 @@ type Props = {
   // never pressed has no time to show and says unknown, yet still works.
   unknownIsUnavailable?: boolean
 }
+
+// How long a sent preview waits for Home Assistant before it gives up.
+const PREVIEW_MS = 5000
 
 // The icon set for the entity in Home Assistant, in its settings or its
 // YAML, picked as `ph:` to match the other tiles or as any other icon.
@@ -69,8 +72,15 @@ export function Tile({
     onHold: () => runAction(env, config.hold_action, () => moreInfo(env.host, config.entity)),
   })
   // Where a feature beside the icon is being moved to, shown on the tile
-  // until the finger lifts.
+  // until Home Assistant says the entity changed, so it does not flash back
+  // to what it was in between.
   const [preview, setPreview] = useState<Preview | null>(null)
+  useEffect(() => setPreview(p => (p?.sent ? null : p)), [entity])
+  useEffect(() => {
+    if (!preview?.sent) return
+    const timer = setTimeout(() => setPreview(null), PREVIEW_MS)
+    return () => clearTimeout(timer)
+  }, [preview])
   const beside = besideIcon(config.feature) && !unavailable
   const wide = isWide(config)
   const said = (active && !unavailable && featureState(config.feature, entity!)) || state

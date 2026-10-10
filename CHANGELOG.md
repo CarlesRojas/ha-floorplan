@@ -40,11 +40,12 @@ moves that section under the new version and uses it as the release notes.
 - A fan tile can be its own speed slider the same way, moving freely under the finger and settling on the nearest speed the fan has when it lifts.
 - A cover or a valve tile can be its own position slider the same way, filling as far as it is open, or as far as its slats are tilted, and a tap opens or closes it.
 - A tile's control sits in its top right corner beside the icon, so a tile with one is as short as a plain tile, and the few with too many buttons for a small tile, like favorite positions, an alarm's modes or a vacuum's commands, always make it wide.
-- A light tile can show a slim color temperature or color bar beside its icon, with a round handle, so it stays as short as a plain tile, and its state line says the light's white in kelvin or the name of its color, and while the bar is dragged the tile takes that color.
+- A light tile can show a slim color temperature or color bar beside its icon, with a round handle, so it stays as short as a plain tile, and its state line says the light's white in kelvin or the name of its color, whichever the light is in, with a faint handle on the bar for the other one, and while the bar is dragged the tile takes that color and keeps it until the light answers.
 - Eight larger cards come with the tiles and are offered beside them when a card is added by entity: an alarm panel with a keypad, a dial for a thermostat, a water heater, a humidifier or a light's brightness, a media control with the cover art, a calendar agenda, a to-do list, a history graph, a gauge and a map.
 
 ### Changed
 
+- The on and off switch under a light's or a humidifier's dial and a fan's oscillate control are now pills that fill in while on, in place of switches.
 - A cover that cannot stop shows only up and down on its wide tile.
 - The weather tile can show the next hours or the next days, and the card picker offers both.
 - The camera tile also shows an image entity.
