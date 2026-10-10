@@ -27,15 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import {
-  faCamera,
-  faCheck,
-  faEye,
-  faFloppyDisk,
-  faTrash,
-  faXmark,
-  type IconDefinition,
-} from '@fortawesome/free-solid-svg-icons'
+import { faCamera, faCheck, faEye, faFloppyDisk, faXmark, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
@@ -676,6 +668,15 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     setFullscreen(false)
   }
 
+  // Closing asks first only when there is something it would throw away.
+  const close = () => {
+    const changed =
+      draft.length > 0 ||
+      serialize(rooms, devices, decorations) !== serialize(opened.rooms, opened.devices, opened.decorations)
+    if (changed) setConfirmDiscard(true)
+    else discard()
+  }
+
   const closeDraft = () => {
     if (
       draft.length < 3 ||
@@ -928,13 +929,9 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
           <div className="flex h-10 items-center justify-between">
             {toolbar}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDiscard(true)}
-                className="text-danger hover:bg-danger/10 active:bg-danger/16 flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors"
-              >
-                <FontAwesomeIcon icon={faTrash} className="size-3" />
-                Discard
+              <button type="button" onClick={close} disabled={saving !== null} className={plainButton}>
+                <FontAwesomeIcon icon={faXmark} className="size-3" />
+                Close
               </button>
               <button type="button" onClick={save} disabled={saving !== null} className={plainButton}>
                 <FontAwesomeIcon icon={faFloppyDisk} className="size-3" />

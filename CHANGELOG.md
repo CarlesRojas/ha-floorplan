@@ -36,6 +36,8 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- The editor's Discard button is now Close: it closes straight away when there is nothing to save, and asks before throwing changes away when there is.
+- Color settings in the editor show just the rounded color, with no gray box behind it.
 - The sizes of every piece go in steps of 5 cm, the same steps it moves by on the plan, and its rotation goes in steps of 5°.
 - The 2D plan in the editor looks cleaner: a fainter grid, no lines through the origin, every room in the same light gray with an outline, pieces without a device in a neutral gray, plain round icons with no ring, and a scale drawn as one rounded line.
 - The editor's sidebar starts wider.

@@ -8,7 +8,7 @@ export const field =
 
 // A color well, rounded and borderless.
 export const colorWell =
-  'h-8 w-full cursor-pointer rounded-lg border-0 bg-fill p-1 [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0'
+  'h-8 w-full cursor-pointer rounded-lg border-0 bg-transparent p-0 [&::-moz-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0'
 
 // A block of related settings in the sidebar, set off by a fill.
 export const group = 'flex flex-col gap-2.5 rounded-xl bg-fill p-3'
