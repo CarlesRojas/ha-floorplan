@@ -10,7 +10,7 @@
 // `editor` shows the editor instead of the card; `merge=0` draws every piece
 // on its own, to compare against the merged room; `views` gives every room
 // a view from above it, where it would have the one worked out for it;
-// `first=room` has a click on a device go to its room first, not act on it;
+// `first=device` has a click on a device act on it from any room;
 // `mobile=1:1` gives the card that aspect ratio while it is narrow, and 16:9
 // otherwise.
 // A click on a piece flips its entity, the way Home Assistant would.
@@ -48,7 +48,10 @@ if (params.has('sun') && Number.isFinite(sun)) {
   }
 }
 
-const config: CardConfig = { ...DEMO_FLAT, aspect_ratio: `${innerWidth} / ${innerHeight}` }
+// The side panel is built from Home Assistant's own cards, which only exist
+// inside Home Assistant, so the page draws the floorplan on its own.
+const { side_panel: _, ...flat } = DEMO_FLAT
+const config: CardConfig = { ...flat, aspect_ratio: `${innerWidth} / ${innerHeight}` }
 const camera = params.get('camera')?.split(',').map(Number)
 if (camera?.length === 6) {
   config.camera = { position: [camera[0], camera[1], camera[2]], target: [camera[3], camera[4], camera[5]] }
@@ -65,7 +68,7 @@ if (mobile) {
   config.aspect_ratio = '16:9'
   config.aspect_ratio_mobile = mobile
 }
-if (params.get('first') === 'room') config.first_click = 'room'
+if (params.get('first') === 'device') config.first_click = 'device'
 
 type CardElement = HTMLElement & { setConfig: (c: CardConfig) => void; hass: HomeAssistant }
 const element = document.createElement(params.has('editor') ? 'floorplan-3d-editor' : 'floorplan-3d') as CardElement

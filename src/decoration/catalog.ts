@@ -2831,6 +2831,7 @@ const SURFACE_TOPS: Record<string, string | number> = {
   half_wall: 'height',
   bench: 'height',
   pouf: 'height',
+  basin: 'height',
 }
 
 // Items let into a worktop rather than set on it, and how far their origin
