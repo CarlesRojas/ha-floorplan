@@ -1,4 +1,5 @@
 import { BACKGROUNDS, DEFAULT_BACKGROUND, PLAIN_SWATCH, THEME_BACKGROUND } from '#/lib/background.ts'
+import { setPreviewRoom } from '#/lib/previewRoom.ts'
 import { cn } from '#/lib/utils.ts'
 import { field, group, iconButton } from '#/editor/look.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
@@ -42,6 +43,8 @@ type Props = {
 export default function CardPanel({ hass, config, onChange, opening, onOpen }: Props) {
   const rooms = config.rooms ?? []
   const sidePanel = config.side_panel === true
+  // The preview starts on the whole home each time the settings open.
+  useEffect(() => () => setPreviewRoom(null), [])
 
   const setSidePanel = (on: boolean) => {
     const { side_panel: _, ...rest } = config
@@ -153,7 +156,7 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           title="Home"
           description="Tiles for the whole home rather than a room, such as a scene, a script, the weather or a group of lights, under a heading of their own. With any here, they are all the panel shows until a room is in view, and each room's tiles show only inside it. Leave it empty to show every room."
         >
-          <div className={group}>
+          <div className={group} {...showsInPreview(null)}>
             <label className="grid grid-cols-[auto_1fr] items-center gap-3 text-[13px]">
               <span>Heading</span>
               <input
@@ -278,6 +281,14 @@ function roomName(hass: HomeAssistant | null, room: RoomConfig) {
   return room.name ?? (room.area_id && hass?.areas[room.area_id]?.name) ?? room.id
 }
 
+// A press or the focus anywhere in a group of tiles takes the preview to
+// the room they are for, or back to the whole home, so a tile added, moved
+// or taken away is seen where it lands.
+const showsInPreview = (room: string | null) => ({
+  onPointerDownCapture: () => setPreviewRoom(room),
+  onFocusCapture: () => setPreviewRoom(room),
+})
+
 function RoomEntities({
   hass,
   config,
@@ -298,7 +309,7 @@ function RoomEntities({
     onChange({ entities: extra.filter(other => other !== id), order: room.order?.filter(other => other !== id) })
 
   return (
-    <div className={group}>
+    <div className={group} {...showsInPreview(room.id)}>
       <p className="px-0.5 text-[13px] font-semibold">{roomName(hass, room)}</p>
       {ids.length > 0 && (
         <SortableList

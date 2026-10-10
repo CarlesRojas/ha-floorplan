@@ -229,7 +229,14 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
 
   protected view() {
     if (this._config!.side_panel) return <WithSidePanel hass={this._hass} config={this._config!} />
-    return <Card hass={this._hass} config={this._config!} panel={inPanelView(this)} />
+    return (
+      <Card
+        hass={this._hass}
+        config={this._config!}
+        panel={inPanelView(this)}
+        preview={!!closest(this, 'hui-dialog-edit-card')}
+      />
+    )
   }
 }
 
