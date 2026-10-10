@@ -1,8 +1,7 @@
 import { Glass, Rain, SEG, Slab } from '#/scene/decor/parts.tsx'
 import type { Vec3 } from '#/scene/decor/points.ts'
 import { Dowel } from '#/scene/decor/woodwork.tsx'
-import { useEased } from '#/scene/decor/ease.ts'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { CatmullRomCurve3, TubeGeometry, Vector3 } from 'three'
 
 // A walk in shower after a Hansgrohe Raindance showerpipe over a low stone
@@ -194,9 +193,8 @@ function Fittings({
 }
 
 // The door, hung off the fixed pane's edge at `from` and closing against
-// `to`, standing just proud of the fixed pane. A click swings it out of the
-// shower and a second one shuts it again. A press that drags is the view
-// being turned, and leaves it be.
+// `to`, standing just proud of the fixed pane. It stays shut: a click on the
+// shower goes to its device, the water, as a click on any piece does.
 function Door({
   from,
   to,
@@ -212,21 +210,9 @@ function Door({
   colors: { glass: string }
   M: (slot: string) => ReactNode
 }) {
-  const [open, setOpen] = useState(false)
-  const swing = useEased(open ? 1 : 0, 4)
   const span = to - from
-  const way = Math.sign(span) || 1
   return (
-    <group
-      position={[from, 0, -PANE * 1.8]}
-      rotation={[0, way * swing * 1.4, 0]}
-      onClick={e => {
-        if (e.delta > 8) return
-        setOpen(o => !o)
-      }}
-      onPointerOver={() => (document.body.style.cursor = 'pointer')}
-      onPointerOut={() => (document.body.style.cursor = '')}
-    >
+    <group position={[from, 0, -PANE * 1.8]}>
       <Pane from={0} to={span} h={h} color={colors.glass} />
       {/* A pull near the free edge, on the outside face. */}
       <Dowel

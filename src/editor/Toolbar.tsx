@@ -1,7 +1,9 @@
 import type { Trace, TraceMode } from '#/editor/trace.ts'
 import type { Tool } from '#/editor/types.ts'
 import { cn } from '#/lib/utils.ts'
-import { EDITOR_ACCENT_COLOR } from '#/theme.ts'
+import { field, floating, iconButton, kbd, plainButton } from '#/editor/look.ts'
+import { Slider } from '#/editor/panel.tsx'
+import { EDITOR_TINT_COLOR } from '#/theme.ts'
 import {
   type IconDefinition,
   faArrowPointer,
@@ -9,7 +11,6 @@ import {
   faExpand,
   faImage,
   faCube,
-  faLocationArrow,
   faMoon,
   faRuler,
   faSun,
@@ -52,10 +53,6 @@ type Props = {
   onShowPreview: () => void
   hour: number
   onHour: (hour: number) => void
-  sunDirection: number
-  onSunDirection: (degrees: number) => void
-  // Called when the slider is let go, to save the new direction.
-  onSunDirectionDone: () => void
   trace: Trace | null
   onTrace: (trace: Trace | null) => void
   onPickTrace: (file: File) => Promise<void>
@@ -71,20 +68,20 @@ export default function Toolbar({
   onShowPreview,
   hour,
   onHour,
-  sunDirection,
-  onSunDirection,
-  onSunDirectionDone,
   trace,
   onTrace,
   onPickTrace,
 }: Props) {
-  const color = EDITOR_ACCENT_COLOR
+  const color = EDITOR_TINT_COLOR
   return (
-    <div className="flex items-center gap-1">
-      {TOOLS.map(t => (
-        <ToolButton key={t.id} action={t} active={tool === t.id} color={color} onClick={() => onTool(t.id)} />
-      ))}
-      <span className="mx-1 h-5 w-px bg-(--divider-color)" />
+    <div className="flex items-center gap-0.5">
+      {/* The tools are one control, of which one is always chosen. */}
+      <div className="bg-fill-strong flex items-center gap-0.5 rounded-[10px] p-0.5">
+        {TOOLS.map(t => (
+          <ToolButton key={t.id} action={t} active={tool === t.id} color={color} onClick={() => onTool(t.id)} />
+        ))}
+      </div>
+      <span className="bg-separator mx-2 h-4 w-px" />
       <ToolButton
         action={{ id: 'fit', icon: faExpand, title: 'Fit view', description: 'Frame all rooms.', shortcut: 'F' }}
         color={color}
@@ -117,22 +114,6 @@ export default function Toolbar({
         step={0.5}
         onChange={onHour}
       />
-      {/* Which way the sun comes from. It is saved with the card, so the
-          room outside the editor is lit the same way. */}
-      <Dial
-        icon={faLocationArrow}
-        label={`Sun from the ${compass(sunDirection)}`}
-        shortcut="S"
-        note={`${sunDirection}°, saved with the card.`}
-        color={color}
-        value={sunDirection}
-        min={0}
-        max={345}
-        step={15}
-        spin={sunDirection + 135}
-        onChange={onSunDirection}
-        onDone={onSunDirectionDone}
-      />
       <ToolButton
         action={{
           id: 'lengths',
@@ -149,14 +130,6 @@ export default function Toolbar({
       <TracePanel color={color} trace={trace} onTrace={onTrace} onPick={onPickTrace} />
     </div>
   )
-}
-
-const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
-
-// The nearest compass point to a bearing, for naming where the sun is.
-function compass(degrees: number) {
-  const turns = ((degrees % 360) + 360) % 360
-  return POINTS[Math.round(turns / 45) % POINTS.length]
 }
 
 // The hour of a day, as a clock.
@@ -213,8 +186,6 @@ function TracePanel({
       setFailed(true)
     }
   }
-  const button =
-    'rounded-lg border border-(--divider-color) px-2.5 py-1.5 text-sm hover:bg-(--secondary-background-color)'
   return (
     <div className="relative" ref={box}>
       <button
@@ -222,14 +193,14 @@ function TracePanel({
         aria-label="Trace image"
         onClick={() => setOpen(!open)}
         style={open || trace ? { color } : undefined}
-        className="flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)"
+        className={cn(iconButton, 'size-8', (open || trace) && 'bg-tint/12 hover:bg-tint/18')}
       >
-        <FontAwesomeIcon icon={faImage} className="size-4" />
+        <FontAwesomeIcon icon={faImage} className="size-[15px]" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 z-20 mt-1 flex w-64 flex-col gap-2 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg">
-          <p className="text-sm font-semibold">Trace image</p>
-          <p className="text-sm text-(--secondary-text-color)">
+        <div className={cn(floating, 'absolute top-full left-0 z-20 mt-2 flex w-72 flex-col gap-3 p-4')}>
+          <p className="text-[13px] font-semibold">Trace image</p>
+          <p className="text-label-2 -mt-1.5 text-xs leading-snug">
             A picture of your plan under the drawing, to trace the rooms over. Click it on the plan to move and resize
             it. It stays in this browser and is never saved with the card.
           </p>
@@ -243,14 +214,14 @@ function TracePanel({
               e.target.value = ''
             }}
           />
-          {failed && <p className="text-sm text-(--error-color)">That file could not be read as a picture.</p>}
+          {failed && <p className="text-danger text-xs">That file could not be read as a picture.</p>}
           {trace && (
             <>
-              <label className="flex items-center justify-between gap-2 text-sm">
+              <label className="flex items-center justify-between gap-2 text-[13px]">
                 Show
                 <select
                   value={trace.mode ?? 'picture'}
-                  className="rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2 py-1"
+                  className={field}
                   onChange={e => onTrace({ ...trace, mode: e.target.value as TraceMode })}
                 >
                   <option value="picture">Whole picture</option>
@@ -258,26 +229,24 @@ function TracePanel({
                   <option value="light-lines">Light lines only</option>
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-sm">
+              <label className="flex flex-col gap-1.5 text-[13px]">
                 Opacity
-                <input
-                  type="range"
+                <Slider
                   min={0.1}
                   max={1}
                   step={0.05}
                   value={trace.opacity}
-                  style={{ accentColor: color }}
                   onChange={e => onTrace({ ...trace, opacity: Number(e.target.value) })}
                 />
               </label>
-              <label className="flex items-center justify-between gap-2 text-sm">
+              <label className="flex items-center justify-between gap-2 text-[13px]">
                 Width in meters
                 <input
                   type="number"
                   min={0.5}
                   step={0.1}
                   value={Math.round(trace.width * 100) / 100}
-                  className="w-24 rounded-lg border border-(--divider-color) bg-transparent px-2 py-1 text-right"
+                  className={cn(field, 'w-24 text-right tabular-nums')}
                   onChange={e => {
                     const width = Number(e.target.value)
                     if (width >= 0.5) onTrace({ ...trace, width })
@@ -287,11 +256,11 @@ function TracePanel({
             </>
           )}
           <div className="flex gap-2">
-            <button type="button" className={cn(button, 'flex-1')} onClick={() => file.current?.click()}>
+            <button type="button" className={cn(plainButton, 'flex-1')} onClick={() => file.current?.click()}>
               {trace ? 'Replace' : 'Choose image'}
             </button>
             {trace && (
-              <button type="button" className={cn(button, 'flex-1')} onClick={() => onTrace(null)}>
+              <button type="button" className={cn(plainButton, 'text-danger flex-1')} onClick={() => onTrace(null)}>
                 Remove
               </button>
             )}
@@ -302,8 +271,7 @@ function TracePanel({
   )
 }
 
-// A button that opens a slider under itself. The sun's bearing turns its
-// arrow to point the way the light falls, so it faces away from the sun.
+// A button that opens a slider under itself.
 function Dial({
   icon,
   label,
@@ -314,9 +282,7 @@ function Dial({
   min,
   max,
   step,
-  spin,
   onChange,
-  onDone,
 }: {
   icon: IconDefinition
   label: string
@@ -327,9 +293,7 @@ function Dial({
   min: number
   max: number
   step: number
-  spin?: number
   onChange: (value: number) => void
-  onDone?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const box = useAway(open, () => setOpen(false))
@@ -340,34 +304,24 @@ function Dial({
         aria-label={label}
         onClick={() => setOpen(!open)}
         style={open ? { color } : undefined}
-        className="flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)"
+        className={cn(iconButton, 'size-8', open && 'bg-tint/12 hover:bg-tint/18')}
       >
-        <FontAwesomeIcon
-          icon={icon}
-          className="size-4"
-          style={spin === undefined ? undefined : { transform: `rotate(${spin}deg)` }}
-        />
+        <FontAwesomeIcon icon={icon} className="size-[15px]" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 z-20 mt-1 w-56 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg">
-          <p className="flex items-center justify-between text-sm font-semibold">
+        <div className={cn(floating, 'absolute top-full left-0 z-20 mt-2 w-64 p-4')}>
+          <p className="flex items-center justify-between gap-2 text-[13px] font-semibold">
             {label}
-            <kbd className="rounded border border-(--divider-color) px-1 font-mono text-[11px] font-normal">
-              {shortcut}
-            </kbd>
+            <kbd className={kbd}>{shortcut}</kbd>
           </p>
-          <p className="mt-0.5 text-sm text-(--secondary-text-color)">{note}</p>
-          <input
-            type="range"
-            className="mt-2 w-full"
+          <p className="text-label-2 mt-0.5 text-xs tabular-nums">{note}</p>
+          <Slider
+            className="mt-3 w-full"
             min={min}
             max={max}
             step={step}
             value={value}
-            style={{ accentColor: color }}
             onChange={e => onChange(Number(e.target.value))}
-            onPointerUp={onDone}
-            onKeyUp={onDone}
           />
         </div>
       )}
@@ -375,8 +329,8 @@ function Dial({
   )
 }
 
-// A toggle shows its state through the icon color alone, a tool through a
-// filled background.
+// A toggle shows its state through the icon color on a faint tint, a tool
+// as the raised segment of the control the tools sit in.
 function ToolButton({
   action,
   active,
@@ -396,22 +350,29 @@ function ToolButton({
         type="button"
         aria-label={action.title}
         onClick={onClick}
-        style={active ? (toggle ? { color } : { backgroundColor: color }) : undefined}
+        style={active ? { color } : undefined}
         className={cn(
-          'flex size-10 items-center justify-center rounded-xl text-(--primary-text-color) hover:bg-(--secondary-background-color)',
-          active && !toggle && 'text-white',
+          iconButton,
+          'size-8',
+          active && !toggle && 'bg-raised hover:bg-raised active:bg-raised shadow-[0_1px_3px_rgba(0,0,0,0.2)]',
+          active && toggle && 'bg-tint/12 hover:bg-tint/18',
         )}
       >
-        <FontAwesomeIcon icon={action.icon} className="size-4" />
+        <FontAwesomeIcon icon={action.icon} className="size-[15px]" />
       </button>
-      <div className="pointer-events-none absolute top-full left-0 z-10 mt-1 hidden w-52 rounded-xl border border-(--divider-color) bg-(--card-background-color) p-3 shadow-lg group-hover:block">
-        <p className="flex items-center justify-between text-sm font-semibold">
+      {/* The tip waits a moment before it shows, so passing over the
+          toolbar does not flash one up after another. */}
+      <div
+        className={cn(
+          floating,
+          'pointer-events-none invisible absolute top-full left-0 z-10 mt-2 w-56 translate-y-0.5 p-3 opacity-0 transition-[opacity,visibility,translate] duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-500',
+        )}
+      >
+        <p className="flex items-center justify-between gap-2 text-[13px] font-semibold">
           {action.title}
-          <kbd className="rounded border border-(--divider-color) px-1 font-mono text-[11px] font-normal">
-            {action.shortcut}
-          </kbd>
+          <kbd className={kbd}>{action.shortcut}</kbd>
         </p>
-        <p className="mt-0.5 text-sm text-(--secondary-text-color)">{action.description}</p>
+        <p className="text-label-2 mt-0.5 text-xs leading-snug">{action.description}</p>
       </div>
     </div>
   )

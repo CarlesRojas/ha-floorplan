@@ -4,9 +4,10 @@ import { kelvinToRgb } from '#/signals.ts'
 import { LIGHT_GLOW_COLOR } from '#/theme.ts'
 import { Color, SRGBColorSpace } from 'three'
 
-// States tried out in the editor, on pieces with no device behind them, so
-// every look a piece has can be seen before anything drives it. They live in
-// the editor only: nothing here is saved, and the card never sees them.
+// States tried out in the editor, so every look a piece has can be seen. A
+// piece with a device starts from it, but trying never reaches the device.
+// They live in the editor only: nothing here is saved, and the card never
+// sees them.
 
 export type Tint = { mode: 'white'; kelvin: number } | { mode: 'color'; hex: string }
 
@@ -17,6 +18,9 @@ export type TryState = {
   // Lights only. Missing is the light's own warm glow, the one it shows
   // bound to a light that says nothing about its color.
   tint?: Tint
+  // How many times its button has been tried, for the pieces that do one
+  // thing for a press.
+  presses?: number
 }
 
 export type TryStates = Record<string, TryState>
@@ -93,5 +97,7 @@ export function tryItemState(kind: DecorationKind, state: TryState): ItemState {
     level: kind.expresses.includes('level') ? state.levels.open : undefined,
     levels: state.levels,
     glow,
+    // Left out until it is pressed, so a device's own count shows through.
+    ...(state.presses !== undefined && { presses: state.presses }),
   }
 }

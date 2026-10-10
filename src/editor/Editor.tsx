@@ -4,6 +4,7 @@ import DecorationPanel from '#/editor/DecorationPanel.tsx'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import Overlay from '#/editor/Overlay.tsx'
 import RoomInfo from '#/editor/RoomInfo.tsx'
+import { plainButton } from '#/editor/look.ts'
 import Toolbar from '#/editor/Toolbar.tsx'
 import { traceFrom, useTrace } from '#/editor/trace.ts'
 import type { Selection, Tool } from '#/editor/types.ts'
@@ -13,6 +14,7 @@ import { freePlacement, isValidRoom, pointOnBoundary, pointStrictlyInside } from
 import { decorationKind, type DecorationKind } from '#/decoration/catalog.ts'
 import { entityGone } from '#/devices/catalog.ts'
 import { initialTry, toggleTry, type TryState, type TryStates } from '#/editor/tryState.ts'
+import { deviceTry } from '#/scene/Devices.tsx'
 import { DEFAULT_FLOOR_MATERIAL, SCENE_BACKGROUND_CSS } from '#/theme.ts'
 import { useFlash } from '#/lib/flash.ts'
 import { cn } from '#/lib/utils.ts'
@@ -25,17 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '#/components/ui/alert-dialog.tsx'
-import {
-  faCamera,
-  faCheck,
-  faDoorOpen,
-  faEye,
-  faFloppyDisk,
-  faHandPointer,
-  faTrash,
-  faXmark,
-  type IconDefinition,
-} from '@fortawesome/free-solid-svg-icons'
+import { faCamera, faCheck, faEye, faFloppyDisk, faXmark, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   EDITOR_DEVICE_GRID_M,
@@ -46,8 +38,6 @@ import {
   EDITOR_HOUR,
   EDITOR_NIGHT_HOUR,
   EDITOR_SIDEBAR_WIDTH_PX,
-  SUN_DIRECTION_DEG,
-  SUN_DIRECTION_STEP_DEG,
 } from '#/constants.ts'
 import type { CardConfig, DecorationConfig, DeviceConfig, HomeAssistant, Point, RoomConfig } from '#/types.ts'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -108,14 +98,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   // toolbar's slider moves it through the day.
   const [hour, setHour] = useState(EDITOR_HOUR)
   const flipHour = () => setHour(current => (current > 6.5 && current < 21.5 ? EDITOR_NIGHT_HOUR : EDITOR_HOUR))
-  // Which way the sun comes from. Unlike day and night, this one is part of
-  // the card: the room is lit the same way outside the editor. The preview
-  // follows the slider as it is dragged, and the card takes it on release.
-  const [sunDirection, setSunDirection] = useState(config.sun_direction ?? SUN_DIRECTION_DEG)
-  const saveSun = () => {
-    if ((config.sun_direction ?? SUN_DIRECTION_DEG) === sunDirection) return
-    onChange({ ...config, sun_direction: sunDirection })
-  }
   // Whether the selected room fills the sidebar. Picking a room opens it,
   // the cross closes it again.
   const [showRoom, setShowRoom] = useState(true)
@@ -134,19 +116,45 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     }
     setSelection(next)
   }
-  // States tried on pieces with no device, to see every look they have.
-  // Held here only: never saved, and gone when the editor closes.
+  // The home as it was when the editor opened. The editor's 3D view draws
+  // it and never anything newer, and trying a piece starts from it.
+  const [home, setHome] = useState(hass)
+  // States tried on pieces, to see every look they have, the ones with a
+  // device included: in the editor a click only tries a device and never
+  // switches the real one. Held here only: never saved, and dropped when the
+  // editor opens again, so it starts from the home as it is.
   const [tries, setTries] = useState<TryStates>({})
+  // Where trying a piece starts: its device as the home had it, or off.
+  const startOf = (id: string, kind: DecorationKind) => {
+    const device = devices.find(d => d.decorations?.includes(id))
+    return device && home ? deviceTry(home, device, kind) : initialTry(kind)
+  }
+  // The pieces trying one also sets, the way a device moves every piece it
+  // stands behind. Only those of the same kind, which share its controls.
+  const together = (id: string, kind: string) => {
+    const device = devices.find(d => d.decorations?.includes(id))
+    return (device?.decorations ?? [id]).filter(
+      other => other === id || decorations.find(d => d.id === other)?.kind === kind,
+    )
+  }
   const setTry = (id: string, state: TryState | null) =>
     setTries(all => {
       const next = { ...all }
-      if (state) next[id] = state
-      else delete next[id]
+      for (const other of together(id, decorations.find(d => d.id === id)?.kind ?? '')) {
+        if (state) next[other] = state
+        else delete next[other]
+      }
       return next
     })
   const stepTry = (id: string) => {
     const kind = decorationKind(decorations.find(d => d.id === id)?.kind ?? '')
-    if (kind) setTries(all => ({ ...all, [id]: toggleTry(kind, all[id] ?? initialTry(kind)) }))
+    if (!kind) return
+    setTries(all => {
+      const state = toggleTry(kind, all[id] ?? startOf(id, kind))
+      const next = { ...all }
+      for (const other of together(id, kind.id)) next[other] = state
+      return next
+    })
   }
   const pickDecoration = (id: string | null) => {
     if (id) {
@@ -195,13 +203,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   const saveRoomCamera = (roomId: string) => {
     const view = camera.current?.view()
     if (view) setRoomCamera(roomId, view)
-  }
-  // What a click on a device goes to first in the card. Devices first is
-  // what the card does when nothing is said, so it is not written down.
-  const roomsFirst = config.first_click === 'room'
-  const toggleFirstClick = () => {
-    const { first_click: _dropped, ...rest } = config
-    onChange(roomsFirst ? rest : { ...rest, first_click: 'room' })
   }
   // With no view saved the card opens on the whole plan, framed.
   const showMainView = () => {
@@ -611,6 +612,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         setOpened({ rooms, devices, decorations })
+        setHome(hass)
+        setTries({})
         setFullscreen(true)
         setOpening(false)
       }),
@@ -663,6 +666,15 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
     commit(opened.rooms, opened.devices, opened.decorations)
     setConfirmDiscard(false)
     setFullscreen(false)
+  }
+
+  // Closing asks first only when there is something it would throw away.
+  const close = () => {
+    const changed =
+      draft.length > 0 ||
+      serialize(rooms, devices, decorations) !== serialize(opened.rooms, opened.devices, opened.decorations)
+    if (changed) setConfirmDiscard(true)
+    else discard()
   }
 
   const closeDraft = () => {
@@ -759,13 +771,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       case 'N':
         flipHour()
         break
-      case 's':
-      case 'S': {
-        const turned = (sunDirection + SUN_DIRECTION_STEP_DEG) % 360
-        setSunDirection(turned)
-        onChange({ ...config, sun_direction: turned })
-        break
-      }
       case 'Enter':
         closeDraft()
         break
@@ -858,9 +863,6 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         onShowPreview={togglePreview}
         hour={hour}
         onHour={setHour}
-        sunDirection={sunDirection}
-        onSunDirection={setSunDirection}
-        onSunDirectionDone={saveSun}
         trace={trace}
         onTrace={next => {
           setTrace(next)
@@ -912,6 +914,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       onStandOn={standOn}
       onSelect={pickDecoration}
       tries={tries}
+      tryStart={startOf}
       onTry={setTry}
     />
   )
@@ -919,39 +922,33 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
   if (fullscreen) {
     return (
       <Overlay>
-        <div className="font-montserrat flex h-full flex-col gap-3 bg-(--card-background-color) p-4 text-(--primary-text-color) outline-none">
-          <div className="flex items-center justify-between">
+        <div
+          data-light={hass?.themes?.darkMode === false || undefined}
+          className="fp-editor font-system flex h-full flex-col gap-3 bg-(--card-background-color) px-4 pt-3 pb-4 text-(--primary-text-color) antialiased outline-none"
+        >
+          <div className="flex h-10 items-center justify-between">
             {toolbar}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDiscard(true)}
-                className="bg-destructive flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white hover:opacity-90"
-              >
-                <FontAwesomeIcon icon={faTrash} className="size-3.5" />
-                Discard
+              <button type="button" onClick={close} disabled={saving !== null} className={plainButton}>
+                <FontAwesomeIcon icon={faXmark} className="size-3" />
+                Close
               </button>
-              <button
-                type="button"
-                onClick={save}
-                disabled={saving !== null}
-                className="flex h-10 items-center gap-2 rounded-xl border border-(--divider-color) px-4 text-sm font-semibold hover:opacity-90 disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faFloppyDisk} className="size-3.5" />
+              <button type="button" onClick={save} disabled={saving !== null} className={plainButton}>
+                <FontAwesomeIcon icon={faFloppyDisk} className="size-3" />
                 {saving === 'save' ? 'Saving' : 'Save'}
               </button>
               <button
                 type="button"
                 onClick={saveAndClose}
                 disabled={saving !== null}
-                className="flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+                className="bg-tint-fill flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-[filter,transform] hover:brightness-[1.06] active:scale-[0.98] active:brightness-95 disabled:opacity-50"
               >
-                <FontAwesomeIcon icon={faCheck} className="size-3.5" />
+                <FontAwesomeIcon icon={faCheck} className="size-3" />
                 {saving === 'close' ? 'Saving' : 'Save & Close'}
               </button>
             </div>
           </div>
-          <div className="flex min-h-0 flex-1 gap-2">
+          <div className="flex min-h-0 flex-1 gap-1">
             <div ref={plan} className="flex min-w-0 flex-1 flex-col">
               <div className="flex min-h-0" style={{ flex: showPreview ? 1 - previewShare : 1 }}>
                 {canvas}
@@ -960,7 +957,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                 <>
                   {/* Drag to share the column between the plan and the view. */}
                   <div
-                    className="group flex h-3 shrink-0 cursor-row-resize touch-none items-center justify-center"
+                    className="group flex h-4 shrink-0 cursor-row-resize touch-none items-center justify-center"
                     onPointerDown={e => {
                       if (e.button !== 0) return
                       e.currentTarget.setPointerCapture(e.pointerId)
@@ -982,30 +979,16 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       e.currentTarget.releasePointerCapture(e.pointerId)
                     }}
                   >
-                    <span className="h-1 w-14 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
+                    <span className="bg-fill-stronger group-hover:bg-label-2 h-[5px] w-10 rounded-full transition-colors" />
                   </div>
                   <div
-                    className="relative min-h-0 overflow-hidden rounded-xl"
+                    className="ring-separator relative min-h-0 overflow-hidden rounded-2xl ring-1"
                     style={{ flex: previewShare, background: SCENE_BACKGROUND_CSS }}
                   >
                     {/* The view the card opens with: saved from where the
                         camera stands, flown back to, or forgotten. Named
                         buttons in the corner, over the view. */}
-                    {/* What a click in the card goes to first, a device or
-                        the room it stands in. */}
-                    <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
-                      <PreviewButton
-                        icon={roomsFirst ? faDoorOpen : faHandPointer}
-                        label={roomsFirst ? 'Click: rooms first' : 'Click: devices first'}
-                        title={
-                          roomsFirst
-                            ? 'In the card, the first click on a device goes to its room, and the device answers once the camera is there. Click to have devices answer from anywhere.'
-                            : 'In the card, a click on a device acts on it from anywhere. Click to have the first click go to its room instead.'
-                        }
-                        onClick={toggleFirstClick}
-                      />
-                    </div>
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                    <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
                       <PreviewButton
                         icon={faXmark}
                         label="Forget view"
@@ -1034,8 +1017,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                       />
                     </div>
                     <Scene
-                      hass={hass}
-                      config={{ ...config, rooms, devices, decorations, sun_direction: sunDirection }}
+                      hass={home ?? hass}
+                      config={{ ...config, rooms, devices, decorations }}
                       sky={hour}
                       wheelZoom
                       onPickDecoration={pickDecoration}
@@ -1061,7 +1044,7 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
             </div>
             {/* Drag to resize the sidebar, between a minimum and half the window. */}
             <div
-              className="group flex w-3 shrink-0 cursor-col-resize touch-none items-center justify-center"
+              className="group flex w-4 shrink-0 cursor-col-resize touch-none items-center justify-center"
               onPointerDown={e => {
                 if (e.button !== 0) return
                 e.currentTarget.setPointerCapture(e.pointerId)
@@ -1078,27 +1061,28 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
                 e.currentTarget.releasePointerCapture(e.pointerId)
               }}
             >
-              <span className="h-14 w-1 rounded-full bg-(--divider-color) group-hover:bg-(--primary-color)" />
+              <span className="bg-fill-stronger group-hover:bg-label-2 h-10 w-[5px] rounded-full transition-colors" />
             </div>
-            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1" style={{ width: sidebarWidth }}>
+            <div className="flex shrink-0 flex-col gap-3 overflow-y-auto pr-1 pl-1" style={{ width: sidebarWidth }}>
               {roomInfo ?? panels}
             </div>
           </div>
+          {/* Inside the editor, so it wears the editor's colors. */}
+          <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The rooms go back to how they were when you opened the editor. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmDiscard(false)}>Keep editing</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={discard}>
+                Discard
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialog>
         </div>
-        <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The rooms go back to how they were when you opened the editor. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmDiscard(false)}>Keep editing</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={discard}>
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialog>
       </Overlay>
     )
   }
@@ -1131,11 +1115,11 @@ function PreviewButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'flex h-8 items-center gap-1.5 rounded-lg border border-(--divider-color) bg-(--card-background-color) px-2.5 text-xs text-(--primary-text-color) shadow transition-colors hover:bg-(--secondary-background-color) disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-(--card-background-color)',
-        done && 'border-emerald-600 text-emerald-600',
+        'fp-floating border-separator flex h-7 items-center gap-1.5 rounded-full border bg-(--card-background-color)/75 px-3 text-xs font-medium text-(--primary-text-color) shadow-[0_2px_10px_-2px_rgba(0,0,0,0.25)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,transform] hover:bg-(--card-background-color)/95 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45',
+        done && 'text-success',
       )}
     >
-      <FontAwesomeIcon icon={icon} className="size-3.5" />
+      <FontAwesomeIcon icon={icon} className="size-3" />
       <span>{label}</span>
     </button>
   )
@@ -1143,14 +1127,20 @@ function PreviewButton({
 
 // A point inside the polygon to drop a new device on. The centroid works for
 // convex rooms. For an L shape it can fall outside, so walk toward a corner.
+// The point found is put on the grid pieces move on, when that keeps it in.
 function pointInside(points: Point[]): Point {
   const c = roomCenter(points)
   const inside = (p: Point) => pointStrictlyInside(p, points) || pointOnBoundary(p, points)
-  if (inside(c)) return c
+  const g = EDITOR_DEVICE_GRID_M
+  const onGrid = (p: Point): Point => {
+    const q: Point = [round(Math.round(p[0] / g) * g), round(Math.round(p[1] / g) * g)]
+    return inside(q) ? q : [round(p[0]), round(p[1])]
+  }
+  if (inside(c)) return onGrid(c)
   for (const v of points) {
     for (const t of [0.5, 0.25, 0.75]) {
       const p: Point = [c[0] + (v[0] - c[0]) * t, c[1] + (v[1] - c[1]) * t]
-      if (pointStrictlyInside(p, points)) return [round(p[0]), round(p[1])]
+      if (pointStrictlyInside(p, points)) return onGrid(p)
     }
   }
   return points[0]

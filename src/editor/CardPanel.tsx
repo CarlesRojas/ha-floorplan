@@ -1,11 +1,25 @@
-import { BACKGROUNDS, DEFAULT_BACKGROUND, THEME_BACKGROUND } from '#/lib/background.ts'
+import { BACKGROUNDS, DEFAULT_BACKGROUND, PLAIN_SWATCH, THEME_BACKGROUND } from '#/lib/background.ts'
+import { setPreviewRoom } from '#/lib/previewRoom.ts'
 import { cn } from '#/lib/utils.ts'
+import { field, group, iconButton } from '#/editor/look.ts'
 import ControlsGuide from '#/editor/ControlsGuide.tsx'
-import { Switch } from '#/editor/panel.tsx'
+import { ResetButton, Slider, Switch } from '#/editor/panel.tsx'
+import { SUN_DIRECTION_DEG } from '#/constants.ts'
+import { EDITOR_TINT_COLOR } from '#/theme.ts'
 import { entityName } from '#/devices/catalog.ts'
 import type { BackgroundConfig, CardConfig, HomeAssistant, HomeConfig, RoomConfig } from '#/types.ts'
 import { roomEntities } from '#/tiles/auto.ts'
-import { faGripVertical, faPen, faPenRuler, faSpinner, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { Icon } from '#/tiles/Icon.tsx'
+import { defaultIcon } from '#/tiles/icons.ts'
+import {
+  faCirclePlus,
+  faGripVertical,
+  faLocationArrow,
+  faMagnifyingGlass,
+  faPenRuler,
+  faSpinner,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   useEffect,
@@ -26,11 +40,29 @@ type Props = {
 }
 
 // What the card's tab in Home Assistant's dialog shows: the way into the
-// editor first, then the side panel, the background, what goes in the
-// panel, and how to move the view last.
+// editor first, then how the card answers a click and where its light
+// comes from, then the side panel and what goes in it, the background, and
+// how to move the view last.
 export default function CardPanel({ hass, config, onChange, opening, onOpen }: Props) {
   const rooms = config.rooms ?? []
   const sidePanel = config.side_panel === true
+  // The preview starts on the whole home each time the settings open.
+  useEffect(() => () => setPreviewRoom(null), [])
+
+  // What a click on a device goes to first in the card. Devices first is
+  // what the card does when nothing is said, so it is not written down.
+  const roomsFirst = config.first_click === 'room'
+  const setRoomsFirst = (on: boolean) => {
+    const { first_click: _, ...rest } = config
+    onChange(on ? { ...rest, first_click: 'room' } : rest)
+  }
+
+  // Which way the sun comes from, left out of the YAML at its default.
+  const sun = config.sun_direction ?? SUN_DIRECTION_DEG
+  const setSun = (degrees: number) => {
+    const { sun_direction: _, ...rest } = config
+    onChange(degrees === SUN_DIRECTION_DEG ? rest : { ...rest, sun_direction: degrees })
+  }
 
   const setSidePanel = (on: boolean) => {
     const { side_panel: _, ...rest } = config
@@ -78,54 +110,85 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
   ]
 
   return (
-    <div className="font-montserrat flex flex-col gap-8 px-6 py-8 text-(--primary-text-color)">
+    <div
+      data-light={hass?.themes?.darkMode === false || undefined}
+      className="fp-editor font-system flex flex-col gap-6 px-5 py-6 text-(--primary-text-color) antialiased"
+    >
       <Section
         title="Floorplan"
         description="Draw the rooms of your home, furnish them, and link each piece to the Home Assistant device it stands for."
       >
-        <button
-          type="button"
-          onClick={onOpen}
-          disabled={opening}
-          aria-busy={opening}
-          className="flex h-10 cursor-pointer items-center gap-2 self-start rounded-xl bg-(--primary-color) px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
-        >
-          <FontAwesomeIcon icon={opening ? faSpinner : faPenRuler} spin={opening} className="size-3.5" />
-          {opening ? 'Opening…' : 'Open editor'}
-        </button>
+        <div className={cn(group, 'flex-row items-center gap-3')}>
+          <span className="bg-tint-fill flex size-9 shrink-0 items-center justify-center rounded-[10px] text-white">
+            <FontAwesomeIcon icon={faPenRuler} className="size-4" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[13px] font-semibold">Floorplan editor</span>
+            <span className="text-label-2 truncate text-xs">Rooms, furniture and devices</span>
+          </span>
+          <button
+            type="button"
+            onClick={onOpen}
+            disabled={opening}
+            aria-busy={opening}
+            className="bg-tint-fill flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold text-white transition-[filter,transform] hover:brightness-[1.06] active:scale-[0.97] disabled:cursor-progress disabled:opacity-70"
+          >
+            {opening && <FontAwesomeIcon icon={faSpinner} spin className="size-3" />}
+            {opening ? 'Opening…' : 'Open editor'}
+          </button>
+        </div>
+      </Section>
+
+      <Section
+        title="In the card"
+        description={
+          roomsFirst
+            ? 'The first click on a device goes to its room, and the device answers once the camera is there. The sun lights the rooms from the side you pick.'
+            : 'A click on a device acts on it from anywhere. The sun lights the rooms from the side you pick.'
+        }
+      >
+        <div className={cn(group, 'gap-0 py-0')}>
+          <label className="flex cursor-pointer items-center justify-between gap-4 py-2.5">
+            <span className="text-[13px]">Rooms first</span>
+            <Switch checked={roomsFirst} accent={EDITOR_TINT_COLOR} label="Rooms first" onChange={setRoomsFirst} />
+          </label>
+          <div className="border-separator flex flex-col gap-2 border-t py-3">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon
+                icon={faLocationArrow}
+                className="text-label-2 size-3"
+                // The arrow points the way the light falls, away from the sun.
+                style={{ transform: `rotate(${sun + 135}deg)` }}
+              />
+              <span className="flex-1 text-[13px]">Sun from the {compass(sun)}</span>
+              <span className="text-label-2 text-xs tabular-nums">{sun}°</span>
+              <ResetButton
+                label="Sun direction"
+                changed={sun !== SUN_DIRECTION_DEG}
+                onReset={() => setSun(SUN_DIRECTION_DEG)}
+              />
+            </div>
+            <Slider
+              aria-label="Sun direction"
+              className="w-full"
+              min={0}
+              max={355}
+              step={5}
+              value={sun}
+              onChange={e => setSun(Number(e.target.value))}
+            />
+          </div>
+        </div>
       </Section>
 
       <Section
         title="Side panel"
         description="Tiles beside the floorplan, a heading for each room and a tile for each of its devices. With a room in view only its tiles show. On a narrow card the panel goes under the floorplan."
       >
-        <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-(--divider-color) px-4 py-3">
-          <span className="text-sm font-medium">Show the side panel</span>
-          <Switch
-            checked={sidePanel}
-            accent="var(--primary-color)"
-            label="Show the side panel"
-            onChange={setSidePanel}
-          />
+        <label className={cn(group, 'cursor-pointer flex-row items-center justify-between gap-4 py-2.5')}>
+          <span className="text-[13px]">Show the side panel</span>
+          <Switch checked={sidePanel} accent={EDITOR_TINT_COLOR} label="Show the side panel" onChange={setSidePanel} />
         </label>
-      </Section>
-
-      <Section
-        title="Background"
-        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Theme leaves the dashboard's own background."
-      >
-        <BackgroundPicker
-          title="Light"
-          mode="light"
-          value={config.background?.light ?? DEFAULT_BACKGROUND}
-          onChange={id => setBackground('light', id)}
-        />
-        <BackgroundPicker
-          title="Dark"
-          mode="dark"
-          value={config.background?.dark ?? DEFAULT_BACKGROUND}
-          onChange={id => setBackground('dark', id)}
-        />
       </Section>
 
       {sidePanel && (
@@ -133,19 +196,15 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           title="Home"
           description="Tiles for the whole home rather than a room, such as a scene, a script, the weather or a group of lights, under a heading of their own. With any here, they are all the panel shows until a room is in view, and each room's tiles show only inside it. Leave it empty to show every room."
         >
-          <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
-            <label className="group flex h-9 cursor-text items-center gap-2 rounded-lg px-1 focus-within:bg-[color-mix(in_srgb,var(--primary-text-color)_7%,transparent)] focus-within:px-3">
+          <div className={group} {...showsInPreview(null)}>
+            <label className="grid grid-cols-[auto_1fr] items-center gap-3 text-[13px]">
+              <span>Heading</span>
               <input
                 type="text"
                 value={home.name ?? ''}
                 placeholder="Home"
-                aria-label="Heading"
                 onChange={event => setHome({ name: event.target.value })}
-                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-(--primary-text-color) outline-none placeholder:text-(--primary-text-color) focus:placeholder:text-(--secondary-text-color)"
-              />
-              <FontAwesomeIcon
-                icon={faPen}
-                className="size-3 text-(--secondary-text-color) group-focus-within:hidden"
+                className={cn(field, 'bg-fill-strong hover:bg-fill-stronger focus:bg-fill-strong outline-none')}
               />
             </label>
             {homeEntities.length > 0 && (
@@ -175,7 +234,7 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           description="Every device on the plan already has a tile in its room. Add the entities that have no piece on the plan, such as a scene, a sensor or a thermostat, and drag the handles to put the tiles in the order the panel shows them."
         >
           {rooms.length === 0 ? (
-            <p className="text-sm text-(--secondary-text-color)">Draw a room in the editor first.</p>
+            <p className={cn(group, 'text-label-2 text-[13px]')}>Draw a room in the editor first.</p>
           ) : (
             rooms.map(room => (
               <RoomEntities
@@ -191,21 +250,49 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
         </Section>
       )}
 
+      <Section
+        title="Background"
+        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Plain leaves the dashboard's own background."
+      >
+        <div className={cn(group, 'gap-4')}>
+          <BackgroundPicker
+            title="Light"
+            mode="light"
+            value={config.background?.light ?? DEFAULT_BACKGROUND}
+            onChange={id => setBackground('light', id)}
+          />
+          <BackgroundPicker
+            title="Dark"
+            mode="dark"
+            value={config.background?.dark ?? DEFAULT_BACKGROUND}
+            onChange={id => setBackground('dark', id)}
+          />
+        </div>
+      </Section>
+
       <Section title="Moving the view">
-        <ControlsGuide className="justify-start" />
+        <div className={cn(group, 'py-3')}>
+          <ControlsGuide className="justify-start" />
+        </div>
       </Section>
     </div>
   )
 }
 
+const POINTS = ['north', 'north east', 'east', 'south east', 'south', 'south west', 'west', 'north west']
+
+// The nearest compass point to a bearing, for naming where the sun is.
+function compass(degrees: number) {
+  const turns = ((degrees % 360) + 360) % 360
+  return POINTS[Math.round(turns / 45) % POINTS.length]
+}
+
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-base font-semibold">{title}</h3>
-        {description && <p className="text-xs text-(--secondary-text-color)">{description}</p>}
-      </div>
+    <section className="flex flex-col gap-2">
+      <h3 className="text-label-2 px-3 text-[13px] font-semibold">{title}</h3>
       {children}
+      {description && <p className="text-label-2 px-3 text-xs leading-snug">{description}</p>}
     </section>
   )
 }
@@ -225,12 +312,12 @@ function BackgroundPicker({
 }) {
   const options = [
     ...BACKGROUNDS.map(b => ({ id: b.id, name: b.name, swatch: b[mode] })),
-    { id: THEME_BACKGROUND, name: 'Theme', swatch: null },
+    { id: THEME_BACKGROUND, name: 'Plain', swatch: PLAIN_SWATCH[mode] },
   ]
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
-      <p className="px-1 text-sm font-semibold">{title}</p>
-      <div role="radiogroup" aria-label={`${title} background`} className="grid grid-cols-3 gap-2">
+    <div className="flex flex-col gap-2">
+      <p className="px-0.5 text-[13px] font-medium">{title}</p>
+      <div role="radiogroup" aria-label={`${title} background`} className="grid grid-cols-3 gap-x-2.5 gap-y-3">
         {options.map(option => {
           const chosen = option.id === value
           return (
@@ -244,15 +331,12 @@ function BackgroundPicker({
             >
               <span
                 className={cn(
-                  'block aspect-4/3 w-full rounded-lg ring-offset-2 ring-offset-(--card-background-color) transition-shadow',
-                  chosen ? 'ring-2 ring-(--primary-color)' : 'ring-1 ring-(--divider-color) group-hover:ring-2',
-                  !option.swatch && 'border border-dashed border-(--secondary-text-color) ring-0',
+                  'block aspect-[16/10] w-full rounded-[10px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)] ring-offset-2 ring-offset-(--card-background-color) transition-[box-shadow,transform] group-active:scale-[0.97]',
+                  chosen ? 'ring-tint ring-[2.5px]' : 'group-hover:ring-separator group-hover:ring-2',
                 )}
-                style={option.swatch ? { background: option.swatch } : undefined}
+                style={{ background: option.swatch }}
               />
-              <span className={cn('text-xs', chosen ? 'font-semibold' : 'text-(--secondary-text-color)')}>
-                {option.name}
-              </span>
+              <span className={cn('text-xs', chosen ? 'text-tint font-semibold' : 'text-label-2')}>{option.name}</span>
             </button>
           )
         })}
@@ -264,6 +348,14 @@ function BackgroundPicker({
 function roomName(hass: HomeAssistant | null, room: RoomConfig) {
   return room.name ?? (room.area_id && hass?.areas[room.area_id]?.name) ?? room.id
 }
+
+// A press or the focus anywhere in a group of tiles takes the preview to
+// the room they are for, or back to the whole home, so a tile added, moved
+// or taken away is seen where it lands.
+const showsInPreview = (room: string | null) => ({
+  onPointerDownCapture: () => setPreviewRoom(room),
+  onFocusCapture: () => setPreviewRoom(room),
+})
 
 function RoomEntities({
   hass,
@@ -285,8 +377,8 @@ function RoomEntities({
     onChange({ entities: extra.filter(other => other !== id), order: room.order?.filter(other => other !== id) })
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border border-(--divider-color) p-3">
-      <p className="px-1 text-sm font-semibold">{roomName(hass, room)}</p>
+    <div className={group} {...showsInPreview(room.id)}>
+      <p className="px-0.5 text-[13px] font-semibold">{roomName(hass, room)}</p>
       {ids.length > 0 && (
         <SortableList
           items={ids.map(id => ({
@@ -376,7 +468,7 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
   }
 
   return (
-    <ul className="relative flex flex-col gap-1.5">
+    <ul className="bg-raised relative flex flex-col overflow-visible rounded-lg shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
       {ids.map(id => {
         const item = byId.get(id)!
         const dragging = held === id
@@ -388,17 +480,21 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
               else rows.current.delete(id)
             }}
             className={cn(
-              'flex h-11 items-center gap-0.5 rounded-lg bg-[color-mix(in_srgb,var(--primary-text-color)_7%,var(--card-background-color,#fff))] pr-1 pl-3',
-              dragging && 'relative z-10 shadow-lg ring-1 ring-(--divider-color)',
+              'bg-raised not-first:border-separator flex h-10 items-center gap-0.5 pr-1 pl-3 not-first:border-t first:rounded-t-lg last:rounded-b-lg',
+              dragging &&
+                'relative z-10 rounded-lg border-transparent shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45),0_0_0_0.5px_rgba(0,0,0,0.1)]',
             )}
           >
-            <span className="min-w-0 flex-1 truncate text-sm">{item.title}</span>
+            <span className="min-w-0 flex-1 truncate text-[13px]">{item.title}</span>
             {item.onRemove && (
               <button
                 type="button"
                 aria-label={`Remove ${item.title}`}
                 onClick={item.onRemove}
-                className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-(--secondary-text-color) hover:bg-[color-mix(in_srgb,var(--primary-text-color)_8%,transparent)] hover:text-(--primary-text-color)"
+                className={cn(
+                  iconButton,
+                  'text-label-2 size-8 shrink-0 cursor-pointer hover:text-(--primary-text-color)',
+                )}
               >
                 <FontAwesomeIcon icon={faXmark} className="size-3.5" />
               </button>
@@ -412,7 +508,8 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
               onPointerCancel={end}
               onKeyDown={event => nudge(event, id)}
               className={cn(
-                'flex size-8 shrink-0 touch-none items-center justify-center rounded-lg text-(--secondary-text-color) hover:bg-[color-mix(in_srgb,var(--primary-text-color)_8%,transparent)] hover:text-(--primary-text-color)',
+                iconButton,
+                'text-label-2 size-8 shrink-0 touch-none hover:text-(--primary-text-color)',
                 dragging ? 'cursor-grabbing' : 'cursor-grab',
               )}
             >
@@ -425,25 +522,12 @@ function SortableList({ items, onReorder }: { items: Item[]; onReorder: (ids: st
   )
 }
 
-type PickerElement = HTMLElement & {
-  hass: HomeAssistant
-  value: string
-  placeholder: string
-  excludeEntities: string[]
-}
+// How many matches the search lists at once. Typing narrows it further.
+const PICKER_LIMIT = 50
 
-// Home Assistant loads its entity picker with the editors that use it. One
-// of its own cards' editors is asked for, which brings it in.
-async function loadPicker() {
-  if (customElements.get('ha-entity-picker')) return
-  const helpers = await window.loadCardHelpers?.()
-  const card = helpers?.createCardElement({ type: 'entities', entities: [] })
-  await (card?.constructor as { getConfigElement?: () => Promise<unknown> } | undefined)?.getConfigElement?.()
-  await customElements.whenDefined('ha-entity-picker')
-}
-
-// Home Assistant's own entity picker. Picking an entity hands it on and
-// leaves the picker empty again, ready for the next one.
+// A button that opens a search over every entity in Home Assistant, right
+// under it. Picking one hands it on and closes the search, ready for the
+// next one. Arrows move through the matches, Enter picks and Escape closes.
 function EntityPicker({
   hass,
   exclude,
@@ -453,43 +537,152 @@ function EntityPicker({
   exclude: string[]
   onPick: (entityId: string) => void
 }) {
-  const holder = useRef<HTMLDivElement>(null)
-  const picker = useRef<PickerElement | null>(null)
-  const latest = useRef({ hass, exclude, onPick })
-  useEffect(() => {
-    latest.current = { hass, exclude, onPick }
-  })
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [active, setActive] = useState(0)
+  const root = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLUListElement>(null)
 
+  const close = () => {
+    setOpen(false)
+    setQuery('')
+    setActive(0)
+  }
+
+  // A press anywhere else closes it. The press is read from the event's
+  // path, since the card's shadow root hides where it really landed.
   useEffect(() => {
-    let gone = false
-    void loadPicker().then(() => {
-      if (gone || !holder.current) return
-      const element = document.createElement('ha-entity-picker') as PickerElement
-      element.hass = latest.current.hass
-      element.excludeEntities = latest.current.exclude
-      element.placeholder = 'Add an entity'
-      element.value = ''
-      element.addEventListener('value-changed', event => {
-        event.stopPropagation()
-        const id = (event as CustomEvent<{ value?: string }>).detail.value
-        if (!id) return
-        element.value = ''
-        latest.current.onPick(id)
-      })
-      picker.current = element
-      holder.current.replaceChildren(element)
-    })
-    return () => {
-      gone = true
-      picker.current = null
+    if (!open) return
+    const away = (event: globalThis.PointerEvent) => {
+      if (root.current && !event.composedPath().includes(root.current)) close()
     }
-  }, [])
+    window.addEventListener('pointerdown', away, true)
+    return () => window.removeEventListener('pointerdown', away, true)
+  }, [open])
+
+  // Every word typed has to be in the name or the id, in any order.
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  const matches = open
+    ? Object.keys(hass.states)
+        .filter(id => !exclude.includes(id))
+        .map(id => ({ id, name: entityName(hass, id) }))
+        .filter(({ id, name }) => {
+          const text = `${name} ${id}`.toLowerCase()
+          return words.every(word => text.includes(word))
+        })
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .slice(0, PICKER_LIMIT)
+    : []
+  const at = Math.min(active, Math.max(matches.length - 1, 0))
 
   useEffect(() => {
-    if (!picker.current) return
-    picker.current.hass = hass
-    picker.current.excludeEntities = exclude
-  })
+    list.current?.children[at]?.scrollIntoView({ block: 'nearest' })
+  }, [at])
 
-  return <div ref={holder} className="[&>*]:block [&>*]:w-full" />
+  const pick = (id: string) => {
+    onPick(id)
+    close()
+  }
+
+  const onKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      setActive((at + step + matches.length) % Math.max(matches.length, 1))
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      if (matches[at]) pick(matches[at].id)
+    } else if (event.key === 'Escape') {
+      // Only the search closes, not Home Assistant's dialog around it.
+      event.preventDefault()
+      event.stopPropagation()
+      close()
+    }
+  }
+
+  if (!open)
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-tint hover:bg-fill-strong active:bg-fill-stronger flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors"
+      >
+        <FontAwesomeIcon icon={faCirclePlus} className="size-4" />
+        Add entity
+      </button>
+    )
+
+  return (
+    <div ref={root} className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <label className="bg-fill-strong focus-within:ring-tint/30 flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg px-3 transition-shadow focus-within:ring-3">
+          <FontAwesomeIcon icon={faMagnifyingGlass} className="text-label-2 size-3.5" />
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            placeholder="Search entities"
+            aria-label="Search entities"
+            role="combobox"
+            aria-expanded
+            aria-controls="fp-entity-matches"
+            aria-activedescendant={matches[at] ? `fp-entity-${at}` : undefined}
+            onChange={event => {
+              setQuery(event.target.value)
+              setActive(0)
+            }}
+            onKeyDown={onKey}
+            className="placeholder:text-label-2 min-w-0 flex-1 bg-transparent text-[13px] text-(--primary-text-color) outline-none"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={close}
+          className="text-tint rounded-md px-1.5 py-1 text-[13px] font-medium transition-opacity hover:opacity-70"
+        >
+          Cancel
+        </button>
+      </div>
+      {matches.length === 0 ? (
+        <p className="text-label-2 px-3 py-2 text-[13px]">No entities match.</p>
+      ) : (
+        <ul
+          ref={list}
+          id="fp-entity-matches"
+          role="listbox"
+          className="bg-raised max-h-64 overflow-y-auto overscroll-contain rounded-lg py-1"
+        >
+          {matches.map(({ id, name }, index) => {
+            const state = hass.states[id]
+            const icon =
+              typeof state?.attributes.icon === 'string'
+                ? state.attributes.icon
+                : defaultIcon(id, state?.attributes.device_class, state?.state)
+            return (
+              <li
+                key={id}
+                id={`fp-entity-${index}`}
+                role="option"
+                aria-selected={index === at}
+                onPointerMove={() => index !== at && setActive(index)}
+                onClick={() => pick(id)}
+                className={cn(
+                  'mx-1 flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5',
+                  index === at && 'bg-fill-strong',
+                )}
+              >
+                <span className="bg-fill-strong text-label-2 flex size-7 flex-none items-center justify-center rounded-md">
+                  <Icon icon={icon} className="size-4 [--mdc-icon-size:16px] [&>svg]:size-full" />
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[13px]">{name}</span>
+                  <span className="text-label-2 truncate text-[11px]">{id}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
 }

@@ -3,10 +3,11 @@ import { aspectRatioCss } from '#/lib/aspect.ts'
 import { cn } from '#/lib/utils.ts'
 import { EDGE_FADE_MASK } from '#/theme.ts'
 import { useEditorOpen } from '#/lib/editorOpen.ts'
+import { usePreviewRoom } from '#/lib/previewRoom.ts'
 import { useRoomFilter } from '#/lib/roomFilter.ts'
 import Scene, { type CameraHandle } from '#/scene/Scene.tsx'
 import type { CameraView, CardConfig, HomeAssistant } from '#/types.ts'
-import { useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
 type Props = {
   hass: HomeAssistant | null
@@ -14,6 +15,9 @@ type Props = {
   // In a panel view the card has the screen to itself and nothing to
   // scroll, so the wheel and a finger dragged up or down move the view.
   panel?: boolean
+  // The copy of the card in Home Assistant's edit dialog, which follows the
+  // room the card's settings are working on.
+  preview?: boolean
 }
 
 // Whether the camera stands in a view, give or take the rounding a view is
@@ -23,7 +27,7 @@ const sameView = (a: CameraView, b: CameraView) =>
   a.position.every((v, i) => Math.abs(v - b.position[i]) <= VIEW_TOLERANCE_M) &&
   a.target.every((v, i) => Math.abs(v - b.target[i]) <= VIEW_TOLERANCE_M)
 
-export default function Card({ hass, config, panel = false }: Props) {
+export default function Card({ hass, config, panel = false, preview = false }: Props) {
   const hasRooms = (config.rooms?.length ?? 0) > 0
   // Hidden under the fullscreen editor, so it holds its last frame.
   const paused = useEditorOpen()
@@ -70,6 +74,35 @@ export default function Card({ hass, config, panel = false }: Props) {
       camera.current.flyTo(view)
     }
   }
+  // In the edit dialog the camera goes to the room whose tiles are being
+  // worked on, and back to the whole home when the home's are. The 3D view
+  // may still be loading, so it is tried again on the next frames until the
+  // camera is there.
+  const asked = usePreviewRoom()
+  const previewing = preview ? asked : null
+  const followed = useRef<string | null>(null)
+  useEffect(() => {
+    // The card opens on the whole home already, with nothing to undo.
+    if (!preview || previewing === followed.current) return
+    followed.current = previewing
+    let frame = 0
+    let tries = 0
+    const go = () => {
+      if (!camera.current) {
+        if (++tries < 120) frame = requestAnimationFrame(go)
+        return
+      }
+      const view = previewing ? viewOf(previewing) : undefined
+      if (view) {
+        setFocus(previewing)
+        camera.current.flyTo(view)
+      } else goHome()
+    }
+    go()
+    return () => cancelAnimationFrame(frame)
+    // Only a change of the room asked for moves the camera.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, previewing])
   // A click on nothing at all, the air around the home or where the faded
   // rooms were, takes the camera back to the opening view.
   const showHome = () => {

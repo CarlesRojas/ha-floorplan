@@ -18,6 +18,7 @@ import { memo, type ReactNode } from 'react'
 import type { DecorationConfig, RoomConfig } from '#/types.ts'
 import { MathUtils } from 'three'
 import { useEased } from '#/scene/decor/ease.ts'
+import { pressedState, usePressed } from '#/scene/decor/pressed.ts'
 
 type Props = {
   item: DecorationConfig
@@ -99,6 +100,9 @@ const READS_PLAN = new Set(['vacuum_robot', 'kitchen_counter'])
 function DecorationModel({ item, all, room, between, state, raise = 0, onClick, onOpen, exact }: Props) {
   const interactive = usePressActions(onClick, onOpen)
   const rise = useEased(raise, 2)
+  // A press shows as the piece switched on for as long as it runs.
+  const pressed = usePressed(item.kind, state?.presses)
+  if (pressed && state) state = pressedState(item.kind, state)
   const kind = decorationKind(item.kind)
   if (!kind) return null
   const Model = KIND_MODELS[kind.id] ?? FAMILY_MODELS[kind.family]

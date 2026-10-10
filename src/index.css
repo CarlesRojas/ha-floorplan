@@ -3,6 +3,8 @@
 
 @theme {
   --font-montserrat: 'Montserrat', sans-serif;
+  /* The editor is set in the system's own interface font. */
+  --font-system: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --transition-duration-slow: 300ms;
 }
 
@@ -22,6 +24,138 @@
   --color-border: var(--divider-color, #e0e0e0);
   --radius-md: 8px;
   --radius-sm: 6px;
+
+  /* The editor's palette, set on the editor's root below. */
+  --color-fill: var(--fp-fill);
+  --color-fill-strong: var(--fp-fill-strong);
+  --color-fill-stronger: var(--fp-fill-stronger);
+  --color-separator: var(--fp-separator);
+  --color-label-2: var(--fp-label-2);
+  --color-tint: var(--fp-tint);
+  --color-danger: var(--fp-danger);
+  --color-success: var(--fp-success);
+  --color-tint-fill: var(--fp-tint-fill);
+  --color-danger-fill: var(--fp-danger-fill);
+  --color-raised: var(--fp-raised);
+}
+
+/* Fills, separators and the secondary text are the text color thinned out,
+   so they read the same over a light theme and a dark one. The colors are
+   vivid over a dark theme and deeper over a light one, so text in them
+   keeps a contrast of at least 4.5 to 1 on either. */
+.fp-editor {
+  --fp-fill: color-mix(in srgb, var(--primary-text-color, #212121) 6%, transparent);
+  --fp-fill-strong: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
+  --fp-fill-stronger: color-mix(in srgb, var(--primary-text-color, #212121) 15%, transparent);
+  --fp-separator: color-mix(in srgb, var(--primary-text-color, #212121) 11%, transparent);
+  --fp-label-2: color-mix(in srgb, var(--primary-text-color, #212121) 68%, transparent);
+  --fp-tint: #0a84ff;
+  --fp-danger: #ff453a;
+  --fp-success: #30d158;
+  /* Behind white text a shade deeper, for the same contrast. */
+  --fp-tint-fill: #0a6cdf;
+  --fp-danger-fill: #e0241b;
+  /* The chosen segment of a segmented control, lifted off its track. */
+  --fp-raised: color-mix(in srgb, var(--primary-text-color, #e1e1e1) 24%, var(--card-background-color, #1c1c1c));
+}
+.fp-editor[data-light] {
+  --fp-tint: #0066cc;
+  --fp-danger: #d70015;
+  --fp-success: #1f7f38;
+  --fp-tint-fill: #0066cc;
+  --fp-danger-fill: #d70015;
+  --fp-raised: var(--card-background-color, #fff);
+}
+
+/* With more contrast asked for, the fills and lines are drawn firmer. */
+@media (prefers-contrast: more) {
+  .fp-editor {
+    --fp-fill: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
+    --fp-fill-strong: color-mix(in srgb, var(--primary-text-color, #212121) 16%, transparent);
+    --fp-fill-stronger: color-mix(in srgb, var(--primary-text-color, #212121) 24%, transparent);
+    --fp-separator: color-mix(in srgb, var(--primary-text-color, #212121) 35%, transparent);
+    --fp-label-2: color-mix(in srgb, var(--primary-text-color, #212121) 82%, transparent);
+  }
+}
+
+/* With less transparency asked for, what floats is solid. */
+@media (prefers-reduced-transparency: reduce) {
+  .fp-floating {
+    background-color: var(--card-background-color);
+    backdrop-filter: none;
+  }
+}
+
+/* With less motion asked for, the editor changes without easing. */
+@media (prefers-reduced-motion: reduce) {
+  .fp-editor *,
+  .fp-editor *::before,
+  .fp-editor *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}
+
+/* The editor's slider: a thin track, filled in the tint up to the thumb, and
+   a white lozenge of a thumb that grows a little while it is held. The fill
+   ends at the thumb's middle, which travels half a thumb in from each end.
+   --fp-share is how far along the value is, from 0 to 1. */
+.fp-slider {
+  --fp-thumb: 22px;
+  --fp-reach: calc(var(--fp-thumb) / 2 + (100% - var(--fp-thumb)) * var(--fp-share, 0));
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  background: transparent;
+  border-radius: 999px;
+}
+.fp-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--fp-tint) var(--fp-reach), var(--fp-fill-stronger) var(--fp-reach));
+}
+.fp-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fp-fill-stronger);
+}
+.fp-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fp-tint);
+}
+.fp-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--fp-thumb);
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 3px rgb(0 0 0 / 0.28);
+  transition: transform 150ms ease-out;
+}
+.fp-slider::-moz-range-thumb {
+  width: var(--fp-thumb);
+  height: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 3px rgb(0 0 0 / 0.28);
+  transition: transform 150ms ease-out;
+}
+.fp-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.fp-slider:active::-moz-range-thumb {
+  transform: scale(1.15);
+}
+.fp-slider:disabled {
+  opacity: 0.4;
 }
 
 @custom-variant mouse (@media (hover: hover) and (pointer: fine));
@@ -37,5 +171,11 @@
   svg,
   canvas {
     @apply block;
+  }
+
+  /* A ring in the tint round whatever the keyboard has reached. */
+  .fp-editor :focus-visible {
+    outline: 2px solid var(--fp-tint);
+    outline-offset: 1px;
   }
 }

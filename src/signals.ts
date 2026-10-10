@@ -3,7 +3,9 @@ import type { HomeAssistant } from '#/types.ts'
 // Abstract controls a device exposes, derived from its Home Assistant domain
 // and attributes. Decoration models express state through these instead of
 // knowing about domains.
-export type Signal = 'toggle' | 'level' | 'color' | 'warmth' | 'value' | 'enum'
+// A press is a button: pressed once, it does one thing and is done, with no
+// state of its own to keep.
+export type Signal = 'toggle' | 'level' | 'color' | 'warmth' | 'value' | 'enum' | 'press'
 
 // A device can offer more than one percentage: a cover has its position and
 // often a tilt, a light its brightness. One of them drives what an item
@@ -57,6 +59,9 @@ export type SignalValues = {
   warmth?: number
   value?: number
   state?: string
+  // When it was last pressed, as Home Assistant says. It changes with every
+  // press, which is all that is read from it.
+  pressed?: string
 }
 
 const domainOf = (entityId: string) => entityId.split('.')[0]
@@ -101,6 +106,11 @@ export function deviceSignals(hass: HomeAssistant, entityId: string): Signal[] {
     case 'number':
     case 'input_number':
       return ['value']
+    case 'button':
+    case 'input_button':
+    case 'scene':
+    case 'script':
+      return ['press']
     default:
       return []
   }
@@ -157,6 +167,16 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
       // A sensor that is unavailable or unknown has no number to show.
       const value = Number(state)
       return { value: Number.isFinite(value) ? value : undefined, state }
+    }
+    // A button's and a scene's state is the time they were last pressed. A
+    // script's is whether it is running, and the time is kept beside it.
+    case 'button':
+    case 'input_button':
+    case 'scene':
+      return { pressed: state === 'unknown' || state === 'unavailable' ? undefined : state, state }
+    case 'script': {
+      const last = attrs.last_triggered
+      return { on: state === 'on', pressed: typeof last === 'string' ? last : undefined, state }
     }
     default:
       return { on: state === 'on', state }

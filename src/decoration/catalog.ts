@@ -1,3 +1,4 @@
+import { EDITOR_DEVICE_GRID_M } from '#/constants.ts'
 import { SOFA_DEPTH, SOFA_REACH, SOFA_WIDTH } from '#/scene/decor/sofaSpecs.ts'
 import type { Signal } from '#/signals.ts'
 import { CEILING_HEIGHT_M, LIGHT_BASE_COLOR, LIGHT_SHADE_COLOR, SCANDI, SCREEN_OFF_COLOR } from '#/theme.ts'
@@ -147,9 +148,10 @@ const p = (
   step?: number,
   unit?: string,
 ): DecorationParam => {
-  // A small thing wants a finer step than a wardrobe does: a seven
-  // centimeter sensor on a five centimeter step has four places to be.
-  const grid = step ?? (d < 0.5 ? 0.01 : 0.05)
+  // Every length steps by the grid pieces are moved on in the plan, so a
+  // piece's edges land on the same marks its position does. Only a value
+  // with a unit of its own, a count or a share, takes its own step.
+  const grid = unit === undefined ? EDITOR_DEVICE_GRID_M : (step ?? 1)
   return {
     id,
     label,
@@ -165,7 +167,7 @@ const width = (d: number, min = 0.3, max = 4) => p('width', 'Width', d, min, max
 const depth = (d: number, min = 0.2, max = 3) => p('depth', 'Depth', d, min, max)
 const height = (d: number, min = 0.2, max = 2.6) => p('height', 'Height', d, min, max)
 const size = (d: number, min = 0.1, max = 1.5) => p('size', 'Size', d, min, max)
-const length = (d: number, min = 0.2, max = 10, step = 0.1) => p('length', 'Length', d, min, max, step)
+const length = (d: number, min = 0.2, max = 10) => p('length', 'Length', d, min, max)
 // Height an item stands at when it is not standing on anything. The editor
 // has no slider for it: the piece is stepped between the floor, this height
 // and the tops under it.
@@ -229,6 +231,24 @@ const TOGGLE_LEVEL: Signal[] = ['toggle', 'level']
 const LIGHT_SIGNALS: Signal[] = ['toggle', 'level', 'color', 'warmth']
 const READOUT: Signal[] = ['value', 'enum', 'toggle']
 
+// Pieces that switch but have nothing to do for a press: a sensor only says
+// what it sees, a lock is locked or not, and a readout shows a number.
+const NO_PRESS = new Set([
+  'motion_sensor',
+  'smoke_detector',
+  'leak_sensor',
+  'alarm_panel',
+  'smart_lock',
+  'air_quality',
+  'thermostat',
+])
+
+// Everything else that switches also does one thing for a press: it runs for
+// a moment and goes back, a light blinks, a fridge opens and shuts, a litter
+// box scoops once.
+const withPress = (id: string, expresses: Signal[]): Signal[] =>
+  expresses.includes('toggle') && !NO_PRESS.has(id) ? [...expresses, 'press'] : expresses
+
 const kind = (
   id: string,
   family: string,
@@ -239,7 +259,17 @@ const kind = (
   materials: Record<string, string>,
   expresses: Signal[] = NONE,
   variants?: DecorationVariant[],
-): DecorationKind => ({ id, family, label, mount, params, colors, materials, expresses, variants })
+): DecorationKind => ({
+  id,
+  family,
+  label,
+  mount,
+  params,
+  colors,
+  materials,
+  expresses: withPress(id, expresses),
+  variants,
+})
 
 // The pendant's styles are real lamps, so they wear their real finishes:
 // natural wood, opal glass, white ceramic, and black canopies and cords.
@@ -1117,7 +1147,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'bed',
     'Bed',
     'floor',
-    [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3, 0.05), flag('headboard', 'Headboard', 1)],
+    [width(1.6, 0.9, 2), length(2.05, 1.8, 2.3), flag('headboard', 'Headboard', 1)],
     BED_HEADBOARD.colors ?? {},
     BED_HEADBOARD.materials ?? {},
     undefined,
@@ -1516,7 +1546,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'bathroom',
     'Bathtub',
     'floor',
-    [width(0.8, 0.6, 1), length(1.7, 1.3, 2, 0.05)],
+    [width(0.8, 0.6, 1), length(1.7, 1.3, 2)],
     { tub: BATH_WHITE, tap: '#c4c7c8' },
     { tub: 'ceramic', tap: 'metal' },
     TOGGLE,
@@ -1912,7 +1942,7 @@ export const DECORATION_KINDS: DecorationKind[] = [
     'media',
     'Monitor',
     'floor',
-    [width(0.6, 0.4, 1.1), p('ratio', 'Height ratio', 0.6, 0.4, 0.8, 0.02), lift(0)],
+    [width(0.6, 0.4, 1.1), p('ratio', 'Height ratio', 0.6, 0.4, 0.8, 0.02, ''), lift(0)],
     { bezel: SCANDI.ink, screen: SCREEN_OFF_COLOR, stand: SCANDI.slate },
     { bezel: 'matte', screen: 'ceramic', stand: 'metal' },
     TOGGLE,

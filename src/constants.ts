@@ -76,7 +76,7 @@ export const EDITOR_SNAP_PX = 10
 // How close, on screen, a click must be to hit a vertex handle.
 export const EDITOR_HANDLE_PX = 7
 export const EDITOR_CANVAS_HEIGHT_PX = 440
-export const EDITOR_SIDEBAR_WIDTH_PX = 340
+export const EDITOR_SIDEBAR_WIDTH_PX = 400
 // The sidebar never goes below this, nor past half the window.
 export const EDITOR_SIDEBAR_MIN_PX = 260
 // How long typing must pause before a text edit is sent to Home Assistant.

@@ -106,7 +106,7 @@ A wide tile shows pause or start, stop, and back to the dock, each only when the
 
 The floorplan card can bring its own tiles. Turn on **Show the side panel** in the card's editor, or set `side_panel: true` in its YAML, and the floorplan takes the left two thirds of the card with its tiles on the right third. When the card is narrower than 900 pixels, the tiles go under the floorplan instead. This works in any view. In a panel view the floorplan fills its column from the top of the screen to the bottom, whatever its `aspect_ratio`. On a phone it is square, with the tiles under it. In a sections view the card takes the full width of its section.
 
-The card also lays a background behind the view it is in, graphite by default. The card's editor has a Background section with a row of swatches for a light dashboard and another for a dark one, so each can have its own: graphite, dusk, ocean, forest or ember, each a dark version and a pale version of the same colors, or Theme to keep the dashboard's own background. In YAML:
+The card also lays a background behind the view it is in, graphite by default. The card's editor has a Background section with a row of swatches for a light dashboard and another for a dark one, so each can have its own: graphite, dusk, ocean, forest or ember, each a dark version and a pale version of the same colors, or Plain to keep the dashboard's own background. In YAML:
 
 ```yaml
 background:

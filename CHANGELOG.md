@@ -12,6 +12,8 @@ moves that section under the new version and uses it as the release notes.
 ### Added
 
 - The floorplan card lays a soft gradient behind its view, with five to choose from in the card's editor and a separate choice for a light and a dark dashboard.
+- Buttons, scripts and scenes can drive nearly every piece that switches on: each press plays it once and it goes back, so a light blinks, a fan goes one turn round, a fridge or a window opens and shuts, and a litter box turns over and back a single time.
+
 - The preview in the card's editor shows the chosen background, and picking another one there changes only the background without loading the flat again.
 - The side panel's tiles fade out and the next room's fade in when the floorplan card flies to a room or back to the whole home.
 - On a light dashboard a tile that is on is dark with white text, so it stands out from the page.
@@ -31,9 +33,24 @@ moves that section under the new version and uses it as the release notes.
 - A leak sensor to put on the floor: it glows blue and a puddle spreads round it when it gets wet.
 - A device removed from Home Assistant is dropped from the card the next time its editor is opened, along with its bindings, so the card never keeps pointing at an entity that is gone.
 - A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
+- Every setting of a piece or a room, its sizes, rotation, colors, style and floor included, has a button beside it that puts it back to its default, and the button only shows once the setting has changed.
+- The 3D preview of a selected piece in the editor can be zoomed and panned as well as turned, and a button in its corner brings the view back.
 
 ### Changed
 
+- The shower's glass door stays shut, so a click on the shower always goes to the device behind it, like any other piece.
+
+- The editor's Discard button is now Close: it closes straight away when there is nothing to save, and asks before throwing changes away when there is.
+- Color settings in the editor show just the rounded color, with no gray box behind it.
+- The sizes of every piece go in steps of 5 cm, the same steps it moves by on the plan, and its rotation goes in steps of 5°.
+- The 2D plan in the editor looks cleaner: a fainter grid, no lines through the origin, every room in the same light gray with an outline, pieces without a device in a neutral gray, plain round icons with no ring, and a scale drawn as one rounded line.
+- The editor's sidebar starts wider.
+- Rooms first and the direction of the sun moved out of the editor into the card's settings, right under the button that opens the editor.
+- In the card's settings, each list of entities ends in an Add entity button that opens a search right under it, listing each entity with its icon, name and id, and picking one with a click or Enter adds it.
+- In the editor, clicking a piece with a device, or changing it under Try its states, only tries it out there and never switches the real device. The editor starts from how the home is when it opens and shows it that way again once it closes.
+- The full screen editor has a cleaner look, with softer colors, settings gathered in rounded groups, frosted menus and tooltips, switches, slim sliders with a pill shaped handle and lighter buttons.
+- The card's settings in the dashboard dialog share the editor's look, with each setting in a rounded group and its explanation under it.
+- The background that keeps the dashboard's own is now called Plain and shows as a flat swatch like the others, without the dotted outline.
 - Under the pointer, the sign that leads into the next room darkens a little instead of lighting up.
 - Up to eight lamps cast shadows at once on a computer and four on a phone or tablet, up from four and two.
 - When a lamp hands its shadow to a brighter light that comes on, the shadow fades out and the new one fades in instead of switching at once.
@@ -48,9 +65,11 @@ moves that section under the new version and uses it as the release notes.
 - The view the card opens with always shows the whole home, whatever the card's shape: on a square or tall card the camera backs off along the saved angle until everything fits, and can still be zoomed and turned from there. On a card narrower than 600 px, as on a phone, the home is centered and fills the card with only a thin margin.
 - A room flown to is fitted to the card the same way, with almost no margin: its saved view keeps its angle and backs off until the whole room shows, on a phone the room is centered and fills the card, and a room with no saved view is centered in the card. The camera flies straight to that view, and keeps the room fitted while the card changes size until it is turned, panned or zoomed.
 - A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.
+- In the card's settings, pressing or changing the tiles of a room flies the preview to that room, and the Home tiles take it back to the whole home.
 
 ### Fixed
 
+- The editor's Discard changes dialog shows its buttons in their proper colors.
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
 - A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.
 - A piece can be set on top of a basin, where it used to sink into it.

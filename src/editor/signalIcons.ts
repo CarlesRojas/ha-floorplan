@@ -1,6 +1,7 @@
 import type { Signal } from '#/signals.ts'
 import {
   faGauge,
+  faHandPointer,
   faList,
   faPalette,
   faPowerOff,
@@ -19,6 +20,7 @@ export const SIGNAL_ICONS: Record<Signal, IconDefinition> = {
   warmth: faSun,
   value: faGauge,
   enum: faList,
+  press: faHandPointer,
 }
 
 export const SIGNAL_LABELS: Record<Signal, string> = {
@@ -28,6 +30,7 @@ export const SIGNAL_LABELS: Record<Signal, string> = {
   warmth: 'Warmth',
   value: 'Reading',
   enum: 'Modes',
+  press: 'Press',
 }
 
 // The longer word for it, shown on hover.
@@ -38,4 +41,5 @@ export const SIGNAL_HINTS: Record<Signal, string> = {
   warmth: 'Color temperature, in kelvin',
   value: 'A number it reads out',
   enum: 'One of a set of modes',
+  press: 'Pressed once, it does one thing and is done',
 }
