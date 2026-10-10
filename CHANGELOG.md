@@ -34,6 +34,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
+- Under the pointer, the sign that leads into the next room darkens a little instead of lighting up.
 - Up to eight lamps cast shadows at once on a computer and four on a phone or tablet, up from four and two.
 - When a lamp hands its shadow to a brighter light that comes on, the shadow fades out and the new one fades in instead of switching at once.
 - A projector's beam goes through the same colors as a TV that is on, where it used to be white.
