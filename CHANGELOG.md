@@ -80,6 +80,7 @@ moves that section under the new version and uses it as the release notes.
 - In the card's settings, pressing or changing the tiles of a room flies the preview to that room, and the Home tiles take it back to the whole home.
 - A button, script or scene tile lights up when pressed, stays lit for half a second and then fades slowly back, and its Press pill does the same on its own.
 - On a small tile, a pill that does something, like Press, is as wide as its words and sits at the right, as on a wide tile.
+- The position tile of a blind, a shutter, a garage door or another cover that goes up and down fills from the top and is dragged up and down, while curtains, gates, doors and valves still fill from the left.
 
 ### Fixed
 
