@@ -146,9 +146,8 @@ function Swirl({ r, y, lit }: { r: number; y: number; lit: number }) {
 }
 
 // Three smart speakers. A tall one wrapped all round in mesh, with no
-// buttons and a glass top that lights up, after the Apple HomePod. A small
-// ball of one with flat poles, after the HomePod mini. The old fabric drum
-// with a wooden base and top.
+// buttons and a glass top that lights up. A small ball of one with flat
+// poles. The old fabric drum with a wooden base and top.
 // Lays a ring of sound flat, round a speaker that plays all ways.
 const FLAT: [number, number, number] = [-Math.PI / 2, 0, 0]
 
