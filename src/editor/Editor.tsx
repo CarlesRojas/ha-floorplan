@@ -520,6 +520,19 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
       }),
     )
 
+  // Shows or hides, in a room's view, the sign on the floor into a room
+  // open beside it.
+  const setArrow = (roomId: string, other: string, shown: boolean) =>
+    commit(
+      rooms.map(r => {
+        if (r.id !== roomId) return r
+        const hidden = (r.hide_arrows ?? []).filter(id => id !== other)
+        if (!shown) hidden.push(other)
+        const { hide_arrows: _dropped, ...rest } = r
+        return hidden.length > 0 ? { ...rest, hide_arrows: hidden } : rest
+      }),
+    )
+
   const selectedRoom = rooms.find(r => r.id === selection.roomId) ?? null
 
   // Where a new piece lands: the selected room, the room the selected piece
@@ -873,6 +886,8 @@ export default function Editor({ hass, config, onChange, onSave }: Props) {
         onRenameDone={flushRename}
         onAssignArea={assignArea}
         onFloor={setFloor}
+        decorations={decorations}
+        onArrow={setArrow}
         onSaveCamera={saveRoomCamera}
         onShowCamera={showRoomCamera}
         onClearCamera={clearRoomCamera}

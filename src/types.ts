@@ -83,6 +83,9 @@ export type RoomConfig = {
   // The order of the room's tiles in the side panel, as entity ids, both
   // the devices on the plan and the entities above.
   order?: string[]
+  // Rooms open beside this one whose sign on the floor is left out of this
+  // room's view, as room ids.
+  hide_arrows?: string[]
 }
 
 // The side panel's section for the whole home.

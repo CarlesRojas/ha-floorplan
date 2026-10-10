@@ -1,9 +1,11 @@
-import { SelectedHeader } from '#/editor/panel.tsx'
+import { decorationKind } from '#/decoration/catalog.ts'
+import { SelectedHeader, Switch } from '#/editor/panel.tsx'
+import { neighboursOf } from '#/geometry/passages.ts'
 import { EDITOR_ACCENT_COLOR, FLOOR_MATERIALS, ROOM_COLORS } from '#/theme.ts'
-import type { Area, RoomConfig } from '#/types.ts'
+import type { Area, DecorationConfig, RoomConfig } from '#/types.ts'
 import { useFlash } from '#/lib/flash.ts'
 import { cn } from '#/lib/utils.ts'
-import { faCamera, faCheck, faEye, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCamera, faCheck, faDoorOpen, faEye, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 type Props = {
@@ -14,6 +16,11 @@ type Props = {
   onRenameDone: () => void
   onAssignArea: (roomId: string, areaId: string | undefined) => void
   onFloor: (roomId: string, floor: RoomConfig['floor']) => void
+  // Every piece of the home, to tell which rooms beside this one a door
+  // leads into.
+  decorations: DecorationConfig[]
+  // Shows or hides the sign on the floor into a room open beside this one.
+  onArrow: (roomId: string, other: string, shown: boolean) => void
   // The room's view: saved from where the 3D view's camera stands now,
   // shown by flying the camera to it, or forgotten.
   onSaveCamera: (roomId: string) => void
@@ -40,6 +47,8 @@ export default function RoomInfo({
   onRenameDone,
   onAssignArea,
   onFloor,
+  decorations,
+  onArrow,
   onSaveCamera,
   onShowCamera,
   onClearCamera,
@@ -59,6 +68,7 @@ export default function RoomInfo({
       style={{ background: room.color ?? ROOM_COLORS[(index < 0 ? 0 : index) % ROOM_COLORS.length] }}
     />
   )
+  const neighbours = neighboursOf(room, rooms, decorations)
   const slider = (label: string, key: 'scale' | 'intensity' | 'rotation', min: number, max: number, step: number) => {
     const value = room.floor?.[key] ?? (key === 'rotation' ? 0 : 1)
     return (
@@ -192,6 +202,37 @@ export default function RoomInfo({
           ? 'Clicking this room in the card flies the camera to this view and fades the rest of the home away.'
           : 'Clicking this room in the card flies the camera to it and fades the rest of the home away. Orbit the 3D view to where the room looks best and save it to choose the view yourself.'}
       </p>
+      {neighbours.length > 0 && (
+        <>
+          <div className="mt-1 text-sm">Rooms beside it</div>
+          {neighbours.map(neighbour => {
+            const other = rooms.find(r => r.id === neighbour.id)
+            const name = other?.name ?? neighbour.id
+            return (
+              <div key={neighbour.id} className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
+                <span className="truncate">{name}</span>
+                {neighbour.door ? (
+                  <span className="flex items-center gap-1.5 text-xs text-(--secondary-text-color)">
+                    <FontAwesomeIcon icon={faDoorOpen} className="size-3" />
+                    {decorationKind(neighbour.door)?.label ?? 'Door'}
+                  </span>
+                ) : (
+                  <Switch
+                    checked={!room.hide_arrows?.includes(neighbour.id)}
+                    accent={accent}
+                    label={`Show an arrow into ${name}`}
+                    onChange={shown => onArrow(room.id, neighbour.id, shown)}
+                  />
+                )}
+              </div>
+            )
+          })}
+          <p className="-mt-1 text-xs text-(--secondary-text-color)">
+            In this room's view a click on a door flies to the room behind it. A room open beside it, with no door
+            between them, gets an arrow on the floor that does the same, unless it is switched off here.
+          </p>
+        </>
+      )}
       <button
         type="button"
         onClick={() => {

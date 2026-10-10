@@ -62,19 +62,33 @@ function sharedStretch(a: Point[], b: Point[]): { at: Point; out: Point } | null
   return best && { at: best.at, out: best.out }
 }
 
-// Every way out of `room` into a room beside it with no door between them.
-export function passagesOf(room: RoomConfig, rooms: RoomConfig[], decorations: DecorationConfig[]): Passage[] {
+// A room beside `room`: the door kind that leads into it, when one does,
+// and else the sign that would, when they share a stretch long enough.
+export type Neighbour = { id: string; door: string | null; passage: Passage | null }
+
+// Every room beside `room`, through a door or open to it.
+export function neighboursOf(room: RoomConfig, rooms: RoomConfig[], decorations: DecorationConfig[]): Neighbour[] {
   const doors = decorations
     .filter(item => DOOR_KINDS.has(item.kind))
-    .map(item => betweenOf(item, rooms)?.rooms ?? [])
-    .filter(between => between.includes(room.id))
-  const result: Passage[] = []
+    .map(item => ({ kind: item.kind, rooms: betweenOf(item, rooms)?.rooms ?? [] }))
+    .filter(door => door.rooms.includes(room.id))
+  const result: Neighbour[] = []
   for (const other of rooms) {
-    if (other.id === room.id || doors.some(between => between.includes(other.id))) continue
-    const stretch = sharedStretch(room.points, other.points)
-    if (stretch) result.push({ from: room.id, to: other.id, ...stretch })
+    if (other.id === room.id) continue
+    const door = doors.find(d => d.rooms.includes(other.id))?.kind ?? null
+    const stretch = door ? null : sharedStretch(room.points, other.points)
+    if (!door && !stretch) continue
+    result.push({ id: other.id, door, passage: stretch && { from: room.id, to: other.id, ...stretch } })
   }
   return result
+}
+
+// Every way out of `room` into a room beside it with no door between them,
+// leaving out the ones the room hides.
+export function passagesOf(room: RoomConfig, rooms: RoomConfig[], decorations: DecorationConfig[]): Passage[] {
+  return neighboursOf(room, rooms, decorations).flatMap(neighbour =>
+    neighbour.passage && !room.hide_arrows?.includes(neighbour.id) ? [neighbour.passage] : [],
+  )
 }
 
 // `outline` turned and moved into place for a passage's sign on the plan.
