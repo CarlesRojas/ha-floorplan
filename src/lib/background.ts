@@ -144,6 +144,10 @@ export function backgroundOf(config: BackgroundConfig | undefined, dark: boolean
   return background ? background[dark ? 'dark' : 'light'] : null
 }
 
+// Whether two configs differ in nothing but their background.
+export const sameButBackground = (a: object, b: object) =>
+  JSON.stringify({ ...a, background: null }) === JSON.stringify({ ...b, background: null })
+
 // Where a card's background goes: the element and the style property it is
 // set through, and whether that element can be fixed to the window.
 type Spot = { element: HTMLElement; property: string; fixable: boolean }
@@ -154,9 +158,14 @@ type Spot = { element: HTMLElement; property: string; fixable: boolean }
 // sets that variable on the element, and puts back what was there before
 // once it lets go. In the card dialog it goes behind the preview instead,
 // so the choice shows there as it is made.
+// What an element had before any card laid a background on it, and the
+// cards laying one now. The preview in the card dialog puts in a new card
+// before the old one lets go, so the element goes back to what it had only
+// once the last of them does.
+const held = new WeakMap<HTMLElement, { value: string; fixed: boolean; by: Set<ViewBackground> }>()
+
 export class ViewBackground {
   private spot: Spot | null = null
-  private before: { value: string; fixed: boolean } | null = null
 
   private readonly card: HTMLElement
 
@@ -181,12 +190,16 @@ export class ViewBackground {
     const value = backgroundOf(config, hass.themes?.darkMode !== false)
     if (!spot || value === null) return this.release()
     const { element, property, fixable } = spot
-    if (!this.before) {
-      this.before = {
+    let before = held.get(element)
+    if (!before) {
+      before = {
         value: element.style.getPropertyValue(property),
         fixed: element.hasAttribute('fixed-background'),
+        by: new Set(),
       }
+      held.set(element, before)
     }
+    before.by.add(this)
     this.spot = spot
     element.style.setProperty(property, value)
     // Fixed to the window, so the colors stay put while the page scrolls.
@@ -195,11 +208,14 @@ export class ViewBackground {
 
   release() {
     const spot = this.spot
-    const before = this.before
     this.spot = null
-    this.before = null
-    if (!spot || !before) return
+    if (!spot) return
     const { element, property, fixable } = spot
+    const before = held.get(element)
+    if (!before) return
+    before.by.delete(this)
+    if (before.by.size) return
+    held.delete(element)
     if (before.value) element.style.setProperty(property, before.value)
     else element.style.removeProperty(property)
     if (fixable) element.toggleAttribute('fixed-background', before.fixed)

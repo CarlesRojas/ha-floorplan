@@ -4,10 +4,10 @@ import Editor from '#/editor/Editor.tsx'
 import { persistCard } from '#/editor/persist.ts'
 import { ReactHost } from '#/host.tsx'
 import { registerTiles } from '#/tiles/index.tsx'
-import { ViewBackground } from '#/lib/background.ts'
-import { inPanelView } from '#/lib/panelView.ts'
+import { sameButBackground, ViewBackground } from '#/lib/background.ts'
+import { closest, inPanelView } from '#/lib/panelView.ts'
 import WithSidePanel from '#/tiles/WithSidePanel.tsx'
-import type { CardConfig } from '#/types.ts'
+import type { BackgroundConfig, CardConfig } from '#/types.ts'
 
 // Baked in by the build from package.json.
 declare const __CARD_VERSION__: string
@@ -167,8 +167,20 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
     // shape it will be drawn in.
     const next = migrate(config)
     validate(next)
-    this._config = next
+    this.backdrop = next.background
+    this._config = this.keep(this._config, next)
     this.render()
+  }
+
+  // The background the config asks for. It is kept apart from the config
+  // the tree is drawn with, so choosing another one changes only the
+  // background and does not draw the flat again.
+  private backdrop: BackgroundConfig | undefined
+
+  // `before` when `next` only changes the background, so the tree is handed
+  // the very same config and has nothing to redo.
+  private keep(before: CardConfig | null, next: CardConfig) {
+    return before && sameButBackground(before, next) ? before : next
   }
 
   // Rough height in 50px rows for the masonry layout.
@@ -186,10 +198,28 @@ class Floorplan3DCard extends ReactHost<CardConfig> {
   // so it is laid again on every render.
   protected render() {
     super.render()
-    if (this._config) this.background.apply(this._config.background, this._hass)
+    // The copy of the card in the side panel leaves it to the card around it.
+    if (this._config && !closest(this, 'fp-side-panel')) this.background.apply(this.backdrop, this._hass)
+  }
+
+  // The preview in the card dialog throws its card away on every change of
+  // the config and builds a new one. The new one takes over the old one's
+  // tree, so a change only updates what it touches instead of loading the
+  // whole flat again.
+  private previewed = false
+
+  connectedCallback() {
+    const holder = this.parentElement
+    this.previewed = holder?.localName === 'hui-card' && !!holder.parentElement?.classList.contains('element-preview')
+    if (this.previewed) {
+      const before = this.adopt()
+      if (this._config) this._config = this.keep(before, this._config)
+    }
+    super.connectedCallback()
   }
 
   disconnectedCallback() {
+    if (this.previewed) this.park()
     super.disconnectedCallback()
     // A card only moved is back by the next tick and keeps its background.
     setTimeout(() => {
