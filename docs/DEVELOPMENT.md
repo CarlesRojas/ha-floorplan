@@ -10,6 +10,10 @@ Custom Lovelace card for Home Assistant: an interactive 3D model of the flat wit
 
 Requires a Home Assistant instance running in Docker with a `compose.yaml`.
 
+### Demo Home Assistant
+
+The quickest way to see the card working is `ha-demo`, a Home Assistant in Docker with the demo flat on a dashboard, bound to the entities of Home Assistant's Demo integration. Build the card with `pnpm build`, run `docker compose up -d` in `ha-demo` and open http://localhost:8124. [ha-demo/README.md](../ha-demo/README.md) has the details.
+
 ### Day to day: dev server with live reload
 
 Home Assistant caches files under `/local` aggressively, so during development the card is served from the Vite dev server instead.
@@ -276,5 +280,5 @@ Home Assistant and the browser cache resources aggressively. After a rebuild, ha
 - `pnpm watch`: rebuild `dist/card.js` on change
 - `pnpm lint`: run oxlint
 - `pnpm showroom`: write `showroom.yaml`, a complete card with every decoration and each of its styles at their defaults, to paste into a dashboard
-- `pnpm demoflat`: write `demoflat.yaml`, the small furnished flat the README screenshots show, to paste into a dashboard. Its plan lives in `scripts/demoflat.plan.ts`
+- `pnpm demoflat`: write `demoflat.yaml`, the small furnished flat the README screenshots show, to paste into a dashboard, and `ha-demo/config/floorplan.yaml`, the same flat as the dashboard of the demo Home Assistant. Its plan lives in `scripts/demoflat.plan.ts`
 - `pnpm release --bump patch|minor|major` or `--version X.Y.Z`: move the Unreleased changelog notes under the new version and write it to `package.json`. The Release workflow on GitHub runs this, so it is rarely run by hand
