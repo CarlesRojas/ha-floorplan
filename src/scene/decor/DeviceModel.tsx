@@ -20,6 +20,7 @@ import { CeilingFan, FloorFan, Radiator } from '#/scene/decor/Climate.tsx'
 import { FAN_SPEED } from '#/scene/decor/pressed.ts'
 import { Beam, Console, FloorSpeaker, PortableProjector, Speaker } from '#/scene/decor/Media.tsx'
 import type { RoomConfig } from '#/types.ts'
+import { MODE_HEX } from '#/tiles/modes.ts'
 import { useMemo, useRef, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useLive } from '#/scene/live.ts'
@@ -126,6 +127,13 @@ function Alarm({ on, s, y }: { on: boolean; s: number; y: number }) {
     </group>
   )
 }
+
+// A color like #ff6422 as red, green and blue from 0 to 1.
+const rgbOf = (hex: string): [number, number, number] => [
+  parseInt(hex.slice(1, 3), 16) / 255,
+  parseInt(hex.slice(3, 5), 16) / 255,
+  parseInt(hex.slice(5, 7), 16) / 255,
+]
 
 export default function DeviceModel({ kind, item, state, room, all }: Props) {
   const p = (id: string) => paramValue(kind, item.params, id, item.variant)
@@ -425,12 +433,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       // top, a louvre that tips open underneath and a small display. Its
       // height and depth follow its width, within what real units come in.
       const w = p('width')
-      // Warm air out a dim red and cool air out a dim blue, dark enough to
-      // blend into the room,
-      // by what the device says it is doing, and plain when it only moves
-      // the air.
-      const mode = state?.text ?? ''
-      const air = /heat/.test(mode) ? '#b4503a' : /cool/.test(mode) ? '#4a6d9e' : '#6b7480'
+      // The air out in the color its tiles show, like orange while it
+      // heats, and plain while it waits.
+      const air = MODE_HEX[state?.text ?? ''] ?? '#6b7480'
       if (style === 'duct') {
         // A grille let into the wall, a frame round a dark slot of blades
         // angled down, with the air coming out through them.
@@ -632,8 +637,10 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
       )
     }
     case 'thermostat': {
-      // A round dial: a steel ring around a face that lights when it runs.
+      // A round dial: a steel ring around a face that lights when it runs,
+      // in the color its tiles show, and white while it waits.
       const r = p('size') / 2
+      const glow = MODE_HEX[state?.text ?? ''] ?? '#ffffff'
       return (
         <group>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.012]}>
@@ -646,9 +653,9 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
             <cylinderGeometry args={[r * 0.82, r * 0.82, 0.004, SEG]} />
-            <Material color={c('face')} material={m('face')} emissive={[1, 0.6, 0.35]} emissiveIntensity={1.5 * lit} />
+            <Material color={c('face')} material={m('face')} emissive={rgbOf(glow)} emissiveIntensity={1.5 * lit} />
           </mesh>
-          <Halo on={on} position={[0, 0, 0.1]} color="#ffb070" />
+          <Halo on={on} position={[0, 0, 0.1]} color={glow} />
         </group>
       )
     }

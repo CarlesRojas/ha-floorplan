@@ -1,22 +1,30 @@
-import { cn } from '#/lib/utils.ts'
 import { entityName, moreInfo, runAction, type TileEnv } from '#/tiles/actions.ts'
-import { insideTile, useTileGestures } from '#/tiles/gestures.ts'
+import { addsRow, besideIcon, Feature, featureState, isWide } from '#/tiles/features/index.tsx'
+import type { Preview } from '#/tiles/features/parts.tsx'
+import { useTileGestures } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Icon } from '#/tiles/Icon.tsx'
 import { defaultIcon } from '#/tiles/icons.ts'
 import type { EntityState } from '#/types.ts'
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 
 type Props = {
   env: TileEnv
   config: TileConfig
   entity: EntityState | undefined
   active?: boolean
+  // Looks like a tile that is off while it still says it is on, for a
+  // tile drawn on in part over it, like a light's brightness.
+  looksOff?: boolean
+  // Going back to off slowly, like a button a moment after it was pressed.
+  fading?: boolean
   // The color the icon takes while the tile is active.
   accent?: string
   // A color that washes over an active tile from its top left corner, like
   // the color a light shines in.
   glow?: string
+  // Whether the glow comes from the top left corner or down from the top.
+  glowFrom?: 'corner' | 'top'
   state: ReactNode
   // What a tap does when the config sets no tap_action.
   onTap?: () => void
@@ -26,12 +34,17 @@ type Props = {
   toggles?: boolean
   // Buttons shown in the top right corner of a wide tile.
   controls?: ReactNode
-  // A row of buttons along the bottom of a wide tile, under the name.
-  footer?: ReactNode
+  // Buttons across from the name along the bottom of a wide tile, so the
+  // name and the state stay in the bottom left corner. A feature beside
+  // the icon takes their place.
+  aside?: ReactNode
   // Whether an unknown state counts as unavailable. A button that was
   // never pressed has no time to show and says unknown, yet still works.
   unknownIsUnavailable?: boolean
 }
+
+// How long a sent preview waits for Home Assistant before it gives up.
+const PREVIEW_MS = 5000
 
 // The icon set for the entity in Home Assistant, in its settings or its
 // YAML, picked as `ph:` to match the other tiles or as any other icon.
@@ -46,14 +59,17 @@ export function Tile({
   config,
   entity,
   active = false,
+  looksOff = false,
+  fading = false,
   accent,
   glow,
+  glowFrom = 'corner',
   state,
   onTap,
   role = 'button',
   toggles = false,
   controls,
-  footer,
+  aside,
   unknownIsUnavailable = true,
 }: Props) {
   const unavailable = !entity || entity.state === 'unavailable' || (unknownIsUnavailable && entity.state === 'unknown')
@@ -62,9 +78,28 @@ export function Tile({
     onTap: unavailable ? undefined : () => runAction(env, config.tap_action, () => onTap?.()),
     onHold: () => runAction(env, config.hold_action, () => moreInfo(env.host, config.entity)),
   })
-  const shown = unavailable ? 'Unavailable' : (config.state_text ?? state)
+  // Where a feature beside the icon is being moved to, shown on the tile
+  // until Home Assistant says the entity changed, so it does not flash back
+  // to what it was in between.
+  const [preview, setPreview] = useState<Preview | null>(null)
+  useEffect(() => setPreview(p => (p?.sent ? null : p)), [entity])
+  useEffect(() => {
+    if (!preview?.sent) return
+    const timer = setTimeout(() => setPreview(null), PREVIEW_MS)
+    return () => clearTimeout(timer)
+  }, [preview])
+  const beside = besideIcon(config.feature) && !unavailable
+  const wide = isWide(config, entity)
+  const said = (active && !unavailable && featureState(config.feature, entity!)) || state
+  const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? said)
   const name = entityName(config, entity)
   const on = active && !unavailable
+  const text = (
+    <div className="fp-text">
+      <div className="fp-name">{name}</div>
+      <div className="fp-state">{shown}</div>
+    </div>
+  )
   return (
     <div
       {...handlers}
@@ -74,11 +109,21 @@ export function Tile({
       aria-pressed={role === 'button' && toggles ? on : undefined}
       aria-checked={role === 'switch' ? on : undefined}
       aria-disabled={unavailable || undefined}
-      data-active={on || undefined}
+      data-active={(on && !looksOff) || undefined}
       data-pressed={(pressed && !unavailable) || undefined}
+      data-fading={fading || undefined}
       data-unavailable={unavailable || undefined}
+      data-wide={wide || undefined}
+      data-glow={glowFrom}
       className="fp-tile"
-      style={{ '--_tile-accent': config.color ?? accent, '--_tile-glow': glow } as CSSProperties}
+      style={
+        {
+          '--_tile-accent': preview?.color
+            ? `color-mix(in oklab, ${preview.color}, black 15%)`
+            : (config.color ?? accent),
+          '--_tile-glow': preview?.color ?? glow,
+        } as CSSProperties
+      }
     >
       <div className="fp-top">
         <Icon
@@ -88,48 +133,29 @@ export function Tile({
             config.piece_icon ??
             defaultIcon(config.entity, entity?.attributes.device_class, entity?.state)
           }
-          on={on}
+          on={(on && !looksOff) || fading}
         />
-        {config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>}
+        {beside ? (
+          <div className="fp-beside">
+            <Feature env={env} config={config} entity={entity!} onPreview={setPreview} />
+          </div>
+        ) : (
+          wide && controls && !unavailable && <div className="fp-controls">{controls}</div>
+        )}
       </div>
-      <div className="fp-text">
-        <div className="fp-name">{name}</div>
-        <div className="fp-state">{shown}</div>
-      </div>
-      {config.size === 'wide' && footer && !unavailable && <div className="fp-footer">{footer}</div>}
+      {wide && aside && !unavailable && !config.feature ? (
+        <div className="fp-bottom">
+          {text}
+          <div className="fp-aside">{aside}</div>
+        </div>
+      ) : (
+        text
+      )}
+      {addsRow(config.feature) && !unavailable && (
+        <div className="fp-footer">
+          <Feature env={env} config={config} entity={entity!} />
+        </div>
+      )}
     </div>
-  )
-}
-
-type ControlProps = {
-  icon: string
-  label: string
-  onPress: () => void
-  className?: string
-  // One of a set where only one is chosen, like the mode of a thermostat.
-  role?: 'radio'
-  checked?: boolean
-  style?: CSSProperties
-}
-
-// One round button inside a wide tile. Pressing it never presses the tile.
-export function Control({ icon, label, onPress, className, role, checked, style }: ControlProps) {
-  return (
-    <button
-      {...insideTile}
-      type="button"
-      role={role}
-      aria-checked={role === 'radio' ? !!checked : undefined}
-      aria-label={label}
-      title={label}
-      className={cn('fp-control', className)}
-      style={style}
-      onClick={e => {
-        e.stopPropagation()
-        onPress()
-      }}
-    >
-      <Icon icon={icon} on />
-    </button>
   )
 }

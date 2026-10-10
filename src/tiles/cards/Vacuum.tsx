@@ -1,6 +1,7 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
-import { Control, Tile } from '#/tiles/Tile.tsx'
+import { Control } from '#/tiles/Control.tsx'
+import { Tile } from '#/tiles/Tile.tsx'
 
 export type VacuumConfig = TileConfig & {
   // A sensor with the battery level, for a vacuum that keeps it there

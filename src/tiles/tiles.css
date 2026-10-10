@@ -17,15 +17,18 @@
   --_shadow: var(--fp-tile-shadow, none);
   --_text-active: var(--fp-text-active, #1c1c1e);
   --_text-inactive: var(--fp-text-inactive, #ffffff);
-  --_secondary: var(--fp-text-secondary-opacity, 0.6);
+  --_secondary: var(--fp-text-secondary-opacity, 0.72);
   --_accent: var(--fp-accent, #0a84ff);
   --_accent-light: var(--fp-accent-light, #ffb340);
   --_accent-cover: var(--fp-accent-cover, #32ade6);
-  --_accent-climate: var(--fp-accent-climate, #ff9f0a);
-  --_accent-cool: var(--fp-accent-cool, #64d2ff);
-  /* Deeper blues for the cooling and drying modes, to read on a lit tile. */
-  --_mode-cool: var(--fp-mode-cool, #0a6fd6);
-  --_mode-dry: var(--fp-mode-dry, #13809c);
+  --_accent-climate: var(--fp-accent-climate, #ff6422);
+  --_accent-cool: var(--fp-accent-cool, #5ab0ff);
+  --_mode-heat: var(--fp-mode-heat, var(--_accent-climate));
+  --_mode-cool: var(--fp-mode-cool, var(--_accent-cool));
+  --_mode-dry: var(--fp-mode-dry, #ffc60a);
+  --_mode-fan: var(--fp-mode-fan, #30c9a4);
+  --_alarm-armed: var(--fp-alarm-armed, #ff453a);
+  --_alarm-disarmed: var(--fp-alarm-disarmed, #30d158);
   --_font-tile: var(--fp-font-tile, 'Inter', system-ui, sans-serif);
   --_font-title: var(--fp-font-title, 'Inter Tight', system-ui, sans-serif);
   --_title-size: var(--fp-title-size, 30px);
@@ -33,6 +36,7 @@
   --_icon-size: var(--fp-tile-icon-size, 28px);
   --_name-size: var(--fp-tile-name-size, 15px);
   --_state-size: var(--fp-tile-state-size, 13px);
+  --_handle: var(--fp-slider-handle, var(--_bg-active));
   --_duration: var(--fp-tile-duration, 200ms);
   --_press: var(--fp-tile-press-scale, 0.96);
   --_focus: var(--fp-tile-focus-scale, 1.03);
@@ -54,10 +58,27 @@
   --_text-active: var(--fp-text-active, #ffffff);
 }
 
-/* The paler blues read on the dark tile where the deeper ones would not. */
-:host([data-light]) .fp-tile[data-active] {
-  --_mode-cool: var(--fp-mode-cool, #64d2ff);
-  --_mode-dry: var(--fp-mode-dry, #5ac8e0);
+/* The accent and mode colors, toward white on a dark tile and toward
+   black on a light one, a tile that is on on a dark dashboard or one that
+   is off on a light dashboard, enough for an icon or a line to stand out
+   three to one from the tile and for words four and a half to one. */
+.fp-tile {
+  --_ink-to: white;
+  --_deep: 20%;
+  --_deep-text: 35%;
+}
+
+:host(:not([data-light])) .fp-tile[data-active] {
+  --_ink-to: black;
+  --_deep: 30%;
+  --_deep-text: 40%;
+}
+
+/* The glass of a light dashboard is grey, so it takes more. */
+:host([data-light]) .fp-tile:not([data-active]) {
+  --_ink-to: black;
+  --_deep: 40%;
+  --_deep-text: 45%;
 }
 
 .fp-tile {
@@ -96,6 +117,19 @@
   color: var(--_text-active);
 }
 
+/* A button lights up at once when pressed and a moment later fades slowly
+   back to off. */
+.fp-tile[data-fading] {
+  --_duration: 1000ms;
+}
+
+.fp-tile[data-fading] .fp-icon,
+.fp-tile[data-fading] .fp-text {
+  transition:
+    color var(--_duration) ease,
+    opacity var(--_duration) ease;
+}
+
 /* The color of a light, strongest in the top left corner and fading out to
    the plain tile. */
 .fp-tile[data-active][style*='--_tile-glow'] {
@@ -103,6 +137,17 @@
     140% 140% at 0% 0%,
     color-mix(in srgb, var(--_tile-glow) 42%, transparent) 0%,
     color-mix(in srgb, var(--_tile-glow) 14%, transparent) 45%,
+    transparent 80%
+  );
+}
+
+/* The color of a thermostat's mode, coming down from the top like the air
+   out of it. */
+.fp-tile[data-active][data-glow='top'][style*='--_tile-glow'] {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--_tile-glow) 24%, transparent) 0%,
+    color-mix(in srgb, var(--_tile-glow) 7%, transparent) 45%,
     transparent 80%
   );
 }
@@ -128,6 +173,117 @@
   transform: scale(var(--_press));
 }
 
+/* A light whose whole tile is its brightness: a lit copy of the tile over
+   the plain one, cut off where the brightness ends. The two scale
+   together when pressed or in focus, so the outer box does instead. */
+.fp-fill {
+  position: relative;
+  height: 100%;
+  border-radius: var(--_radius);
+  touch-action: pan-y;
+  transition: transform var(--_duration) ease;
+}
+
+.fp-fill > .fp-tile {
+  touch-action: pan-y;
+}
+
+/* One that fills from the top is dragged up and down, so a swipe that
+   starts on it moves the fill and not the page. */
+.fp-fill[data-vertical],
+.fp-fill[data-vertical] > .fp-tile {
+  touch-action: pan-x;
+}
+
+.fp-fill .fp-tile,
+.fp-fill .fp-tile:focus-visible,
+.fp-fill .fp-tile[data-pressed] {
+  transform: none;
+}
+
+.fp-fill:has(.fp-tile[data-pressed]) {
+  transform: scale(var(--_press));
+}
+
+.fp-fill:has(> .fp-tile:focus-visible) {
+  transform: scale(var(--_focus));
+}
+
+.fp-fill-lit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: clip-path 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-fill[data-dragging] .fp-fill-lit,
+.fp-fill[data-dragging] .fp-fill-grip {
+  transition: none;
+}
+
+/* The lit copy draws no shadow and no blur of its own, so the edge where
+   it ends is clean. */
+.fp-fill-lit .fp-tile {
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* A short bar that rides just inside the edge of the fill, centered on
+   the tile, the handle to drag it with. It fades in over the last stretch
+   to full brightness, where there is no edge left to see, and ends up
+   halfway across the padding past the words. Another one waits at the
+   start while it is empty, to show where to pull it from. */
+.fp-fill-grip {
+  --_inset: calc(var(--_padding) / 2 - 2px);
+  position: absolute;
+  top: 50%;
+  left: calc(var(--_edge) - var(--_inset) - 4px);
+  width: 4px;
+  height: 28px;
+  border-radius: 2px;
+  background: var(--_text-active);
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition:
+    left 250ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-fill[data-vertical] .fp-fill-grip {
+  left: 50%;
+  width: 28px;
+  height: 4px;
+  transform: translateX(-50%);
+  transition:
+    top 250ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-fill[data-from='top'] .fp-fill-grip {
+  top: calc(var(--_edge) - var(--_inset) - 4px);
+}
+
+.fp-fill[data-from='bottom'] .fp-fill-grip {
+  top: calc(100% - var(--_edge) + var(--_inset));
+}
+
+.fp-fill .fp-fill-grip[data-start] {
+  background: var(--_text-inactive);
+}
+
+.fp-fill[data-from='left'] .fp-fill-grip[data-start] {
+  left: var(--_inset);
+}
+
+.fp-fill[data-from='top'] .fp-fill-grip[data-start] {
+  top: var(--_inset);
+}
+
+.fp-fill[data-from='bottom'] .fp-fill-grip[data-start] {
+  top: calc(100% - var(--_inset) - 4px);
+}
+
 .fp-top {
   display: flex;
   align-items: flex-start;
@@ -137,6 +293,25 @@
 
 .fp-text {
   min-width: 0;
+}
+
+/* The name and the state in the bottom left corner, with buttons across
+   from them, like a thermostat's modes, level with the state line. */
+.fp-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fp-bottom > .fp-text {
+  flex: 1 1 auto;
+}
+
+.fp-aside {
+  display: flex;
+  flex: none;
+  margin: 0 -4px -4px 0;
 }
 
 .fp-icon {
@@ -154,7 +329,7 @@
 }
 
 .fp-tile[data-active] .fp-icon {
-  color: var(--_tile-accent, var(--_accent));
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
 }
 
 .fp-name {
@@ -177,6 +352,137 @@
   text-overflow: ellipsis;
   opacity: var(--_secondary);
   font-variant-numeric: tabular-nums;
+}
+
+/* A feature across from the icon, in the space the icon leaves. Buttons
+   and menus sit in the corner like the controls of a wide tile, as wide as
+   they need on a wide tile and as wide as there is room on a small one.
+   Bars take the whole space. */
+.fp-beside {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+  margin: -4px -4px 0 12px;
+}
+.fp-beside:has(.fp-slim) {
+  margin: -2px 0 0 12px;
+}
+.fp-beside .fp-feature {
+  justify-content: flex-end;
+}
+.fp-beside .fp-pill,
+.fp-beside .fp-slider {
+  height: 40px;
+}
+.fp-beside .fp-feature > .fp-group {
+  flex: 0 1 auto;
+}
+.fp-beside .fp-feature .fp-group > .fp-control {
+  flex: 0 1 40px;
+  width: 40px;
+  max-width: 40px;
+  height: 40px;
+}
+.fp-beside .fp-feature .fp-group > .fp-pill {
+  height: 36px;
+}
+.fp-tile[data-wide] .fp-beside .fp-feature > :is(.fp-pill, .fp-feature-date) {
+  flex: 0 1 auto;
+}
+/* A pill that does something, like Press, is as wide as its words on a
+   small tile too, at the right. */
+.fp-beside .fp-feature > .fp-pill-action {
+  flex: 0 1 auto;
+}
+.fp-tile[data-wide] .fp-beside .fp-feature .fp-group > .fp-control {
+  flex: none;
+  width: 44px;
+  max-width: none;
+  height: 44px;
+}
+.fp-tile[data-wide] .fp-beside .fp-feature .fp-group > .fp-pill {
+  flex: none;
+  padding: 0 12px;
+}
+.fp-tile[data-wide] .fp-beside .fp-pill-menu {
+  max-width: 260px;
+}
+/* Smaller colors, and on a small tile only as many as fit. */
+.fp-beside .fp-swatches {
+  flex: none;
+  gap: 8px;
+  padding: 4px 0;
+}
+.fp-beside .fp-swatch {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+/* A small tile drops what the space beside the icon has no room for: the
+   word on a pill that stays pressed, the colors past the fourth, and some of the room
+   around a range of temperatures. */
+@container (max-width: 220px) {
+  .fp-beside .fp-swatch:nth-child(n + 5) {
+    display: none;
+  }
+
+  .fp-beside .fp-feature > .fp-pill-toggle {
+    flex: none;
+  }
+
+  .fp-beside .fp-pill-toggle .fp-pill-label {
+    display: none;
+  }
+
+  .fp-beside .fp-stepper-end {
+    width: auto;
+    padding: 0 5px;
+    font-size: 15px;
+  }
+}
+
+/* A slim bar of a scale with round ends, and a round handle where the
+   value is. */
+.fp-slim {
+  position: relative;
+  flex: 1 1 auto;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--_track);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  cursor: ew-resize;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.fp-slim:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.fp-slim-handle {
+  position: absolute;
+  top: 3px;
+  left: calc(3px + var(--_share) * (100% - 32px));
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  /* Tinted by the light's color like the tile around it. */
+  background: linear-gradient(color-mix(in srgb, var(--_tile-glow, transparent) 25%, transparent) 0 0), var(--_handle);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  transition: left 120ms ease-out;
+}
+
+.fp-slim-dragging .fp-slim-handle {
+  transition: none;
+}
+.fp-slim-idle .fp-slim-handle {
+  opacity: 0.4;
 }
 
 /* Round buttons inside a tile, for the wide cover and vacuum tiles. */
@@ -203,6 +509,7 @@
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--_duration) ease,
+    box-shadow var(--_duration) ease,
     transform var(--_duration) ease;
 }
 
@@ -213,15 +520,18 @@
   color: inherit;
 }
 
+/* Under the pointer and the finger, a button takes a wash of the color of
+   its words over whatever fill it has, so a chosen, colored or filled one
+   keeps its look and its contrast. */
 @media (hover: hover) and (pointer: fine) {
   .fp-control:hover {
-    background: color-mix(in srgb, currentColor 14%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 14%, transparent);
   }
 }
 
 .fp-control:active {
   transform: scale(0.88);
-  background: color-mix(in srgb, currentColor 22%, transparent);
+  box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 22%, transparent);
 }
 
 .fp-control:focus-visible {
@@ -230,7 +540,7 @@
 }
 
 /* The minus and plus of a thermostat, with what it aims for between them. */
-/* As wide as the widest temperature it shows, like 99.5° or 100°, so it
+/* As wide as the widest temperature it shows, like 99.5°, so it
    keeps its width as the number changes. */
 .fp-stepper-value,
 .fp-stepper-end {
@@ -261,7 +571,7 @@
   background: transparent;
   color: inherit;
   font-family: inherit;
-  opacity: 0.55;
+  opacity: var(--_secondary);
   cursor: pointer;
   transition:
     background-color var(--_duration) ease,
@@ -303,7 +613,7 @@
 
 /* The mode it runs in, filled and in the color of that mode. */
 .fp-mode[aria-checked='true'] {
-  color: var(--_mode-color, inherit);
+  color: color-mix(in oklab, var(--_mode-color, currentColor), var(--_ink-to) var(--_deep));
   background: color-mix(in srgb, var(--_mode-color, currentColor) 20%, transparent);
 }
 
@@ -393,7 +703,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .fp-option:hover {
-    background: color-mix(in srgb, currentColor 10%, transparent);
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 10%, transparent);
   }
 }
 
@@ -519,12 +829,1409 @@
   font-weight: 600;
 }
 
+/* A feature along the bottom of a tile, at any size: a bar, a menu, a
+   switch or a set of buttons, the whole width of the tile. */
+.fp-feature {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 6px;
+  container-type: inline-size;
+}
+
+.fp-feature > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Round buttons side by side in one frosted pill, spread out to fill it. */
+.fp-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.fp-feature .fp-group > .fp-control {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  max-width: 64px;
+  height: 38px;
+}
+
+.fp-feature .fp-group:has(> .fp-pill) {
+  gap: 3px;
+}
+
+.fp-group > .fp-pill {
+  flex: 1 1 0;
+  height: 38px;
+  padding: 0 6px;
+  background: transparent;
+}
+
+/* Pills with a word and no icon, like 25% or 50%, a size smaller once
+   there are five of them in a small tile, so each fits whole. */
+@container (max-width: 260px) {
+  .fp-group > .fp-pill {
+    font-size: 13px;
+  }
+
+  .fp-group > .fp-pill:has(> .fp-icon) .fp-pill-label {
+    display: none;
+  }
+}
+
+/* A slider: a thick rounded bar that fills from the left as far as its
+   value, the value written inside it. */
+.fp-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  cursor: ew-resize;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-slider-dragging {
+  transform: scaleY(1.06);
+}
+
+.fp-slider:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.fp-slider-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--_share) * 100%);
+  background: var(--_fill, var(--_tile-accent, var(--_accent)));
+  transition: width 120ms ease-out;
+}
+
+.fp-slider-dragging .fp-slider-fill {
+  transition: none;
+}
+
+.fp-slider-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.fp-slider-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-tile .fp-slider-label > .fp-icon {
+  width: 20px;
+  height: 20px;
+  --mdc-icon-size: 20px;
+  color: inherit;
+}
+
+/* A bar that is a scale of its own, like a rainbow, shows a knob where its
+   value is, its words in white over the colors. */
+.fp-slider-scale {
+  background: var(--_track);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.fp-slider-knob {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: calc(5px + var(--_share) * (100% - 18px));
+  width: 8px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  transition: left 120ms ease-out;
+}
+
+.fp-slider-dragging .fp-slider-knob {
+  transition: none;
+}
+
+.fp-slider-static {
+  cursor: inherit;
+  touch-action: auto;
+}
+
+/* A pill with words, for a menu, a switch or an action. */
+.fp-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--_duration) ease,
+    box-shadow var(--_duration) ease,
+    color var(--_duration) ease,
+    transform var(--_duration) ease;
+}
+
+.fp-tile .fp-pill > .fp-icon {
+  width: 20px;
+  height: 20px;
+  --mdc-icon-size: 20px;
+  flex: none;
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-pill:not(:disabled):hover {
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 7%, transparent);
+  }
+}
+
+.fp-pill:not(:disabled):active {
+  transform: scale(0.96);
+  box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.fp-pill:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.fp-pill:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.fp-pill-label,
+.fp-pill-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A menu names what it picks in a dimmer weight, then the choice. */
+.fp-pill-menu {
+  justify-content: flex-start;
+}
+
+.fp-pill-menu .fp-pill-label {
+  flex: none;
+  font-weight: 500;
+  opacity: var(--_secondary);
+}
+
+.fp-pill-menu .fp-pill-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.fp-tile .fp-pill > .fp-pill-caret {
+  width: 14px;
+  height: 14px;
+  opacity: var(--_secondary);
+}
+
+/* A narrow tile has room for the choice only, or for what the menu picks
+   while nothing is chosen, like a fan running at a speed of its own. */
+@container (max-width: 220px) {
+  .fp-pill-menu:not([data-empty]) .fp-pill-label {
+    display: none;
+  }
+
+  .fp-pill-menu[data-empty] .fp-pill-label {
+    flex: 1 1 auto;
+    text-align: left;
+  }
+}
+
+/* A pill that does what a button does lights up the same way. */
+.fp-pill-action[data-flash='lit'] {
+  background-color: var(--_bg-active);
+  color: var(--_text-active);
+}
+
+.fp-pill-action[data-flash='fading'] {
+  --_duration: 1000ms;
+}
+
+/* A pill that stays pressed while what it says is on, filled in the color
+   of its words, with the words in the color of the tile. */
+.fp-pill-toggle[aria-pressed='true'] {
+  background: currentColor;
+}
+
+.fp-tile .fp-pill-toggle[aria-pressed='true'] > * {
+  color: var(--_text-active);
+}
+
+.fp-tile[data-active] .fp-pill-toggle[aria-pressed='true'] > * {
+  color: var(--_text-inactive);
+}
+
+/* Pressed, a wash of its own color would not show, so under the pointer
+   and the finger it lets a little of the tile through instead, little
+   enough for the words to stay readable. */
+@media (hover: hover) and (pointer: fine) {
+  .fp-pill-toggle[aria-pressed='true']:not(:disabled):hover {
+    background: color-mix(in srgb, currentColor 80%, transparent);
+    box-shadow: none;
+  }
+}
+
+.fp-pill-toggle[aria-pressed='true']:not(:disabled):active {
+  background: color-mix(in srgb, currentColor 70%, transparent);
+  box-shadow: none;
+}
+
+/* One of a set, like the position of a lock, filled while it is the one. */
+.fp-pill[aria-checked='true'] {
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.fp-group > .fp-pill[aria-checked='true'] {
+  background: var(--_bg-chosen, color-mix(in srgb, currentColor 18%, transparent));
+}
+
+/* The action a sheet is for, like Disarm, in the accent. */
+.fp-pill-primary:not(:disabled) {
+  background: color-mix(in oklab, var(--_accent), black 15%);
+  color: #fff;
+}
+
+/* A stepper fills its pill: minus on the left, plus on the right. */
+.fp-stepper > .fp-stepper-value,
+.fp-feature .fp-group > .fp-stepper-value,
+.fp-feature .fp-group > .fp-stepper-range {
+  flex: 1 1 auto;
+  width: auto;
+  justify-content: center;
+}
+
+/* A few colors a press away. */
+.fp-swatches {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px;
+}
+
+.fp-swatch {
+  flex: 0 1 38px;
+  aspect-ratio: 1;
+  min-width: 0;
+  max-height: 38px;
+  border: none;
+  border-radius: 999px;
+  background: var(--_swatch);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+  cursor: pointer;
+  transition: transform var(--_duration) ease;
+}
+
+.fp-swatch:active {
+  transform: scale(0.88);
+}
+
+.fp-swatch:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* The line of a reading's last day along the bottom of a tile. */
+.fp-sparkline {
+  display: block;
+  width: 100%;
+  height: 44px;
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
+  overflow: visible;
+}
+
+.fp-feature-date {
+  position: relative;
+  display: flex;
+}
+
+.fp-feature-date > .fp-pill {
+  flex: 1 1 auto;
+}
+
+/* The native picker opens from a field no one sees, under its pill. */
+.fp-hidden-input {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* A sheet in the middle of the screen, over the dashboard, like the keypad
+   an alarm asks for its code with. */
+.fp-sheet {
+  position: fixed;
+  inset: 0;
+  width: min(340px, calc(100vw - 32px));
+  height: fit-content;
+  margin: auto;
+  padding: 22px 20px 20px;
+  border: none;
+  border-radius: 28px;
+  background: var(--fp-menu-bg, rgba(44, 44, 48, 0.86));
+  color: var(--fp-menu-text, #fff);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  font-family: var(--_font-tile);
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity var(--_duration) ease,
+    transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay var(--_duration) allow-discrete,
+    display var(--_duration) allow-discrete;
+}
+
+.fp-sheet:popover-open {
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .fp-sheet:popover-open {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+.fp-sheet::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+:host([data-light]) .fp-sheet {
+  background: var(--fp-menu-bg, rgba(250, 250, 252, 0.9));
+  color: var(--fp-menu-text, #1c1c1e);
+}
+
+.fp-sheet-title {
+  margin-bottom: 4px;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* The keypad: the code as dots, round keys three across, and the action. */
+.fp-keypad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.fp-keypad-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 28px;
+}
+
+.fp-keypad-hint {
+  font-size: 15px;
+  font-weight: 500;
+  opacity: var(--_secondary);
+}
+
+.fp-keypad-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.fp-keypad-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  gap: 14px 22px;
+  justify-content: center;
+}
+
+.fp-key {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 30px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease;
+}
+
+.fp-key:active {
+  background: color-mix(in srgb, currentColor 32%, transparent);
+}
+
+.fp-key:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.fp-key-plain {
+  background: transparent;
+}
+
+.fp-key:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.fp-key > .fp-icon {
+  width: 26px;
+  height: 26px;
+  --mdc-icon-size: 26px;
+}
+
+.fp-keypad-field {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+}
+
+.fp-keypad-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.fp-keypad-actions > .fp-pill {
+  flex: 1 1 0;
+}
+
+/* A card bigger than a tile, like the alarm panel or the calendar: the same
+   glass, as tall as what it holds, with the icon, the name and the state
+   along the top. */
+.fp-panel {
+  justify-content: flex-start;
+  gap: 14px;
+  height: auto;
+  min-height: 100%;
+  cursor: default;
+}
+
+.fp-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -6px;
+  padding: 6px;
+  border-radius: calc(var(--_radius) - 12px);
+  cursor: pointer;
+  transition:
+    background-color var(--_duration) ease,
+    box-shadow var(--_duration) ease,
+    transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-panel-head:hover {
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 8%, transparent);
+  }
+}
+
+.fp-panel-head[data-pressed] {
+  transform: scale(0.98);
+}
+
+.fp-panel-head:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.fp-panel-head > .fp-text {
+  flex: 1;
+}
+
+/* The icon on a disc of its own color. */
+.fp-panel-icon {
+  display: grid;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--_tile-accent, var(--_accent)) 22%, transparent);
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
+  transition:
+    background-color var(--_duration) ease,
+    color var(--_duration) ease;
+}
+
+.fp-tile .fp-panel-icon > .fp-icon {
+  width: 22px;
+  height: 22px;
+  --mdc-icon-size: 22px;
+  color: inherit;
+}
+
+.fp-panel-aside {
+  flex: none;
+  font-size: var(--_state-size);
+  font-weight: 600;
+  opacity: var(--_secondary);
+}
+
+/* The modes of the alarm, one pill each, the one it is in filled. */
+.fp-alarm-modes {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.fp-alarm-modes > .fp-pill {
+  flex: 1 1 96px;
+  height: 40px;
+}
+
+.fp-panel .fp-keypad {
+  align-self: center;
+}
+
+/* A link like button, for Clear. */
+.fp-link {
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep-text));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-link:hover {
+    box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 12%, transparent);
+  }
+}
+
+.fp-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* The calendar: a day by day agenda, each day a small heading over its
+   events, each event a rounded row with a bar in its calendar's color. */
+.fp-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 420px;
+  margin: 0 -6px;
+  padding: 0 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.fp-agenda-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fp-agenda-day {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: var(--_secondary);
+}
+
+.fp-agenda-day[data-today] {
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep-text));
+  opacity: 1;
+}
+
+.fp-agenda-event {
+  position: relative;
+  padding: 10px 12px 10px 18px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--_event, currentColor) 14%, transparent);
+}
+
+.fp-agenda-event::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 8px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--_event, currentColor);
+}
+
+.fp-agenda-event[data-now] {
+  background: color-mix(in srgb, var(--_event, currentColor) 26%, transparent);
+}
+
+.fp-agenda-title {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fp-agenda-time {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: var(--_secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-agenda-empty,
+.fp-graph-empty {
+  display: grid;
+  place-items: center;
+  min-height: 80px;
+  font-size: 15px;
+  font-weight: 500;
+  opacity: var(--_secondary);
+}
+
+/* The to-do list: a field to add to, then the rows, each with a round box
+   to tick. A ticked row fades and is struck through. */
+.fp-todo-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 3px 3px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.fp-todo-field {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+}
+
+.fp-todo-field::placeholder {
+  color: inherit;
+  opacity: 0.5;
+}
+
+.fp-todo-add > .fp-control {
+  width: 38px;
+  height: 38px;
+  background: var(--_tile-accent, var(--_accent));
+  color: #fff;
+}
+
+.fp-todo-add > .fp-control:disabled {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  color: inherit;
+  opacity: 0.5;
+  cursor: default;
+}
+
+.fp-todo-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fp-todo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.fp-todo-item:last-child {
+  border-bottom: none;
+}
+
+.fp-todo-text {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+}
+
+.fp-todo-summary {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.fp-todo-due {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: var(--_secondary);
+}
+
+.fp-todo-item[data-done] .fp-todo-text {
+  text-decoration: line-through;
+  opacity: var(--_secondary);
+}
+
+.fp-todo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: -6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fp-todo-head > span {
+  opacity: var(--_secondary);
+}
+
+.fp-todo-head > .fp-link {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+}
+
+/* A round box to tick, filled in the accent once ticked. */
+.fp-todo-item > .fp-check {
+  display: grid;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 2px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background-color var(--_duration) ease,
+    border-color var(--_duration) ease,
+    transform var(--_duration) ease;
+}
+
+.fp-todo-item > .fp-check[aria-checked='true'] {
+  border-color: var(--_tile-accent, var(--_accent));
+  background: var(--_tile-accent, var(--_accent));
+  color: #1c1c1e;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fp-todo-item > .fp-check:not(:disabled):hover {
+    border-color: var(--_tile-accent, var(--_accent));
+  }
+}
+
+.fp-todo-item > .fp-check:active {
+  transform: scale(0.88);
+}
+
+.fp-todo-item > .fp-check:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.fp-tile .fp-todo-item > .fp-check > .fp-icon {
+  width: 14px;
+  height: 14px;
+  --mdc-icon-size: 14px;
+  color: inherit;
+}
+
+/* The graph: the chart fills the rest of the card, in the accent, with the
+   highest and lowest values up its side and the hours under it. */
+.fp-graph {
+  height: 100%;
+}
+
+.fp-graph-chart {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 72px;
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
+}
+
+.fp-graph-chart > svg {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.fp-graph-scale {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.fp-graph-scale > span,
+.fp-graph-axis {
+  color: var(--_text-inactive);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-graph-scale > span {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--_bg-inactive) 80%, transparent);
+  opacity: 0.8;
+}
+
+.fp-graph-axis {
+  display: flex;
+  justify-content: space-between;
+  opacity: var(--_secondary);
+}
+
+.fp-bars {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 72px;
+}
+
+.fp-bar {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.fp-bar-fill {
+  display: block;
+  border-radius: 6px;
+  background: currentColor;
+  opacity: 0.85;
+  transition: height 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-bar:last-child .fp-bar-fill {
+  opacity: 1;
+}
+
+.fp-bar-day {
+  color: var(--_text-inactive);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  opacity: var(--_secondary);
+}
+
+.fp-timeline-chart {
+  justify-content: flex-end;
+}
+
+.fp-timeline {
+  position: relative;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--_text-inactive) 10%, transparent);
+}
+
+.fp-timeline-span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.fp-timeline-span[data-on] {
+  background: currentColor;
+}
+
+.fp-timeline-span[data-off] {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--_text-inactive) 18%, transparent) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+/* The gauge: a ring open at the bottom with the value in its middle. */
+.fp-gauge {
+  display: grid;
+  place-items: center;
+  justify-content: stretch;
+}
+
+.fp-gauge-ring,
+.fp-gauge-center {
+  grid-area: 1 / 1;
+}
+
+.fp-gauge-ring {
+  width: 100%;
+  height: 100%;
+  max-height: 150px;
+  color: color-mix(in oklab, var(--_tile-accent, var(--_accent)), var(--_ink-to) var(--_deep));
+}
+
+.fp-gauge-track,
+.fp-gauge-fill {
+  fill: none;
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.fp-gauge-track {
+  stroke: color-mix(in srgb, var(--_text-inactive) 16%, transparent);
+}
+
+.fp-gauge-fill {
+  stroke: currentColor;
+  transition: stroke-dasharray 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-gauge-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 70%;
+  padding-top: 6px;
+  text-align: center;
+}
+
+.fp-gauge-value {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-gauge-unit {
+  margin-left: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: var(--_secondary);
+}
+
+.fp-gauge .fp-name {
+  margin-top: 4px;
+  font-size: 13px;
+  opacity: var(--_secondary);
+  -webkit-line-clamp: 1;
+}
+
+/* The dial: a big ring to drag, open at the bottom, with what it aims for
+   in its middle and the minus and plus under it. */
+.fp-dial {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  color: color-mix(in oklab, var(--_dial, var(--_accent)), var(--_ink-to) var(--_deep));
+}
+
+.fp-dial-ring,
+.fp-dial-center {
+  grid-area: 1 / 1;
+}
+
+.fp-dial-ring {
+  width: min(240px, 100%);
+  aspect-ratio: 1;
+  overflow: visible;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+
+.fp-dial[data-dragging] .fp-dial-ring {
+  cursor: grabbing;
+}
+
+.fp-dial-track,
+.fp-dial-fill {
+  fill: none;
+  stroke-width: 18;
+  stroke-linecap: round;
+}
+
+.fp-dial-track {
+  stroke: color-mix(in srgb, var(--_text-inactive) 14%, transparent);
+}
+
+.fp-dial-fill {
+  stroke: currentColor;
+  transition:
+    stroke-dasharray var(--_duration) ease,
+    stroke-dashoffset var(--_duration) ease,
+    stroke var(--_duration) ease;
+}
+
+.fp-dial[data-dragging] .fp-dial-fill {
+  transition: none;
+}
+
+.fp-dial[data-off] .fp-dial-fill {
+  stroke: color-mix(in srgb, var(--_text-inactive) 40%, transparent);
+}
+
+.fp-dial-knob {
+  fill: #fff;
+  stroke: color-mix(in srgb, #000 12%, transparent);
+  stroke-width: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+  transition: r var(--_duration) ease;
+}
+
+.fp-dial-ring:focus-visible .fp-dial-knob[data-active],
+.fp-dial[data-dragging] .fp-dial-knob[data-active] {
+  r: 13;
+}
+
+.fp-dial-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--_text-inactive);
+  pointer-events: none;
+}
+
+.fp-dial-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: var(--_secondary);
+}
+
+.fp-dial-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-dial-end {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 34px;
+  opacity: 0.6;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    background-color var(--_duration) ease,
+    opacity var(--_duration) ease;
+}
+
+.fp-dial-end[aria-pressed='true'] {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  opacity: 1;
+}
+
+.fp-dial-end:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.fp-dial-now {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: var(--_secondary);
+}
+
+.fp-dial-buttons {
+  display: flex;
+  gap: 48px;
+  margin-top: -36px;
+  color: var(--_text-inactive);
+}
+
+.fp-dial-buttons > .fp-control {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.fp-dial-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.fp-dial-footer > * {
+  flex: 1 1 auto;
+}
+
+/* The media control: the cover art, large and blurred, washes the whole
+   card, with the art itself in the top left. */
+.fp-media-control[data-art]::before {
+  content: '';
+  position: absolute;
+  inset: -40px;
+  z-index: -1;
+  background: var(--_art) center / cover;
+  filter: blur(40px) saturate(1.4) brightness(0.7);
+  opacity: 0.85;
+}
+
+.fp-media-control {
+  isolation: isolate;
+}
+
+.fp-media-control[data-art] {
+  color: #fff;
+}
+
+.fp-media-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fp-media-top > .fp-text {
+  flex: 1;
+}
+
+.fp-media-art {
+  display: grid;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 14%, transparent) var(--_art, none) center / cover;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform var(--_duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fp-media-art[data-pressed] {
+  transform: scale(0.94);
+}
+
+.fp-media-art:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.fp-media-title {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fp-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fp-progress-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.fp-progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+}
+
+.fp-progress-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: var(--_secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-media-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.fp-tile .fp-media-buttons > .fp-control > .fp-icon {
+  width: 26px;
+  height: 26px;
+  --mdc-icon-size: 26px;
+}
+
+.fp-media-buttons > .fp-media-main {
+  width: 60px;
+  height: 60px;
+}
+
+.fp-tile .fp-media-buttons > .fp-media-main > .fp-icon {
+  width: 34px;
+  height: 34px;
+  --mdc-icon-size: 34px;
+}
+
+.fp-tile .fp-media-buttons > .fp-media-small > .fp-icon {
+  width: 20px;
+  height: 20px;
+  --mdc-icon-size: 20px;
+  opacity: 0.6;
+}
+
+.fp-media-buttons > .fp-media-small[aria-checked='true'] {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.fp-tile .fp-media-buttons > .fp-media-small[aria-checked='true'] > .fp-icon {
+  opacity: 1;
+}
+
+/* The map: Home Assistant's own, edge to edge in the tile's corners, the
+   name on a frosted label over its top left. */
+.fp-map {
+  padding: 0;
+  cursor: default;
+}
+
+.fp-map-box {
+  position: absolute;
+  inset: 0;
+  --ha-card-border-radius: 0;
+  --ha-card-border-width: 0;
+  --ha-card-background: transparent;
+  --ha-card-box-shadow: none;
+}
+
+.fp-map-box > * {
+  display: block;
+  height: 100%;
+}
+
+.fp-map-name {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--_bg-inactive);
+  -webkit-backdrop-filter: blur(var(--_blur)) saturate(1.6);
+  backdrop-filter: blur(var(--_blur)) saturate(1.6);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fp-tile,
   .fp-icon,
   .fp-control,
   .fp-stepper-end,
-  .fp-menu {
+  .fp-menu,
+  .fp-slider,
+  .fp-slider-fill,
+  .fp-slider-knob,
+  .fp-pill,
+  .fp-swatch,
+  .fp-sheet,
+  .fp-key,
+  .fp-panel-head,
+  .fp-panel-icon,
+  .fp-todo-item > .fp-check,
+  .fp-bar-fill,
+  .fp-gauge-fill,
+  .fp-dial-fill,
+  .fp-dial-knob,
+  .fp-dial-end,
+  .fp-media-art {
     transition: none;
   }
 

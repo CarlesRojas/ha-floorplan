@@ -1,21 +1,36 @@
 # Floorplan tiles
 
-Floorplan 3D comes with eleven small tiles, to sit around the 3D model on the same dashboard. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, and the floorplan card can also lay them out beside itself in its [side panel](#side-panel).
+Floorplan 3D comes with twelve small tiles and eight larger cards, to sit around the 3D model on the same dashboard. They are in the same `card.js`, so there is nothing more to install. The tiles are made for a sections view, and the floorplan card can also lay them out beside itself in its [side panel](#side-panel).
 
-| Card         | Takes                                                                                                               | A tap                                                                                                                                                                                             |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fp-title`   | nothing                                                                                                             | nothing, it is a heading                                                                                                                                                                          |
-| `fp-toggle`  | `light.*`, `switch.*`, `fan.*`, `input_boolean.*`, `humidifier.*`, `siren.*`, `remote.*`, `automation.*`, `valve.*` | toggles it, or opens or closes a valve                                                                                                                                                            |
-| `fp-button`  | `button.*`, `input_button.*`, `script.*`, `scene.*`                                                                 | presses it, or runs the script or scene                                                                                                                                                           |
-| `fp-cover`   | `cover.*`                                                                                                           | opens or closes it. A wide tile adds up, stop and down                                                                                                                                            |
-| `fp-vacuum`  | `vacuum.*`                                                                                                          | starts or pauses it. A wide tile adds the vacuum's buttons                                                                                                                                        |
-| `fp-select`  | `select.*`, `input_select.*`                                                                                        | opens a menu of the options, or moves to the next one                                                                                                                                             |
-| `fp-camera`  | `camera.*`                                                                                                          | opens the camera's dialog                                                                                                                                                                         |
-| `fp-climate` | `climate.*`, `water_heater.*`                                                                                       | opens its dialog. A wide tile has minus and plus for the temperature it aims for, or for either end of its range, and a wide thermostat is three rows tall with a button for each mode it runs in |
-| `fp-media`   | `media_player.*`                                                                                                    | plays or pauses it, or turns it on. A wide tile adds previous, play or pause, next, and a button to turn it off                                                                                   |
-| `fp-lock`    | `lock.*`                                                                                                            | locks it, or unlocks it while it is locked                                                                                                                                                        |
-| `fp-weather` | `weather.*`                                                                                                         | opens its dialog. It takes the whole width and three rows, and shows the next hours or days                                                                                                       |
-| `fp-entity`  | any entity                                                                                                          | opens its dialog. The line under the name is its state, with its unit                                                                                                                             |
+| Card         | Takes                                                                                                               | A tap                                                                                                                                                                                                                                                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fp-title`   | nothing                                                                                                             | nothing, it is a heading                                                                                                                                                                                                                                                                                            |
+| `fp-toggle`  | `light.*`, `switch.*`, `fan.*`, `input_boolean.*`, `humidifier.*`, `siren.*`, `remote.*`, `automation.*`, `valve.*` | toggles it, or opens or closes a valve                                                                                                                                                                                                                                                                              |
+| `fp-button`  | `button.*`, `input_button.*`, `script.*`, `scene.*`                                                                 | presses it, or runs the script or scene                                                                                                                                                                                                                                                                             |
+| `fp-cover`   | `cover.*`                                                                                                           | opens or closes it. A wide tile adds up, stop and down                                                                                                                                                                                                                                                              |
+| `fp-vacuum`  | `vacuum.*`                                                                                                          | starts or pauses it. A wide tile adds the vacuum's buttons                                                                                                                                                                                                                                                          |
+| `fp-select`  | `select.*`, `input_select.*`                                                                                        | opens a menu of the options, or moves to the next one                                                                                                                                                                                                                                                               |
+| `fp-camera`  | `camera.*`, `image.*`                                                                                               | opens the camera's dialog                                                                                                                                                                                                                                                                                           |
+| `fp-climate` | `climate.*`, `water_heater.*`                                                                                       | opens its dialog. A wide tile has minus and plus for the temperature it aims for, or for either end of its range, and a wide thermostat is three rows tall, with a button for each mode it runs in across from its name, which stays in the bottom left corner. Temperatures read in degrees with no unit, like 21° |
+| `fp-media`   | `media_player.*`                                                                                                    | plays or pauses it, or turns it on. A wide tile adds previous, play or pause, next, and a button to turn it off                                                                                                                                                                                                     |
+| `fp-lock`    | `lock.*`                                                                                                            | locks it, or unlocks it while it is locked                                                                                                                                                                                                                                                                          |
+| `fp-weather` | `weather.*`                                                                                                         | opens its dialog. It takes the whole width and three rows, and shows the next hours or days                                                                                                                                                                                                                         |
+| `fp-entity`  | any entity                                                                                                          | opens its dialog. The line under the name is its state, with its unit                                                                                                                                                                                                                                               |
+
+The larger cards are offered beside the tiles when a card is added by entity:
+
+| Card               | Takes                                                                                                    | What it shows                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `fp-alarm-panel`   | `alarm_control_panel.*`                                                                                  | a button for each mode it arms in and a keypad for its code                                |
+| `fp-dial`          | `climate.*`, `water_heater.*`, `humidifier.*`, and `light.*` that dims                                   | a ring to drag to the temperature, humidity or brightness it aims for, with minus and plus |
+| `fp-media-control` | `media_player.*`                                                                                         | the cover art, what is playing, how far into it, its buttons and its volume                |
+| `fp-calendar`      | `calendar.*`                                                                                             | the events of the next days, as a list by day                                              |
+| `fp-todo`          | `todo.*`                                                                                                 | the items to do with a box to tick each, a field to add one, and the done items            |
+| `fp-graph`         | `sensor.*`, `binary_sensor.*`, `counter.*`, `input_number.*`, `number.*`, `person.*`, `device_tracker.*` | a line over the last day, bars for the last days, or a strip lit for the times it was on   |
+| `fp-gauge`         | any entity with a number for a state                                                                     | the reading on a ring, from its own minimum and maximum when it has them                   |
+| `fp-map`           | `person.*`, `device_tracker.*`, `zone.*`                                                                 | where it is, on Home Assistant's own map                                                   |
+
+Most tiles can also show a control in the top right corner beside the icon, set with `feature`, so the tile stays two rows tall: favorite colors or an effect for a light, a fan's direction, oscillation or preset, a cover's favorite positions, tilt or buttons, a thermostat's modes, presets, fan or swing, a target temperature or humidity, a media player's playback, volume buttons, source or sound mode, a lock's button to open the door, an alarm's modes, a vacuum's or a lawn mower's commands, a counter's or a timer's buttons, a number, a date or an option list. The card editor lists the ones the entity can do, and the card picker offers a tile with each of them. A small tile drops what has no room there, like the word on the oscillate pill or the colors past the fourth, and a few controls with too many buttons for it, favorite positions and tilts, an alarm's modes, a vacuum's commands, a thermostat's modes and its target temperature when it is a range of two, always make the tile wide. A wide thermostat with a control beside its icon has no modes across from its name. A light's `brightness`, a fan's `speed`, a media player's `volume-slider`, and a cover's or a valve's `position` or `tilt-position` make the whole tile a slider: it fills from the left as far as the light is bright, the fan is fast, the player is loud or the cover is open, a drag sideways anywhere on it follows the finger, the left and right arrows do the same from the keyboard, and a tap still turns it on or off, plays or pauses a media player, or opens or closes a cover. A cover that goes up and down, like a blind, a shutter or a garage door, fills from the bottom instead as it rises and is dragged up and down, or moved with the up and down arrows. An inverted one, like a projector screen, fills from the top as it comes down. Meanwhile a curtain, a gate, a door, a valve and the tilt of slats still fill from the left. A faint handle sits at the end of a full tile, and at the start of an empty one to show where to pull it from, halfway across the padding. A fan with a few speeds moves freely under the finger and settles on the nearest speed when it lifts. A light's `color-temp` and `color` are a slim bar beside the icon, at every size, with a round handle: a press on the bar jumps there and a drag follows the finger, while the line under the name says the temperature or hue and the tile takes that color, until the light answers, and a tap anywhere else still turns the light on or off. While the light is on, that line says its white in kelvin or the name of its color, like Orange, in place of its brightness, and the tile shines in it. Both follow the mode the light is in: a light shining in a color says its brightness on a temperature tile, whose handle then shows faint, and the same for a white on a color tile. A fan's oscillation is a pill that fills in while it oscillates, or will once the fan is on.
 
 On every tile but the title, a long press or a right click opens Home Assistant's more info dialog for the entity. With a keyboard, Enter or Space taps and the context menu key or Shift+F10 holds.
 
@@ -88,6 +103,18 @@ The buttons are never greyed out, since many covers do not know where they are. 
 | `battery_entity` | A sensor with the battery level, for a vacuum that does not report it. Without one, a battery sensor on the vacuum's own device is used |
 
 A wide tile shows pause or start, stop, and back to the dock, each only when the vacuum supports it.
+
+`feature`, on any tile, is the id of the control under its name, as the card editor and the card picker set it.
+
+`fp-graph`
+
+| Key     | Default | Description                                                     |
+| ------- | ------- | --------------------------------------------------------------- |
+| `chart` | `line`  | `line` for the last hours of a reading, `bar` for one bar a day |
+| `hours` | `24`    | How far back a line or a strip reaches                          |
+| `days`  | `7`     | How many days of bars                                           |
+
+`fp-gauge` takes `min` and `max`, and `fp-calendar` takes `entities`, more calendars to list along with its own, and `days`, how many days ahead it lists. `fp-map` takes `hours_to_show`, how many hours of a person's path it draws behind them, and `fp-weather` takes `forecast_type`, `hourly` or `daily`.
 
 `fp-select`
 
@@ -209,41 +236,46 @@ Then pick **Floorplan Glass** in your profile, or as the dashboard's theme.
 
 The tiles look finished without it, and change with any theme that sets these:
 
-| Token                         | Default                    | What it changes                                                                                      |
-| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `fp-tile-radius`              | `30px`                     | The corner radius                                                                                    |
-| `fp-tile-padding`             | `18px`                     | The space inside a tile                                                                              |
-| `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                                                           |
-| `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on, `rgba(28, 28, 30, .94)` on a light dashboard                    |
-| `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                                                                 |
-| `fp-tile-blur`                | `24px`                     | How much the glass blurs what is behind it                                                           |
-| `fp-tile-shadow`              | `none`                     | A box shadow under every tile                                                                        |
-| `fp-tile-opacity-inactive`    | `1`                        | The icon and text of a tile that is off                                                              |
-| `fp-tile-opacity-unavailable` | `.45`                      | A tile whose entity is unavailable                                                                   |
-| `fp-tile-icon-size`           | `28px`                     | The icon                                                                                             |
-| `fp-tile-name-size`           | `15px`                     | The name                                                                                             |
-| `fp-tile-state-size`          | `13px`                     | The line under the name                                                                              |
-| `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                                      |
-| `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                                                 |
-| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                                                |
-| `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on, `#ffffff` on a light dashboard                                        |
-| `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                                                                       |
-| `fp-text-secondary-opacity`   | `.6`                       | The line under the name                                                                              |
-| `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                                          |
-| `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                                           |
-| `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                                            |
-| `fp-accent-climate`           | `#ff9f0a`                  | The icon of a thermostat or water heater that heats                                                  |
-| `fp-accent-cool`              | `#64d2ff`                  | The icon of a thermostat that cools                                                                  |
-| `fp-mode-cool`                | `#0a6fd6`                  | A thermostat's cooling mode button while chosen, `#64d2ff` on a tile that is on on a light dashboard |
-| `fp-mode-dry`                 | `#13809c`                  | A thermostat's drying mode button while chosen, `#5ac8e0` on a tile that is on on a light dashboard  |
-| `fp-font-tile`                | Inter                      | The tiles' font                                                                                      |
-| `fp-font-title`               | Inter Tight                | The headings' font                                                                                   |
-| `fp-title-size`               | `30px`                     | The headings' size                                                                                   |
-| `fp-title-opacity`            | `.92`                      | The headings' opacity                                                                                |
-| `fp-title-color`              | the theme's text color     | The headings' color                                                                                  |
-| `fp-menu-bg`                  | dark frosted glass         | The select tile's menu                                                                               |
-| `fp-menu-text`                | `#ffffff`                  | The text in that menu                                                                                |
+| Token                         | Default                    | What it changes                                                                   |
+| ----------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| `fp-tile-radius`              | `30px`                     | The corner radius                                                                 |
+| `fp-tile-padding`             | `18px`                     | The space inside a tile                                                           |
+| `fp-tile-gap`                 | `10px`                     | The space between tiles, used by the theme                                        |
+| `fp-tile-bg-active`           | `rgba(255, 255, 255, .94)` | The background of a tile that is on, `rgba(28, 28, 30, .94)` on a light dashboard |
+| `fp-tile-bg-inactive`         | `rgba(118, 118, 128, .24)` | The background of a tile that is off                                              |
+| `fp-tile-blur`                | `24px`                     | How much the glass blurs what is behind it                                        |
+| `fp-tile-shadow`              | `none`                     | A box shadow under every tile                                                     |
+| `fp-tile-opacity-inactive`    | `1`                        | The icon and text of a tile that is off                                           |
+| `fp-tile-opacity-unavailable` | `.45`                      | A tile whose entity is unavailable                                                |
+| `fp-tile-icon-size`           | `28px`                     | The icon                                                                          |
+| `fp-tile-name-size`           | `15px`                     | The name                                                                          |
+| `fp-tile-state-size`          | `13px`                     | The line under the name                                                           |
+| `fp-slider-handle`            | the lit tile background    | The round handle of a slim slider beside the icon                                 |
+| `fp-tile-duration`            | `200ms`                    | How long a tile takes to change                                                   |
+| `fp-tile-press-scale`         | `.96`                      | How far a tile shrinks while pressed                                              |
+| `fp-tile-focus-scale`         | `1.03`                     | How far a tile grows while in focus from the keyboard                             |
+| `fp-text-active`              | `#1c1c1e`                  | The text on a tile that is on, `#ffffff` on a light dashboard                     |
+| `fp-text-inactive`            | `#ffffff`                  | The text on a tile that is off                                                    |
+| `fp-text-secondary-opacity`   | `.72`                      | The line under the name                                                           |
+| `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                       |
+| `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                        |
+| `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                         |
+| `fp-accent-climate`           | `#ff6422`                  | A water heater that is on, and the heating mode unless it is set                  |
+| `fp-accent-cool`              | `#5ab0ff`                  | A humidifier, and the cooling mode unless it is set                               |
+| `fp-mode-heat`                | `fp-accent-climate`        | A thermostat that heats                                                           |
+| `fp-mode-cool`                | `fp-accent-cool`           | A thermostat that cools                                                           |
+| `fp-mode-dry`                 | `#ffc60a`                  | A thermostat that dries the air                                                   |
+| `fp-mode-fan`                 | `#30c9a4`                  | A thermostat that only runs its fan                                               |
+| `fp-font-tile`                | Inter                      | The tiles' font                                                                   |
+| `fp-font-title`               | Inter Tight                | The headings' font                                                                |
+| `fp-title-size`               | `30px`                     | The headings' size                                                                |
+| `fp-title-opacity`            | `.92`                      | The headings' opacity                                                             |
+| `fp-title-color`              | the theme's text color     | The headings' color                                                               |
+| `fp-menu-bg`                  | dark frosted glass         | The select tile's menu                                                            |
+| `fp-menu-text`                | `#ffffff`                  | The text in that menu                                                             |
 
 On a light dashboard, a tile that is off is lighter glass with dark text, unless the theme sets its own.
+
+The accent and mode colors are drawn lighter on a dark tile and deeper on a light one, so an icon or a line stands out at least three to one from its tile and words at least four and a half to one.
 
 The fonts load from Google Fonts. Without a connection the tiles fall back to the system font.

@@ -48,6 +48,10 @@ export type HomeAssistant = {
   // with their units. Missing on very old versions.
   formatEntityState?: (entity: EntityState, state?: string) => string
   formatEntityAttributeValue?: (entity: EntityState, attribute: string, value?: unknown) => string
+  // A message on the websocket that gets one answer, like a stretch of history.
+  callWS?: <T>(message: Record<string, unknown>) => Promise<T>
+  // A call to the REST API, like the events of a calendar.
+  callApi?: <T>(method: 'GET' | 'POST', path: string, data?: Record<string, unknown>) => Promise<T>
   // The websocket, for what is only sent to those who ask, like a forecast.
   connection?: {
     subscribeMessage: <T>(callback: (message: T) => void, message: Record<string, unknown>) => Promise<() => void>

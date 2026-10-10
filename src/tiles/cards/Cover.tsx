@@ -1,5 +1,8 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
 import CoverControls from '#/tiles/cards/CoverControls.tsx'
+import { PositionTile } from '#/tiles/cards/Fill.tsx'
+import { SET_POSITION, SET_TILT, STOP } from '#/tiles/features/cover.tsx'
+import { supports } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 
@@ -10,7 +13,9 @@ const STATES: Record<string, string> = { open: 'Open', closed: 'Closed', opening
 type Props = { env: TileEnv; config: CoverConfig }
 
 // A blind, a shutter or a screen. A tap opens it or closes it, or stops it
-// while it moves. A wide tile adds up, stop and down buttons. The tile is
+// while it moves. A wide tile adds up, stop and down buttons, stop only
+// for a cover that can stop. With the position or tilt position feature
+// the whole tile is how far it is open or tilted. The tile is
 // lit while the cover is open or opening, so it shows where it is heading.
 export default function Cover({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
@@ -20,6 +25,12 @@ export default function Cover({ env, config }: Props) {
   const state =
     typeof position === 'number' && entity?.state === 'open' && position < 100 ? `${label} · ${position}%` : label
   const run = (service: string) => () => callService(env.hass, `cover.${service}`, target)
+  const usable = entity && entity.state !== 'unavailable' && entity.state !== 'unknown'
+  const { feature: _, ...plain } = config
+  if (usable && config.feature === 'position' && supports(entity, SET_POSITION))
+    return <PositionTile env={env} config={plain} entity={entity} />
+  if (usable && config.feature === 'tilt-position' && supports(entity, SET_TILT))
+    return <PositionTile env={env} config={plain} entity={entity} tilt />
   return (
     <Tile
       env={env}
@@ -33,6 +44,7 @@ export default function Cover({ env, config }: Props) {
       controls={
         <CoverControls
           invert={config.invert === true}
+          stops={supports(entity, STOP)}
           onOpen={run('open_cover')}
           onStop={run('stop_cover')}
           onClose={run('close_cover')}

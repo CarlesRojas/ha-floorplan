@@ -35,9 +35,23 @@ moves that section under the new version and uses it as the release notes.
 - A lowered projection screen shows the same moving colors as a TV that is on when a projector that is on faces it, from either side, and the room around the end of a projector's beam is lit in those colors.
 - Every setting of a piece or a room, its sizes, rotation, colors, style and floor included, has a button beside it that puts it back to its default, and the button only shows once the setting has changed.
 - The 3D preview of a selected piece in the editor can be zoomed and panned as well as turned, and a button in its corner brings the view back.
+- When a card is added by entity, every tile is also offered with each control it can show beside its icon, like a fan's direction, a thermostat's modes, an alarm's modes or a media player's volume, the same way Home Assistant offers its own tile.
+- A light tile can be its own brightness slider: the whole tile fills as far as the light is bright, a drag sideways anywhere on it dims or brightens it, and a tap still turns it on or off.
+- A fan tile can be its own speed slider the same way, moving freely under the finger and settling on the nearest speed the fan has when it lifts.
+- A cover or a valve tile can be its own position slider the same way, filling as far as it is open, or as far as its slats are tilted, and a tap opens or closes it.
+- A tile's control sits in its top right corner beside the icon, so a tile with one is as short as a plain tile, and the few with too many buttons for a small tile, like favorite positions, an alarm's modes or a vacuum's commands, always make it wide.
+- A light tile can show a slim color temperature or color bar beside its icon, with a round handle, so it stays as short as a plain tile, and its state line says the light's white in kelvin or the name of its color, whichever the light is in, with a faint handle on the bar for the other one, and while the bar is dragged the tile takes that color and keeps it until the light answers.
+- Eight larger cards come with the tiles and are offered beside them when a card is added by entity: an alarm panel with a keypad, a dial for a thermostat, a water heater, a humidifier or a light's brightness, a media control with the cover art, a calendar agenda, a to-do list, a history graph, a gauge and a map.
 
 ### Changed
 
+- A media player tile with the volume is its volume across the whole tile, dragged sideways like a light's brightness, while a tap still plays or pauses it.
+- A media player tile with the volume buttons says how loud it plays before what is playing.
+- The rainbow of a light's color bar and its favorite colors are softer and even in lightness, so no color glares on the tile.
+- The on and off switch under a light's or a humidifier's dial and a fan's oscillate control are now pills that fill in while on, in place of switches.
+- A cover that cannot stop shows only up and down on its wide tile.
+- The weather tile can show the next hours or the next days, and the card picker offers both.
+- The camera tile also shows an image entity.
 - The shower's glass door stays shut, so a click on the shower always goes to the device behind it, like any other piece.
 
 - The editor's Discard button is now Close: it closes straight away when there is nothing to save, and asks before throwing changes away when there is.
@@ -66,13 +80,27 @@ moves that section under the new version and uses it as the release notes.
 - A room flown to is fitted to the card the same way, with almost no margin: its saved view keeps its angle and backs off until the whole room shows, on a phone the room is centered and fills the card, and a room with no saved view is centered in the card. The camera flies straight to that view, and keeps the room fitted while the card changes size until it is turned, panned or zoomed.
 - A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.
 - In the card's settings, pressing or changing the tiles of a room flies the preview to that room, and the Home tiles take it back to the whole home.
+- A button, script or scene tile lights up when pressed, stays lit for half a second and then fades slowly back, and its Press pill does the same on its own.
+- On a small tile, a pill that does something, like Press, is as wide as its words and sits at the right, as on a wide tile.
+- The position tile of a blind, a shutter, a garage door or another cover that goes up and down fills from the bottom as it rises and is dragged up and down, an inverted one like a projector screen fills from the top as it comes down, and curtains, gates, doors and valves still fill from the left.
+- A slider tile that is empty shows a faint handle at the side to pull it from, and the handles at both ends sit exactly halfway across the tile's padding.
+- A thermostat's target temperature tile is always wide when it holds a range of two temperatures, since a small one had no room for them.
+- A wide thermostat is three rows tall, with its mode buttons across from its name so the name and the state stay in the bottom left corner like on every other tile.
+- A thermostat's modes tile is always wide, since a small one had no room for every mode.
+- Temperatures on thermostats and dials show a degree sign, like 22°, and a thermostat's state reads as one phrase, like 20.5° to 22°.
+- A thermostat's icon takes the color of the mode it runs in on every one of its tiles, and that color washes down from the top of the tile while it is on. In auto, or keeping a range, it takes the color of what it is doing, like orange while it heats, and no color while it waits.
+- Each thermostat mode has its own color: orange for heating, blue for cooling, yellow for drying and teal for the fan alone, while auto and keeping a range look plain like off. Water heaters, humidifiers and the alarm panel's warning share the same orange and blue. In the 3D view, the air out of an air conditioner and the glow of a thermostat take the same color as its tiles.
 
 ### Fixed
 
+- Buttons keep their fill and stay readable under the pointer, on a tile that is on or off and on a light or a dark dashboard.
+- Colored icons, words and lines on the tiles, like the chosen mode, the Clear link of a to-do list or a light's icon, now stand out clearly from the tile in light and in dark, and the dimmer second lines are a little stronger.
 - The editor's Discard changes dialog shows its buttons in their proper colors.
 - When picking a device for a blind, window, projector screen or other piece, the devices of its own type are listed first, so a cover without a position is no longer lost among switches.
 - A speaker, floor speaker or soundbar on pause stops sending out sound waves, and keeps its lights until it is switched off.
 - A piece can be set on top of a basin, where it used to sink into it.
+- Picking an option from a menu on a tile, like the mode of a humidifier, or typing an alarm code, no longer also turns the tile on or off.
+- A small tile with a menu where nothing is chosen, like a fan running without a preset, now says what the menu picks instead of showing an empty pill.
 
 ## [1.2.5] - 2026-10-08
 

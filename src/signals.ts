@@ -1,3 +1,4 @@
+import { shownMode } from '#/tiles/modes.ts'
 import type { HomeAssistant } from '#/types.ts'
 
 // Abstract controls a device exposes, derived from its Home Assistant domain
@@ -154,13 +155,14 @@ export function signalValues(hass: HomeAssistant, entityId: string): SignalValue
     // of them means it is out on the floor.
     case 'vacuum':
       return { on: state === 'cleaning', state }
-    // Its mode is the setting, heat or cool. What it is doing right now,
-    // heating or cooling, says more when the device reports it.
-    case 'climate': {
-      const action = attrs.hvac_action
-      const doing = action === 'heating' || action === 'cooling' ? action : undefined
-      return { on: !['off', 'unavailable', 'unknown'].includes(state), state: doing ?? state }
-    }
+    // The mode whose color its tiles show, like heat, so the model glows
+    // in the same color. In auto that is what it is doing right now, and
+    // idle while it waits.
+    case 'climate':
+      return {
+        on: !['off', 'unavailable', 'unknown'].includes(state),
+        state: shownMode(state, attrs.hvac_action) ?? 'idle',
+      }
     case 'sensor':
     case 'number':
     case 'input_number': {

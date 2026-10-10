@@ -38,7 +38,7 @@ function useImageElement() {
 
 type Props = { env: TileEnv; config: CameraConfig }
 
-// A camera picture that fills the tile, with its name over a dark fade at
+// A camera picture, or an image entity's, that fills the tile, with its name over a dark fade at
 // the bottom. A tap or a hold opens it bigger.
 export default function Camera({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
@@ -49,6 +49,11 @@ export default function Camera({ env, config }: Props) {
     onTap: () => runAction(env, config.tap_action, open),
     onHold: () => runAction(env, config.hold_action, open),
   })
+  // An image entity is a still picture that changes now and then.
+  const still =
+    config.entity?.startsWith('image.') && typeof entity?.attributes.entity_picture === 'string'
+      ? entity.attributes.entity_picture
+      : null
   const fixed = typeof config.grid_options?.rows === 'number'
   const ratio = (config.aspect_ratio ?? '16:9').replace(':', '/')
   return (
@@ -65,7 +70,8 @@ export default function Camera({ env, config }: Props) {
         <hui-image
           className="fp-camera-image"
           hass={env.hass}
-          cameraImage={config.entity}
+          cameraImage={still ? undefined : config.entity}
+          image={still ?? undefined}
           cameraView={config.camera_view ?? 'auto'}
           fitMode="cover"
         />

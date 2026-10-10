@@ -13,6 +13,7 @@ declare module 'react' {
       'hui-image': HTMLAttributes<HTMLElement> & {
         hass?: HomeAssistant | null
         cameraImage?: string
+        image?: string
         cameraView?: 'auto' | 'live'
         fitMode?: 'cover' | 'contain' | 'fill'
         aspectRatio?: string

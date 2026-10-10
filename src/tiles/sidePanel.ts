@@ -1,6 +1,7 @@
 import { closest, inPanelView } from '#/lib/panelView.ts'
 import { onRoomFilter, roomFilter } from '#/lib/roomFilter.ts'
 import { autoGroups } from '#/tiles/auto.ts'
+import { isWide, tileRows } from '#/tiles/features/index.tsx'
 import type { CardConfig as PlanConfig, HomeAssistant } from '#/types.ts'
 
 type CardConfig = {
@@ -29,7 +30,7 @@ const FADE_IN_MS = 220
 
 // How many of the 12 columns and how many rows a side card takes, read from
 // its config so the layout is known before the card has loaded.
-function span(config: CardConfig) {
+function span(config: CardConfig, hass: HomeAssistant | null) {
   const own = config.grid_options
   const type = config.type.replace(/^custom:/, '')
   let columns: number | 'full' = 12
@@ -38,9 +39,10 @@ function span(config: CardConfig) {
   else if (type === 'fp-camera') columns = 12
   else if (type === 'fp-weather') rows = 3
   else if (type.startsWith('fp-')) {
-    columns = config.size === 'wide' ? 12 : 6
-    // A wide thermostat has a row of modes along its bottom.
-    rows = config.size === 'wide' && type === 'fp-climate' && String(config.entity).startsWith('climate.') ? 3 : 2
+    const tile = config as { size?: string; entity?: string; feature?: string }
+    const entity = hass?.states[String(config.entity)]
+    columns = isWide(tile, entity) ? 12 : 6
+    rows = tileRows(tile, entity)
   }
   columns = own?.columns ?? columns
   rows = own?.rows ?? rows
@@ -265,7 +267,7 @@ export class SidePanel extends HTMLElement {
     const children = autoGroups(config).flatMap(group => group.cards.map(card => ({ card, room: group.room })))
     this.side = children.map(({ card: child, room }) => {
       const card = this.create(child)
-      const { columns, rows } = span(child)
+      const { columns, rows } = span(child, this._hass)
       card.style.gridColumn = `span ${columns}`
       card.toggleAttribute('data-sized', rows !== 'auto')
       if (rows !== 'auto') card.style.height = `calc(${rows * ROW_PX}px + ${rows - 1} * var(--_gap))`

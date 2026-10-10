@@ -1,6 +1,10 @@
 import { callService, formatState, type TileEnv } from '#/tiles/actions.ts'
+import { FillTile } from '#/tiles/cards/Fill.tsx'
+import { Control } from '#/tiles/Control.tsx'
+import { MEDIA } from '#/tiles/features/media.tsx'
+import { numberOf, supports } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
-import { Control, Tile } from '#/tiles/Tile.tsx'
+import { Tile } from '#/tiles/Tile.tsx'
 
 // The media player features the buttons need, as Home Assistant numbers them.
 const PAUSE = 1
@@ -14,7 +18,9 @@ type Props = { env: TileEnv; config: TileConfig }
 // A speaker or a TV. A tap plays or pauses it, or turns it on while it is
 // off. The line under the name says what is playing. A wide tile adds
 // previous, play or pause, and next buttons, and a power button for one
-// that is on and can be turned off. Lit while it plays.
+// that is on and can be turned off. Lit while it plays. With the volume
+// feature the whole tile is its volume, filled from the left, and a tap
+// still plays or pauses it.
 export default function Media({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const attributes = entity?.attributes ?? {}
@@ -22,9 +28,36 @@ export default function Media({ env, config }: Props) {
   const playing = entity?.state === 'playing'
   const loaded = playing || entity?.state === 'paused'
   const title = [attributes.media_title, attributes.media_artist].filter(part => typeof part === 'string' && part)
-  const state = loaded && title.length ? title.join(' · ') : formatState(env.hass, entity)
   const on = !!entity && !['off', 'standby', 'unavailable', 'unknown'].includes(entity.state)
+  const muted = attributes.is_volume_muted === true
+  const loudness = (v: number) => (muted ? 'Muted' : `${v}%`)
+  const level = entity && numberOf(entity, 'volume_level')
+  const shown = loaded && title.length ? title.join(' · ') : formatState(env.hass, entity)
+  // The volume buttons say how loud it plays first, like the volume does.
+  const state =
+    config.feature === 'volume-buttons' && on && level != null
+      ? `${loudness(Math.round(level * 100))} · ${shown}`
+      : shown
   const run = (service: string) => () => callService(env.hass, `media_player.${service}`, { entity_id: config.entity })
+  const onTap = loaded ? run('media_play_pause') : run('toggle')
+  if (config.feature === 'volume-slider' && on && supports(entity, MEDIA.volumeSet)) {
+    const { feature: _, ...plain } = config
+    return (
+      <FillTile
+        env={env}
+        config={plain}
+        entity={entity}
+        value={Math.round((level ?? 0) * 100)}
+        on={playing}
+        accent="var(--_accent)"
+        format={v => [loudness(v), ...(loaded ? title : [])].join(' · ')}
+        onTap={onTap}
+        onSend={v =>
+          callService(env.hass, 'media_player.volume_set', { entity_id: entity.entity_id, volume_level: v / 100 })
+        }
+      />
+    )
+  }
   return (
     <Tile
       env={env}
@@ -33,7 +66,7 @@ export default function Media({ env, config }: Props) {
       active={playing}
       toggles
       state={state}
-      onTap={loaded ? run('media_play_pause') : run('toggle')}
+      onTap={onTap}
       controls={
         (loaded || on) && (
           <>
