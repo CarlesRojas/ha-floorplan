@@ -77,7 +77,12 @@ export function resolveArea(hass: HomeAssistant, area: string | undefined, entit
 }
 
 export function stubEntity(hass: HomeAssistant | undefined, domains: string[]) {
-  return Object.keys(hass?.states ?? {}).find(id => domains.includes(id.split('.')[0]))
+  const ids = Object.keys(hass?.states ?? {})
+  // Domain by domain in the card's order, so a toggle shows a light first.
+  for (const domain of domains) {
+    const id = ids.find(id => id.split('.')[0] === domain)
+    if (id) return id
+  }
 }
 
 // The base of every tile. It follows the floorplan card's room filter:
