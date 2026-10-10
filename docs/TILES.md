@@ -162,6 +162,8 @@ alarm, armchair, arrow-line-down, arrow-line-up, bathtub, battery-charging, batt
 
 The same icons are offered as `ph:` in Home Assistant's icon picker, and can be used on any card, unless another `ph` icon set is already installed.
 
+A tile with no `icon` of its own shows the icon set for its entity in Home Assistant, in the entity's settings or its YAML, so a scene switch or a script can show a projector or a television. Pick a `ph:` icon there to match the other tiles. With none set, a tile on the plan shows the icon of its piece, and any other the one for its kind of entity.
+
 A name not in the list shows a question mark and logs a warning in the browser console. Any other icon is one `mdi:` name away.
 
 ## Room filtering

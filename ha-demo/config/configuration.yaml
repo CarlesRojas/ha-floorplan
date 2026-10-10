@@ -43,7 +43,7 @@ template:
   - switch:
       - name: Projector scene
         unique_id: projector_scene
-        icon: mdi:projector
+        icon: ph:projector-screen
         state: "{{ is_state('cover.projector_screen', 'open') }}"
         turn_on:
           - action: light.turn_off
@@ -60,7 +60,7 @@ template:
               entity_id: cover.projector_screen
       - name: TV scene
         unique_id: tv_scene
-        icon: mdi:television
+        icon: ph:television
         state: "{{ states('media_player.living_room') not in ['off', 'standby', 'unavailable', 'unknown'] }}"
         turn_on:
           - action: light.turn_off
@@ -81,7 +81,7 @@ template:
               entity_id: media_player.living_room
       - name: All lights
         unique_id: all_lights
-        icon: mdi:lightbulb-group
+        icon: ph:lightbulb
         state: "{{ ['light.living_room_rgbww_lights', 'light.entrance_color_white_lights', 'light.kitchen_lights', 'light.office_rgbw_lights', 'light.bed_light', 'light.ceiling_lights'] | select('is_state', 'on') | list | count > 0 }}"
         turn_on:
           - action: light.turn_on

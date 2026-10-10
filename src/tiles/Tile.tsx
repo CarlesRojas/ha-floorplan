@@ -33,6 +33,11 @@ type Props = {
   unknownIsUnavailable?: boolean
 }
 
+// The icon set for the entity in Home Assistant, in its settings or its
+// YAML, picked as `ph:` to match the other tiles or as any other icon.
+const entityIcon = (entity: EntityState | undefined) =>
+  typeof entity?.attributes.icon === 'string' && entity.attributes.icon ? entity.attributes.icon : undefined
+
 // The shell every entity tile shares: the icon on top, the name and a
 // dimmer state line under it, and on a wide tile a row of buttons across
 // from the icon and, for some, another along the bottom. Active tiles are opaque and light, the rest are frosted glass.
@@ -77,7 +82,12 @@ export function Tile({
     >
       <div className="fp-top">
         <Icon
-          icon={config.icon ?? defaultIcon(config.entity, entity?.attributes.device_class, entity?.state)}
+          icon={
+            config.icon ??
+            entityIcon(entity) ??
+            config.piece_icon ??
+            defaultIcon(config.entity, entity?.attributes.device_class, entity?.state)
+          }
           on={on}
         />
         {config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>}

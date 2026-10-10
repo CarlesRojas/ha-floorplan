@@ -108,7 +108,7 @@ function tile(device: DeviceConfig, pieces: Map<string, DecorationConfig>): Auto
   const card = entityTile(device.entity_id)
   const kind = device.decorations?.map(id => pieces.get(id)?.kind).find(Boolean)
   const icon = kind && KIND_ICONS[kind]
-  if (icon) card.icon = icon
+  if (icon) card.piece_icon = icon
   // A projector screen comes down to open.
   if (kind === 'projector_screen') card.invert = true
   return card

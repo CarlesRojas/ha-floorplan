@@ -11,6 +11,9 @@ export type TileConfig = {
   entity?: string
   name?: string
   icon?: string
+  // The icon of the piece on the plan the tile stands for, which the icon
+  // set for the entity in Home Assistant takes over.
+  piece_icon?: string
   // The color the icon takes while the tile is on, any CSS color.
   color?: string
   // Replaces the line under the name.
