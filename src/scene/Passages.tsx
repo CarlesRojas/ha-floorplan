@@ -1,18 +1,20 @@
 import { SLAB_BEVEL_SEGMENTS, SLAB_CURVE_SEGMENTS } from '#/constants.ts'
 import { ensureCounterClockwise, roundedShape } from '#/geometry/polygon.ts'
-import { PASSAGE_ARROW, PASSAGE_GAP_M, passagesOf, type Passage } from '#/geometry/passages.ts'
+import { PASSAGE_ARROW, PASSAGE_CORNER_RADIUS_M, PASSAGE_GAP_M, passagesOf, type Passage } from '#/geometry/passages.ts'
 import { slabGeometry } from '#/geometry/slab.ts'
 import { useEased } from '#/scene/decor/ease.ts'
 import { usePressActions } from '#/scene/decor/press.ts'
+import { floorColor } from '#/scene/floorColor.ts'
 import { HIDDEN_LAYER, PASSAGE } from '#/scene/focus.ts'
-import { PASSAGE_COLOR, PASSAGE_GLOW, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
+import { PASSAGE_HOVER_GLOW, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
 import type { DecorationConfig, Point, RoomConfig } from '#/types.ts'
 import { useMemo, useState } from 'react'
 import type { BufferGeometry, Mesh } from 'three'
 
 // The signs on the floor that lead from a focused room into the room open
-// beside it. Each is as thick as a floor and rounded the same, lying just
-// past the stretch the two share, and only shows around the room it leads
+// beside it. Each is a triangle as thick as a floor, rounded all over and
+// in the color of the floor it leads onto, lying just past the stretch the
+// two share, and only shows around the room it leads
 // out of. A press on one goes to the room it points at, as a press on a door
 // between them would.
 
@@ -26,20 +28,31 @@ export default function Passages({ rooms, decorations, onRoom }: Props) {
   const passages = useMemo(() => rooms.flatMap(room => passagesOf(room, rooms, decorations)), [rooms, decorations])
   // One shape for every sign, built the way a floor is.
   const geometry = useMemo(() => {
-    const outline = roundedShape(ensureCounterClockwise(PASSAGE_ARROW), ROOM_SLAB_EDGE_RADIUS_M)
+    const outline = roundedShape(ensureCounterClockwise(PASSAGE_ARROW), PASSAGE_CORNER_RADIUS_M)
       .getPoints(SLAB_CURVE_SEGMENTS)
       .map((p): Point => [p.x, p.y])
     return slabGeometry(outline, [], ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M, SLAB_BEVEL_SEGMENTS)
   }, [])
   return passages.map(passage => (
-    <Sign key={`${passage.from}>${passage.to}`} passage={passage} geometry={geometry} onRoom={onRoom} />
+    <Sign
+      key={`${passage.from}>${passage.to}`}
+      passage={passage}
+      geometry={geometry}
+      color={floorColor(
+        rooms.find(room => room.id === passage.to)!,
+        rooms.findIndex(room => room.id === passage.to),
+      )}
+      onRoom={onRoom}
+    />
   ))
 }
 
 // Hidden from the start: the focus brings a sign out around its own room.
 const hide = (mesh: Mesh | null) => mesh?.layers.set(HIDDEN_LAYER)
 
-function Sign({ passage, geometry, onRoom }: { passage: Passage; geometry: BufferGeometry; onRoom: Props['onRoom'] }) {
+type SignProps = { passage: Passage; geometry: BufferGeometry; color: string; onRoom: Props['onRoom'] }
+
+function Sign({ passage, geometry, color, onRoom }: SignProps) {
   const go = () => onRoom(passage.to, [passage.from, passage.to])
   const press = usePressActions(go)
   // Under the pointer the sign leans a little further on its way.
@@ -70,10 +83,10 @@ function Sign({ passage, geometry, onRoom }: { passage: Passage; geometry: Buffe
         }}
       >
         <meshStandardMaterial
-          color={PASSAGE_COLOR}
-          emissive={PASSAGE_COLOR}
-          emissiveIntensity={PASSAGE_GLOW + lean * 0.15}
-          roughness={0.6}
+          color={color}
+          emissive={color}
+          emissiveIntensity={lean * PASSAGE_HOVER_GLOW}
+          roughness={0.85}
         />
       </mesh>
     </group>

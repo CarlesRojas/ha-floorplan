@@ -14,11 +14,10 @@ export const ROOM_SLAB_EDGE_RADIUS_M = 0.07
 // Rounding of the room corners, seen from above: the same as the edge's, and
 // like it only for the corners that touch no other room.
 export const ROOM_CORNER_RADIUS_M = ROOM_SLAB_EDGE_RADIUS_M
-// The sign on the floor that leads into a room open beside the focused one:
-// a soft white that reads on any floor and any dashboard, and how much it
-// lights itself, so it still reads in a room with the lights off.
-export const PASSAGE_COLOR = '#f5f5f4'
-export const PASSAGE_GLOW = 0.12
+// The sign on the floor that leads into a room open beside the focused one
+// takes that room's floor color, and under the pointer lights itself this
+// much, so it answers without standing out the rest of the time.
+export const PASSAGE_HOVER_GLOW = 0.25
 // Fill colors, assigned to rooms in order. A room can override with `color`.
 export const ROOM_COLORS = ['#7c9cbf', '#c9a27e', '#9bb38a', '#b58fb0', '#d6b56a', '#8fb6b3']
 

@@ -1,13 +1,8 @@
 import { SLAB_BEVEL_SEGMENTS, SLAB_CURVE_SEGMENTS } from '#/constants.ts'
 import SurfaceMaterial from '#/scene/SurfaceMaterial.tsx'
 import type { SurfaceKind } from '#/materials/textures.ts'
-import {
-  FLOOR_MATERIALS,
-  FLOOR_PATTERN_SHIFT_M,
-  ROOM_COLORS,
-  ROOM_SLAB_EDGE_RADIUS_M,
-  ROOM_SLAB_THICKNESS_M,
-} from '#/theme.ts'
+import { FLOOR_MATERIALS, FLOOR_PATTERN_SHIFT_M, ROOM_SLAB_EDGE_RADIUS_M, ROOM_SLAB_THICKNESS_M } from '#/theme.ts'
+import { floorColor } from '#/scene/floorColor.ts'
 import { ensureCounterClockwise, inset, roundedShape } from '#/geometry/polygon.ts'
 import { slabGeometry, touchesNeighbour } from '#/geometry/slab.ts'
 import type { Point, RoomConfig } from '#/types.ts'
@@ -51,7 +46,7 @@ function Room({ room, rooms, index, radius, gap }: Props) {
   }, [room.id, room.points, room.radius, rooms, radius, gap])
 
   const floor = room.floor ? FLOOR_MATERIALS[room.floor.material] : undefined
-  const color = room.floor?.color ?? floor?.color ?? room.color ?? ROOM_COLORS[index % ROOM_COLORS.length]
+  const color = floorColor(room, index)
 
   return (
     <mesh

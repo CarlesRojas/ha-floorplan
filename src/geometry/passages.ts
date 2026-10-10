@@ -15,16 +15,15 @@ const MIN_STRETCH_M = 0.5
 export const PASSAGE_GAP_M = 0.2
 
 // The sign, pointing along plan +x from its back edge, which sits at the
-// origin. A short broad shaft under a wide head.
+// origin: a plain triangle. The scene rounds its corners off.
 export const PASSAGE_ARROW: Point[] = [
-  [0, -0.13],
-  [0.28, -0.13],
-  [0.28, -0.3],
-  [0.6, 0],
-  [0.28, 0.3],
-  [0.28, 0.13],
-  [0, 0.13],
+  [0, -0.28],
+  [0.42, 0],
+  [0, 0.28],
 ]
+// How round the triangle's corners are, wider than the rounding of its
+// edges so the two run into each other smoothly.
+export const PASSAGE_CORNER_RADIUS_M = 0.1
 
 // The kinds a person walks through. A window in the shared stretch leaves
 // it open, a door closes it off and leads through itself instead.
