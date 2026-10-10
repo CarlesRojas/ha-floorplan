@@ -41,8 +41,8 @@ type Props = {
 
 // What the card's tab in Home Assistant's dialog shows: the way into the
 // editor first, then how the card answers a click and where its light
-// comes from, then the side panel, the background, what goes in the
-// panel, and how to move the view last.
+// comes from, then the side panel and what goes in it, the background, and
+// how to move the view last.
 export default function CardPanel({ hass, config, onChange, opening, onOpen }: Props) {
   const rooms = config.rooms ?? []
   const sidePanel = config.side_panel === true
@@ -191,26 +191,6 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
         </label>
       </Section>
 
-      <Section
-        title="Background"
-        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Plain leaves the dashboard's own background."
-      >
-        <div className={cn(group, 'gap-4')}>
-          <BackgroundPicker
-            title="Light"
-            mode="light"
-            value={config.background?.light ?? DEFAULT_BACKGROUND}
-            onChange={id => setBackground('light', id)}
-          />
-          <BackgroundPicker
-            title="Dark"
-            mode="dark"
-            value={config.background?.dark ?? DEFAULT_BACKGROUND}
-            onChange={id => setBackground('dark', id)}
-          />
-        </div>
-      </Section>
-
       {sidePanel && (
         <Section
           title="Home"
@@ -269,6 +249,26 @@ export default function CardPanel({ hass, config, onChange, opening, onOpen }: P
           )}
         </Section>
       )}
+
+      <Section
+        title="Background"
+        description="The colors laid behind the view the card is in, one for a light dashboard and one for a dark one. Plain leaves the dashboard's own background."
+      >
+        <div className={cn(group, 'gap-4')}>
+          <BackgroundPicker
+            title="Light"
+            mode="light"
+            value={config.background?.light ?? DEFAULT_BACKGROUND}
+            onChange={id => setBackground('light', id)}
+          />
+          <BackgroundPicker
+            title="Dark"
+            mode="dark"
+            value={config.background?.dark ?? DEFAULT_BACKGROUND}
+            onChange={id => setBackground('dark', id)}
+          />
+        </div>
+      </Section>
 
       <Section title="Moving the view">
         <div className={cn(group, 'py-3')}>
