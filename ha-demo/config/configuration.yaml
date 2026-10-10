@@ -139,6 +139,17 @@ automation:
         data:
           brightness: 255
           color_temp_kelvin: 3200
+  # The living room TV comes up on, which would turn TV scene on, so this
+  # turns it off and every scene starts off.
+  - id: tv_off_on_start
+    alias: TV off on start
+    triggers:
+      - trigger: homeassistant
+        event: start
+    actions:
+      - action: media_player.turn_off
+        target:
+          entity_id: media_player.living_room
 
 # The Floorplan Glass theme from the repo's themes folder.
 frontend:
