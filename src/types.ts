@@ -165,6 +165,9 @@ export type CardConfig = {
   home?: HomeConfig
 }
 
+// A card Home Assistant's card picker offers for an entity.
+type Suggestion = { label?: string; config: Record<string, unknown> }
+
 declare global {
   interface Window {
     customCards?: {
@@ -174,7 +177,7 @@ declare global {
       // Draws the card from its stub config in Home Assistant's card picker.
       preview?: boolean
       // The cards Home Assistant offers for an entity picked by entity.
-      getEntitySuggestion?: (hass: HomeAssistant, entityId: string) => { config: Record<string, unknown> } | null
+      getEntitySuggestion?: (hass: HomeAssistant, entityId: string) => Suggestion | Suggestion[] | null
     }[]
   }
 }

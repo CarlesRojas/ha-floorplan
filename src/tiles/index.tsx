@@ -43,11 +43,13 @@ type EntityView<C extends TileConfig> = (props: {
   config: C
 }) => ReactNode
 
-// One class per card, which only names its domains and its view.
+// One class per card, which only names its domains and its view. A wide
+// card starts wide in the card picker, to show its controls.
 function entityCard<C extends TileConfig>(
   domains: string[] | 'any',
   View: EntityView<C>,
   extras: Parameters<typeof tileForm>[1] = [],
+  wide = false,
 ) {
   return class extends TileHost<C> {
     protected readonly domains = domains
@@ -58,7 +60,7 @@ function entityCard<C extends TileConfig>(
 
     static getStubConfig(hass?: HomeAssistant) {
       const named = domains === 'any' ? ['sensor'] : domains
-      return { entity: stubEntity(hass, named) ?? `${named[0]}.example` }
+      return { entity: stubEntity(hass, named) ?? `${named[0]}.example`, ...(wide && { size: 'wide' }) }
     }
 
     protected view() {
@@ -114,7 +116,7 @@ class WeatherCard extends entityCard(WEATHER_DOMAINS, Weather) {
 }
 
 // A wide thermostat, not a water heater, is a row taller, for its modes along the bottom.
-class ClimateCard extends entityCard(CLIMATE_DOMAINS, Climate) {
+class ClimateCard extends entityCard(CLIMATE_DOMAINS, Climate, [], true) {
   getCardSize() {
     return this.tall() ? 3 : 2
   }
@@ -135,6 +137,8 @@ type Card = {
   description: string
   // The entity domains it shows, any for every one, none for no entity.
   domains: string[] | 'any' | null
+  // Wide, it shows its controls, and small it does not.
+  wide?: boolean
 }
 
 const CARDS: Card[] = [
@@ -161,14 +165,16 @@ const CARDS: Card[] = [
   },
   {
     type: 'fp-cover',
-    element: entityCard<CoverConfig>(COVER_DOMAINS, Cover, ['invert']),
+    element: entityCard<CoverConfig>(COVER_DOMAINS, Cover, ['invert'], true),
+    wide: true,
     domains: COVER_DOMAINS,
     name: 'Floorplan Cover',
     description: 'Blind or screen tile with up, stop and down',
   },
   {
     type: 'fp-vacuum',
-    element: entityCard<VacuumConfig>(VACUUM_DOMAINS, Vacuum, ['battery_entity']),
+    element: entityCard<VacuumConfig>(VACUUM_DOMAINS, Vacuum, ['battery_entity'], true),
+    wide: true,
     domains: VACUUM_DOMAINS,
     name: 'Floorplan Vacuum',
     description: 'Robot vacuum tile',
@@ -183,13 +189,15 @@ const CARDS: Card[] = [
   {
     type: 'fp-climate',
     element: ClimateCard,
+    wide: true,
     domains: CLIMATE_DOMAINS,
     name: 'Floorplan Climate',
     description: 'Thermostat or water heater tile with its temperature and modes',
   },
   {
     type: 'fp-media',
-    element: entityCard(MEDIA_DOMAINS, Media),
+    element: entityCard(MEDIA_DOMAINS, Media, [], true),
+    wide: true,
     domains: MEDIA_DOMAINS,
     name: 'Floorplan Media',
     description: 'Speaker or TV tile with play, pause and tracks',
@@ -235,8 +243,11 @@ export function registerTiles() {
         name: card.name,
         description: card.description,
         preview: true,
-        getEntitySuggestion: (_hass, entityId) =>
-          shows(card, entityId) ? { config: { type: `custom:${card.type}`, entity: entityId } } : null,
+        getEntitySuggestion: (_hass, entityId) => {
+          if (!shows(card, entityId)) return null
+          const config = { type: `custom:${card.type}`, entity: entityId }
+          return card.wide ? [{ config: { ...config, size: 'wide' } }, { label: 'Small', config }] : { config }
+        },
       })
   }
 }

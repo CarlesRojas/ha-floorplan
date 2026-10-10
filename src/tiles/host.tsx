@@ -76,11 +76,18 @@ export function resolveArea(hass: HomeAssistant, area: string | undefined, entit
   return entityId ? entityArea(hass, entityId) : null
 }
 
+// The states of an entity that is not in use.
+const IDLE = ['off', 'standby', 'idle', 'unavailable', 'unknown']
+
 export function stubEntity(hass: HomeAssistant | undefined, domains: string[]) {
   const ids = Object.keys(hass?.states ?? {})
+  // One in use first, like a player that is playing, so the preview shows
+  // its controls.
+  const idle = (id: string) => IDLE.includes(hass!.states[id].state)
   // Domain by domain in the card's order, so a toggle shows a light first.
   for (const domain of domains) {
-    const id = ids.find(id => id.split('.')[0] === domain)
+    const all = ids.filter(id => id.split('.')[0] === domain)
+    const id = all.find(id => !idle(id)) ?? all[0]
     if (id) return id
   }
 }
