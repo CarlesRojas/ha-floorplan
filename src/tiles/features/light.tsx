@@ -85,8 +85,26 @@ export const hueState = (entity: EntityState) => {
   return Array.isArray(hs) && typeof hs[0] === 'number' && !inWhite(entity) ? hueText(hs[0]) : undefined
 }
 
-// A little short of full saturation, so the rainbow does not glare.
-const HUES = [0, 60, 120, 180, 240, 300, 360].map(h => `hsl(${h} 60% 64%) ${(h / 360) * 100}%`).join(', ')
+// The hue a light's hue looks like, as the angle of the color in OKLCH.
+function perceivedHue(hue: number) {
+  const [r, g, b] = [0, 8, 4].map(n => {
+    const k = (n + hue / 30) % 12
+    const c = 0.5 - 0.5 * Math.max(-1, Math.min(k - 3, 9 - k, 1))
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s
+  const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  return (Math.atan2(bb, a) * 180) / Math.PI
+}
+
+// Every hue at the same lightness and a moderate strength, so no band of
+// the rainbow, like its greens and yellows, glares brighter than the rest.
+const HUES = Array.from({ length: 13 }, (_, i) => i * 30)
+  .map(h => `oklch(0.72 0.155 ${perceivedHue(h).toFixed(1)}) ${(h / 360) * 100}%`)
+  .join(', ')
 
 // The hue it shines in, along a slim rainbow beside the icon.
 export function Hue({ env, entity, onPreview }: FeatureProps) {
