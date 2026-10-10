@@ -1,7 +1,9 @@
 import { useFrame } from '@react-three/fiber'
+import { useEased } from '#/scene/decor/ease.ts'
 import { useLive } from '#/scene/live.ts'
+import { useWarmed } from '#/scene/warm.ts'
 import { useMemo, useRef } from 'react'
-import type { ShaderMaterial } from 'three'
+import type { PointLight, ShaderMaterial } from 'three'
 
 // A screen that is playing. Soft blocks of changing color glow out of black
 // and drift across it, so a TV or a monitor that is on reads as running
@@ -52,11 +54,71 @@ export default function ScreenMaterial() {
   const ref = useRef<ShaderMaterial>(null)
   const uniforms = useMemo(() => ({ uTime: { value: 0 } }), [])
   // Only shown while the screen is on, so it plays for as long as it is.
+  // On the scene's clock, so the glow round it keeps the same color.
   useLive(true)
-  useFrame((_, delta) => {
-    if (ref.current) ref.current.uniforms.uTime.value += delta
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.uniforms.uTime.value = clock.elapsedTime
   })
   return (
     <shaderMaterial ref={ref} uniforms={uniforms} vertexShader={VERTEX} fragmentShader={FRAGMENT} toneMapped={false} />
+  )
+}
+
+// The hue of the screen at a time, the same as the shader's.
+function hueAt(time: number) {
+  const x = (time / 100) % 1
+  const t = Math.min(1, Math.max(0, (x - 0.7) / 0.3))
+  return 0.47 + 0.1 * Math.sin(time * 0.15) + t * t * (3 - 2 * t)
+}
+
+// The color of a hue at full strength, from 0 to 1 round the wheel.
+function vivid(h: number, out: [number, number, number]) {
+  for (let i = 0; i < 3; i++) {
+    const k = (((h * 6 + [0, 4, 2][i]) % 6) + 6) % 6
+    out[i] = Math.min(1, Math.max(0, Math.abs(k - 3) - 1))
+  }
+  return out
+}
+
+/**
+ * The light a playing screen throws on the room, in the color on the
+ * screen at the moment, so a TV that is on reads from behind it too. It
+ * fades in and out with the screen and stays mounted at zero when off,
+ * since adding and removing lights recompiles every material in the scene.
+ */
+export function ScreenGlow({
+  on,
+  position,
+  intensity,
+  distance,
+}: {
+  on: boolean
+  position: [number, number, number]
+  intensity: number
+  distance: number
+}) {
+  const lit = useEased(on ? 1 : 0, 4)
+  const light = useRef<PointLight>(null)
+  const shown = useWarmed(lit > 0.01, visible => {
+    if (light.current) light.current.visible = visible
+  })
+  const rgb = useMemo<[number, number, number]>(() => [0, 0, 0], [])
+  useLive(on)
+  useFrame(({ clock }) => {
+    if (!light.current) return
+    // Between the screen's two colors, washed a touch towards white so the
+    // room still reads under it.
+    vivid(hueAt(clock.elapsedTime) + 0.04, rgb)
+    light.current.color.setRGB(0.1 + 0.9 * rgb[0], 0.1 + 0.9 * rgb[1], 0.1 + 0.9 * rgb[2])
+  })
+  return (
+    <pointLight
+      ref={light}
+      position={position}
+      intensity={intensity * lit}
+      distance={distance}
+      decay={1}
+      visible={shown}
+    />
   )
 }

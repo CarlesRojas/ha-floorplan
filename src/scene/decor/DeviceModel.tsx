@@ -9,7 +9,7 @@ import {
 } from '#/decoration/catalog.ts'
 import { Bar, Draft, Glass, Halo, Led, Material, SEG, Slab, Steam, Waves } from '#/scene/decor/parts.tsx'
 import { roundedShape } from '#/geometry/polygon.ts'
-import ScreenMaterial from '#/scene/decor/Screen.tsx'
+import ScreenMaterial, { ScreenGlow } from '#/scene/decor/Screen.tsx'
 import type { ItemState } from '#/scene/decor/state.ts'
 import type { DecorationConfig } from '#/types.ts'
 import { useEased, useTravel } from '#/scene/decor/ease.ts'
@@ -210,6 +210,8 @@ export default function DeviceModel({ kind, item, state, room, all }: Props) {
         <planeGeometry args={[w - 0.012, h - 0.012]} />
         {on ? <ScreenMaterial /> : <meshStandardMaterial color={c('screen')} roughness={0.12} metalness={0.25} />}
       </mesh>
+      {/* The picture's light on the room round it, more for a bigger screen. */}
+      <ScreenGlow on={on} position={[0, h / 2, z + 0.25]} intensity={Math.min(2.5, 0.8 + w * 1.2)} distance={2.5 + w * 2} />
     </group>
   )
 

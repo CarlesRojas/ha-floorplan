@@ -19,6 +19,7 @@ moves that section under the new version and uses it as the release notes.
 - The floorplan card's `aspect_ratio` can be `fill`, to take the whole height of what holds it.
 - The side panel can have a section for the whole home, set in the card's editor above the tiles by room, with a heading that reads Home unless it is renamed and any entities, such as a scene, a script, the weather or a group of lights; with any there, the whole home shows only those tiles and each room's tiles show only while that room is in view.
 - A tile with no icon of its own shows the icon picked for its entity in Home Assistant.
+- A TV or a monitor that is on lights the room around it in the colors on its screen, so it shows it is on even when the screen faces away.
 - The tile cards show a preview in Home Assistant's card picker, and the ones made for an entity show up under Community when a card is added by entity, with the cover, media, vacuum and climate tiles offered wide with their buttons and also small.
 - A tile's `room_filter` can be `room`, to show only while its room is in view, or `home`, to show only while the whole home is.
 - A leak sensor to put on the floor: it glows blue and a puddle spreads round it when it gets wet.
