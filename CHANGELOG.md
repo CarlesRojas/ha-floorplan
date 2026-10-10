@@ -79,6 +79,7 @@ moves that section under the new version and uses it as the release notes.
 - A second click on the floor of the room in view always takes the camera back to the whole home, even after turning, panning or zooming inside the room, where it used to fly back to the room's view.
 - In the card's settings, pressing or changing the tiles of a room flies the preview to that room, and the Home tiles take it back to the whole home.
 - A button, script or scene tile lights up when pressed, stays lit for a second and then fades slowly back, and its Press pill does the same on its own.
+- On a small tile, a pill that does something, like Press, is as wide as its words and sits at the right, as on a wide tile.
 
 ### Fixed
 

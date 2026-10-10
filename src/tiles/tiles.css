@@ -314,6 +314,11 @@
 .fp-tile[data-wide] .fp-beside .fp-feature > :is(.fp-pill, .fp-feature-date) {
   flex: 0 1 auto;
 }
+/* A pill that does something, like Press, is as wide as its words on a
+   small tile too, at the right. */
+.fp-beside .fp-feature > .fp-pill-action {
+  flex: 0 1 auto;
+}
 .fp-tile[data-wide] .fp-beside .fp-feature .fp-group > .fp-control {
   flex: none;
   width: 44px;
