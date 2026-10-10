@@ -1,0 +1,75 @@
+default_config:
+
+# Home Assistant's Demo integration: lights, covers, a vacuum, media players
+# and the rest of the devices the flat is bound to, all made up.
+demo:
+
+# Real looking names for the media players the flat uses.
+homeassistant:
+  customize:
+    media_player.living_room:
+      friendly_name: Living room TV
+    media_player.walkman:
+      friendly_name: Bedroom speaker
+
+# A projector screen that rolls down and up, which the Demo integration does
+# not have, kept as a toggle behind a cover.
+input_boolean:
+  projector_screen_down:
+    name: Projector screen down
+    icon: mdi:projector-screen
+
+template:
+  - cover:
+      - name: Projector screen
+        unique_id: projector_screen
+        device_class: shade
+        state: "{{ 'open' if is_state('input_boolean.projector_screen_down', 'on') else 'closed' }}"
+        open_cover:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.projector_screen_down
+        close_cover:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.projector_screen_down
+
+# The Demo integration's lights come up red and pink. This sets them to a
+# warm white at full brightness every time Home Assistant starts.
+automation:
+  - id: warm_white_lights_on_start
+    alias: Warm white lights on start
+    triggers:
+      - trigger: homeassistant
+        event: start
+    actions:
+      - action: light.turn_on
+        target:
+          entity_id:
+            - light.living_room_rgbww_lights
+            - light.office_rgbw_lights
+            - light.entrance_color_white_lights
+            - light.kitchen_lights
+            - light.ceiling_lights
+            - light.bed_light
+        data:
+          brightness: 255
+          color_temp_kelvin: 3200
+
+# The Floorplan Glass theme from the repo's themes folder.
+frontend:
+  themes: !include_dir_merge_named themes
+
+# The card from the repo's dist folder, and the dashboard with the demo flat.
+lovelace:
+  resource_mode: yaml
+  resources:
+    - url: /local/floorplan-3d/card.js
+      type: module
+  dashboards:
+    floorplan-demo:
+      mode: yaml
+      filename: floorplan.yaml
+      title: Floorplan
+      icon: mdi:floor-plan
+      show_in_sidebar: true

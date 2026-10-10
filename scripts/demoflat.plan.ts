@@ -344,7 +344,6 @@ export const DEMO_FLAT: CardConfig = {
       points: LIVING,
       floor: { material: 'wood' },
       camera: { position: [-0.4, 4.3, -4.68], target: [2.24, 0.3, -1.11] },
-      entities: ['climate.living_room'],
       order: [
         'light.living_room',
         'light.floor_lamp',
@@ -352,7 +351,6 @@ export const DEMO_FLAT: CardConfig = {
         'lock.front_door',
         'alarm_control_panel.home',
         'camera.backyard',
-        'climate.living_room',
       ],
     },
     {
@@ -410,6 +408,34 @@ export const DEMO_FLAT: CardConfig = {
   camera: { position: [3.97, 8.58, 3.33], target: [3.97, 0.3, -3.08] },
 }
 
+// The same entities in Home Assistant's own Demo integration, for the
+// dashboard in ha-demo, where the flat runs against a real Home Assistant.
+export const HA_DEMO_IDS: Record<string, string> = {
+  'light.floor_lamp': 'light.living_room_rgbww_lights',
+  'light.kitchen_pendants': 'light.kitchen_lights',
+  'vacuum.robot': 'vacuum.demo_vacuum_0_ground_floor',
+  'light.bathroom': 'light.ceiling_lights',
+  'light.bedside_lamps': 'light.bed_light',
+  'fan.ceiling_fan': 'fan.ceiling_fan',
+  'cover.kitchen_blind': 'cover.hall_window',
+  'climate.thermostat': 'climate.hvac',
+  'media_player.living_tv': 'media_player.living_room',
+  'lock.front_door': 'lock.front_door',
+  'switch.kitchen_strip': 'switch.decorative_lights',
+  'camera.backyard': 'camera.backyard_camera',
+  'binary_sensor.bathroom_motion': 'binary_sensor.movement_backyard',
+  'alarm_control_panel.home': 'alarm_control_panel.security',
+  'light.living_room': 'light.entrance_color_white_lights',
+  'light.bedroom': 'light.office_rgbw_lights',
+  'media_player.bedroom_speaker': 'media_player.walkman',
+  'humidifier.bedroom': 'humidifier.humidifier',
+  'cover.projector_screen': 'cover.projector_screen',
+  'water_heater.boiler': 'water_heater.demo_water_heater_celsius',
+  'binary_sensor.bathroom_moisture': 'binary_sensor.basement_floor_wet',
+  'button.litter_box_scoop': 'button.push',
+  'weather.home': 'weather.demo_weather_south',
+}
+
 // What the made up devices report, for the dev page. Every entity starts
 // off, closed, docked, locked or armed; the page flips the ones asked for.
 const NAMES: Record<string, string> = {
@@ -424,7 +450,6 @@ const NAMES: Record<string, string> = {
   'cover.kitchen_blind': 'Kitchen blind',
   'weather.home': 'Home',
   'climate.thermostat': 'Thermostat',
-  'climate.living_room': 'Living room thermostat',
   'light.bedside_lamps': 'Bedside lamps',
   'light.bedroom': 'Bedroom light',
   'fan.ceiling_fan': 'Ceiling fan',

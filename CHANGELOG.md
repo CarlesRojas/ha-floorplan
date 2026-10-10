@@ -23,7 +23,7 @@ moves that section under the new version and uses it as the release notes.
 
 ### Changed
 
-- The demo flat in demoflat.yaml is refurnished, with a camera, an alarm panel, a humidifier, a water heater and a second thermostat, its side panel on with the tiles of each room in order, and a click on another room flying to it first.
+- The demo flat in demoflat.yaml is refurnished, with a camera, an alarm panel, a humidifier and a water heater, its side panel on with the tiles of each room in order, and a click on another room flying to it first.
 - A TV or laptop that is on shows deep, muted colors glowing out of black, swaying between greens and blues and now and then going round every other color, and moves faster than before.
 - A smart lock glows red while it is locked and green while it is unlocked.
 - A click on a piece bound to something it cannot switch, like a camera or a thermostat, opens its dialog, where it used to do nothing.

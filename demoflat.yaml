@@ -17,155 +17,13 @@ rooms:
     camera:
       position: [-0.4, 4.3, -4.68]
       target: [2.24, 0.3, -1.11]
-    entities:
-      - 0: c
-        1: l
-        2: i
-        3: m
-        4: a
-        5: t
-        6: e
-        7: "."
-        8: l
-        9: i
-        10: v
-        11: i
-        12: n
-        13: g
-        14: "_"
-        15: r
-        16: o
-        17: o
-        18: m
     order:
-      - 0: l
-        1: i
-        2: g
-        3: h
-        4: t
-        5: "."
-        6: l
-        7: i
-        8: v
-        9: i
-        10: n
-        11: g
-        12: "_"
-        13: r
-        14: o
-        15: o
-        16: m
-      - 0: l
-        1: i
-        2: g
-        3: h
-        4: t
-        5: "."
-        6: f
-        7: l
-        8: o
-        9: o
-        10: r
-        11: "_"
-        12: l
-        13: a
-        14: m
-        15: p
-      - 0: m
-        1: e
-        2: d
-        3: i
-        4: a
-        5: "_"
-        6: p
-        7: l
-        8: a
-        9: y
-        10: e
-        11: r
-        12: "."
-        13: l
-        14: i
-        15: v
-        16: i
-        17: n
-        18: g
-        19: "_"
-        20: t
-        21: v
-      - 0: l
-        1: o
-        2: c
-        3: k
-        4: "."
-        5: f
-        6: r
-        7: o
-        8: n
-        9: t
-        10: "_"
-        11: d
-        12: o
-        13: o
-        14: r
-      - 0: a
-        1: l
-        2: a
-        3: r
-        4: m
-        5: "_"
-        6: c
-        7: o
-        8: n
-        9: t
-        10: r
-        11: o
-        12: l
-        13: "_"
-        14: p
-        15: a
-        16: n
-        17: e
-        18: l
-        19: "."
-        20: h
-        21: o
-        22: m
-        23: e
-      - 0: c
-        1: a
-        2: m
-        3: e
-        4: r
-        5: a
-        6: "."
-        7: b
-        8: a
-        9: c
-        10: k
-        11: y
-        12: a
-        13: r
-        14: d
-      - 0: c
-        1: l
-        2: i
-        3: m
-        4: a
-        5: t
-        6: e
-        7: "."
-        8: l
-        9: i
-        10: v
-        11: i
-        12: n
-        13: g
-        14: "_"
-        15: r
-        16: o
-        17: o
-        18: m
+      - light.living_room
+      - light.floor_lamp
+      - media_player.living_tv
+      - lock.front_door
+      - alarm_control_panel.home
+      - camera.backyard
   - id: kitchen
     name: Kitchen
     area_id: kitchen
@@ -180,110 +38,13 @@ rooms:
       position: [-1.26, 3.91, -1.25]
       target: [2.29, 0.3, -4.94]
     entities:
-      - 0: w
-        1: e
-        2: a
-        3: t
-        4: h
-        5: e
-        6: r
-        7: "."
-        8: h
-        9: o
-        10: m
-        11: e
+      - weather.home
     order:
-      - 0: l
-        1: i
-        2: g
-        3: h
-        4: t
-        5: "."
-        6: k
-        7: i
-        8: t
-        9: c
-        10: h
-        11: e
-        12: n
-        13: "_"
-        14: p
-        15: e
-        16: n
-        17: d
-        18: a
-        19: n
-        20: t
-        21: s
-      - 0: s
-        1: w
-        2: i
-        3: t
-        4: c
-        5: h
-        6: "."
-        7: k
-        8: i
-        9: t
-        10: c
-        11: h
-        12: e
-        13: n
-        14: "_"
-        15: s
-        16: t
-        17: r
-        18: i
-        19: p
-      - 0: c
-        1: o
-        2: v
-        3: e
-        4: r
-        5: "."
-        6: k
-        7: i
-        8: t
-        9: c
-        10: h
-        11: e
-        12: n
-        13: "_"
-        14: b
-        15: l
-        16: i
-        17: n
-        18: d
-      - 0: w
-        1: e
-        2: a
-        3: t
-        4: h
-        5: e
-        6: r
-        7: "."
-        8: h
-        9: o
-        10: m
-        11: e
-      - 0: c
-        1: l
-        2: i
-        3: m
-        4: a
-        5: t
-        6: e
-        7: "."
-        8: t
-        9: h
-        10: e
-        11: r
-        12: m
-        13: o
-        14: s
-        15: t
-        16: a
-        17: t
+      - light.kitchen_pendants
+      - switch.kitchen_strip
+      - cover.kitchen_blind
+      - weather.home
+      - climate.thermostat
   - id: bedroom
     name: Bedroom
     area_id: bedroom
@@ -299,121 +60,12 @@ rooms:
       position: [10.23, 4.83, -6.21]
       target: [5.79, 0.3, -3.35]
     order:
-      - 0: l
-        1: i
-        2: g
-        3: h
-        4: t
-        5: "."
-        6: b
-        7: e
-        8: d
-        9: s
-        10: i
-        11: d
-        12: e
-        13: "_"
-        14: l
-        15: a
-        16: m
-        17: p
-        18: s
-      - 0: l
-        1: i
-        2: g
-        3: h
-        4: t
-        5: "."
-        6: b
-        7: e
-        8: d
-        9: r
-        10: o
-        11: o
-        12: m
-      - 0: f
-        1: a
-        2: n
-        3: "."
-        4: c
-        5: e
-        6: i
-        7: l
-        8: i
-        9: n
-        10: g
-        11: "_"
-        12: f
-        13: a
-        14: n
-      - 0: h
-        1: u
-        2: m
-        3: i
-        4: d
-        5: i
-        6: f
-        7: i
-        8: e
-        9: r
-        10: "."
-        11: b
-        12: e
-        13: d
-        14: r
-        15: o
-        16: o
-        17: m
-      - 0: m
-        1: e
-        2: d
-        3: i
-        4: a
-        5: "_"
-        6: p
-        7: l
-        8: a
-        9: y
-        10: e
-        11: r
-        12: "."
-        13: b
-        14: e
-        15: d
-        16: r
-        17: o
-        18: o
-        19: m
-        20: "_"
-        21: s
-        22: p
-        23: e
-        24: a
-        25: k
-        26: e
-        27: r
-      - 0: c
-        1: o
-        2: v
-        3: e
-        4: r
-        5: "."
-        6: p
-        7: r
-        8: o
-        9: j
-        10: e
-        11: c
-        12: t
-        13: o
-        14: r
-        15: "_"
-        16: s
-        17: c
-        18: r
-        19: e
-        20: e
-        21: n
+      - light.bedside_lamps
+      - light.bedroom
+      - fan.ceiling_fan
+      - humidifier.bedroom
+      - media_player.bedroom_speaker
+      - cover.projector_screen
   - id: bathroom
     name: Bathroom
     area_id: bathroom
@@ -429,516 +81,128 @@ rooms:
       position: [8.29, 3.76, 2.7]
       target: [6.12, 0.91, -0.96]
     order:
-      - 0: l
-        1: i
-        2: g
-        3: h
-        4: t
-        5: "."
-        6: b
-        7: a
-        8: t
-        9: h
-        10: r
-        11: o
-        12: o
-        13: m
-      - 0: b
-        1: i
-        2: n
-        3: a
-        4: r
-        5: y
-        6: "_"
-        7: s
-        8: e
-        9: n
-        10: s
-        11: o
-        12: r
-        13: "."
-        14: b
-        15: a
-        16: t
-        17: h
-        18: r
-        19: o
-        20: o
-        21: m
-        22: "_"
-        23: m
-        24: o
-        25: t
-        26: i
-        27: o
-        28: n
-      - 0: v
-        1: a
-        2: c
-        3: u
-        4: u
-        5: m
-        6: "."
-        7: r
-        8: o
-        9: b
-        10: o
-        11: t
-      - 0: w
-        1: a
-        2: t
-        3: e
-        4: r
-        5: "_"
-        6: h
-        7: e
-        8: a
-        9: t
-        10: e
-        11: r
-        12: "."
-        13: b
-        14: o
-        15: i
-        16: l
-        17: e
-        18: r
-      - 0: b
-        1: i
-        2: n
-        3: a
-        4: r
-        5: y
-        6: "_"
-        7: s
-        8: e
-        9: n
-        10: s
-        11: o
-        12: r
-        13: "."
-        14: b
-        15: a
-        16: t
-        17: h
-        18: r
-        19: o
-        20: o
-        21: m
-        22: "_"
-        23: m
-        24: o
-        25: i
-        26: s
-        27: t
-        28: u
-        29: r
-        30: e
-      - 0: b
-        1: u
-        2: t
-        3: t
-        4: o
-        5: n
-        6: "."
-        7: l
-        8: i
-        9: t
-        10: t
-        11: e
-        12: r
-        13: "_"
-        14: b
-        15: o
-        16: x
-        17: "_"
-        18: s
-        19: c
-        20: o
-        21: o
-        22: p
+      - light.bathroom
+      - binary_sensor.bathroom_motion
+      - vacuum.robot
+      - water_heater.boiler
+      - binary_sensor.bathroom_moisture
+      - button.litter_box_scoop
 devices:
   - entity_id: light.floor_lamp
     room: living
     position: [0.5, 2.45]
     decorations:
-      - 0: f
-        1: l
-        2: o
-        3: o
-        4: r
-        5: "_"
-        6: l
-        7: a
-        8: m
-        9: p
+      - floor_lamp
   - entity_id: light.kitchen_pendants
     room: kitchen
     position: [1.65, 4.1]
     decorations:
-      - 0: p
-        1: e
-        2: n
-        3: d
-        4: a
-        5: n
-        6: t
-        7: "_"
-        8: a
-      - 0: p
-        1: e
-        2: n
-        3: d
-        4: a
-        5: n
-        6: t
-        7: "_"
-        8: b
+      - pendant_a
+      - pendant_b
   - entity_id: vacuum.robot
     room: bathroom
     position: [7.55, 0.35]
     decorations:
-      - 0: v
-        1: a
-        2: c
-        3: u
-        4: u
-        5: m
+      - vacuum
   - entity_id: light.bathroom
     room: bathroom
     position: [5.15, 1]
     decorations:
-      - 0: b
-        1: a
-        2: t
-        3: h
-        4: r
-        5: o
-        6: o
-        7: m
-        8: "_"
-        9: s
-        10: p
-        11: o
-        12: t
-        13: "_"
-        14: a
-      - 0: b
-        1: a
-        2: t
-        3: h
-        4: r
-        5: o
-        6: o
-        7: m
-        8: "_"
-        9: s
-        10: p
-        11: o
-        12: t
-        13: "_"
-        14: b
+      - bathroom_spot_a
+      - bathroom_spot_b
   - entity_id: light.bedside_lamps
     room: bedroom
     position: [4.95, 5.17]
     decorations:
-      - 0: b
-        1: e
-        2: d
-        3: s
-        4: i
-        5: d
-        6: e
-        7: "_"
-        8: a
-      - 0: b
-        1: e
-        2: d
-        3: s
-        4: i
-        5: d
-        6: e
-        7: "_"
-        8: b
+      - bedside_a
+      - bedside_b
   - entity_id: fan.ceiling_fan
     room: bedroom
     position: [6, 4.5]
     decorations:
-      - 0: f
-        1: a
-        2: n
-        3: "_"
-        4: c
-        5: e
-        6: i
-        7: l
-        8: i
-        9: n
-        10: g
-        11: "-"
-        12: "1"
+      - fan_ceiling-1
   - entity_id: cover.kitchen_blind
     room: kitchen
     position: [0, 4.3]
     decorations:
-      - 0: l
-        1: i
-        2: v
-        3: i
-        4: n
-        5: g
-        6: "_"
-        7: b
-        8: l
-        9: i
-        10: n
-        11: d
+      - living_blind
   - entity_id: climate.thermostat
     room: kitchen
     position: [4.2, 4.15]
     decorations:
-      - 0: t
-        1: h
-        2: e
-        3: r
-        4: m
-        5: o
-        6: s
-        7: t
-        8: a
-        9: t
+      - thermostat
   - entity_id: media_player.living_tv
     room: living
     position: [2, 0]
     decorations:
-      - 0: t
-        1: v
-      - 0: s
-        1: o
-        2: u
-        3: n
-        4: d
-        5: b
-        6: a
-        7: r
+      - tv
+      - soundbar
   - entity_id: lock.front_door
     room: living
     position: [3.05, 0]
     decorations:
-      - 0: f
-        1: r
-        2: o
-        3: n
-        4: t
-        5: "_"
-        6: l
-        7: o
-        8: c
-        9: k
+      - front_lock
   - entity_id: switch.kitchen_strip
     room: kitchen
     position: [1.8, 5.6]
     decorations:
-      - 0: k
-        1: i
-        2: t
-        3: c
-        4: h
-        5: e
-        6: n
-        7: "_"
-        8: s
-        9: t
-        10: r
-        11: i
-        12: p
+      - kitchen_strip
   - entity_id: camera.backyard
     room: living
     position: [0, 1]
     decorations:
-      - 0: l
-        1: i
-        2: v
-        3: i
-        4: n
-        5: g
-        6: "_"
-        7: c
-        8: a
-        9: m
-        10: e
-        11: r
-        12: a
+      - living_camera
   - entity_id: binary_sensor.bathroom_motion
     room: bathroom
     position: [4.2, 1.8]
     decorations:
-      - 0: b
-        1: a
-        2: t
-        3: h
-        4: r
-        5: o
-        6: o
-        7: m
-        8: "_"
-        9: m
-        10: o
-        11: t
-        12: i
-        13: o
-        14: n
+      - bathroom_motion
   - entity_id: alarm_control_panel.home
     room: living
     position: [3.05, 0]
     decorations:
-      - 0: a
-        1: l
-        2: a
-        3: r
-        4: m
+      - alarm
   - entity_id: light.living_room
     room: living
     position: [2.3, 1.8]
     decorations:
-      - 0: l
-        1: i
-        2: v
-        3: i
-        4: n
-        5: g
-        6: "_"
-        7: l
-        8: i
-        9: g
-        10: h
-        11: t
+      - living_light
   - entity_id: light.bedroom
     room: bedroom
     position: [6, 3.4]
     decorations:
-      - 0: b
-        1: e
-        2: d
-        3: r
-        4: o
-        5: o
-        6: m
-        7: "_"
-        8: l
-        9: i
-        10: g
-        11: h
-        12: t
+      - bedroom_light
   - entity_id: media_player.bedroom_speaker
     room: bedroom
     position: [7.55, 2.65]
     decorations:
-      - 0: b
-        1: e
-        2: d
-        3: r
-        4: o
-        5: o
-        6: m
-        7: "_"
-        8: s
-        9: p
-        10: e
-        11: a
-        12: k
-        13: e
-        14: r
+      - bedroom_speaker
   - entity_id: humidifier.bedroom
     room: bedroom
     position: [7.55, 5.15]
     decorations:
-      - 0: h
-        1: u
-        2: m
-        3: i
-        4: d
-        5: i
-        6: f
-        7: i
-        8: e
-        9: r
+      - humidifier
   - entity_id: cover.projector_screen
     room: bedroom
     position: [6, 2.35]
     decorations:
-      - 0: p
-        1: r
-        2: o
-        3: j
-        4: e
-        5: c
-        6: t
-        7: o
-        8: r
-        9: "_"
-        10: s
-        11: c
-        12: r
-        13: e
-        14: e
-        15: n
-      - 0: p
-        1: r
-        2: o
-        3: j
-        4: e
-        5: c
-        6: t
-        7: o
-        8: r
+      - projector_screen
+      - projector
   - entity_id: water_heater.boiler
     room: bathroom
     position: [7.8, 0.85]
     decorations:
-      - 0: w
-        1: a
-        2: t
-        3: e
-        4: r
-        5: "_"
-        6: h
-        7: e
-        8: a
-        9: t
-        10: e
-        11: r
+      - water_heater
   - entity_id: binary_sensor.bathroom_moisture
     room: bathroom
     position: [6.2, 1.95]
     decorations:
-      - 0: b
-        1: a
-        2: t
-        3: h
-        4: r
-        5: o
-        6: o
-        7: m
-        8: "_"
-        9: l
-        10: e
-        11: a
-        12: k
+      - bathroom_leak
   - entity_id: button.litter_box_scoop
     room: bathroom
     position: [4.56, 0.32]
     decorations:
-      - 0: l
-        1: i
-        2: t
-        3: t
-        4: e
-        5: r
-        6: "_"
-        7: b
-        8: o
-        9: x
+      - litter_box
 decorations:
   - id: sofa
     kind: sofa
@@ -959,14 +223,14 @@ decorations:
     kind: books
     room: living
     position: [1.7, 1.25]
-    on: coffee_table
+    "on": coffee_table
     rotation: 300
   - id: coffee_plant
     kind: plant_small
     room: living
     position: [2.3, 1.4]
     variant: pilea
-    on: coffee_table
+    "on": coffee_table
   - id: sideboard
     kind: sideboard
     room: living
@@ -984,7 +248,7 @@ decorations:
     position: [2, 0.2]
     variant: bar
     rotation: 180
-    on: sideboard
+    "on": sideboard
   - id: living_plant
     kind: plant_large
     room: living
@@ -1057,7 +321,7 @@ decorations:
     room: kitchen
     position: [0.15, 5.45]
     variant: jug
-    on: counter_a
+    "on": counter_a
     colors:
       body: "#7a7a7a"
       fittings: "#454545"
@@ -1066,19 +330,19 @@ decorations:
     room: kitchen
     position: [1.9, 5.45]
     variant: bambino
-    on: counter_b
+    "on": counter_b
   - id: sink
     kind: kitchen_sink
     room: kitchen
     position: [2.9, 5.3]
     variant: undermount
-    on: counter_b
+    "on": counter_b
   - id: toaster
     kind: toaster
     room: kitchen
     position: [1.55, 5.45]
     variant: retro
-    on: counter_a
+    "on": counter_a
   - id: cabinets_a
     kind: upper_cabinets
     room: kitchen
@@ -1109,7 +373,7 @@ decorations:
     kind: vase
     room: kitchen
     position: [2.65, 4.15]
-    on: island
+    "on": island
     params:
       height: 0.21
       size: 0.16
@@ -1165,13 +429,13 @@ decorations:
     room: bedroom
     position: [4.95, 5.17]
     variant: cestita
-    on: nightstand_a
+    "on": nightstand_a
   - id: bedside_b
     kind: light_table
     room: bedroom
     position: [7.05, 5.17]
     variant: cestita
-    on: nightstand_b
+    "on": nightstand_b
   - id: bedroom_light
     kind: light_ceiling
     room: bedroom
@@ -1199,7 +463,7 @@ decorations:
     room: bedroom
     position: [7.55, 3.45]
     variant: pilea
-    on: dresser
+    "on": dresser
     params:
       size: 0.39
   - id: bedroom_door
@@ -1241,7 +505,7 @@ decorations:
     variant: snake
     params:
       size: 0.23
-    on: basin
+    "on": basin
   - id: bathroom_mirror
     kind: wall_mirror
     room: bathroom
@@ -1294,7 +558,7 @@ decorations:
     kind: projector_portable
     room: bedroom
     position: [6, 5.5]
-    on: half_wall
+    "on": half_wall
     params:
       throw: 3.2
   - id: projector_screen
@@ -1325,7 +589,7 @@ decorations:
     kind: speaker
     room: bedroom
     position: [7.55, 2.65]
-    on: dresser
+    "on": dresser
     variant: pod
   - id: humidifier
     kind: humidifier
