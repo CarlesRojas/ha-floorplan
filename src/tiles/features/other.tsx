@@ -366,7 +366,7 @@ export function UpdateActions({ env, entity }: FeatureProps) {
   if (!waiting) return <Pill icon="ph:check-circle" label="Up to date" disabled onPress={() => {}} />
   return (
     <div className="fp-group">
-      <Pill label="Skip" disabled={installing} onPress={run('skip')} />
+      <Pill icon="ph:skip-forward" label="Skip" disabled={installing} onPress={run('skip')} />
       {supports(entity, 1) && (
         <Pill
           icon="ph:download"

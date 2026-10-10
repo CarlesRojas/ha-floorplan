@@ -12,7 +12,7 @@ type Props = { env: TileEnv; config: TileConfig }
 // row taller: minus and plus around the temperature it aims for, or around
 // the two ends of the range it keeps to, where a tap on one picks which
 // the buttons move. A wide thermostat adds a button for each mode it runs
-// in along the bottom. Lit while it is on, warm while it heats and cool
+// in along the bottom, unless a feature sits beside the icon instead. Lit while it is on, warm while it heats and cool
 // while it cools.
 export default function Climate({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
@@ -29,7 +29,7 @@ export default function Climate({ env, config }: Props) {
   if (entity && typeof attributes.current_temperature === 'number')
     parts.push(formatAttribute(env.hass, entity, 'current_temperature'))
   // A tile with minus and plus shows what it aims for between them.
-  const stepped = wide || config.feature === 'target-temperature'
+  const stepped = (wide && !config.feature) || config.feature === 'target-temperature'
   if (!stepped && on && entity && typeof attributes.temperature === 'number')
     parts.push(`to ${formatAttribute(env.hass, entity, 'temperature')}`)
 

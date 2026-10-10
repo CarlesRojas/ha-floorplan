@@ -7,7 +7,7 @@ import { domainOf, listOf, numberOf, supports, type FeatureProps } from '#/tiles
 import type { EntityState } from '#/types.ts'
 import type { ComponentType } from 'react'
 
-// The features a tile can show along its bottom, by the names Home
+// The features a tile can show beside its icon, by the names Home
 // Assistant gives its own tile features. Each says which domains it is
 // for and whether an entity has what it needs, so the card picker offers
 // only the ones that work.
@@ -18,11 +18,16 @@ export type FeatureDef = {
   label: string
   domains: string[]
   supports?: (entity: EntityState) => boolean
-  // What it draws along the bottom. A feature without one is the whole
-  // tile instead, drawn by the tile itself, and adds no row.
+  // What it draws across from the icon, so the tile stays two rows tall.
+  // A feature without one is the whole tile instead, drawn by the tile
+  // itself.
   View?: ComponentType<FeatureProps>
-  // Drawn across from the icon instead, so it adds no row either.
-  beside?: boolean
+  // Too big to sit beside the icon, so it goes along the bottom and makes
+  // the tile a row taller.
+  row?: boolean
+  // Too many buttons to fit beside the icon of a small tile, so a tile
+  // with it is always wide.
+  wide?: boolean
   // What the tile says under its name while it is on, in place of what it
   // would say without the feature, like a light's white in kelvin.
   state?: (entity: EntityState) => string | undefined
@@ -45,7 +50,6 @@ export const FEATURES: FeatureDef[] = [
     domains: ['light'],
     supports: light.warms,
     View: light.ColorTemp,
-    beside: true,
     state: light.tempState,
   },
   {
@@ -54,7 +58,6 @@ export const FEATURES: FeatureDef[] = [
     domains: ['light'],
     supports: light.colors,
     View: light.Hue,
-    beside: true,
     state: light.hueState,
   },
   {
@@ -72,13 +75,14 @@ export const FEATURES: FeatureDef[] = [
     supports: e => supports(e, cover.OPEN) || supports(e, cover.CLOSE),
     View: cover.OpenClose,
   },
-  { id: 'position', label: 'Position', domains: COVERS, supports: bit(cover.SET_POSITION), View: cover.Position },
+  { id: 'position', label: 'Position', domains: COVERS, supports: bit(cover.SET_POSITION) },
   {
     id: 'position-favorite',
     label: 'Favorite positions',
     domains: COVERS,
     supports: bit(cover.SET_POSITION),
     View: cover.Favorites,
+    wide: true,
   },
   {
     id: 'tilt',
@@ -92,7 +96,6 @@ export const FEATURES: FeatureDef[] = [
     label: 'Tilt position',
     domains: ['cover'],
     supports: bit(cover.SET_TILT),
-    View: cover.TiltPosition,
   },
   {
     id: 'tilt-favorite',
@@ -100,6 +103,7 @@ export const FEATURES: FeatureDef[] = [
     domains: ['cover'],
     supports: bit(cover.SET_TILT),
     View: props => <cover.Favorites {...props} tilt />,
+    wide: true,
   },
   { id: 'speed', label: 'Speed', domains: ['fan'], supports: bit(cover.FAN.speed) },
   {
@@ -200,7 +204,7 @@ export const FEATURES: FeatureDef[] = [
   },
   { id: 'commands', label: 'Lock and unlock', domains: ['lock'], View: other.LockCommands },
   { id: 'open-door', label: 'Open the door', domains: ['lock'], supports: bit(1), View: other.OpenDoor },
-  { id: 'commands', label: 'Commands', domains: ['vacuum'], View: other.VacuumCommands },
+  { id: 'commands', label: 'Commands', domains: ['vacuum'], View: other.VacuumCommands, wide: true },
   {
     id: 'fan-speed',
     label: 'Suction',
@@ -209,7 +213,13 @@ export const FEATURES: FeatureDef[] = [
     View: other.VacuumFanSpeed,
   },
   { id: 'commands', label: 'Commands', domains: ['lawn_mower'], View: other.MowerCommands },
-  { id: 'alarm-modes', label: 'Alarm modes', domains: ['alarm_control_panel'], View: other.AlarmModes },
+  {
+    id: 'alarm-modes',
+    label: 'Alarm modes',
+    domains: ['alarm_control_panel'],
+    View: other.AlarmModes,
+    wide: true,
+  },
   { id: 'actions', label: 'Counter buttons', domains: ['counter'], View: other.CounterActions },
   { id: 'actions', label: 'Timer buttons', domains: ['timer'], View: other.TimerActions },
   {
@@ -259,16 +269,23 @@ export function featuresFor(entity: EntityState | undefined) {
 
 // Whether a tile's feature goes along its bottom, making it a row taller.
 export const addsRow = (feature: string | undefined) =>
-  !!feature && !!FEATURES.find(f => f.id === feature && f.View && !f.beside)
+  !!feature && !!FEATURES.find(f => f.id === feature && f.View && f.row)
 
 // What a tile with the feature says under its name, when the feature
 // has something to say.
 export const featureState = (feature: string | undefined, entity: EntityState) =>
   FEATURES.find(f => f.id === feature && f.domains.includes(domainOf(entity)))?.state?.(entity)
 
+// Whether a tile is wide, because its config says so or because its
+// feature only fits a wide one.
+export const isWide = (config: { size?: string; entity?: string; feature?: string }) =>
+  config.size === 'wide' ||
+  (!!config.feature &&
+    !!FEATURES.find(f => f.id === config.feature && f.wide && f.domains.includes(config.entity?.split('.')[0] ?? '')))
+
 // Whether the feature is drawn across from the icon.
 export const besideIcon = (feature: string | undefined) =>
-  !!feature && !!FEATURES.find(f => f.id === feature && f.beside)
+  !!feature && !!FEATURES.find(f => f.id === feature && f.View && !f.row)
 
 // The features of a domain, for the editor, whatever the entity has.
 export function featuresOf(domains: string[] | 'any') {
@@ -284,7 +301,6 @@ export function Feature(props: FeatureProps) {
   const def = FEATURES.find(f => f.id === props.config.feature && f.domains.includes(domain))
   if (!def?.View) return null
   const View = def.View
-  if (def.beside) return <View {...props} />
   return (
     <div className="fp-feature">
       <View {...props} />

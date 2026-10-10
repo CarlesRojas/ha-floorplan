@@ -1,5 +1,5 @@
 import { entityName, moreInfo, runAction, type TileEnv } from '#/tiles/actions.ts'
-import { addsRow, besideIcon, Feature, featureState } from '#/tiles/features/index.tsx'
+import { addsRow, besideIcon, Feature, featureState, isWide } from '#/tiles/features/index.tsx'
 import type { Preview } from '#/tiles/features/parts.tsx'
 import { useTileGestures } from '#/tiles/gestures.ts'
 import type { TileConfig } from '#/tiles/host.tsx'
@@ -72,6 +72,7 @@ export function Tile({
   // until the finger lifts.
   const [preview, setPreview] = useState<Preview | null>(null)
   const beside = besideIcon(config.feature) && !unavailable
+  const wide = isWide(config)
   const said = (active && !unavailable && featureState(config.feature, entity!)) || state
   const shown = unavailable ? 'Unavailable' : preview ? preview.state : (config.state_text ?? said)
   const name = entityName(config, entity)
@@ -88,6 +89,7 @@ export function Tile({
       data-active={(on && !looksOff) || undefined}
       data-pressed={(pressed && !unavailable) || undefined}
       data-unavailable={unavailable || undefined}
+      data-wide={wide || undefined}
       className="fp-tile"
       style={
         {
@@ -113,7 +115,7 @@ export function Tile({
             <Feature env={env} config={config} entity={entity!} onPreview={setPreview} />
           </div>
         ) : (
-          config.size === 'wide' && controls && !unavailable && <div className="fp-controls">{controls}</div>
+          wide && controls && !unavailable && <div className="fp-controls">{controls}</div>
         )}
       </div>
       <div className="fp-text">
@@ -126,7 +128,7 @@ export function Tile({
               <Feature env={env} config={config} entity={entity!} />
             </div>
           )
-        : config.size === 'wide' && footer && !unavailable && <div className="fp-footer">{footer}</div>}
+        : wide && footer && !unavailable && !besideIcon(config.feature) && <div className="fp-footer">{footer}</div>}
     </div>
   )
 }

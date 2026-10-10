@@ -47,7 +47,7 @@ const HELPERS: Record<string, string> = {
   battery_entity: 'Found on the same device when empty',
   aspect_ratio: 'Width to height, like 16:9',
   title: 'The area name when empty',
-  feature: 'A control under the name, at any size, which makes the tile a row taller',
+  feature: 'A control beside the icon. Some only fit a wide tile and make it wide',
 }
 
 const ROOM_FILTER: Field = {

@@ -249,13 +249,87 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* A feature across from the icon, like a light's color, filling the space
-   the icon leaves. */
+/* A feature across from the icon, in the space the icon leaves. Buttons
+   and menus sit in the corner like the controls of a wide tile, as wide as
+   they need on a wide tile and as wide as there is room on a small one.
+   Bars take the whole space. */
 .fp-beside {
   display: flex;
   flex: 1 1 auto;
+  justify-content: flex-end;
   min-width: 0;
+  margin: -4px -4px 0 12px;
+}
+.fp-beside:has(.fp-slim) {
   margin: -2px 0 0 12px;
+}
+.fp-beside .fp-feature {
+  justify-content: flex-end;
+}
+.fp-beside .fp-pill,
+.fp-beside .fp-slider {
+  height: 40px;
+}
+.fp-beside .fp-feature > .fp-group {
+  flex: 0 1 auto;
+}
+.fp-beside .fp-feature .fp-group > .fp-control {
+  flex: 0 1 40px;
+  width: 40px;
+  max-width: 40px;
+  height: 40px;
+}
+.fp-beside .fp-feature .fp-group > .fp-pill {
+  height: 36px;
+}
+.fp-tile[data-wide] .fp-beside .fp-feature > :is(.fp-pill, .fp-feature-date) {
+  flex: 0 1 auto;
+}
+.fp-tile[data-wide] .fp-beside .fp-feature .fp-group > .fp-control {
+  flex: none;
+  width: 44px;
+  max-width: none;
+  height: 44px;
+}
+.fp-tile[data-wide] .fp-beside .fp-feature .fp-group > .fp-pill {
+  flex: none;
+  padding: 0 12px;
+}
+.fp-tile[data-wide] .fp-beside .fp-pill-menu {
+  max-width: 260px;
+}
+/* Smaller colors, and on a small tile only as many as fit. */
+.fp-beside .fp-swatches {
+  flex: none;
+  gap: 8px;
+  padding: 4px 0;
+}
+.fp-beside .fp-swatch {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+/* A small tile drops what the space beside the icon has no room for: the
+   word on a switch, the colors past the fourth, and some of the room
+   around a range of temperatures. */
+@container (max-width: 220px) {
+  .fp-beside .fp-swatch:nth-child(n + 5) {
+    display: none;
+  }
+
+  .fp-beside .fp-feature > .fp-pill-switch {
+    flex: none;
+  }
+
+  .fp-beside .fp-pill-switch .fp-pill-label {
+    display: none;
+  }
+
+  .fp-beside .fp-stepper-end {
+    width: auto;
+    padding: 0 5px;
+    font-size: 15px;
+  }
 }
 
 /* A slim bar of a scale with round ends, and a round handle where the

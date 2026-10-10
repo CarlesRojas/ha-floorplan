@@ -1,5 +1,5 @@
-import { haptic, type TileEnv } from '#/tiles/actions.ts'
-import { useHeld } from '#/tiles/features/parts.tsx'
+import { callService, haptic, type TileEnv } from '#/tiles/actions.ts'
+import { numberOf, useHeld } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
 import { Tile } from '#/tiles/Tile.tsx'
 import type { EntityState } from '#/types.ts'
@@ -15,6 +15,12 @@ type Props = {
   step?: number
   accent: string
   glow?: string
+  // Whether it is on, open for a cover, when Home Assistant says more than
+  // on and off.
+  on?: boolean
+  // What the line under the name says for a value, a percentage unless
+  // it says otherwise.
+  format?: (value: number) => string
   onTap: () => void
   onSend: (value: number) => void
 }
@@ -29,15 +35,26 @@ const GRIP_OPACITY = 0.35
 const SEND_MS = 700
 
 // A tile that is a value from 0 to 100 across its whole width, like a
-// light's brightness or a fan's speed. The tile fills from the left as far
+// light's brightness, a fan's speed or how far a blind is open. The tile fills from the left as far
 // as the value and looks like one that is on up to there, and like one
 // that is off past it. A drag sideways anywhere on it moves that edge from
 // where it was, following the finger smoothly, and when it lifts the value
 // goes to the nearest step; down to nothing turns it off. A tap still turns
 // it on or off. Near the end, where the edge is about to go, a short bar
 // fades in just inside it to show there is something to drag.
-export function FillTile({ env, config, entity, value: reported, step = 1, accent, glow, onTap, onSend }: Props) {
-  const on = entity.state === 'on'
+export function FillTile({
+  env,
+  config,
+  entity,
+  value: reported,
+  step = 1,
+  accent,
+  glow,
+  on = entity.state === 'on',
+  format = v => (v === 0 ? 'Off' : `${v}%`),
+  onTap,
+  onSend,
+}: Props) {
   const [value, hold] = useHeld(reported)
   const [drag, setDrag] = useState<number | null>(null)
   const box = useRef<HTMLDivElement>(null)
@@ -116,7 +133,7 @@ export function FillTile({ env, config, entity, value: reported, step = 1, accen
     }, SEND_MS)
   }
 
-  const state = Math.round(shown) === 0 ? 'Off' : `${Math.round(shown)}%`
+  const state = format(Math.round(shown))
   return (
     <div
       ref={box}
@@ -147,5 +164,44 @@ export function FillTile({ env, config, entity, value: reported, step = 1, accen
         />
       </div>
     </div>
+  )
+}
+
+// A cover's or a valve's tile that is how far it is open, or with `tilt`
+// how far its slats are tilted. A tap opens or closes it.
+export function PositionTile({
+  env,
+  config,
+  entity,
+  tilt = false,
+}: {
+  env: TileEnv
+  config: TileConfig
+  entity: EntityState
+  tilt?: boolean
+}) {
+  const valve = entity.entity_id.startsWith('valve.')
+  const domain = valve ? 'valve' : 'cover'
+  const open = entity.state === 'open' || entity.state === 'opening'
+  const value = tilt
+    ? (numberOf(entity, 'current_tilt_position') ?? 0)
+    : (numberOf(entity, 'current_position') ?? (open ? 100 : 0))
+  const target = { entity_id: entity.entity_id }
+  return (
+    <FillTile
+      env={env}
+      config={config}
+      entity={entity}
+      value={value}
+      on={tilt ? value > 0 : open}
+      accent="var(--_accent-cover)"
+      format={v => (tilt ? `Tilt ${v}%` : v === 0 ? 'Closed' : v === 100 ? 'Open' : `${v}%`)}
+      onTap={() => callService(env.hass, `${domain}.toggle`, target)}
+      onSend={v =>
+        tilt
+          ? callService(env.hass, 'cover.set_cover_tilt_position', { ...target, tilt_position: v })
+          : callService(env.hass, `${domain}.set_${domain}_position`, { ...target, position: v })
+      }
+    />
   )
 }

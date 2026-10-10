@@ -8,7 +8,6 @@ import {
   numberOf,
   optionWord,
   Pill,
-  Slider,
   supports,
   SwitchPill,
   type FeatureProps,
@@ -52,41 +51,6 @@ export function OpenClose({ env, config, entity }: FeatureProps) {
       {supports(entity, STOP) && <Control icon="ph:stop" label="Stop" onPress={run('stop')} />}
       <Control icon="ph:caret-down" label={invert ? 'Open' : 'Close'} onPress={run(invert ? 'open' : 'close')} />
     </Group>
-  )
-}
-
-// How far open it is, along a bar.
-export function Position({ env, entity }: FeatureProps) {
-  const domain = domainOf(entity)
-  const position = numberOf(entity, 'current_position') ?? (entity.state === 'open' ? 100 : 0)
-  return (
-    <Slider
-      label="Position"
-      value={position}
-      fill="var(--_accent-cover)"
-      format={v => (v === 0 ? 'Closed' : v === 100 ? 'Open' : percent(v))}
-      onChange={v =>
-        callService(env.hass, domain === 'valve' ? 'valve.set_valve_position' : 'cover.set_cover_position', {
-          entity_id: entity.entity_id,
-          position: v,
-        })
-      }
-    />
-  )
-}
-
-// How far its slats are tilted, along a bar.
-export function TiltPosition({ env, entity }: FeatureProps) {
-  return (
-    <Slider
-      label="Tilt"
-      value={numberOf(entity, 'current_tilt_position') ?? 0}
-      fill="var(--_accent-cover)"
-      format={v => `Tilt ${percent(v)}`}
-      onChange={v =>
-        callService(env.hass, 'cover.set_cover_tilt_position', { entity_id: entity.entity_id, tilt_position: v })
-      }
-    />
   )
 }
 

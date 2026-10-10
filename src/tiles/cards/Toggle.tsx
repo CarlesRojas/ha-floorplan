@@ -1,6 +1,6 @@
 import { callService, type TileEnv } from '#/tiles/actions.ts'
-import { FillTile } from '#/tiles/cards/Fill.tsx'
-import { FAN } from '#/tiles/features/cover.tsx'
+import { FillTile, PositionTile } from '#/tiles/cards/Fill.tsx'
+import { FAN, SET_POSITION } from '#/tiles/features/cover.tsx'
 import { dims } from '#/tiles/features/light.tsx'
 import { numberOf, supports } from '#/tiles/features/parts.tsx'
 import type { TileConfig } from '#/tiles/host.tsx'
@@ -16,7 +16,8 @@ type Props = { env: TileEnv; config: TileConfig }
 // its tile from the top left corner with the color it shines in, read from
 // its hue and saturation at full brightness, and its icon takes that color
 // too. A light that dims, with the brightness feature, is its brightness
-// across the whole tile, and a fan with the speed feature its speed.
+// across the whole tile, a fan with the speed feature its speed, and a
+// valve with the position feature how far it is open.
 export default function Toggle({ env, config }: Props) {
   const entity = env.hass.states[config.entity!]
   const domain = config.entity!.split('.')[0]
@@ -69,6 +70,8 @@ export default function Toggle({ env, config }: Props) {
       />
     )
   }
+  if (valve && config.feature === 'position' && !unavailable && supports(entity, SET_POSITION))
+    return <PositionTile env={env} config={plain} entity={entity} />
   if (domain === 'fan' && config.feature === 'speed' && !unavailable && supports(entity, FAN.speed)) {
     return (
       <FillTile

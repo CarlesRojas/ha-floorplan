@@ -20,7 +20,7 @@ import MapCard, { type MapConfig } from '#/tiles/cards/Map.tsx'
 import MediaControl from '#/tiles/cards/MediaControl.tsx'
 import Todo from '#/tiles/cards/Todo.tsx'
 import Weather, { type WeatherConfig } from '#/tiles/cards/Weather.tsx'
-import { featuresFor } from '#/tiles/features/index.tsx'
+import { besideIcon, featuresFor, isWide } from '#/tiles/features/index.tsx'
 import type { HomeAssistant } from '#/types.ts'
 import type { ReactNode } from 'react'
 
@@ -137,7 +137,8 @@ class WeatherCard extends entityCard<WeatherConfig>(WEATHER_DOMAINS, Weather, ['
   }
 }
 
-// A wide thermostat, not a water heater, is a row taller, for its modes along the bottom.
+// A wide thermostat, not a water heater, is a row taller, for its modes
+// along the bottom, unless a feature sits beside its icon instead.
 class ClimateCard extends entityCard(CLIMATE_DOMAINS, Climate, [], true) {
   getCardSize() {
     return this.tall() ? 3 : 2
@@ -148,7 +149,11 @@ class ClimateCard extends entityCard(CLIMATE_DOMAINS, Climate, [], true) {
   }
 
   private tall() {
-    return this._config?.size === 'wide' && !!this._config.entity?.startsWith('climate.')
+    return (
+      this._config?.size === 'wide' &&
+      !!this._config.entity?.startsWith('climate.') &&
+      !besideIcon(this._config.feature)
+    )
   }
 }
 
@@ -402,10 +407,10 @@ function suggestions(card: Card, hass: HomeAssistant, entityId: string): Suggest
   const config = { type, entity: entityId }
   const base = card.wide ? [{ config: { ...config, size: 'wide' } }, { label: 'Small', config }] : [{ config }]
   if (card.extra) return base
-  const features = featuresFor(hass.states[entityId]).map(feature => ({
-    label: feature.label,
-    config: { ...config, feature: feature.id },
-  }))
+  const features = featuresFor(hass.states[entityId]).map(feature => {
+    const featured = { ...config, feature: feature.id }
+    return { label: feature.label, config: isWide(featured) ? { ...featured, size: 'wide' } : featured }
+  })
   return [...base, ...features]
 }
 
