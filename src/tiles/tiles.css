@@ -21,7 +21,7 @@
   --_accent: var(--fp-accent, #0a84ff);
   --_accent-light: var(--fp-accent-light, #ffb340);
   --_accent-cover: var(--fp-accent-cover, #32ade6);
-  --_accent-climate: var(--fp-accent-climate, #ff7f16);
+  --_accent-climate: var(--fp-accent-climate, #ff6422);
   --_accent-cool: var(--fp-accent-cool, #5ab0ff);
   --_mode-heat: var(--fp-mode-heat, var(--_accent-climate));
   --_mode-cool: var(--fp-mode-cool, var(--_accent-cool));

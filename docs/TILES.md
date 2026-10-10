@@ -260,7 +260,7 @@ The tiles look finished without it, and change with any theme that sets these:
 | `fp-accent`                   | `#0a84ff`                  | The icon of an `input_boolean`, script or select that is on                       |
 | `fp-accent-light`             | `#ffb340`                  | The icon of a light or a switch that is on                                        |
 | `fp-accent-cover`             | `#32ade6`                  | The icon of an open cover                                                         |
-| `fp-accent-climate`           | `#ff7f16`                  | A water heater that is on, and the heating mode unless it is set                  |
+| `fp-accent-climate`           | `#ff6422`                  | A water heater that is on, and the heating mode unless it is set                  |
 | `fp-accent-cool`              | `#5ab0ff`                  | A humidifier, and the cooling mode unless it is set                               |
 | `fp-mode-heat`                | `fp-accent-climate`        | A thermostat that heats                                                           |
 | `fp-mode-cool`                | `fp-accent-cool`           | A thermostat that cools                                                           |

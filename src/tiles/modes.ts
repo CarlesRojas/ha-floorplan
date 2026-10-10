@@ -29,11 +29,26 @@ export const NO_COLOR = 'currentColor'
 // The modes that pick on their own whether to heat or cool.
 const EITHER = ['auto', 'heat_cool']
 
-// The color of a thermostat's tiles: the mode it runs in, or in a mode
-// that heats or cools as it needs to, what it is doing right now, like
-// orange while it heats. While that one waits its tiles take no color.
+// The mode whose color a thermostat shows: the one it runs in, or in a
+// mode that heats or cools as it needs to, the one for what it is doing
+// right now, like heat while it heats. Null while that one waits.
+export const shownMode = (state: string, action: unknown) => {
+  if (!EITHER.includes(state)) return state
+  return (typeof action === 'string' && ACTION_MODES[action]) || null
+}
+
+// The color of a thermostat's tiles, for the mode it shows. No color while
+// it waits.
 export const climateColor = (state: string, action: unknown) => {
-  if (!EITHER.includes(state)) return HVAC_MODES[state]?.color
-  const doing = typeof action === 'string' ? ACTION_MODES[action] : undefined
-  return doing ? HVAC_MODES[doing]?.color : NO_COLOR
+  const mode = shownMode(state, action)
+  return mode ? HVAC_MODES[mode]?.color : NO_COLOR
+}
+
+// The same colors for the 3D model, which cannot read the tiles' CSS, so
+// it keeps to their defaults.
+export const MODE_HEX: Record<string, string> = {
+  heat: '#ff6422',
+  cool: '#5ab0ff',
+  dry: '#ffc60a',
+  fan_only: '#30c9a4',
 }

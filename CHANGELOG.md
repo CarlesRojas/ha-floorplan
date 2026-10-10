@@ -87,7 +87,7 @@ moves that section under the new version and uses it as the release notes.
 - A thermostat's modes tile is always wide, since a small one had no room for every mode.
 - Temperatures on thermostats and dials show a degree sign, like 22°, and a thermostat's state reads as one phrase, like 20.5° to 22°.
 - A thermostat's icon takes the color of the mode it runs in on every one of its tiles, and that color washes down from the top of the tile while it is on. In auto, or keeping a range, it takes the color of what it is doing, like orange while it heats, and no color while it waits.
-- Each thermostat mode has its own color: orange for heating, blue for cooling, yellow for drying and teal for the fan alone, while auto and keeping a range look plain like off. Water heaters, humidifiers and the alarm panel's warning share the same orange and blue.
+- Each thermostat mode has its own color: orange for heating, blue for cooling, yellow for drying and teal for the fan alone, while auto and keeping a range look plain like off. Water heaters, humidifiers and the alarm panel's warning share the same orange and blue. In the 3D view, the air out of an air conditioner and the glow of a thermostat take the same color as its tiles.
 
 ### Fixed
 
